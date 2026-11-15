@@ -1,0 +1,28 @@
+CREATE TABLE item (
+  id TEXT COLLATE "C" PRIMARY KEY,
+  version INTEGER NOT NULL,
+  name TEXT COLLATE "C",
+  code TEXT COLLATE "C" NOT NULL UNIQUE,
+  active BOOLEAN NOT NULL,
+  data JSONB,
+  amount BIGINT
+);
+
+CREATE TABLE things (
+  id TEXT COLLATE "C" PRIMARY KEY,
+  version INTEGER NOT NULL,
+  name TEXT COLLATE "C" NOT NULL,
+  size INTEGER NOT NULL,
+  tag TEXT COLLATE "C"
+);
+
+CREATE TABLE pair (
+  id TEXT COLLATE "C" PRIMARY KEY,
+  version INTEGER NOT NULL,
+  tenant TEXT COLLATE "C" NOT NULL,
+  code TEXT COLLATE "C" NOT NULL,
+  email TEXT COLLATE "C" NOT NULL,
+  UNIQUE (tenant, code)
+);
+
+CREATE UNIQUE INDEX pair_email_unique ON pair (email);

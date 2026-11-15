@@ -1,0 +1,50 @@
+import { describe }        from 'bun:test'
+import { expect }          from 'bun:test'
+import { test }            from 'bun:test'
+// --------------------------------------------------------
+import { MemoryCluster }   from '../../../adapters/cluster/memory/memory-cluster/memory-cluster'
+import { MemoryDatabase }  from '../../../adapters/database/memory/memory-database/memory-database'
+import { Module }          from '../../../domain/module/module/module'
+import { UseCase }         from '../../../domain/use-case/use-case/use-case'
+import { ContextBase }     from '../../context/context-base/context-base'
+import { Platform }        from '../../platform/platform/platform'
+import { describeContext } from './describe-context'
+
+const platform = new Platform({ cluster: new MemoryCluster() })
+
+class Tax_Module extends Module {
+  constructor(base: ContextBase) {
+    super('tax', base.useCaseRunner)
+  }
+
+  @UseCase()
+  async rate() {}
+}
+
+class Order_Module extends Module {
+  constructor(base: ContextBase, deps: object) {
+    super('order', base.useCaseRunner, deps)
+  }
+
+  @UseCase()
+  async place() {}
+}
+
+describe('describeContext', () => {
+  test('lists its modules, the other contexts they use and the subscriptions to its events', () => {
+    const shop = new ContextBase({ name: 'shop', platform, database: new MemoryDatabase() })
+    const billing = new ContextBase({ name: 'billing', platform, database: new MemoryDatabase() })
+    const tax = new Tax_Module(billing)
+    new Order_Module(shop, { tax, self: new Tax_Module(shop) })
+    shop.bus.subscribe('order.placed', () => {}, { strategy: 'handler', queue: 'invoice.open.on.order.placed', attempts: 3 })
+
+    const described = describeContext(shop.useCaseRunner.registry, new Map())
+
+    expect(described.name).toBe('shop')
+    expect(described.modules.map(module => module.id)).toEqual(['shop/tax', 'shop/order'])
+    expect(described.uses).toEqual(['billing'])
+    expect(described.subscriptions).toEqual([
+      { event: 'shop/order.placed', strategy: 'handler', queue: 'invoice.open.on.order.placed', handler: 'invoice.open', attempts: 3, filtered: false },
+    ])
+  })
+})

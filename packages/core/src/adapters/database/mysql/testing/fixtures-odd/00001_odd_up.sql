@@ -1,0 +1,5 @@
+CREATE TABLE odd (
+  id VARCHAR(64) COLLATE utf8mb4_0900_bin PRIMARY KEY,
+  version INTEGER NOT NULL,
+  name VARCHAR(255) COLLATE utf8mb4_0900_ai_ci NOT NULL
+);

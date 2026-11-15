@@ -1,0 +1,22 @@
+{
+  "name": "@newt-js/lint",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.0"
+  },
+  "peerDependencies": {
+    "eslint": "^10.12.0"
+  },
+  "dependencies": {
+    "@typescript-eslint/utils": "8.71.1",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript-eslint": "8.71.1"
+  },
+  "devDependencies": {
+    "eslint": "10.12.0"
+  }
+}

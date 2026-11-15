@@ -1,0 +1,5 @@
+CREATE TABLE plain (
+  id TEXT PRIMARY KEY,
+  version INTEGER NOT NULL,
+  name TEXT NOT NULL
+);

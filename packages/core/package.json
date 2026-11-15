@@ -1,0 +1,29 @@
+{
+  "name": "@newt-js/core",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./application": "./src/application/index.ts",
+    "./application/testing": "./src/application/testing/index.ts",
+    "./database/memory": "./src/adapters/database/memory/index.ts",
+    "./files/memory": "./src/adapters/files/memory/index.ts",
+    "./cluster/memory": "./src/adapters/cluster/memory/index.ts",
+    "./cluster/valkey": "./src/adapters/cluster/valkey/index.ts",
+    "./files/local": "./src/adapters/files/local/index.ts",
+    "./files/s3": "./src/adapters/files/s3/index.ts",
+    "./database/postgres": "./src/adapters/database/postgres/index.ts",
+    "./database/mysql": "./src/adapters/database/mysql/index.ts",
+    "./database/sqlite": "./src/adapters/database/sqlite/index.ts",
+    "./http": "./src/adapters/http/index.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.0"
+  },
+  "peerDependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "zod": "4.3.6"
+  }
+}

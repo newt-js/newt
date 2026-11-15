@@ -1,0 +1,1 @@
+export const foldingAToZ = (text: string) => [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].reduce((folded, letter) => `REPLACE(${folded}, '${letter}', '${letter.toLowerCase()}')`, `${text} COLLATE utf8mb4_0900_bin`)

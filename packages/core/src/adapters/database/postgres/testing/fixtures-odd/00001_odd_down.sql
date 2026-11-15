@@ -1,0 +1,2 @@
+DROP TABLE odd;
+DROP COLLATION ci;

@@ -1,0 +1,24 @@
+{
+  "name": "newt-framework",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "bun check",
+    "test": "bun test",
+    "lint": "bun --bun eslint"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "@typescript-eslint/parser": "8.71.1",
+    "eslint": "10.12.0",
+    "typescript": "7.0.2"
+  },
+  "overrides": {
+    "@typescript-eslint/parser": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    }
+  }
+}
