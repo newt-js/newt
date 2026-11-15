@@ -1,0 +1,44 @@
+// @ts-check
+import { defineConfig } from 'astro/config'
+import starlight from '@astrojs/starlight'
+import react from '@astrojs/react'
+import tailwindcss from '@tailwindcss/vite'
+import { remarkPackageName } from './src/plugins/remark-package-name.mjs'
+// The one place the package name lives; the docs write %PKG% for it.
+import { PACKAGE } from './src/config/site.ts'
+
+export default defineConfig({
+  // Where it is published: GitHub Pages unless SITE_URL says otherwise.
+  site: process.env.SITE_URL ?? 'https://newt-js.github.io',
+  // The folder it is served from: '/' at a domain's root, '/newt' on GitHub Pages without a domain.
+  base: process.env.BASE_PATH ?? '/',
+  markdown: {
+    remarkPlugins: [remarkPackageName(PACKAGE)],
+  },
+  integrations: [
+    starlight({
+      title: 'newt',
+      favicon: '/favicon.svg',
+      defaultLocale: 'root',
+      locales: {
+        root: { label: 'English', lang: 'en' },
+        es: { label: 'Español', lang: 'es' },
+      },
+      customCss: ['./src/styles/docs.css'],
+      components: {
+        SiteTitle: './src/components/docs/SiteTitle.astro',
+        SocialIcons: './src/components/docs/HeaderLinks.astro',
+      },
+      editLink: undefined,
+      lastUpdated: false,
+      sidebar: [
+        { slug: 'guide/getting-started' },
+        { slug: 'tutorial' },
+      ],
+    }),
+    react(),
+  ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
+})

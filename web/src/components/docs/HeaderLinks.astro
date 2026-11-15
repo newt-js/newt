@@ -1,0 +1,26 @@
+---
+// Replaces Starlight's social icons: the manifesto, and GitHub.
+import GithubIcon from '@/components/landing/GithubIcon.astro'
+import { GITHUB } from '@/config/site'
+import { landing, routes, type Lang } from '@/i18n/landing'
+
+const lang: Lang = Astro.locals.starlightRoute.locale === 'es' ? 'es' : 'en'
+const t = landing[lang].nav
+---
+<a class="header-link" href={routes.principles[lang]}>{t.manifesto}</a>
+<a class="header-link" href={GITHUB} aria-label="GitHub"><GithubIcon /></a>
+
+<style>
+  .header-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--sl-text-sm);
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+  }
+  .header-link:hover {
+    color: var(--sl-color-white);
+  }
+</style>
