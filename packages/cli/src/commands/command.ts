@@ -21,7 +21,7 @@ export type EnsureLinesChange = { action: 'ensure-lines', path: string, lines: s
 
 export type RemoveUnchangedChange = { action: 'remove-unchanged', path: string, content: string, why: string }
 
-export type RemoveJsonKeyChange = { action: 'remove-json-key', path: string, key: string, value: unknown, whenMissing: string }
+export type RemoveJsonKeyChange = { action: 'remove-json-key', path: string, in?: string, key: string, value: unknown, whenMissing: string }
 
 export type CompleteEnvChange = { action: 'complete-env', path: string, variables: Record<string, string> }
 

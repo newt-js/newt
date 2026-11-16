@@ -8,12 +8,14 @@ import type { VirtualFiles }        from '../virtual-files/virtual-files'
 
 const UP_TO_DATE: ChangeOutcome = { status: 'skipped', note: 'up to date', warnings: [] }
 
-/** Removes a key of a JSON file while it holds `value`, once the file `whenMissing` is gone, by its text. */
-export async function removeJsonKey({ path, key, value, whenMissing }: RemoveJsonKeyChange, files: VirtualFiles): Promise<ChangeOutcome> {
+/** Removes a key of a JSON file, or of its object `in`, while it holds `value`, once the file `whenMissing` is gone, by its text. */
+export async function removeJsonKey({ path, in: parent, key, value, whenMissing }: RemoveJsonKeyChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   if (text === null || await files.read(whenMissing) !== null) return UP_TO_DATE
   const source = ts.parseJsonText(path, text)
-  const root = source.statements[0]?.expression
+  const top = source.statements[0]?.expression
+  const root = parent === undefined || !top || !ts.isObjectLiteralExpression(top) ? top
+    : top.properties.find((each): each is ts.PropertyAssignment => ts.isPropertyAssignment(each) && propertyKey(each) === parent)?.initializer
   if (!root || !ts.isObjectLiteralExpression(root)) return UP_TO_DATE
   const property = root.properties.find((each): each is ts.PropertyAssignment => ts.isPropertyAssignment(each) && propertyKey(each) === key)
   if (!property || JSON.stringify(jsonValue(text, property.initializer, source)) !== JSON.stringify(value)) return UP_TO_DATE

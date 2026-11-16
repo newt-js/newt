@@ -117,9 +117,12 @@ describe('newt init', () => {
   test('--monorepo over bun init takes away what bun init left at the root, and says how to run the checks', async () => {
     const folder = join(await emptyFolder(), 'shop')
     await writeBunInitProject(folder)
-    await runCommand(INIT, ['.', '--monorepo'], { cwd: folder, ask: null })
+    const report = JSON.parse((await runCommand(INIT, ['.', '--monorepo', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
     for (const file of ['index.ts', 'tsconfig.json']) expect(await Bun.file(join(folder, file)).exists()).toBe(false)
-    expect(await Bun.file(join(folder, 'package.json')).json()).not.toHaveProperty('module')
+    const manifest = await Bun.file(join(folder, 'package.json')).json() as { scripts: Record<string, string> }
+    expect(manifest).not.toHaveProperty('module')
+    expect(manifest.scripts.typecheck).toBe("bun run --filter '*' typecheck")
+    expect(report.warnings.filter(warning => warning.startsWith('package.json'))).toEqual([])
     expect(await Bun.file(join(folder, 'AGENTS.md')).text()).toContain('`bun test` here does not read')
     expect(await Bun.file(join(folder, 'CLAUDE.md')).text()).toContain('@AGENTS.md')
   })
