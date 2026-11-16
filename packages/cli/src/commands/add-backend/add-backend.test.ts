@@ -39,14 +39,21 @@ describe('newt add backend', () => {
 
   test('leaves the workspaces alone when they already take the folder', async () => {
     const root = await monorepoProject(['apps/*'])
-    const output = JSON.parse((await addBackend(['apps/api', '--json'], root)).text) as { files: { path: string }[] }
-    expect(output.files.map(file => file.path)).not.toContain('package.json')
+    const before = await Bun.file(join(root, 'package.json')).json() as { workspaces: string[] }
+    await addBackend(['apps/api'], root)
+    expect((await Bun.file(join(root, 'package.json')).json() as { workspaces: string[] }).workspaces).toEqual(before.workspaces)
+  })
+
+  test("the root depends on newt's cli, so bunx newt runs it there", async () => {
+    const root = await monorepoProject(['apps/*'])
+    await addBackend(['apps/api'], root)
+    expect((await Bun.file(join(root, 'package.json')).json() as { devDependencies: Record<string, string> }).devDependencies).toHaveProperty('@newt-js/cli')
   })
 
   test('in a monorepo made by newt init --monorepo, its workspaces already take apps/', async () => {
     const root = join(await generate(INIT, ['shop', '--monorepo']), 'shop')
-    const report = JSON.parse((await addBackend(['apps/web', '--port', '3010', '--json'], root)).text) as { files: { path: string }[] }
-    expect(report.files.map(file => file.path)).not.toContain('package.json')
+    const report = JSON.parse((await addBackend(['apps/web', '--port', '3010', '--json'], root)).text) as { files: { path: string, status: string }[] }
+    expect(report.files.find(file => file.path === 'package.json')?.status).toBe('skipped')
     expect(await Bun.file(join(root, 'apps/web/.env')).text()).toStartWith('PORT=3010\n')
   })
 

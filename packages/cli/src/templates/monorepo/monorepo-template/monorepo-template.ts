@@ -19,7 +19,7 @@ export type MonorepoTemplateOptions = { folder: string, name: string, backend: s
 export function monorepoTemplate({ folder, name, backend, port, stores, versions }: MonorepoTemplateOptions): FileChange[] {
   const at = (path: string) => join(folder, path)
   return [
-    { action: 'complete-json', path: at('package.json'), values: rootPackageJson(name, workspacePattern(backend)) },
+    { action: 'complete-json', path: at('package.json'), values: rootPackageJson(name, workspacePattern(backend), versions) },
     { action: 'create', path: at('AGENTS.md'), content: ROOT_AGENTS_MD },
     { action: 'ensure-lines', path: at('.gitignore'), lines: ['node_modules'] },
     { action: 'ensure-lines', path: at('CLAUDE.md'), lines: CLAUDE_MD },

@@ -1,6 +1,11 @@
+import type { TemplateVersions } from '../../template-versions/template-versions'
+
 const IN_EVERY_WORKSPACE = (script: string) => `bun run --filter '*' ${script}`
 
-export function rootPackageJson(name: string, pattern: string): Record<string, unknown> {
+/** The root depends on the cli too, so `bunx newt` runs it here, and never npm's `newt`. */
+export const rootCli = (versions: TemplateVersions) => ({ devDependencies: { '@newt-js/cli': versions.newt } })
+
+export function rootPackageJson(name: string, pattern: string, versions: TemplateVersions): Record<string, unknown> {
   return {
     name,
     private: true,
@@ -11,5 +16,6 @@ export function rootPackageJson(name: string, pattern: string): Record<string, u
       typecheck: IN_EVERY_WORKSPACE('typecheck'),
       lint: IN_EVERY_WORKSPACE('lint'),
     },
+    ...rootCli(versions),
   }
 }
