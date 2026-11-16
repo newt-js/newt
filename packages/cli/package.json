@@ -1,0 +1,11 @@
+{
+  "name": "@newt-js/cli",
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "newt": "./src/bin.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.0"
+  }
+}
