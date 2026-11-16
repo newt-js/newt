@@ -32,7 +32,7 @@ describe('run', () => {
 
   test('a command in the list shows in the help and runs', async () => {
     expect((await run([], CONTEXT)).text).toContain('init')
-    expect(await run(['init'], CONTEXT)).toEqual({ code: 0, text: 'Nothing to do.' })
+    expect(await run(['init'], CONTEXT)).toEqual({ code: 0, text: 'Nothing to do.', json: false })
   })
 
   test('a command runs in the given folder', async () => {
@@ -42,7 +42,12 @@ describe('run', () => {
   })
 
   test('an unknown command fails and says how to get help', async () => {
-    expect(await run(['nope'], CONTEXT)).toEqual({ code: 1, text: "Unknown command 'nope'. Run newt --help." })
+    expect(await run(['nope'], CONTEXT)).toEqual({ code: 1, text: "Unknown command 'nope'. Run newt --help.", json: false })
+  })
+
+  test('with --json, an unknown command or option fails as JSON', async () => {
+    expect(await run(['nope', '--json'], CONTEXT)).toEqual({ code: 1, text: JSON.stringify({ error: "Unknown command 'nope'. Run newt --help." }, null, 2), json: true })
+    expect(await run(['--nope', '--json'], CONTEXT)).toMatchObject({ code: 1, json: true })
   })
 
   test('an unknown option fails and says how to get help', async () => {

@@ -47,7 +47,7 @@ describe('newt init', () => {
 
   test('refuses a cluster there is not', async () => {
     const output = await runCommand(INIT, ['shop', '--cluster', 'redis'], { cwd: await emptyFolder(), ask: null })
-    expect(output).toEqual({ code: 1, text: "'redis' is not a cluster: memory or valkey" })
+    expect(output).toEqual({ code: 1, text: "'redis' is not a cluster: memory or valkey", json: false })
   })
 
   test('serves on the port told', async () => {
@@ -124,7 +124,7 @@ describe('newt init', () => {
 
   test('--backend without --monorepo says to add it', async () => {
     const output = await runCommand(INIT, ['shop', '--backend', 'apps/api'], { cwd: await emptyFolder(), ask: null })
-    expect(output).toEqual({ code: 1, text: '--backend says where a monorepo has its first backend: add --monorepo' })
+    expect(output).toEqual({ code: 1, text: '--backend says where a monorepo has its first backend: add --monorepo', json: false })
   })
 
   test('asked from scratch in a terminal, asks the name and then whether a backend or a monorepo', async () => {
@@ -199,7 +199,7 @@ describe('newt init', () => {
     await Bun.write(join(folder, 'shop/src'), 'a file')
     for (const args of [['shop', '--dry-run'], ['shop']]) {
       const output = await runCommand(INIT, args, { cwd: folder, ask: null })
-      expect(output).toEqual({ code: 1, text: expect.stringContaining('newt wrote nothing: shop/src is a file, so shop/src/') })
+      expect(output).toEqual({ code: 1, text: expect.stringContaining('newt wrote nothing: shop/src is a file, so shop/src/'), json: false })
     }
     expect(await Bun.file(join(folder, 'shop/package.json')).exists()).toBe(false)
   })

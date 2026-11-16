@@ -1,4 +1,5 @@
-export type Output = { code: number, text: string }
+/** What a command answers; `json` when its text is JSON, which goes to stdout even when it fails. */
+export type Output = { code: number, text: string, json?: boolean }
 
 export type Option = { type: 'boolean' | 'string', description: string, short?: string, value?: string }
 

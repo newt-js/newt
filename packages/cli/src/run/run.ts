@@ -6,6 +6,7 @@ import type { Output }         from '../commands/command'
 import { newtHelp }            from '../help/newt-help/newt-help'
 import { NEWT_OPTIONS }        from '../options/newt-options'
 import { parseArgsOptions }    from '../options/parse-args-options/parse-args-options'
+import { errorReport }         from '../report/error-report/error-report'
 import { version }             from '../version/version'
 import { findCommand }         from './find-command/find-command'
 import { runCommand }          from './run-command/run-command'
@@ -17,11 +18,13 @@ export async function run(args: string[], { commands, ...context }: RunContext):
   if (found) {
     return runCommand(found.command, found.rest, context)
   }
+  const json = args.includes('--json')
+  const failed = (message: string): Output => ({ code: 1, text: errorReport(message, json), json })
   let parsed
   try {
     parsed = parseArgs({ args, allowPositionals: true, strict: true, options: parseArgsOptions(NEWT_OPTIONS) })
   } catch (error) {
-    return { code: 1, text: `${(error as Error).message}\nRun newt --help.` }
+    return failed(`${(error as Error).message}\nRun newt --help.`)
   }
   const { values, positionals } = parsed
   if (values.version) {
@@ -31,5 +34,5 @@ export async function run(args: string[], { commands, ...context }: RunContext):
   if (values.help || command === undefined) {
     return { code: 0, text: await newtHelp(commands) }
   }
-  return { code: 1, text: `Unknown command '${command}'. Run newt --help.` }
+  return failed(`Unknown command '${command}'. Run newt --help.`)
 }

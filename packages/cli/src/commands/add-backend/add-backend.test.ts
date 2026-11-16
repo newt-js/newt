@@ -98,7 +98,7 @@ describe('newt add backend', () => {
 
   test('outside a monorepo, says to use newt init', async () => {
     const output = await addBackend(['api'], await mkdtemp(join(tmpdir(), 'newt-cli-alone-')))
-    expect(output).toEqual({ code: 1, text: 'This is not a monorepo: no package.json with workspaces here or above. For a backend alone, newt init <name>' })
+    expect(output).toEqual({ code: 1, text: 'This is not a monorepo: no package.json with workspaces here or above. For a backend alone, newt init <name>', json: false })
   })
 
   test('refuses a folder outside the monorepo, or its root', async () => {

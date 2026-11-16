@@ -24,7 +24,7 @@ describe('runCommand', () => {
   })
 
   test('refuses a flag given twice', async () => {
-    expect(await runCommand(ADD_BACKEND, ['api', '--db', 'postgres', '--db=sqlite'], { cwd: emptyFolder(), ask: null })).toEqual({ code: 1, text: '--db is given twice: give it once' })
+    expect(await runCommand(ADD_BACKEND, ['api', '--db', 'postgres', '--db=sqlite'], { cwd: emptyFolder(), ask: null })).toEqual({ code: 1, text: '--db is given twice: give it once', json: false })
   })
 
   test('--json prints the report as JSON', async () => {
@@ -52,10 +52,17 @@ describe('runCommand', () => {
   })
 
   test('a CommandError fails with its message, as text or as JSON', async () => {
-    expect(await runCommand(BROKEN, [], { cwd: emptyFolder(), ask: null })).toEqual({ code: 1, text: 'It broke: fix it like this' })
+    expect(await runCommand(BROKEN, [], { cwd: emptyFolder(), ask: null })).toEqual({ code: 1, text: 'It broke: fix it like this', json: false })
     const output = await runCommand(BROKEN, ['--json'], { cwd: emptyFolder(), ask: null })
     expect(output.code).toBe(1)
+    expect(output.json).toBe(true)
     expect(JSON.parse(output.text)).toEqual({ error: 'It broke: fix it like this' })
+  })
+
+  test('with --json, an option it does not know fails as JSON too', async () => {
+    const output = await runCommand(ADD_BACKEND, ['api', '--nope', '--json'], { cwd: emptyFolder(), ask: null })
+    expect(output).toMatchObject({ code: 1, json: true })
+    expect((JSON.parse(output.text) as { error: string }).error).toEndWith('Run newt add backend --help.')
   })
 
   test('any other error is a bug, and is not hidden', async () => {

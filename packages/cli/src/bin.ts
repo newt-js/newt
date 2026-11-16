@@ -20,7 +20,8 @@ if (projectCli?.warning) console.error(projectCli.warning)
 if (projectCli?.path) {
   process.exit(await handOverTo(projectCli.path, args))
 }
-const { code, text } = await run(args, { commands: COMMANDS, cwd: process.cwd(), ask: process.stdin.isTTY ? terminalAsk : null })
-if (code === 0) console.log(text)
+const { code, text, json } = await run(args, { commands: COMMANDS, cwd: process.cwd(), ask: process.stdin.isTTY ? terminalAsk : null })
+// An agent reads --json from stdout, failed or not.
+if (code === 0 || json) console.log(text)
 else console.error(text)
 process.exit(code)
