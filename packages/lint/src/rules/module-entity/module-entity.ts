@@ -32,7 +32,7 @@ export const moduleEntity: TSESLint.RuleModule<'elsewhere' | 'second'> = {
   },
   create(context) {
     const place = modulePlace(context.filename, rootOf(context))
-    if (!place) return {}
+    if (!place || /\.test\.tsx?$/.test(place.inside)) return {}
     const ownFile = place.inside === `${place.module}.ts`
     let entities = new Set<string>()
     let found = 0

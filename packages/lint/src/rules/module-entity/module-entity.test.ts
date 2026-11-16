@@ -10,6 +10,7 @@ tester.run('module-entity', asRule(moduleEntity), {
     { code: `${ENTITY}export class PriceChange extends Entity<S> {}`, filename: `${MODULE}/price-change.ts` },
     { code: `${ENTITY}export class PriceRounding {}\nexport class Rounder extends Base {}`, filename: `${MODULE}/services/price-rounding.ts` },
     { code: `${ENTITY}export class Line extends Entity<S> {}`, filename: '/repo/src/shared/line.ts' },
+    { code: `${ENTITY}class Probe extends Entity<S> {}`, filename: `${MODULE}/price-change.module.test.ts` },
   ],
   invalid: [
     { code: `${ENTITY}export class PriceChange extends Entity<S> {}\nexport class Line extends Entity<L> {}`, filename: `${MODULE}/price-change.ts`, errors: [{ messageId: 'second', data: { name: 'Line', module: 'price-change' } }] },
