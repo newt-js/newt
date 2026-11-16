@@ -42,6 +42,19 @@ describe('newt add route', () => {
     expect(await read(backend, 'order.module.test.ts')).toBe(before)
   })
 
+  test('refuses a route registered already, a GET with a body, and a use case of two inputs', async () => {
+    const backend = await moduleProject()
+    expect((await run(ADD_ROUTE, ['sales/order', 'paginate', '--method', 'get', '--path', '/orders'], backend)).text).toStartWith('paginate takes 2 inputs')
+    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--method', 'get', '--path', '/new-orders'], backend)).text).toStartWith('create takes an input, and a GET has no body')
+    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/orders'], backend)).text).toBe(`${ORDER_MODULE}/order.routes.ts has POST /orders already: give the route another --path or --method`)
+  })
+
+  test('says when it writes no test for a route with a body', async () => {
+    const backend = await moduleProject()
+    const report = JSON.parse((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/orders/new', '--json'], backend)).text) as { warnings: string[] }
+    expect(report.warnings).toEqual(['POST /orders/new takes a body, so newt wrote no test for it: write one in order.module.test.ts'])
+  })
+
   test('a second route that answers 204 is written whole', async () => {
     const backend = await moduleProject()
     await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', '0 3 * * *'], backend)

@@ -2,6 +2,7 @@ import { join }            from 'node:path'
 // --------------------------------------------------------
 import { pieceNames }      from '../../names/piece-names/piece-names'
 import { findModule }      from '../../project/find-module/find-module'
+import { routeFileWith }   from '../../project/route-file-with/route-file-with'
 import { routesHead }      from '../../templates/module/files/routes-ts'
 import { routeLine }       from '../../templates/pieces/route-ts'
 import { routeTest }       from '../../templates/pieces/route-ts'
@@ -29,7 +30,7 @@ export const ADD_ROUTE = defineCommand({
     if (name === undefined || rest.length > 0) throw new CommandError(USAGE)
     const method = (options.method ?? 'post').toLowerCase()
     if (!METHODS.includes(method)) throw new CommandError(`'${options.method}' is not a method: ${METHODS.join(', ')}`)
-    const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
+    const { backend, folder, module } = await findModule(given, cwd, options.backend, USAGE)
     const useCase = pieceNames(name, 'a use case')
     const path = options.path ?? `/${module.path}/:id/${useCase.folder}`
     if (!PATH.test(path)) throw new CommandError(`'${path}' is not a path: it starts with / and has letters, digits and / : _ - alone`)
@@ -39,7 +40,16 @@ export const ADD_ROUTE = defineCommand({
     if (!signature) {
       throw new CommandError(`${module.type}_Module has no use case ${useCase.camel}: add it with newt add use-case ${given} ${name}`)
     }
-    const shape = { method, path, takesInput: signature[1]!.trim() !== '', returnsNothing: signature[2] === 'void' }
+    const parameters = signature[1]!.split(',').filter(each => each.trim() !== '').length
+    if (parameters > 1) {
+      throw new CommandError(`${useCase.camel} takes ${parameters} inputs, and a route gives one: write its route by hand in ${module.folder}.routes.ts`)
+    }
+    const shape = { method, path, takesInput: parameters === 1, returnsNothing: signature[2] === 'void' }
+    if (shape.takesInput && !path.includes(':id') && ['get', 'delete'].includes(method)) {
+      throw new CommandError(`${useCase.camel} takes an input, and a ${method.toUpperCase()} has no body to give it: put :id in --path, or use post, put or patch`)
+    }
+    const registered = await routeFileWith(join(cwd, backend, 'src'), method, path)
+    if (registered) throw new CommandError(`${registered} has ${method.toUpperCase()} ${path} already: give the route another --path or --method`)
     const testable = !shape.takesInput || path.includes(':id')
     const changes: FileChange[] = [
       {
@@ -52,6 +62,7 @@ export const ADD_ROUTE = defineCommand({
       },
       ...testable ? [{ action: 'append-block' as const, path: file('.module.test.ts'), block: routeTest(module, useCase, shape), imports: [] }] : [],
     ]
-    return { changes, nextSteps: [`bun test ${folder}`] }
+    const untested = testable ? [] : [`${method.toUpperCase()} ${path} takes a body, so newt wrote no test for it: write one in ${module.folder}.module.test.ts`]
+    return { changes, warnings: untested, nextSteps: [`bun test ${folder}`] }
   },
 })
