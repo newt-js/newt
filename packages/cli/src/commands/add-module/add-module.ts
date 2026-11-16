@@ -5,7 +5,7 @@ import { contextNames }    from '../../names/context-names/context-names'
 import { moduleNames }     from '../../names/module-names/module-names'
 import { CONTEXTS_FOLDER } from '../../project/backend-contexts/backend-contexts'
 import { backendContexts } from '../../project/backend-contexts/backend-contexts'
-import { contextDatabase } from '../../project/context-database/context-database'
+import { backendStores }   from '../../project/backend-stores/backend-stores'
 import { findBackend }     from '../../project/find-backend/find-backend'
 import { nextMigration }   from '../../project/next-migration/next-migration'
 import { moduleTemplate }  from '../../templates/module/module-template/module-template'
@@ -31,9 +31,9 @@ export const ADD_MODULE = defineCommand({
     if (!(await backendContexts(backend)).some(each => each.name === context)) {
       throw new CommandError(`The backend has no context ${context}: add it with newt add context ${context}`)
     }
-    const database = await contextDatabase(backend, context)
-    if (database === null) {
-      throw new CommandError(`${context}.context.ts opens no database of newt's, so newt cannot tell in which SQL to write the table of ${module}`)
+    const database = (await backendStores(backend))?.database
+    if (database === undefined) {
+      throw new CommandError(`The backend's src/stores.ts opens no database of newt's, so newt cannot tell in which SQL to write the table of ${module}`)
     }
     const migration = await nextMigration(join(backend, CONTEXTS_FOLDER, context, 'migrations'), names.table)
     return {

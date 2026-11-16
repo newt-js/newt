@@ -6,7 +6,14 @@ export type StoreFiles = {
   testEnv: Record<string, string>
   usesEnvOf: boolean
   needsEnv: boolean
+  className: string
+  contextEnv: ContextVariables
+  contextTestEnv: ContextVariables
 }
+
+type ContextVariables = (env: string, folder: string) => Record<string, string>
+
+const none: ContextVariables = () => ({})
 
 const secret = () => Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('hex')
 
@@ -27,6 +34,9 @@ export const STORE_FILES = {
     testEnv: { PUBLIC_URL: 'http://localhost', FILES_SECRET: 'a-secret-for-the-tests-only-not-for-real-use' },
     usesEnvOf: true,
     needsEnv: true,
+    className: 'LocalStorage',
+    contextEnv: (env, folder) => ({ [`${env}_FILES`]: `data/files/${folder}` }),
+    contextTestEnv: (env, folder) => ({ [`${env}_FILES`]: `data/test/files/${folder}` }),
   },
   s3: {
     imports: ["import { S3Storage } from '@newt-js/core/files/s3'"],
@@ -44,6 +54,9 @@ export const STORE_FILES = {
     testEnv: {},
     usesEnvOf: true,
     needsEnv: true,
+    className: 'S3Storage',
+    contextEnv: (env, folder) => ({ [`${env}_S3_BUCKET`]: folder }),
+    contextTestEnv: none,
   },
   memory: {
     imports: ["import { MemoryStorage } from '@newt-js/core/files/memory'"],
@@ -53,6 +66,9 @@ export const STORE_FILES = {
     testEnv: {},
     usesEnvOf: false,
     needsEnv: false,
+    className: 'MemoryStorage',
+    contextEnv: none,
+    contextTestEnv: none,
   },
 } satisfies Record<string, StoreFiles>
 

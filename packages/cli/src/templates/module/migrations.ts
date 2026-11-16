@@ -1,5 +1,5 @@
 import type { ModuleNames }  from '../../names/module-names/module-names'
-import type { DatabaseName } from '../context/databases'
+import type { DatabaseKind } from '../stores/store-databases'
 
 type Migration = { up: string, down: string }
 
@@ -14,7 +14,7 @@ function migration(table: string, id: string, text: string, after = ''): Migrati
 }
 
 /** The table of a module's entity, in the SQL of its context's database; none for a database in memory. */
-export function moduleMigration({ table }: ModuleNames, database: DatabaseName): Migration | null {
+export function moduleMigration({ table }: ModuleNames, database: DatabaseKind): Migration | null {
   switch (database) {
     case 'sqlite': return migration(`"${table}"`, 'TEXT', 'TEXT')
     case 'postgres': return migration(`"${table}"`, 'TEXT COLLATE "C"', 'TEXT COLLATE "C"')
