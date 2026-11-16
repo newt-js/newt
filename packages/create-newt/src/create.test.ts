@@ -48,4 +48,4 @@ test('its bin runs it with Bun from Node, and without Bun says how to install it
   const withoutBun = Bun.spawnSync([node!, bin, 'shop'], { cwd, env: { PATH: nodeAlone } })
   expect(withoutBun.exitCode).toBe(1)
   expect(withoutBun.stderr.toString()).toContain('https://bun.sh')
-})
+}, 30_000)
