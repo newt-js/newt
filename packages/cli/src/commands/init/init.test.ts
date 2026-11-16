@@ -9,6 +9,8 @@ import { runCommand }          from '../../run/run-command/run-command'
 import { writeBunInitProject } from '../../testing/bun-init-project/bun-init-project'
 import { checkGenerated }      from '../../testing/check-generated/check-generated'
 import { generate }            from '../../testing/generate/generate'
+import { ADD_CONTEXT }         from '../add-context/add-context'
+import { ADD_FRONTEND }        from '../add-frontend/add-frontend'
 import { INIT }                from './init'
 
 const emptyFolder = () => mkdtemp(join(tmpdir(), 'newt-cli-init-'))
@@ -171,4 +173,15 @@ describe('newt init', () => {
       'eslint.config.js is there too, and ESLint reads it instead of eslint.config.ts: newt\'s lint does not run until it goes',
     ])
   })
+
+  test("over bun init, a frontend completes bun init's tsconfig, comments and all, and passes its checks", async () => {
+    const folder = join(await emptyFolder(), 'shop')
+    await writeBunInitProject(folder)
+    await runCommand(INIT, ['.'], { cwd: folder, ask: null })
+    await runCommand(ADD_CONTEXT, ['sales'], { cwd: folder, ask: null })
+    const report = JSON.parse((await runCommand(ADD_FRONTEND, ['sales', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
+    expect(report.warnings).toEqual([])
+    expect(await Bun.file(join(folder, 'tsconfig.json')).text()).toContain('    // Bundler mode\n')
+    expect(await checkGenerated(folder)).toEqual([])
+  }, 30_000)
 })

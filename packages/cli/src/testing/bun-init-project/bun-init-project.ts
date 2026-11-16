@@ -10,29 +10,37 @@ const BUN_INIT_FILES: Record<string, string> = {
     devDependencies: { '@types/bun': 'latest' },
     peerDependencies: { typescript: '^7' },
   }, null, 2)}\n`,
-  'tsconfig.json': `${JSON.stringify({
-    compilerOptions: {
-      lib: ['ESNext'],
-      target: 'ESNext',
-      module: 'Preserve',
-      moduleDetection: 'force',
-      jsx: 'react-jsx',
-      allowJs: true,
-      types: ['bun'],
-      moduleResolution: 'bundler',
-      allowImportingTsExtensions: true,
-      verbatimModuleSyntax: true,
-      noEmit: true,
-      strict: true,
-      skipLibCheck: true,
-      noFallthroughCasesInSwitch: true,
-      noUncheckedIndexedAccess: true,
-      noImplicitOverride: true,
-      noUnusedLocals: false,
-      noUnusedParameters: false,
-      noPropertyAccessFromIndexSignature: false,
-    },
-  }, null, 2)}\n`,
+  'tsconfig.json': `{
+  "compilerOptions": {
+    // Environment setup & latest features
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "types": ["bun"],
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false
+  }
+}
+`,
   'index.ts': 'console.log("Hello via Bun!");\n',
   '.gitignore': '# dependencies (bun install)\nnode_modules\n\n# dotenv environment variable files\n.env\n.env.local\n',
   'CLAUDE.md': 'Default to using Bun instead of Node.js.\n\n- Use `bun test` instead of `jest` or `vitest`\n',

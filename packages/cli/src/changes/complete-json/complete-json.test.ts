@@ -42,7 +42,7 @@ describe('completeJson', () => {
     expect(await completeJson('package.json', { name: 'shop' }, virtualFiles(cwd, false))).toEqual({
       status: 'skipped',
       note: 'not valid JSON',
-      warnings: ['package.json is not valid JSON: newt left it as it is'],
+      warnings: ['package.json is not valid JSON, so newt left it as it is: add to it {"name":"shop"}'],
     })
   })
 
@@ -56,5 +56,17 @@ describe('completeJson', () => {
     const cwd = await folderWith('package.json', '{ "name": "shop" }')
     expect((await completeJson('package.json', { type: 'module' }, virtualFiles(cwd, true))).status).toBe('updated')
     expect(await Bun.file(join(cwd, 'package.json')).text()).toBe('{ "name": "shop" }')
+  })
+
+  test('completes a JSONC file by its text, its comments and layout kept', async () => {
+    const cwd = await folderWith('tsconfig.json', '{\n  "compilerOptions": {\n    // Bundler mode\n    "strict": true,\n  },\n}\n')
+    await completeJson('tsconfig.json', { compilerOptions: { lib: ['DOM'] }, exclude: ['x'] }, virtualFiles(cwd, false))
+    expect(await Bun.file(join(cwd, 'tsconfig.json')).text()).toBe('{\n  "compilerOptions": {\n    // Bundler mode\n    "strict": true,\n    "lib": [\n      "DOM"\n    ],\n  },\n  "exclude": [\n    "x"\n  ],\n}\n')
+  })
+
+  test('adds the items an array lacks on its own line', async () => {
+    const cwd = await folderWith('package.json', '{ "workspaces": ["packages/*"] }\n')
+    await completeJson('package.json', { workspaces: ['apps/*'] }, virtualFiles(cwd, false))
+    expect(await Bun.file(join(cwd, 'package.json')).text()).toBe('{ "workspaces": ["packages/*", "apps/*"] }\n')
   })
 })
