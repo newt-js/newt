@@ -156,4 +156,19 @@ describe('newt init', () => {
     expect((await runCommand(INIT, ['shop', '--db', 'mongo'], { cwd: await emptyFolder(), ask: null })).text).toBe("'mongo' is not a database: sqlite, postgres, mysql, memory")
     expect((await runCommand(INIT, ['shop', '--files', 'ftp'], { cwd: await emptyFolder(), ask: null })).text).toBe("'ftp' is not a storage for files: local, s3, memory")
   })
+
+  test('in a folder with its own .env, tsconfig, src/index.ts and ESLint config, completes or keeps each and says what it needs', async () => {
+    const folder = await emptyFolder()
+    await Bun.write(join(folder, '.env'), 'API_KEY=x\n')
+    await Bun.write(join(folder, 'tsconfig.json'), '{ "compilerOptions": { "strict": true } }\n')
+    await Bun.write(join(folder, 'src/index.ts'), 'console.log(1)\n')
+    await Bun.write(join(folder, 'eslint.config.js'), 'export default []\n')
+    const report = JSON.parse((await runCommand(INIT, ['.', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
+    expect(await Bun.file(join(folder, '.env')).text()).toStartWith('API_KEY=x\nPORT=3000\nPUBLIC_URL=')
+    expect(report.warnings).toEqual([
+      'tsconfig.json was there already, so newt kept it: newt\'s code needs in its compilerOptions types: ["bun"], module: "Preserve" and moduleResolution: "bundler"',
+      'src/index.ts was there already, so newt kept it: it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT ?? 3000))',
+      'eslint.config.js is there too, and ESLint reads it instead of eslint.config.ts: newt\'s lint does not run until it goes',
+    ])
+  })
 })

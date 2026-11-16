@@ -1,15 +1,19 @@
-import { BACKEND_OPTIONS }  from '../../options/backend-options'
-import { portOf }           from '../../options/port-of/port-of'
-import { storesOf }         from '../../options/stores-of/stores-of'
-import { backendTemplate }  from '../../templates/backend/backend-template/backend-template'
-import { monorepoTemplate } from '../../templates/monorepo/monorepo-template/monorepo-template'
-import { templateVersions } from '../../templates/template-versions/template-versions'
-import { defineCommand }    from '../command'
-import { CommandError }     from '../command-error/command-error'
-import { DEFAULT_BACKEND }  from './backend-in-root/backend-in-root'
-import { backendInRoot }    from './backend-in-root/backend-in-root'
-import { projectFolder }    from './project-folder/project-folder'
-import { askProjectKind }   from './project-kind/project-kind'
+import { join }               from 'node:path'
+// --------------------------------------------------------
+import { BACKEND_OPTIONS }    from '../../options/backend-options'
+import { portOf }             from '../../options/port-of/port-of'
+import { storesOf }           from '../../options/stores-of/stores-of'
+import { eslintWarning }      from '../../project/eslint-warning/eslint-warning'
+import { otherEslintConfigs } from '../../project/other-eslint-configs/other-eslint-configs'
+import { backendTemplate }    from '../../templates/backend/backend-template/backend-template'
+import { monorepoTemplate }   from '../../templates/monorepo/monorepo-template/monorepo-template'
+import { templateVersions }   from '../../templates/template-versions/template-versions'
+import { defineCommand }      from '../command'
+import { CommandError }       from '../command-error/command-error'
+import { DEFAULT_BACKEND }    from './backend-in-root/backend-in-root'
+import { backendInRoot }      from './backend-in-root/backend-in-root'
+import { projectFolder }      from './project-folder/project-folder'
+import { askProjectKind }     from './project-kind/project-kind'
 
 export const INIT = defineCommand({
   name: 'init',
@@ -30,9 +34,11 @@ export const INIT = defineCommand({
     const port = portOf(options.port)
     const stores = storesOf(options)
     const versions = await templateVersions()
+    const backendFolder = kind === 'monorepo' ? join(folder, backendInRoot(options.backend)) : folder
     const changes = kind === 'monorepo'
       ? monorepoTemplate({ folder, name, backend: backendInRoot(options.backend), port, stores, versions })
       : backendTemplate({ folder, name, port, stores, versions })
-    return { changes, nextSteps: [...folder === '.' ? [] : [`cd ${folder}`], 'bun install', 'bun run dev'] }
+    const warnings = (await otherEslintConfigs(join(cwd, backendFolder))).map(other => eslintWarning(join(backendFolder, other)))
+    return { changes, warnings, nextSteps: [...folder === '.' ? [] : [`cd ${folder}`], 'bun install', 'bun run dev'] }
   },
 })

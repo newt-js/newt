@@ -12,7 +12,7 @@ export type CommandContext = { cwd: string, ask: Ask | null }
 
 export type CommandInput<O extends Options> = CommandContext & { args: string[], options: OptionValues<O> }
 
-export type CreateChange = { action: 'create', path: string, content: string }
+export type CreateChange = { action: 'create', path: string, content: string, kept?: { needs: string[], warning: string } }
 
 export type CompleteJsonChange = { action: 'complete-json', path: string, values: Record<string, unknown> }
 

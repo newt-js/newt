@@ -18,7 +18,7 @@ import { wireModule }              from '../wire-module/wire-module'
 
 export function applyChange(change: FileChange, files: VirtualFiles): Promise<ChangeOutcome> {
   switch (change.action) {
-    case 'create': return createFile(change.path, change.content, files)
+    case 'create': return createFile(change, files)
     case 'complete-json': return completeJson(change.path, change.values, files)
     case 'ensure-lines': return ensureLines(change.path, change.lines, files)
     case 'remove-unchanged': return removeUnchanged(change, files)

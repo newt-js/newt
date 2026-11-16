@@ -31,15 +31,15 @@ describe('backendTemplate', () => {
       'complete-json apps/shop/package.json',
       'create apps/shop/tsconfig.json',
       'create apps/shop/eslint.config.ts',
-      'create apps/shop/.env',
-      'create apps/shop/.env.example',
       'create apps/shop/AGENTS.md',
-      'create apps/shop/src/index.ts',
       'create apps/shop/src/backend.ts',
       'create apps/shop/src/stores.ts',
       'create apps/shop/src/env.ts',
       'create apps/shop/src/backend.test.ts',
       'create apps/shop/src/contexts.ts',
+      'create apps/shop/src/index.ts',
+      'complete-env apps/shop/.env',
+      'complete-env apps/shop/.env.example',
       'complete-env apps/shop/.env.test',
       'ensure-lines apps/shop/.gitignore',
       'ensure-lines apps/shop/CLAUDE.md',
@@ -59,11 +59,11 @@ describe('backendTemplate', () => {
 
   test('its port and the files\' variables in .env, and in .env.example without the secret', () => {
     const changes = backendTemplate({ folder: '.', name: 'shop', port: 3010, stores: STORES, versions: VERSIONS })
-    const contentOf = (path: string) => {
+    const variablesOf = (path: string) => {
       const change = changeTo(changes, path)
-      return change?.action === 'create' ? change.content : ''
+      return change?.action === 'complete-env' ? change.variables : {}
     }
-    expect(contentOf('.env')).toMatch(/^PORT=3010\nPUBLIC_URL=http:\/\/localhost:3010\nFILES_SECRET=[0-9a-f]{64}\n$/)
-    expect(contentOf('.env.example')).toBe('PORT=3010\nPUBLIC_URL=http://localhost:3010\nFILES_SECRET=\n')
+    expect(variablesOf('.env')).toEqual({ PORT: '3010', PUBLIC_URL: 'http://localhost:3010', FILES_SECRET: expect.stringMatching(/^[0-9a-f]{64}$/) })
+    expect(variablesOf('.env.example')).toEqual({ PORT: '3010', PUBLIC_URL: 'http://localhost:3010', FILES_SECRET: '' })
   })
 })

@@ -10,7 +10,6 @@ import { BUN_INIT_INDEX_TS }     from '../bun-init/bun-init'
 import { CLUSTERS }              from '../clusters'
 import { AGENTS_MD }             from '../files/agents-md'
 import { CLAUDE_MD }             from '../files/claude-md'
-import { env }                   from '../files/env'
 import { ENV_TS }                from '../files/env-ts'
 import { ESLINT_CONFIG_TS }      from '../files/eslint-config-ts'
 import { GITIGNORE }             from '../files/gitignore'
@@ -21,18 +20,18 @@ import { SRC_CONTEXTS_TS }       from '../files/src-contexts-ts'
 import { SRC_INDEX_TS }          from '../files/src-index-ts'
 import { TSCONFIG_JSON }         from '../files/tsconfig-json'
 
+const TSCONFIG_KEPT = { needs: ['"bun"', '"bundler"'], warning: 'newt\'s code needs in its compilerOptions types: ["bun"], module: "Preserve" and moduleResolution: "bundler"' }
+
+const INDEX_KEPT = { needs: ['startBackend'], warning: 'it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT ?? 3000))' }
+
 export type BackendTemplateOptions = { folder: string, name: string, port: number, stores: Stores, versions: TemplateVersions }
 
 export function backendTemplate({ folder, name, port, stores, versions }: BackendTemplateOptions): FileChange[] {
   const at = (path: string) => join(folder, path)
-  const variables = (example: boolean) => env({ PORT: port, ...CLUSTERS[stores.cluster].env, ...STORE_FILES[stores.files].env(port, example) })
+  const variables = (example: boolean) => ({ PORT: String(port), ...CLUSTERS[stores.cluster].env, ...STORE_FILES[stores.files].env(port, example) })
   const created: Record<string, string> = {
-    'tsconfig.json': TSCONFIG_JSON,
     'eslint.config.ts': ESLINT_CONFIG_TS,
-    '.env': variables(false),
-    '.env.example': variables(true),
     'AGENTS.md': AGENTS_MD,
-    'src/index.ts': SRC_INDEX_TS,
     'src/backend.ts': srcBackendTs(CLUSTERS[stores.cluster]),
     'src/stores.ts': storesTs(stores),
     ...storesNeedEnv(stores) ? { 'src/env.ts': ENV_TS } : {},
@@ -41,7 +40,11 @@ export function backendTemplate({ folder, name, port, stores, versions }: Backen
   }
   return [
     { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions) },
+    { action: 'create', path: at('tsconfig.json'), content: TSCONFIG_JSON, kept: TSCONFIG_KEPT },
     ...Object.entries(created).map(([path, content]): FileChange => ({ action: 'create', path: at(path), content })),
+    { action: 'create', path: at('src/index.ts'), content: SRC_INDEX_TS, kept: INDEX_KEPT },
+    { action: 'complete-env', path: at('.env'), variables: variables(false) },
+    { action: 'complete-env', path: at('.env.example'), variables: variables(true) },
     { action: 'complete-env', path: at('.env.test'), variables: STORE_FILES[stores.files].testEnv },
     { action: 'ensure-lines', path: at('.gitignore'), lines: GITIGNORE },
     { action: 'ensure-lines', path: at('CLAUDE.md'), lines: CLAUDE_MD },
