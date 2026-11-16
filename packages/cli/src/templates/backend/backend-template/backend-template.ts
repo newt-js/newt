@@ -22,7 +22,7 @@ import { TSCONFIG_JSON }         from '../files/tsconfig-json'
 
 const TSCONFIG_KEPT = { needs: ['"bun"', '"bundler"'], warning: 'newt\'s code needs in its compilerOptions types: ["bun"], module: "Preserve" and moduleResolution: "bundler"' }
 
-const INDEX_KEPT = { needs: ['startBackend'], warning: 'it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT ?? 3000))' }
+const INDEX_KEPT = { needs: ['startBackend'], warning: 'it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT || 3000))' }
 
 export type BackendTemplateOptions = { folder: string, name: string, port: number, stores: Stores, versions: TemplateVersions }
 

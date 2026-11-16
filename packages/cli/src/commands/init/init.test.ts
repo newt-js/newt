@@ -179,7 +179,7 @@ describe('newt init', () => {
     expect(await Bun.file(join(folder, '.env')).text()).toStartWith('API_KEY=x\nPORT=3000\nPUBLIC_URL=')
     expect(report.warnings).toEqual([
       'tsconfig.json was there already, so newt kept it: newt\'s code needs in its compilerOptions types: ["bun"], module: "Preserve" and moduleResolution: "bundler"',
-      'src/index.ts was there already, so newt kept it: it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT ?? 3000))',
+      'src/index.ts was there already, so newt kept it: it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT || 3000))',
       'eslint.config.js is there too, and ESLint reads it instead of eslint.config.ts: newt\'s lint does not run until it goes',
     ])
   })
