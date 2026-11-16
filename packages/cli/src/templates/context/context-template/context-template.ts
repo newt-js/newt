@@ -11,7 +11,7 @@ import { contextTs }          from '../files/context-ts'
 
 export type ContextTemplateOptions = { backend: string, packageName: string, names: ContextNames, stores: Required<{ [K in keyof BackendStores]: NonNullable<BackendStores[K]> }> }
 
-export const RETURN_CONTEXTS = '  return contexts'
+const RETURN_CONTEXTS = '  return contexts'
 
 /** A context in `backend`, on the backend's stores: its folder, its variables, and its place in src/contexts.ts. */
 export function contextTemplate({ backend, packageName, names, stores }: ContextTemplateOptions): FileChange[] {

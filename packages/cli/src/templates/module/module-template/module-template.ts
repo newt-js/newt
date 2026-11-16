@@ -19,7 +19,7 @@ import { moduleMigration }   from '../migrations'
 export type ModuleTemplateOptions = { backend: string, context: ContextNames, names: ModuleNames, database: DatabaseKind, migration: string }
 
 /** The line of <ctx>-modules.ts that initializes a module. */
-export function initializedLine({ module, type }: ModuleNames, deps = ''): string {
+function initializedLine({ module, type }: ModuleNames, deps = ''): string {
   return `  const ${module} = ${type}_Module.initialize(base, router${deps})`
 }
 
