@@ -1,4 +1,7 @@
-import { join } from 'node:path'
+import { join }                   from 'node:path'
+// --------------------------------------------------------
+import { BUN_INIT_INDEX_TS }      from '../../templates/backend/bun-init/bun-init'
+import { BUN_INIT_TSCONFIG_JSON } from '../../templates/backend/bun-init/bun-init'
 
 const BUN_INIT_FILES: Record<string, string> = {
   'package.json': `${JSON.stringify({
@@ -10,38 +13,8 @@ const BUN_INIT_FILES: Record<string, string> = {
     devDependencies: { '@types/bun': 'latest' },
     peerDependencies: { typescript: '^7' },
   }, null, 2)}\n`,
-  'tsconfig.json': `{
-  "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "Preserve",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
-    "types": ["bun"],
-
-    // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-
-    // Best practices
-    "strict": true,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
-}
-`,
-  'index.ts': 'console.log("Hello via Bun!");\n',
+  'tsconfig.json': BUN_INIT_TSCONFIG_JSON,
+  'index.ts': BUN_INIT_INDEX_TS,
   '.gitignore': '# dependencies (bun install)\nnode_modules\n\n# dotenv environment variable files\n.env\n.env.local\n',
   'CLAUDE.md': 'Default to using Bun instead of Node.js.\n\n- Use `bun test` instead of `jest` or `vitest`\n',
   'README.md': '# shop\n\nTo run:\n\n```bash\nbun run index.ts\n```\n',

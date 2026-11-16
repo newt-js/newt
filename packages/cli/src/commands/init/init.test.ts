@@ -111,6 +111,16 @@ describe('newt init', () => {
     expect((await Bun.file(join(root, 'services/core/package.json')).json()).name).toBe('core')
   })
 
+  test('--monorepo over bun init takes away what bun init left at the root, and says how to run the checks', async () => {
+    const folder = join(await emptyFolder(), 'shop')
+    await writeBunInitProject(folder)
+    await runCommand(INIT, ['.', '--monorepo'], { cwd: folder, ask: null })
+    for (const file of ['index.ts', 'tsconfig.json']) expect(await Bun.file(join(folder, file)).exists()).toBe(false)
+    expect(await Bun.file(join(folder, 'package.json')).json()).not.toHaveProperty('module')
+    expect(await Bun.file(join(folder, 'AGENTS.md')).text()).toContain('`bun test` here does not read')
+    expect(await Bun.file(join(folder, 'CLAUDE.md')).text()).toContain('@AGENTS.md')
+  })
+
   test('--backend without --monorepo says to add it', async () => {
     const output = await runCommand(INIT, ['shop', '--backend', 'apps/api'], { cwd: await emptyFolder(), ask: null })
     expect(output).toEqual({ code: 1, text: '--backend says where a monorepo has its first backend: add --monorepo' })
