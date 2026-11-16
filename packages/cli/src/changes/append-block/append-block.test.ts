@@ -27,6 +27,11 @@ describe('appendBlock', () => {
     expect((await appendBlock({ action: 'append-block', path: 'f.ts', block: 'export const b = 2', imports: [] }, diskFiles(cwd))).status).toBe('skipped')
   })
 
+  test('nor when it has it in other quotes and with a semicolon', async () => {
+    const cwd = await folderWith('test("GET /sales/orders", async () => {\n  run();\n});\n')
+    expect((await appendBlock({ action: 'append-block', path: 'f.ts', block: "test('GET /sales/orders', async () => {\n  run()\n})", imports: [] }, diskFiles(cwd))).status).toBe('skipped')
+  })
+
   test('says what to add to a file that is not there', async () => {
     const outcome = await appendBlock({ action: 'append-block', path: 'f.ts', block: 'export const b = 2', imports: [] }, virtualFiles(mkdtempSync(join(tmpdir(), 'newt-cli-append-'))))
     expect(outcome.warnings).toEqual(['f.ts is not there, so newt did not add to it:\nexport const b = 2'])

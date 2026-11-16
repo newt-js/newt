@@ -32,6 +32,14 @@ describe('insertLines', () => {
     expect(await Bun.file(join(cwd, 'f.ts')).text()).toContain('  const list = []\n  list.push(b)\n  return list')
   })
 
+  test('on a file with double quotes and semicolons, it finds the line and what it added already', async () => {
+    const cwd = await folderWith('import { a } from "a";\nimport { b } from "b";\n\nexport function f() {\n  const list = [];\n  list.push(b);\n  return list;\n}\n')
+    expect((await insertLines(CHANGE, diskFiles(cwd))).status).toBe('skipped')
+    const other = await folderWith('import { a } from "a";\n\nexport function f() {\n  const list = [];\n  return list;\n}\n')
+    await insertLines(CHANGE, diskFiles(other))
+    expect(await Bun.file(join(other, 'f.ts')).text()).toContain('  const list = [];\n  list.push(b)\n  return list;\n')
+  })
+
   test('the second time, nothing changes', async () => {
     const cwd = await folderWith(FILE)
     await insertLines(CHANGE, diskFiles(cwd))

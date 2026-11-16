@@ -3,6 +3,8 @@ import { relative }              from 'node:path'
 import { resolve }               from 'node:path'
 import { sep }                   from 'node:path'
 // --------------------------------------------------------
+import { codeTokens }            from '../../changes/code-tokens/code-tokens'
+import { indexOfTokens }         from '../../changes/index-of-tokens/index-of-tokens'
 import { contextNames }          from '../../names/context-names/context-names'
 import { backendContexts }       from '../../project/backend-contexts/backend-contexts'
 import { findBackend }           from '../../project/find-backend/find-backend'
@@ -31,11 +33,12 @@ export const ADD_FRONTEND = defineCommand({
     if (!(await backendContexts(backend)).some(each => each.name === context)) {
       throw new CommandError(`The backend has no context ${context}: add it with newt add context ${context}`)
     }
-    const frontends = await Bun.file(join(backend, 'src/frontends.ts')).text().catch(() => '')
+    const frontends = codeTokens(await Bun.file(join(backend, 'src/frontends.ts')).text().catch(() => ''))
+    const holds = (code: string) => indexOfTokens(frontends, codeTokens(code)) !== -1
     const mounted = (changes: FileChange[]) => {
       const line = changes.find(change => change.action === 'insert-lines' && change.path.endsWith('frontends.ts'))
-      const again = line?.action === 'insert-lines' && line.lines.every(each => frontends.includes(each))
-      if (!again && frontends.includes(`path: '/${context}'`)) {
+      const again = line?.action === 'insert-lines' && holds(line.lines.join('\n'))
+      if (!again && holds(`path: '/${context}'`)) {
         throw new CommandError(`src/frontends.ts serves a frontend at /${context} already: take it out of it first to serve another`)
       }
       return changes

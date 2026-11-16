@@ -50,17 +50,18 @@ export const ADD_ROUTE = defineCommand({
       throw new CommandError(`${useCase.camel} takes an input, and a ${method.toUpperCase()} has no body to give it: put :id in --path, or use post, put or patch`)
     }
     const registered = await routeFileWith(join(cwd, backend, 'src'), method, path)
-    if (registered) throw new CommandError(`${registered} has ${method.toUpperCase()} ${path} already: give the route another --path or --method`)
+    const again = registered !== null && registered.handler.includes(`.${useCase.camel}(`)
+    if (registered && !again) throw new CommandError(`${registered.file} has ${method.toUpperCase()} ${path} already: give the route another --path or --method`)
     const testable = !shape.takesInput || path.includes(':id')
     const changes: FileChange[] = [
-      {
+      ...again ? [] : [{
         action: 'insert-lines',
         path: file('.routes.ts'),
         anchor: routesHead(module),
         position: 'after',
         lines: routeLine(module, useCase, shape).split('\n'),
         imports: [`import { ${module.type}Id } from './value-objects/${module.folder}-id'`],
-      },
+      } satisfies FileChange],
       ...testable ? [{ action: 'append-block' as const, path: file('.module.test.ts'), block: routeTest(module, useCase, shape), imports: [] }] : [],
     ]
     const untested = testable ? [] : [`${method.toUpperCase()} ${path} takes a body, so newt wrote no test for it: write one in ${module.folder}.module.test.ts`]

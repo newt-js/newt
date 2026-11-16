@@ -3,9 +3,8 @@ import { default as ts }                      from 'typescript'
 import type { AddConstructorStatementChange } from '../../commands/command'
 import type { ChangeOutcome }                 from '../change-outcome'
 import { endOfLine }                          from '../end-of-line/end-of-line'
+import { sameCode }                           from '../same-code/same-code'
 import type { VirtualFiles }                  from '../virtual-files/virtual-files'
-
-const bare = (statement: string) => statement.replace(/\s+/g, '').replace(/;$/, '')
 
 /** Adds a statement at the end of a class's constructor; one it has already is left alone. */
 export async function addConstructorStatement({ path, className, statement }: AddConstructorStatementChange, files: VirtualFiles): Promise<ChangeOutcome> {
@@ -16,7 +15,7 @@ export async function addConstructorStatement({ path, className, statement }: Ad
   if (text === null || !body) {
     return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} has no constructor of ${className}, so newt did not change it: add to it ${statement}`] }
   }
-  if (body.statements.some(each => bare(each.getText(source)) === bare(statement))) {
+  if (body.statements.some(each => sameCode(each.getText(source), statement))) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
   const last = body.statements.at(-1)

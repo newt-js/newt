@@ -25,6 +25,13 @@ describe('replaceLine', () => {
     expect(await Bun.file(join(cwd, 'f.ts')).text()).toBe("import { a } from 'a'\nimport { b } from 'b'\n\nconst x = a(b)\n")
   })
 
+  test('on a file with double quotes and semicolons, it replaces the code and keeps the semicolon', async () => {
+    const cwd = await folderWith('import { a } from "a";\n\nconst x = a( );\n')
+    await replaceLine(CHANGE, diskFiles(cwd))
+    expect(await Bun.file(join(cwd, 'f.ts')).text()).toBe('import { a } from "a";\nimport { b } from \'b\'\n\nconst x = a(b);\n')
+    expect((await replaceLine(CHANGE, diskFiles(cwd))).status).toBe('skipped')
+  })
+
   test('the second time, nothing changes', async () => {
     const cwd = await folderWith(FILE)
     await replaceLine(CHANGE, diskFiles(cwd))

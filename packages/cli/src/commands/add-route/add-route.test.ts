@@ -46,7 +46,27 @@ describe('newt add route', () => {
     const backend = await moduleProject()
     expect((await run(ADD_ROUTE, ['sales/order', 'paginate', '--method', 'get', '--path', '/sales/orders'], backend)).text).toStartWith('paginate takes 2 inputs')
     expect((await run(ADD_ROUTE, ['sales/order', 'create', '--method', 'get', '--path', '/sales/new-orders'], backend)).text).toStartWith('create takes an input, and a GET has no body')
-    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/sales/orders'], backend)).text).toBe(`${ORDER_MODULE}/order.routes.ts has POST /sales/orders already: give the route another --path or --method`)
+    await run(ADD_USE_CASE, ['sales/order', 'archive'], backend)
+    expect((await run(ADD_ROUTE, ['sales/order', 'archive', '--path', '/sales/orders'], backend)).text).toBe(`${ORDER_MODULE}/order.routes.ts has POST /sales/orders already: give the route another --path or --method`)
+  })
+
+  test('a route registered already in other quotes, or with its param named otherwise, is the same route', async () => {
+    const backend = await moduleProject()
+    await run(ADD_USE_CASE, ['sales/order', 'archive'], backend)
+    const routes = join(backend, ORDER_MODULE, 'order.routes.ts')
+    await Bun.write(routes, (await Bun.file(routes).text()).replace("router.get('/sales/orders/:id'", 'router.get("/sales/orders/:orderId"'))
+    expect((await run(ADD_ROUTE, ['sales/order', 'archive', '--method', 'get', '--path', '/sales/orders/:id'], backend)).text).toBe(`${ORDER_MODULE}/order.routes.ts has GET /sales/orders/:id already: give the route another --path or --method`)
+  })
+
+  test('run again, it is up to date', async () => {
+    const backend = await moduleProject()
+    await run(ADD_USE_CASE, ['sales/order', 'cancel'], backend)
+    await run(ADD_ROUTE, ['sales/order', 'cancel', '--method', 'patch'], backend)
+    const routes = await read(backend, 'order.routes.ts')
+    const again = await run(ADD_ROUTE, ['sales/order', 'cancel', '--method', 'patch', '--json'], backend)
+    expect(again.code).toBe(0)
+    expect((JSON.parse(again.text) as { files: { status: string }[] }).files.every(file => file.status === 'skipped')).toBe(true)
+    expect(await read(backend, 'order.routes.ts')).toBe(routes)
   })
 
   test('says when it writes no test for a route with a body', async () => {

@@ -1,5 +1,7 @@
 import { join }             from 'node:path'
 // --------------------------------------------------------
+import { codeTokens }       from '../../changes/code-tokens/code-tokens'
+import { indexOfTokens }    from '../../changes/index-of-tokens/index-of-tokens'
 import { pieceNames }       from '../../names/piece-names/piece-names'
 import { findModule }       from '../../project/find-module/find-module'
 import { reactionLine }     from '../../templates/pieces/subscription-ts'
@@ -51,7 +53,8 @@ export const ADD_SUBSCRIPTION = defineCommand({
       { action: 'insert-lines', path: file('.module.ts'), anchor: '    return module', position: 'before', lines: [`    register${module.type}Workers(module)`], imports: [`import { register${module.type}Workers } from './${module.folder}.workers'`] },
       ...event.folder === 'created' ? [{ action: 'append-block' as const, path: file('.module.test.ts'), block: subscriptionTest(module, useCase, event), imports: [] }] : [],
     ]
-    const subscribed = (await Bun.file(join(cwd, file('.workers.ts'))).text().catch(() => '')).includes(reaction)
+    const workers = codeTokens(await Bun.file(join(cwd, file('.workers.ts'))).text().catch(() => ''))
+    const subscribed = indexOfTokens(workers, codeTokens(reaction)) !== -1
     const warnings = event.folder === 'created' || subscribed ? [] : [
       `newt cannot tell how to make ${event.folder} happen, so it wrote no test of ${useCase.camel} on it: write one in ${module.folder}.module.test.ts`,
     ]
