@@ -11,7 +11,7 @@ import { INIT }        from '../testing/fake-commands'
 import { version }     from '../version/version'
 import { run }         from './run'
 
-const CONTEXT = { commands: [INIT, ADD_BACKEND], cwd: '/project' }
+const CONTEXT = { commands: [INIT, ADD_BACKEND], cwd: '/project', ask: null }
 
 describe('run', () => {
   test('without a command, it shows the help', async () => {

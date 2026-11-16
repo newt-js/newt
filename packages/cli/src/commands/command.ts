@@ -6,7 +6,11 @@ export type Options = Record<string, Option>
 
 export type OptionValues<O extends Options> = { [K in keyof O]?: O[K]['type'] extends 'boolean' ? boolean : string }
 
-export type CommandInput<O extends Options> = { args: string[], options: OptionValues<O>, cwd: string }
+export type Ask = (question: string, suggested: string) => Promise<string>
+
+export type CommandContext = { cwd: string, ask: Ask | null }
+
+export type CommandInput<O extends Options> = CommandContext & { args: string[], options: OptionValues<O> }
 
 export type FileChange = { action: 'create', path: string, content: string }
 

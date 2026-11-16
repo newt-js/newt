@@ -1,6 +1,7 @@
 import { parseArgs }        from 'node:util'
 // --------------------------------------------------------
 import { Command }          from '../../commands/command'
+import { CommandContext }   from '../../commands/command'
 import { OptionValues }     from '../../commands/command'
 import { Options }          from '../../commands/command'
 import { Output }           from '../../commands/command'
@@ -13,7 +14,7 @@ import { errorReport }      from '../../report/error-report/error-report'
 import { humanReport }      from '../../report/human-report/human-report'
 import { jsonReport }       from '../../report/json-report/json-report'
 
-export async function runCommand(command: Command, args: string[], cwd: string): Promise<Output> {
+export async function runCommand(command: Command, args: string[], { cwd, ask }: CommandContext): Promise<Output> {
   let parsed
   try {
     parsed = parseArgs({ args, allowPositionals: true, strict: true, options: parseArgsOptions({ ...command.options, ...COMMAND_OPTIONS }) })
@@ -24,8 +25,11 @@ export async function runCommand(command: Command, args: string[], cwd: string):
   if (help) {
     return { code: 0, text: commandHelp(command) }
   }
+  if (!command.args && parsed.positionals.length > 0) {
+    return { code: 1, text: errorReport(`newt ${command.name} takes no arguments, and was given ${parsed.positionals.join(' ')}.\nRun newt ${command.name} --help.`, json === true) }
+  }
   try {
-    const result = await command.run({ args: parsed.positionals, options: options as OptionValues<Options>, cwd })
+    const result = await command.run({ args: parsed.positionals, options: options as OptionValues<Options>, cwd, ask: json ? null : ask })
     const report = await applyResult(result, cwd, dryRun === true)
     return { code: 0, text: json ? jsonReport(report) : humanReport(report) }
   } catch (error) {

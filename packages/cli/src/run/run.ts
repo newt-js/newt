@@ -1,6 +1,7 @@
 import { parseArgs }        from 'node:util'
 // --------------------------------------------------------
 import { Command }          from '../commands/command'
+import { CommandContext }   from '../commands/command'
 import { Output }           from '../commands/command'
 import { newtHelp }         from '../help/newt-help/newt-help'
 import { NEWT_OPTIONS }     from '../options/newt-options'
@@ -9,12 +10,12 @@ import { version }          from '../version/version'
 import { findCommand }      from './find-command/find-command'
 import { runCommand }       from './run-command/run-command'
 
-export type RunContext = { commands: Command[], cwd: string }
+export type RunContext = CommandContext & { commands: Command[] }
 
-export async function run(args: string[], { commands, cwd }: RunContext): Promise<Output> {
+export async function run(args: string[], { commands, ...context }: RunContext): Promise<Output> {
   const found = findCommand(args, commands)
   if (found) {
-    return runCommand(found.command, found.rest, cwd)
+    return runCommand(found.command, found.rest, context)
   }
   let parsed
   try {
