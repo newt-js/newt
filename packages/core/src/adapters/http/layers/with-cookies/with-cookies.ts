@@ -1,4 +1,4 @@
-import { HttpRoute } from '../../router/http-route'
+import type { HttpRoute } from '../../router/http-route'
 
 export function withCookies(route: HttpRoute): HttpRoute {
   return async request => {

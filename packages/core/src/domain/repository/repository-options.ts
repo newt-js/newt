@@ -1,4 +1,4 @@
-import { StoredRow } from './records/stored-row'
+import type { StoredRow } from './records/stored-row'
 
 export type RepositoryScope<Row extends StoredRow = StoredRow> = { field: Extract<keyof Row, string>, current: () => string }
 

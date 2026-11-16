@@ -1,4 +1,4 @@
-import { Command }      from '../../commands/command'
+import type { Command } from '../../commands/command'
 import { NEWT_OPTIONS } from '../../options/newt-options'
 import { columns }      from '../../text/columns/columns'
 import { version }      from '../../version/version'

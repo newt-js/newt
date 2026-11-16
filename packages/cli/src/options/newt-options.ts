@@ -1,4 +1,4 @@
-import { Option } from '../commands/command'
+import type { Option } from '../commands/command'
 
 export const HELP_OPTION: Option = { type: 'boolean', short: 'h', description: 'Show this help' }
 

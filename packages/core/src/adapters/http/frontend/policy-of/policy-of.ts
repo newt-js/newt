@@ -1,5 +1,5 @@
-import { CONTENT_SECURITY_POLICY } from '../content-security-policy'
-import { ContentSecurityPolicy }   from '../content-security-policy'
+import { CONTENT_SECURITY_POLICY }    from '../content-security-policy'
+import type { ContentSecurityPolicy } from '../content-security-policy'
 
 const NEVER_FRAMED = "frame-ancestors 'none'"
 

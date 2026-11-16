@@ -1,9 +1,9 @@
-import { describe } from 'bun:test'
-import { expect }   from 'bun:test'
-import { test }     from 'bun:test'
+import { describe }     from 'bun:test'
+import { expect }       from 'bun:test'
+import { test }         from 'bun:test'
 // --------------------------------------------------------
-import { Handler }  from '../handler'
-import { wrapped }  from './wrapped'
+import type { Handler } from '../handler'
+import { wrapped }      from './wrapped'
 
 const server = {} as Bun.Server<undefined>
 const request = new Request('http://shop.test/')

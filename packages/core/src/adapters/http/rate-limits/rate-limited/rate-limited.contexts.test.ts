@@ -2,7 +2,7 @@ import { describe }      from 'bun:test'
 import { expect }        from 'bun:test'
 import { test }          from 'bun:test'
 // --------------------------------------------------------
-import { Cluster }       from '../../../../application/cluster/cluster'
+import type { Cluster }  from '../../../../application/cluster/cluster'
 import { RateLimits }    from '../../../../application/runtime/rate-limits/rate-limits/rate-limits'
 import { systemClock }   from '../../../../domain/clock/system-clock/system-clock'
 import { MemoryCluster } from '../../../cluster/memory/memory-cluster/memory-cluster'

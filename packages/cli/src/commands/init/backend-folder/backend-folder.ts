@@ -2,7 +2,7 @@ import { basename }      from 'node:path'
 // --------------------------------------------------------
 import { isBackendName } from '../../../names/backend-name/backend-name'
 import { packageNameOf } from '../../../names/package-name-of/package-name-of'
-import { Ask }           from '../../command'
+import type { Ask }      from '../../command'
 import { CommandError }  from '../../command-error/command-error'
 
 export type BackendFolder = { folder: string, name: string }

@@ -2,7 +2,7 @@ import { describe } from 'bun:test'
 import { expect }   from 'bun:test'
 import { test }     from 'bun:test'
 // --------------------------------------------------------
-import { Job }      from '../../../database/outbox/job'
+import type { Job } from '../../../database/outbox/job'
 import { linesOf }  from '../../../platform/capture-lines/capture-lines'
 import { warnLost } from './warn-lost'
 

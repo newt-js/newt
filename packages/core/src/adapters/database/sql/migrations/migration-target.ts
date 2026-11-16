@@ -1,4 +1,4 @@
-import { SqlRun } from '../dialect/sql-run'
+import type { SqlRun } from '../dialect/sql-run'
 
 export interface MigrationTarget {
   transaction<T>(lock: string, fn: (run: SqlRun) => Promise<T>): Promise<T>

@@ -1,7 +1,7 @@
 import { IdempotencyAnswerNotKept } from '../errors/idempotency-answer-not-kept/idempotency-answer-not-kept'
-import { KeptAnswer }               from '../kept-answer'
+import type { KeptAnswer }          from '../kept-answer'
 import { keptHeaders }              from '../kept-headers/kept-headers'
-import { Stored }                   from '../stored'
+import type { Stored }              from '../stored'
 
 export const NO_BODY = new Set([101, 204, 205, 304])
 

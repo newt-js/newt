@@ -2,7 +2,7 @@ import { describe }   from 'bun:test'
 import { expect }     from 'bun:test'
 import { test }       from 'bun:test'
 // --------------------------------------------------------
-import { Job }        from '../../../../application/database/outbox/job'
+import type { Job }   from '../../../../application/database/outbox/job'
 import { byCreation } from './by-creation'
 
 const job = (id: string, createdAt: string) => ({ id, createdAt }) as Job

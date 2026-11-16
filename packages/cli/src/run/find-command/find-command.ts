@@ -1,4 +1,4 @@
-import { Command } from '../../commands/command'
+import type { Command } from '../../commands/command'
 
 export type FoundCommand = { command: Command, rest: string[] }
 

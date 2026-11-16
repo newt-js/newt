@@ -2,7 +2,7 @@ import { describe }   from 'bun:test'
 import { expect }     from 'bun:test'
 import { test }       from 'bun:test'
 // --------------------------------------------------------
-import { Clock }      from '../../../domain/clock/clock'
+import type { Clock } from '../../../domain/clock/clock'
 import { clockScope } from '../../../domain/clock/clock-scope/clock-scope'
 import { logStamp }   from './log-stamp'
 

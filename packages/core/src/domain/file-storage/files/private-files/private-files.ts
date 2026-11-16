@@ -1,5 +1,5 @@
-import { DownloadUrlOptions } from '../../adapter/download-url-options'
-import { Files }              from '../files/files'
+import type { DownloadUrlOptions } from '../../adapter/download-url-options'
+import { Files }                   from '../files/files'
 
 export class PrivateFiles extends Files {
   in(prefix: string): PrivateFiles {

@@ -2,9 +2,9 @@ import { MalformedBody }        from '../../errors/malformed-body/malformed-body
 import { PayloadTooLarge }      from '../../errors/payload-too-large/payload-too-large'
 import { toErrorResponse }      from '../../errors/to-error-response/to-error-response'
 import { UnsupportedMediaType } from '../../errors/unsupported-media-type/unsupported-media-type'
-import { HttpRequest }          from '../../request/http-request'
-import { ErrorHandler }         from '../../router/http-route'
-import { HttpRoute }            from '../../router/http-route'
+import type { HttpRequest }     from '../../request/http-request'
+import type { ErrorHandler }    from '../../router/http-route'
+import type { HttpRoute }       from '../../router/http-route'
 import { isJson }               from '../is-json/is-json'
 import { limitBody }            from '../limit-body/limit-body'
 

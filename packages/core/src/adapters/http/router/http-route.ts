@@ -1,4 +1,4 @@
-import { HttpRequest } from '../request/http-request'
+import type { HttpRequest } from '../request/http-request'
 
 export type HttpRoute<Path extends string = string> = (request: HttpRequest<Path>) => Response | Promise<Response>
 

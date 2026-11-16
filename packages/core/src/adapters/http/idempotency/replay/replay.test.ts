@@ -3,7 +3,7 @@ import { expect }                   from 'bun:test'
 import { test }                     from 'bun:test'
 // --------------------------------------------------------
 import { IdempotencyAnswerNotKept } from '../errors/idempotency-answer-not-kept/idempotency-answer-not-kept'
-import { KeptAnswer }               from '../kept-answer'
+import type { KeptAnswer }          from '../kept-answer'
 import { replay }                   from './replay'
 
 function answer(status: number, headers: [string, string][], body: 'base64' | 'not kept', bytes = ''): KeptAnswer {

@@ -1,8 +1,8 @@
-import { join }          from 'node:path'
+import { join }               from 'node:path'
 // --------------------------------------------------------
-import { CommandResult } from '../../commands/command'
-import { FileReport }    from '../report'
-import { Report }        from '../report'
+import type { CommandResult } from '../../commands/command'
+import type { FileReport }    from '../report'
+import type { Report }        from '../report'
 
 /** Writes what a command created, never over an existing file; with `dryRun`, only says what it would do. */
 export async function applyResult(result: CommandResult, cwd: string, dryRun: boolean): Promise<Report> {

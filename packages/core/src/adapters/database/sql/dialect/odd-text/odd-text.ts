@@ -1,5 +1,5 @@
-import { SqlDialect } from '../sql-dialect'
-import { SqlRun }     from '../sql-run'
+import type { SqlDialect } from '../sql-dialect'
+import type { SqlRun }     from '../sql-run'
 
 export const MIGRATION_TABLES = ['newt_migrations', 'newt_framework_migrations']
 

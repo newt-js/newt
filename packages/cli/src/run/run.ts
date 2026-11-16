@@ -1,14 +1,14 @@
-import { parseArgs }        from 'node:util'
+import { parseArgs }           from 'node:util'
 // --------------------------------------------------------
-import { Command }          from '../commands/command'
-import { CommandContext }   from '../commands/command'
-import { Output }           from '../commands/command'
-import { newtHelp }         from '../help/newt-help/newt-help'
-import { NEWT_OPTIONS }     from '../options/newt-options'
-import { parseArgsOptions } from '../options/parse-args-options/parse-args-options'
-import { version }          from '../version/version'
-import { findCommand }      from './find-command/find-command'
-import { runCommand }       from './run-command/run-command'
+import type { Command }        from '../commands/command'
+import type { CommandContext } from '../commands/command'
+import type { Output }         from '../commands/command'
+import { newtHelp }            from '../help/newt-help/newt-help'
+import { NEWT_OPTIONS }        from '../options/newt-options'
+import { parseArgsOptions }    from '../options/parse-args-options/parse-args-options'
+import { version }             from '../version/version'
+import { findCommand }         from './find-command/find-command'
+import { runCommand }          from './run-command/run-command'
 
 export type RunContext = CommandContext & { commands: Command[] }
 

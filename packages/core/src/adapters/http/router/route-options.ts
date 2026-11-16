@@ -1,7 +1,7 @@
-import { Cors }          from '../cors/cors'
-import { Idempotency }   from '../idempotency/idempotency'
-import { HttpRateLimit } from '../rate-limits/http-rate-limit'
-import { ErrorHandler }  from './http-route'
+import type { Cors }          from '../cors/cors'
+import type { Idempotency }   from '../idempotency/idempotency'
+import type { HttpRateLimit } from '../rate-limits/http-rate-limit'
+import type { ErrorHandler }  from './http-route'
 
 export type RouteOptions = {
   public?: boolean

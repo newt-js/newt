@@ -1,4 +1,4 @@
-import { PageRequest } from '../../../../domain/pagination/page-request'
+import type { PageRequest } from '../../../../domain/pagination/page-request'
 
 const DEFAULT_SIZE = 20
 const MAX_SIZE = 100

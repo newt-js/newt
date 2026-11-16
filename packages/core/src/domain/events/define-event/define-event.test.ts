@@ -1,14 +1,14 @@
-import { describe }     from 'bun:test'
-import { expect }       from 'bun:test'
-import { test }         from 'bun:test'
-import { z }            from 'zod'
+import { describe }      from 'bun:test'
+import { expect }        from 'bun:test'
+import { test }          from 'bun:test'
+import { z }             from 'zod'
 // --------------------------------------------------------
-import { Clock }        from '../../clock/clock'
-import { clockScope }   from '../../clock/clock-scope/clock-scope'
-import { EventBus }     from '../bus/event-bus'
-import { eventsOf }     from '../events-of/events-of'
-import { InvalidEvent } from '../invalid-event/invalid-event'
-import { defineEvent }  from './define-event'
+import type { Clock }    from '../../clock/clock'
+import { clockScope }    from '../../clock/clock-scope/clock-scope'
+import type { EventBus } from '../bus/event-bus'
+import { eventsOf }      from '../events-of/events-of'
+import { InvalidEvent }  from '../invalid-event/invalid-event'
+import { defineEvent }   from './define-event'
 
 const OrderPlaced = defineEvent('order.placed', z.object({ id: z.string(), total: z.number() }))
 

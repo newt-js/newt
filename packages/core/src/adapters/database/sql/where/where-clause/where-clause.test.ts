@@ -1,11 +1,11 @@
-import { describe }     from 'bun:test'
-import { expect }       from 'bun:test'
-import { test }         from 'bun:test'
+import { describe }        from 'bun:test'
+import { expect }          from 'bun:test'
+import { test }            from 'bun:test'
 // --------------------------------------------------------
-import { criteriaTree } from '../../../../../domain/criteria/criteria-tree/criteria-tree'
-import { Criteria }     from '../../../../../domain/criteria/criteria/criteria'
-import { SqlDialect }   from '../../dialect/sql-dialect'
-import { whereClause }  from './where-clause'
+import { criteriaTree }    from '../../../../../domain/criteria/criteria-tree/criteria-tree'
+import type { Criteria }   from '../../../../../domain/criteria/criteria/criteria'
+import type { SqlDialect } from '../../dialect/sql-dialect'
+import { whereClause }     from './where-clause'
 
 const dialect = {
   param: (n: number) => `$${n}`,

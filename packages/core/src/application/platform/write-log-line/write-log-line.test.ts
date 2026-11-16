@@ -6,7 +6,7 @@ import { spyOn }         from 'bun:test'
 import { test }          from 'bun:test'
 // --------------------------------------------------------
 import { MemoryCluster } from '../../../adapters/cluster/memory/memory-cluster/memory-cluster'
-import { LogLine }       from '../../logs/log-line'
+import type { LogLine }  from '../../logs/log-line'
 import { platformScope } from '../platform-scope/platform-scope'
 import { Platform }      from '../platform/platform'
 import { setLogger }     from '../set-logger/set-logger'

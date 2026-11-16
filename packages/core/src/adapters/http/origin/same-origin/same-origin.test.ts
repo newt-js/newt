@@ -2,7 +2,7 @@ import { describe }           from 'bun:test'
 import { expect }             from 'bun:test'
 import { test }               from 'bun:test'
 // --------------------------------------------------------
-import { Cors }               from '../../cors/cors'
+import type { Cors }          from '../../cors/cors'
 import { CrossOriginRefused } from '../../errors/cross-origin-refused/cross-origin-refused'
 import { requestHosts }       from '../../request/request-host/request-hosts'
 import { withParams }         from '../../request/with-params/with-params'

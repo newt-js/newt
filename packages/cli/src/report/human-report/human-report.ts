@@ -1,6 +1,6 @@
-import { columns }    from '../../text/columns/columns'
-import { FileReport } from '../report'
-import { Report }     from '../report'
+import { columns }         from '../../text/columns/columns'
+import type { FileReport } from '../report'
+import type { Report }     from '../report'
 
 const DONE = { created: 'created', skipped: 'skipped' }
 const PLANNED = { created: 'will create', skipped: 'will skip' }

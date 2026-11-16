@@ -1,8 +1,8 @@
-import { Criteria }    from '../../criteria/criteria/criteria'
-import { FindOptions } from './find-options'
-import { NewRow }      from './new-row'
-import { RowCount }    from './row-count'
-import { StoredRow }   from './stored-row'
+import type { Criteria }    from '../../criteria/criteria/criteria'
+import type { FindOptions } from './find-options'
+import type { NewRow }      from './new-row'
+import type { RowCount }    from './row-count'
+import type { StoredRow }   from './stored-row'
 
 export interface Records<Row extends StoredRow> {
   find(criteria?: Criteria<Row>, options?: FindOptions<Row>): Promise<Row[]>

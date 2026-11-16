@@ -7,6 +7,7 @@ export const TSCONFIG_JSON = `${JSON.stringify({
     moduleResolution: 'bundler',
     types: ['bun'],
     allowImportingTsExtensions: true,
+    verbatimModuleSyntax: true,
     noEmit: true,
     strict: true,
     skipLibCheck: true,

@@ -1,5 +1,5 @@
-import { ValidationError } from '../../../errors/validation-error/validation-error'
-import { FilterIssue }     from '../filter-issue'
+import { ValidationError }  from '../../../errors/validation-error/validation-error'
+import type { FilterIssue } from '../filter-issue'
 
 export class InvalidSort extends ValidationError<{ issues: FilterIssue[] }> {
   readonly code = 'invalid_sort'

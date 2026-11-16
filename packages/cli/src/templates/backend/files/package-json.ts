@@ -1,4 +1,4 @@
-import { TemplateVersions } from '../../template-versions/template-versions'
+import type { TemplateVersions } from '../../template-versions/template-versions'
 
 export function packageJson(name: string, versions: TemplateVersions): string {
   return `${JSON.stringify({

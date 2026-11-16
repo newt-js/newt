@@ -1,11 +1,11 @@
-import { describe }    from 'bun:test'
-import { expect }      from 'bun:test'
-import { test }        from 'bun:test'
+import { describe }         from 'bun:test'
+import { expect }           from 'bun:test'
+import { test }             from 'bun:test'
 // --------------------------------------------------------
-import { EventId }     from '../../value-objects/event-id/event-id'
-import { EventBus }    from '../bus/event-bus'
-import { DomainEvent } from '../event/domain-event'
-import { eventsOf }    from './events-of'
+import { EventId }          from '../../value-objects/event-id/event-id'
+import type { EventBus }    from '../bus/event-bus'
+import type { DomainEvent } from '../event/domain-event'
+import { eventsOf }         from './events-of'
 
 class Placed implements DomainEvent<{ id: string }> {
   static readonly eventName = 'order.placed'

@@ -1,12 +1,12 @@
-import { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
-import { ContextRegistry }     from '../../../domain/registry/context-registry/context-registry'
-import { RegisteredModule }    from '../../../domain/registry/registered-module'
-import { UseCaseOptions }      from '../../../domain/use-case/use-case-options'
-import { ModuleDescription }   from '../application-description'
-import { dependenciesOf }      from '../dependencies-of/dependencies-of'
-import { emittersOf }          from '../emitters-of/emitters-of'
-import { eventId }             from '../event-id/event-id'
-import { moduleId }            from '../module-id/module-id'
+import type { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
+import { ContextRegistry }          from '../../../domain/registry/context-registry/context-registry'
+import type { RegisteredModule }    from '../../../domain/registry/registered-module'
+import type { UseCaseOptions }      from '../../../domain/use-case/use-case-options'
+import type { ModuleDescription }   from '../application-description'
+import { dependenciesOf }           from '../dependencies-of/dependencies-of'
+import { emittersOf }               from '../emitters-of/emitters-of'
+import { eventId }                  from '../event-id/event-id'
+import { moduleId }                 from '../module-id/module-id'
 
 export function describeModule(registry: ContextRegistry, module: RegisteredModule, owners: Map<BrandedEventEmitter, string>): ModuleDescription {
   const { context } = registry

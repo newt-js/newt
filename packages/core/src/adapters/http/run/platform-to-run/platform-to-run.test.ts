@@ -1,13 +1,13 @@
-import { describe }       from 'bun:test'
-import { expect }         from 'bun:test'
-import { test }           from 'bun:test'
+import { describe }          from 'bun:test'
+import { expect }            from 'bun:test'
+import { test }              from 'bun:test'
 // --------------------------------------------------------
-import { ContextBase }    from '../../../../application/context/context-base/context-base'
-import { Platform }       from '../../../../application/platform/platform/platform'
-import { MemoryCluster }  from '../../../cluster/memory/memory-cluster/memory-cluster'
-import { MemoryDatabase } from '../../../database/memory/memory-database/memory-database'
-import { ContextToRun }   from '../run-contexts-options'
-import { platformToRun }  from './platform-to-run'
+import { ContextBase }       from '../../../../application/context/context-base/context-base'
+import { Platform }          from '../../../../application/platform/platform/platform'
+import { MemoryCluster }     from '../../../cluster/memory/memory-cluster/memory-cluster'
+import { MemoryDatabase }    from '../../../database/memory/memory-database/memory-database'
+import type { ContextToRun } from '../run-contexts-options'
+import { platformToRun }     from './platform-to-run'
 
 const platform = new Platform({ cluster: new MemoryCluster() })
 

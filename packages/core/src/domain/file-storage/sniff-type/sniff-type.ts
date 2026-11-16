@@ -1,6 +1,6 @@
-import { fitsSignature } from '../fits-signature/fits-signature'
-import { ftypSignature } from '../ftyp-signature/ftyp-signature'
-import { Signature }     from './signature'
+import { fitsSignature }  from '../fits-signature/fits-signature'
+import { ftypSignature }  from '../ftyp-signature/ftyp-signature'
+import type { Signature } from './signature'
 
 const ZIP_BASED = ['application/zip', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.openxmlformats-officedocument.presentationml.presentation']
 

@@ -1,6 +1,6 @@
-import { platformOf }   from '../../../../application/context/platform-of/platform-of'
-import { Platform }     from '../../../../application/platform/platform/platform'
-import { ContextToRun } from '../run-contexts-options'
+import { platformOf }        from '../../../../application/context/platform-of/platform-of'
+import { Platform }          from '../../../../application/platform/platform/platform'
+import type { ContextToRun } from '../run-contexts-options'
 
 export function platformToRun(contexts: ContextToRun[], withoutContexts: Platform | undefined): Platform {
   if (contexts.length === 0 && withoutContexts) {

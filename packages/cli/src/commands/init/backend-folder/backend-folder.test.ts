@@ -2,7 +2,7 @@ import { describe }       from 'bun:test'
 import { expect }         from 'bun:test'
 import { test }           from 'bun:test'
 // --------------------------------------------------------
-import { Ask }            from '../../command'
+import type { Ask }       from '../../command'
 import { SUGGESTED_NAME } from './backend-folder'
 import { backendFolder }  from './backend-folder'
 

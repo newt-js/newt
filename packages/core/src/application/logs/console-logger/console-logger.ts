@@ -1,5 +1,5 @@
-import { LogLine } from '../log-line'
-import { Logger }  from '../log-line'
+import type { LogLine } from '../log-line'
+import type { Logger }  from '../log-line'
 
 export class ConsoleLogger implements Logger {
 

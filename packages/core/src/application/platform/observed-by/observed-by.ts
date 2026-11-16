@@ -1,7 +1,7 @@
-import { Observability } from '../../../domain/observability/observability'
-import { log }           from '../log/log'
-import { platformScope } from '../platform-scope/platform-scope'
-import { Platform }      from '../platform/platform'
+import type { Observability } from '../../../domain/observability/observability'
+import { log }                from '../log/log'
+import { platformScope }      from '../platform-scope/platform-scope'
+import { Platform }           from '../platform/platform'
 
 export function observedBy(platform: Platform): Observability {
   return {

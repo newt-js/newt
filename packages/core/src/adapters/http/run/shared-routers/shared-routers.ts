@@ -1,6 +1,6 @@
-import { HttpRouter }   from '../../router/http-router/http-router'
-import { PathPattern }  from '../../router/path-pattern/path-pattern'
-import { ContextToRun } from '../run-contexts-options'
+import { HttpRouter }        from '../../router/http-router/http-router'
+import { PathPattern }       from '../../router/path-pattern/path-pattern'
+import type { ContextToRun } from '../run-contexts-options'
 
 export function sharedRouters(contexts: ContextToRun[]): HttpRouter[] {
   const owner = new Map<string, string>()

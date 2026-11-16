@@ -1,5 +1,5 @@
-import { PublicStorageAdapter } from '../adapter/public-storage-adapter'
-import { StorageAdapter }       from '../adapter/storage-adapter'
+import type { PublicStorageAdapter } from '../adapter/public-storage-adapter'
+import type { StorageAdapter }       from '../adapter/storage-adapter'
 
 export type StorageOptions = {
   private?: StorageAdapter
