@@ -1,6 +1,6 @@
-import { EntitySchema }     from '../../entity-schema'
-import { keepsUnnamed }     from '../keeps-unnamed/keeps-unnamed'
-import { unnamedTimestamp } from '../unnamed-timestamp/unnamed-timestamp'
+import type { EntitySchema } from '../../entity-schema'
+import { keepsUnnamed }      from '../keeps-unnamed/keeps-unnamed'
+import { unnamedTimestamp }  from '../unnamed-timestamp/unnamed-timestamp'
 
 const checked = new WeakMap<EntitySchema, WeakMap<EntitySchema, string[] | undefined>>()
 

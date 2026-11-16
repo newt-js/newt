@@ -1,5 +1,5 @@
-import { GuardOptions }   from './guard-options'
-import { SaveInProgress } from './save-in-progress'
+import type { GuardOptions }   from './guard-options'
+import type { SaveInProgress } from './save-in-progress'
 
 export interface Transactions {
   run<T>(fn: () => T | Promise<T>): Promise<T>

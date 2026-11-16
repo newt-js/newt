@@ -1,10 +1,10 @@
-import { AsyncLocalStorage }  from 'node:async_hooks'
+import { AsyncLocalStorage }   from 'node:async_hooks'
 // --------------------------------------------------------
-import { GuardOptions }       from '../../../../domain/repository/transactions/guard-options'
-import { SaveInProgress }     from '../../../../domain/repository/transactions/save-in-progress'
-import { TransactionSpoiled } from '../../../../domain/repository/transactions/transaction-spoiled/transaction-spoiled'
-import { Transactions }       from '../../../../domain/repository/transactions/transactions'
-import { runEach }            from '../run-each/run-each'
+import type { GuardOptions }   from '../../../../domain/repository/transactions/guard-options'
+import type { SaveInProgress } from '../../../../domain/repository/transactions/save-in-progress'
+import { TransactionSpoiled }  from '../../../../domain/repository/transactions/transaction-spoiled/transaction-spoiled'
+import type { Transactions }   from '../../../../domain/repository/transactions/transactions'
+import { runEach }             from '../run-each/run-each'
 
 export type Staged = { apply(): void }
 

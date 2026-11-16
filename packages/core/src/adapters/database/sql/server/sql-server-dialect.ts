@@ -1,7 +1,7 @@
-import { ReservedSQL } from 'bun'
+import type { ReservedSQL } from 'bun'
 // --------------------------------------------------------
-import { SqlDialect }  from '../dialect/sql-dialect'
-import { SqlRun }      from '../dialect/sql-run'
+import type { SqlDialect }  from '../dialect/sql-dialect'
+import type { SqlRun }      from '../dialect/sql-run'
 
 export type SqlServerDialect = SqlDialect & {
   name: 'postgres' | 'mysql'

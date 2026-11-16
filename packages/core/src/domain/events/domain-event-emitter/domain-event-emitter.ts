@@ -1,11 +1,11 @@
-import { EventBus }            from '../bus/event-bus'
-import { eventOfQueue }        from '../event-of-queue/event-of-queue'
-import { DomainEventClass }    from '../event/domain-event-class'
-import { EventMeta }           from '../event/event-meta'
-import { Json }                from '../event/json'
-import { PublishedEvent }      from '../event/published-event'
-import { EVENT_EMITTER_BRAND } from '../is-event-emitter/is-event-emitter'
-import { Subscription }        from '../subscription/subscription'
+import type { EventBus }         from '../bus/event-bus'
+import { eventOfQueue }          from '../event-of-queue/event-of-queue'
+import type { DomainEventClass } from '../event/domain-event-class'
+import type { EventMeta }        from '../event/event-meta'
+import type { Json }             from '../event/json'
+import type { PublishedEvent }   from '../event/published-event'
+import { EVENT_EMITTER_BRAND }   from '../is-event-emitter/is-event-emitter'
+import type { Subscription }     from '../subscription/subscription'
 
 export class DomainEventEmitter<TPayload extends Json> {
 

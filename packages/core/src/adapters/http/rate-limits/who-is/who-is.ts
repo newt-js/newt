@@ -1,7 +1,7 @@
-import { findCurrentActor } from '../../../../domain/actor/find-current-actor/find-current-actor'
-import { clientIp }         from '../../request/client-ip/client-ip'
-import { HttpRequest }      from '../../request/http-request'
-import { HttpRateLimit }    from '../http-rate-limit'
+import { findCurrentActor }   from '../../../../domain/actor/find-current-actor/find-current-actor'
+import { clientIp }           from '../../request/client-ip/client-ip'
+import type { HttpRequest }   from '../../request/http-request'
+import type { HttpRateLimit } from '../http-rate-limit'
 
 export function whoIs({ by = 'actor' }: HttpRateLimit, request: HttpRequest): string | null {
   if (typeof by === 'function') {

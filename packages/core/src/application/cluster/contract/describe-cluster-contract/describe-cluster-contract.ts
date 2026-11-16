@@ -1,13 +1,13 @@
-import { afterEach }      from 'bun:test'
-import { beforeEach }     from 'bun:test'
-import { describe }       from 'bun:test'
-import { expect }         from 'bun:test'
-import { test }           from 'bun:test'
+import { afterEach }           from 'bun:test'
+import { beforeEach }          from 'bun:test'
+import { describe }            from 'bun:test'
+import { expect }              from 'bun:test'
+import { test }                from 'bun:test'
 // --------------------------------------------------------
-import { captureLines }   from '../../../platform/capture-lines/capture-lines'
-import { pause }          from '../../../testing/pause/pause'
-import { Cluster }        from '../../cluster'
-import { ClusterFixture } from '../cluster-fixture'
+import { captureLines }        from '../../../platform/capture-lines/capture-lines'
+import { pause }               from '../../../testing/pause/pause'
+import type { Cluster }        from '../../cluster'
+import type { ClusterFixture } from '../cluster-fixture'
 
 export function describeClusterContract(name: string, fixture: ClusterFixture): void {
   describe(`${name} keeps the Cluster contract`, () => {

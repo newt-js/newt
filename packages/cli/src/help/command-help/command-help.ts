@@ -1,4 +1,4 @@
-import { Command }         from '../../commands/command'
+import type { Command }    from '../../commands/command'
 import { COMMAND_OPTIONS } from '../../options/newt-options'
 import { optionsHelp }     from '../options-help/options-help'
 

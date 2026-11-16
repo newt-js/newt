@@ -1,8 +1,8 @@
-import { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
-import { ContextRegistry }     from '../../../domain/registry/context-registry/context-registry'
-import { ContextDescription }  from '../application-description'
-import { describeModule }      from '../describe-module/describe-module'
-import { eventId }             from '../event-id/event-id'
+import type { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
+import { ContextRegistry }          from '../../../domain/registry/context-registry/context-registry'
+import type { ContextDescription }  from '../application-description'
+import { describeModule }           from '../describe-module/describe-module'
+import { eventId }                  from '../event-id/event-id'
 
 export function describeContext(registry: ContextRegistry, owners: Map<BrandedEventEmitter, string>): ContextDescription {
   const { context } = registry

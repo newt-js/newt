@@ -1,18 +1,18 @@
-import { afterEach }      from 'bun:test'
-import { describe }       from 'bun:test'
-import { expect }         from 'bun:test'
-import { test }           from 'bun:test'
-import { join }           from 'node:path'
+import { afterEach }          from 'bun:test'
+import { describe }           from 'bun:test'
+import { expect }             from 'bun:test'
+import { test }               from 'bun:test'
+import { join }               from 'node:path'
 // --------------------------------------------------------
-import { ContextBase }    from '../../../../application/context/context-base/context-base'
-import { CapturedLines }  from '../../../../application/platform/capture-lines/capture-lines'
-import { captureLines }   from '../../../../application/platform/capture-lines/capture-lines'
-import { Platform }       from '../../../../application/platform/platform/platform'
-import { MemoryCluster }  from '../../../cluster/memory/memory-cluster/memory-cluster'
-import { MemoryDatabase } from '../../../database/memory/memory-database/memory-database'
-import { HttpRouter }     from '../../router/http-router/http-router'
-import { ContextToRun }   from '../run-contexts-options'
-import { runContexts }    from './run-contexts'
+import { ContextBase }        from '../../../../application/context/context-base/context-base'
+import type { CapturedLines } from '../../../../application/platform/capture-lines/capture-lines'
+import { captureLines }       from '../../../../application/platform/capture-lines/capture-lines'
+import { Platform }           from '../../../../application/platform/platform/platform'
+import { MemoryCluster }      from '../../../cluster/memory/memory-cluster/memory-cluster'
+import { MemoryDatabase }     from '../../../database/memory/memory-database/memory-database'
+import { HttpRouter }         from '../../router/http-router/http-router'
+import type { ContextToRun }  from '../run-contexts-options'
+import { runContexts }        from './run-contexts'
 
 const platform = new Platform({ cluster: new MemoryCluster() })
 
@@ -156,6 +156,13 @@ describe('runContexts, one server for every context', () => {
     await app.stop()
     expect(await at('/api/health').then(() => 'answered', () => 'closed')).toBe('closed')
     expect(log.slice(3)).toEqual(['auth worker stopped', 'boards worker stopped', 'quiet worker stopped', 'quiet closed', 'boards closed', 'auth closed'])
+  })
+
+  test('with no context yet, it serves the health on platformWithoutContexts', async () => {
+    const app = runContexts([], { signals: false, platformWithoutContexts: platform, serve: { port: 0, health: true } })
+
+    expect((await fetch(new URL('/api/health', app.server!.url))).status).toBe(200)
+    await app.stop()
   })
 
   test('two contexts that take one path stop it before anything starts', () => {

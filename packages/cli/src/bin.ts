@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { join }         from 'node:path'
 // --------------------------------------------------------
+import { terminalAsk }  from './ask/terminal-ask/terminal-ask'
 import { COMMANDS }     from './commands/commands'
 import { findLocalCli } from './find-local-cli/find-local-cli'
 import { run }          from './run/run'
@@ -18,7 +19,7 @@ const projectCli = process.env[ALREADY_HANDED_OVER] ? null : await findLocalCli(
 if (projectCli) {
   process.exit(await handOverTo(projectCli, args))
 }
-const { code, text } = await run(args, { commands: COMMANDS, cwd: process.cwd() })
+const { code, text } = await run(args, { commands: COMMANDS, cwd: process.cwd(), ask: process.stdin.isTTY ? terminalAsk : null })
 if (code === 0) console.log(text)
 else console.error(text)
 process.exit(code)

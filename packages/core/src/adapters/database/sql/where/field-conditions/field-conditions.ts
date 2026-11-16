@@ -1,6 +1,6 @@
-import { Condition }    from '../../../../../domain/criteria/criteria/condition'
-import { SqlDialect }   from '../../dialect/sql-dialect'
-import { WhereContext } from '../where-clause/where-clause'
+import type { Condition }    from '../../../../../domain/criteria/criteria/condition'
+import type { SqlDialect }   from '../../dialect/sql-dialect'
+import type { WhereContext } from '../where-clause/where-clause'
 
 export function fieldConditions(field: string, condition: Condition<unknown>, dialect: SqlDialect, context: WhereContext, params: unknown[]): string[] {
   const column = dialect.quote(context.column(field))

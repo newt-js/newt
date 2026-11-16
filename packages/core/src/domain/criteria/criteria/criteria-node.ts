@@ -1,4 +1,4 @@
-import { Condition } from './condition'
+import type { Condition } from './condition'
 
 export type CriteriaNode =
   | { kind: 'all', of: CriteriaNode[] }

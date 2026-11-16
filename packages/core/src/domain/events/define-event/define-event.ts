@@ -1,9 +1,9 @@
-import { z }            from 'zod'
+import { z }                from 'zod'
 // --------------------------------------------------------
-import { now }          from '../../clock/now/now'
-import { DomainEvent }  from '../event/domain-event'
-import { Json }         from '../event/json'
-import { InvalidEvent } from '../invalid-event/invalid-event'
+import { now }              from '../../clock/now/now'
+import type { DomainEvent } from '../event/domain-event'
+import type { Json }        from '../event/json'
+import { InvalidEvent }     from '../invalid-event/invalid-event'
 
 type SameInAndOut<Schema extends z.ZodType> = [z.input<Schema>, z.output<Schema>] extends [z.output<Schema>, z.input<Schema>] ? unknown : never
 

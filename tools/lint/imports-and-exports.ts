@@ -1,4 +1,4 @@
-import { Rule }      from 'eslint'
+import type { Rule } from 'eslint'
 // --------------------------------------------------------
 import { compare }   from './compare/compare'
 import { isPackage } from './is-package/is-package'

@@ -1,4 +1,4 @@
-import { Json } from './json'
+import type { Json } from './json'
 
 export type DomainEvent<T extends Json = Json> = {
   id?: string

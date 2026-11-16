@@ -6,9 +6,23 @@ export type Options = Record<string, Option>
 
 export type OptionValues<O extends Options> = { [K in keyof O]?: O[K]['type'] extends 'boolean' ? boolean : string }
 
-export type CommandInput<O extends Options> = { args: string[], options: OptionValues<O>, cwd: string }
+export type Ask = (question: string, suggested: string) => Promise<string>
 
-export type FileChange = { action: 'create', path: string, content: string }
+export type CommandContext = { cwd: string, ask: Ask | null }
+
+export type CommandInput<O extends Options> = CommandContext & { args: string[], options: OptionValues<O> }
+
+export type CreateChange = { action: 'create', path: string, content: string }
+
+export type CompleteJsonChange = { action: 'complete-json', path: string, values: Record<string, unknown> }
+
+export type EnsureLinesChange = { action: 'ensure-lines', path: string, lines: string[] }
+
+export type RemoveUnchangedChange = { action: 'remove-unchanged', path: string, content: string, why: string }
+
+export type RemoveJsonKeyChange = { action: 'remove-json-key', path: string, key: string, value: unknown, whenMissing: string }
+
+export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange | RemoveUnchangedChange | RemoveJsonKeyChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }
 

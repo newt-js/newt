@@ -1,12 +1,12 @@
-import { columns }    from '../../text/columns/columns'
-import { FileReport } from '../report'
-import { Report }     from '../report'
+import { columns }         from '../../text/columns/columns'
+import type { FileReport } from '../report'
+import type { Report }     from '../report'
 
-const DONE = { created: 'created', skipped: 'skipped' }
-const PLANNED = { created: 'will create', skipped: 'will skip' }
+const DONE = { created: 'created', updated: 'updated', removed: 'removed', skipped: 'skipped' }
+const PLANNED = { created: 'will create', updated: 'will update', removed: 'will remove', skipped: 'will skip' }
 
 function fileLine(file: FileReport, dryRun: boolean): [string, string] {
-  const path = file.status === 'skipped' ? `${file.path} (already exists)` : file.path
+  const path = file.note ? `${file.path} (${file.note})` : file.path
   return [(dryRun ? PLANNED : DONE)[file.status], path]
 }
 

@@ -24,7 +24,7 @@ describe('applyResult', () => {
     const cwd = emptyFolder()
     await Bun.write(join(cwd, 'a.txt'), 'mine')
     const report = await applyResult({ changes: [create('a.txt', 'theirs')] }, cwd, false)
-    expect(report.files).toEqual([{ path: 'a.txt', status: 'skipped' }])
+    expect(report.files).toEqual([{ path: 'a.txt', status: 'skipped', note: 'already exists' }])
     expect(await Bun.file(join(cwd, 'a.txt')).text()).toBe('mine')
   })
 
@@ -42,11 +42,33 @@ describe('applyResult', () => {
     const report = await applyResult({ changes }, cwd, true)
     expect(report).toEqual({
       dryRun: true,
-      files: [{ path: 'a.txt', status: 'skipped' }, { path: 'src/b.txt', status: 'created' }, { path: 'src/b.txt', status: 'skipped' }],
+      files: [{ path: 'a.txt', status: 'skipped', note: 'already exists' }, { path: 'src/b.txt', status: 'created' }, { path: 'src/b.txt', status: 'skipped', note: 'already exists' }],
       warnings: [],
       nextSteps: [],
     })
     expect(readdirSync(cwd)).toEqual(['a.txt'])
+  })
+
+  test('completes a JSON and ensures lines, saying what each changed and warning of what it left', async () => {
+    const cwd = emptyFolder()
+    await Bun.write(join(cwd, 'package.json'), '{ "name": "shop", "scripts": { "dev": "bun index.ts" } }')
+    const report = await applyResult({ changes: [
+      { action: 'complete-json', path: 'package.json', values: { scripts: { dev: 'bun src/index.ts', test: 'bun test' } } },
+      { action: 'ensure-lines', path: '.gitignore', lines: ['data'] },
+    ] }, cwd, false)
+    expect(report.files).toEqual([{ path: 'package.json', status: 'updated' }, { path: '.gitignore', status: 'created' }])
+    expect(report.warnings).toEqual(['package.json: scripts.dev is "bun index.ts", newt\'s is "bun src/index.ts"; newt left it as it is'])
+  })
+
+  test('in a dry run, each change sees what the ones before it would write', async () => {
+    const cwd = emptyFolder()
+    const report = await applyResult({ changes: [
+      create('.gitignore', 'node_modules\n'),
+      { action: 'ensure-lines', path: '.gitignore', lines: ['node_modules', 'data'] },
+      { action: 'ensure-lines', path: '.gitignore', lines: ['data'] },
+    ] }, cwd, true)
+    expect(report.files.map(file => file.status)).toEqual(['created', 'updated', 'skipped'])
+    expect(readdirSync(cwd)).toEqual([])
   })
 
   test('keeps the warnings and the next steps', async () => {

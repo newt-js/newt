@@ -1,5 +1,5 @@
-import { DomainEvent } from '../events/event/domain-event'
-import { SavedState }  from './saved-state'
+import type { DomainEvent } from '../events/event/domain-event'
+import type { SavedState }  from './saved-state'
 
 export type RepositoryAccess<Fields> = {
   assertSavable(): void

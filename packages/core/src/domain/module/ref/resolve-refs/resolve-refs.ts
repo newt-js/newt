@@ -1,6 +1,6 @@
 import { ReferenceNotFound } from '../../../errors/reference-not-found/reference-not-found'
-import { Ref }               from '../ref'
-import { RefFinder }         from '../ref-finder'
+import type { Ref }          from '../ref'
+import type { RefFinder }    from '../ref-finder'
 import { resolve }           from '../resolve/resolve'
 
 export function resolveRefs<K extends string>(ids: Record<K, string | null>, finders: Record<K, RefFinder>): Promise<Record<K, Ref | null>>

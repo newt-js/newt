@@ -1,14 +1,14 @@
-import { afterEach }           from 'bun:test'
-import { beforeEach }          from 'bun:test'
-import { describe }            from 'bun:test'
-import { expect }              from 'bun:test'
-import { test }                from 'bun:test'
+import { afterEach }            from 'bun:test'
+import { beforeEach }           from 'bun:test'
+import { describe }             from 'bun:test'
+import { expect }               from 'bun:test'
+import { test }                 from 'bun:test'
 // --------------------------------------------------------
-import { ConcurrencyConflict } from '../../../../domain/errors/concurrency-conflict/concurrency-conflict'
-import { uuidV7 }              from '../../../../domain/value-objects/uuid/uuid-v7/uuid-v7'
-import { pause }               from '../../../testing/pause/pause'
-import { Database }            from '../../database'
-import { DatabaseFixture }     from '../database-fixture'
+import { ConcurrencyConflict }  from '../../../../domain/errors/concurrency-conflict/concurrency-conflict'
+import { uuidV7 }               from '../../../../domain/value-objects/uuid/uuid-v7/uuid-v7'
+import { pause }                from '../../../testing/pause/pause'
+import type { Database }        from '../../database'
+import type { DatabaseFixture } from '../database-fixture'
 
 export function describeOutboxContract(name: string, fixture: DatabaseFixture): void {
   describe(`${name} keeps the Outbox contract`, () => {

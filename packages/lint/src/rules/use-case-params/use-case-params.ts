@@ -1,15 +1,15 @@
-import { ParserServicesWithTypeInformation } from '@typescript-eslint/utils'
-import { TSESLint }                          from '@typescript-eslint/utils'
-import { TSESTree }                          from '@typescript-eslint/utils'
-import { posix }                             from 'node:path'
-import { default as ts }                     from 'typescript'
+import type { ParserServicesWithTypeInformation } from '@typescript-eslint/utils'
+import { TSESLint }                               from '@typescript-eslint/utils'
+import { TSESTree }                               from '@typescript-eslint/utils'
+import { posix }                                  from 'node:path'
+import { default as ts }                          from 'typescript'
 // --------------------------------------------------------
-import { extendsModule }                     from '../../ast/ast'
-import { importedAs }                        from '../../ast/ast'
-import { isUseCase }                         from '../../ast/ast'
-import { nodes }                             from '../../ast/ast'
-import { parameterOf }                       from '../../ast/ast'
-import { slashed }                           from '../../paths/paths'
+import { extendsModule }                          from '../../ast/ast'
+import { importedAs }                             from '../../ast/ast'
+import { isUseCase }                              from '../../ast/ast'
+import { nodes }                                  from '../../ast/ast'
+import { parameterOf }                            from '../../ast/ast'
+import { slashed }                                from '../../paths/paths'
 
 /** Whether a type says nothing: `unknown` or `any`, alone or in a union (`unknown | undefined`). */
 function saysNothing(type: TSESTree.TypeNode): boolean {

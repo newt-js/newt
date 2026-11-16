@@ -3,7 +3,7 @@ import { expect }                  from 'bun:test'
 import { test }                    from 'bun:test'
 // --------------------------------------------------------
 import { describeRecordsContract } from '../../../../domain/repository/contract/describe-records-contract/describe-records-contract'
-import { ContractRow }             from '../../../../domain/repository/contract/records-fixture'
+import type { ContractRow }        from '../../../../domain/repository/contract/records-fixture'
 import { MemoryTransactions }      from '../memory-transactions/memory-transactions'
 import { MemoryRecords }           from './memory-records'
 

@@ -1,4 +1,4 @@
-import { Json } from '../event/json'
+import type { Json } from '../event/json'
 
 export type Subscription<TPayload extends Json = Json, TSeen extends TPayload = TPayload> = (
   | {

@@ -1,12 +1,12 @@
-import { describe }   from 'bun:test'
-import { expect }     from 'bun:test'
-import { test }       from 'bun:test'
+import { describe }       from 'bun:test'
+import { expect }         from 'bun:test'
+import { test }           from 'bun:test'
 // --------------------------------------------------------
-import { withParams } from '../../request/with-params/with-params'
-import { HttpRoute }  from '../../router/http-route'
-import { Layer }      from '../layer'
-import { Layering }   from '../layering'
-import { layered }    from './layered'
+import { withParams }     from '../../request/with-params/with-params'
+import type { HttpRoute } from '../../router/http-route'
+import type { Layer }     from '../layer'
+import type { Layering }  from '../layering'
+import { layered }        from './layered'
 
 describe('layered', () => {
   test('a route inside its layers, the first outermost: a request meets them in order, its answer leaves backwards', async () => {

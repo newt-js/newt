@@ -7,7 +7,7 @@ import { default as tseslint }     from 'typescript-eslint'
 // --------------------------------------------------------
 import { absolute }                from './paths/paths'
 import { slashed }                 from './paths/paths'
-import { Uses }                    from './rules/context-imports/context-imports'
+import type { Uses }               from './rules/context-imports/context-imports'
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'

@@ -1,4 +1,4 @@
-import { HttpRateLimit } from '../http-rate-limit'
+import type { HttpRateLimit } from '../http-rate-limit'
 
 export type Limits = HttpRateLimit | HttpRateLimit[] | false | undefined
 

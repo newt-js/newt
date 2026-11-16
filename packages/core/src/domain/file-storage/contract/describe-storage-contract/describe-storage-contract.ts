@@ -1,14 +1,14 @@
-import { afterEach }      from 'bun:test'
-import { beforeEach }     from 'bun:test'
-import { describe }       from 'bun:test'
-import { expect }         from 'bun:test'
-import { test }           from 'bun:test'
+import { afterEach }           from 'bun:test'
+import { beforeEach }          from 'bun:test'
+import { describe }            from 'bun:test'
+import { expect }              from 'bun:test'
+import { test }                from 'bun:test'
 // --------------------------------------------------------
-import { StorageAdapter } from '../../adapter/storage-adapter'
-import { PrivateFiles }   from '../../files/private-files/private-files'
-import { UploadTooLarge } from '../../upload/upload-too-large/upload-too-large'
-import { StorageFixture } from '../storage-fixture'
-import { textOf }         from '../text-of/text-of'
+import type { StorageAdapter } from '../../adapter/storage-adapter'
+import { PrivateFiles }        from '../../files/private-files/private-files'
+import { UploadTooLarge }      from '../../upload/upload-too-large/upload-too-large'
+import type { StorageFixture } from '../storage-fixture'
+import { textOf }              from '../text-of/text-of'
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 const EXE = new Uint8Array([0x4D, 0x5A, 0x90, 0, 3, 0, 0, 0])

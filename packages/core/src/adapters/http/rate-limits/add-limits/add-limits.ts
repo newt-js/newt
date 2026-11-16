@@ -1,6 +1,6 @@
-import { HttpRateLimit } from '../http-rate-limit'
-import { Limits }        from '../list-of/list-of'
-import { listOf }        from '../list-of/list-of'
+import type { HttpRateLimit } from '../http-rate-limit'
+import type { Limits }        from '../list-of/list-of'
+import { listOf }             from '../list-of/list-of'
 
 export function addLimits(outer: Limits, own: Limits): HttpRateLimit[] | false {
   if (own === false) {

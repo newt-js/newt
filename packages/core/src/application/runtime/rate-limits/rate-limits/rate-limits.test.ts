@@ -4,7 +4,7 @@ import { test }            from 'bun:test'
 // --------------------------------------------------------
 import { MemoryCluster }   from '../../../../adapters/cluster/memory/memory-cluster/memory-cluster'
 import { MemoryDatabase }  from '../../../../adapters/database/memory/memory-database/memory-database'
-import { Clock }           from '../../../../domain/clock/clock'
+import type { Clock }      from '../../../../domain/clock/clock'
 import { TooManyRequests } from '../../../../domain/errors/too-many-requests/too-many-requests'
 import { Module }          from '../../../../domain/module/module/module'
 import { UseCase }         from '../../../../domain/use-case/use-case/use-case'
