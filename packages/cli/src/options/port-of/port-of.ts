@@ -1,4 +1,4 @@
-import { CommandError } from '../../command-error/command-error'
+import { CommandError } from '../../commands/command-error/command-error'
 
 export const DEFAULT_PORT = 3000
 
