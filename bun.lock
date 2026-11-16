@@ -42,6 +42,16 @@
         "zod": "^4.3.6",
       },
     },
+    "packages/create-newt": {
+      "name": "create-newt",
+      "version": "0.0.0",
+      "bin": {
+        "create-newt": "./src/create.ts",
+      },
+      "dependencies": {
+        "@newt-js/cli": "workspace:*",
+      },
+    },
     "packages/lint": {
       "name": "@newt-js/lint",
       "version": "0.0.0",
@@ -632,6 +642,8 @@
     "cookie": ["cookie@2.0.2", "", {}, "sha512-SL0cVuEdETEp7pN0FuZb01toc3vnODEfVUCooxG1SJN0yIirh7JMb9X9bvfCFf0vzzbT68RdbKDHYTiWy7a7iw=="],
 
     "cookie-es": ["cookie-es@1.2.3", "", {}, "sha512-lXVyvUvrNXblMqzIRrxHb57UUVmqsSWlxqt3XIjCkUP0wDAf6uicO6KMbEgYrMNtEvWgWHwe42CKxPu9MYAnWw=="],
+
+    "create-newt": ["create-newt@workspace:packages/create-newt"],
 
     "cross-spawn": ["cross-spawn@7.0.6", "", { "dependencies": { "path-key": "^3.1.0", "shebang-command": "^2.0.0", "which": "^2.0.1" } }, "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA=="],
 

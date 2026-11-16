@@ -16,7 +16,7 @@ async function packed(into: string): Promise<Record<string, string>> {
   const tarballs: Record<string, string> = {}
   for (const { name, folder } of PACKAGES) {
     await $`bun pm pack --destination ${into} --quiet`.cwd(join(ROOT, folder))
-    const [tarball] = await Array.fromAsync(new Bun.Glob(`${name.replace('@', '').replace('/', '-')}-*.tgz`).scan({ cwd: into, absolute: true }))
+    const [tarball] = await Array.fromAsync(new Bun.Glob(`${name.replace('@', '').replace('/', '-')}-[0-9]*.tgz`).scan({ cwd: into, absolute: true }))
     if (!tarball) throw new Error(`${folder} packed no tarball`)
     tarballs[name] = `file:${tarball}`
   }
@@ -40,9 +40,9 @@ const work = await mkdtemp(join(tmpdir(), 'newt-packs-'))
 try {
   const tarballs = await packed(join(work, 'packs'))
   const tool = join(work, 'tool')
-  await Bun.write(join(tool, 'package.json'), JSON.stringify({ private: true, dependencies: { '@newt-js/cli': tarballs['@newt-js/cli'] } }))
+  await Bun.write(join(tool, 'package.json'), JSON.stringify({ private: true, dependencies: { 'create-newt': tarballs['create-newt'] }, overrides: tarballs }))
   await $`bun install`.cwd(tool).quiet()
-  await $`${join(tool, 'node_modules/.bin/newt')} init shop`.cwd(work).quiet()
+  await $`${join(tool, 'node_modules/.bin/create-newt')} shop`.cwd(work).quiet()
   const app = join(work, 'shop')
   await fromTarballs(app, tarballs)
   await $`bun install`.cwd(app).quiet()
