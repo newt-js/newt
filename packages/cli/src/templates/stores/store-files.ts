@@ -2,6 +2,7 @@ export type StoreFiles = {
   imports: string[]
   constants: string
   body: string
+  inMemoryForTests: boolean
   env: (port: number, example: boolean) => Record<string, string>
   testEnv: Record<string, string>
   usesEnvOf: boolean
@@ -21,6 +22,7 @@ const secret = () => Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toS
 export const STORE_FILES = {
   local: {
     imports: ["import { LocalStorage } from '@newt-js/core/files/local'"],
+    inMemoryForTests: false,
     constants: 'const MAX_UPLOAD_BYTES = 100 * 1024 * 1024\n',
     body: `  const path = \`/files/\${context}\`
   const storage = await LocalStorage.open({
@@ -41,6 +43,7 @@ export const STORE_FILES = {
   },
   s3: {
     imports: ["import { S3Storage } from '@newt-js/core/files/s3'"],
+    inMemoryForTests: true,
     constants: '',
     body: `  return {
     private: await S3Storage.open({
@@ -61,6 +64,7 @@ export const STORE_FILES = {
   },
   memory: {
     imports: ["import { MemoryStorage } from '@newt-js/core/files/memory'"],
+    inMemoryForTests: false,
     constants: '',
     body: '  return { private: new MemoryStorage() }',
     env: () => ({}),

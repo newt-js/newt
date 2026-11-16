@@ -5,11 +5,12 @@ const none: ContextVariables = () => ({})
 
 const databaseName = (backend: string, folder: string) => `${backend}_${folder}`.toLowerCase().replace(/[^a-z0-9_]+/g, '_')
 
-export type StoreDatabase = { imports: string[], open: string, usesEnvOf: boolean, needsEnv: boolean, className: string, contextEnv: ContextVariables, contextTestEnv: ContextVariables }
+export type StoreDatabase = { imports: string[], open: string, inMemoryForTests: boolean, usesEnvOf: boolean, needsEnv: boolean, className: string, contextEnv: ContextVariables, contextTestEnv: ContextVariables }
 
 export const STORE_DATABASES = {
   sqlite: {
     imports: ["import { SqliteDatabase } from '@newt-js/core/database/sqlite'"],
+    inMemoryForTests: false,
     open: 'SqliteDatabase.open({ path: Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`, migrations })',
     usesEnvOf: true,
     needsEnv: false,
@@ -19,6 +20,7 @@ export const STORE_DATABASES = {
   },
   postgres: {
     imports: ["import { PostgresDatabase } from '@newt-js/core/database/postgres'"],
+    inMemoryForTests: true,
     open: 'PostgresDatabase.open({ url: requiredEnv(`${envOf(context)}_DATABASE_URL`), migrations })',
     usesEnvOf: true,
     needsEnv: true,
@@ -28,6 +30,7 @@ export const STORE_DATABASES = {
   },
   mysql: {
     imports: ["import { MysqlDatabase } from '@newt-js/core/database/mysql'"],
+    inMemoryForTests: true,
     open: 'MysqlDatabase.open({ url: requiredEnv(`${envOf(context)}_DATABASE_URL`), migrations })',
     usesEnvOf: true,
     needsEnv: true,
@@ -37,6 +40,7 @@ export const STORE_DATABASES = {
   },
   memory: {
     imports: ["import { MemoryDatabase } from '@newt-js/core/database/memory'"],
+    inMemoryForTests: false,
     open: 'Promise.resolve(new MemoryDatabase())',
     usesEnvOf: false,
     needsEnv: false,

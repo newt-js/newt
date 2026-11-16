@@ -11,6 +11,7 @@ import { checkGenerated }      from '../../testing/check-generated/check-generat
 import { generate }            from '../../testing/generate/generate'
 import { ADD_CONTEXT }         from '../add-context/add-context'
 import { ADD_FRONTEND }        from '../add-frontend/add-frontend'
+import { ADD_MODULE }          from '../add-module/add-module'
 import { INIT }                from './init'
 
 const emptyFolder = () => mkdtemp(join(tmpdir(), 'newt-cli-init-'))
@@ -148,19 +149,17 @@ describe('newt init', () => {
     expect(questions).toEqual([])
   })
 
-  const COMBINATIONS = [
-    ...['sqlite', 'postgres', 'mysql', 'memory'].map(db => ({ db, files: 'local' })),
-    ...['s3', 'memory'].map(files => ({ db: 'sqlite', files })),
-  ]
+  const COMBINATIONS = ['sqlite', 'postgres', 'mysql', 'memory'].flatMap(db => ['local', 's3', 'memory'].map(files => ({ db, files })))
 
   for (const { db, files } of COMBINATIONS) {
-    test(`--db ${db} --files ${files}: src/stores.ts opens them, and the backend passes its lint, types and, without services, its tests`, async () => {
+    test(`--db ${db} --files ${files}: with a context and a module, its lint, types and tests pass, in memory where a service is needed`, async () => {
       const folder = join(await generate(INIT, ['shop', '--db', db, '--files', files]), 'shop')
       const stores = await Bun.file(join(folder, 'src/stores.ts')).text()
-      expect(stores).toContain('export function openDatabase(context: string, migrations: string): Promise<Database> {')
+      expect(stores).toContain('function openDatabase(context: string, migrations: string): Promise<Database> {')
       expect(stores).toContain('export async function openStorage(context: string, router: HttpRouter): Promise<StorageOptions> {')
-      const needsService = ['postgres', 'mysql'].includes(db) || files === 's3'
-      expect(await checkGenerated(folder, { tests: !needsService })).toEqual([])
+      await runCommand(ADD_CONTEXT, ['sales'], { cwd: folder, ask: null })
+      await runCommand(ADD_MODULE, ['sales/order'], { cwd: folder, ask: null })
+      expect(await checkGenerated(folder)).toEqual([])
     }, 30_000)
   }
 

@@ -55,7 +55,7 @@ describe('newt add module', () => {
     const postgres = await backendWithContext('postgres')
     await run(ADD_MODULE, ['sales/order'], postgres)
     expect(await read(join(postgres, 'src/contexts/sales/migrations/00001_order_up.sql'))).toContain('CREATE TABLE "order" (\n  id TEXT COLLATE "C" PRIMARY KEY,')
-    expect(await checkGenerated(postgres, { tests: false })).toEqual([])
+    expect(await checkGenerated(postgres)).toEqual([])
     const mysql = await backendWithContext('mysql')
     await run(ADD_MODULE, ['sales/order'], mysql)
     expect(await read(join(mysql, 'src/contexts/sales/migrations/00001_order_up.sql'))).toContain('CREATE TABLE `order` (\n  id VARCHAR(64) COLLATE utf8mb4_0900_bin PRIMARY KEY,')
