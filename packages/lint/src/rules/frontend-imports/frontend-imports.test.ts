@@ -35,6 +35,8 @@ tester.run('frontend-imports', asRule(frontendImports), {
     { ...at("const lazy = import('@newt-js/core/http')"), errors: [{ messageId: 'server' }] },
     { ...at("import { Database } from 'bun:sqlite'"), errors: [{ messageId: 'runtime', data: { path: 'bun:sqlite', context: 'sales' } }] },
     { ...at("import { readFile } from 'node:fs/promises'"), errors: [{ messageId: 'runtime' }] },
+    { ...at("import { readFileSync } from 'fs'"), errors: [{ messageId: 'runtime' }] },
+    { ...at("import { join } from 'path'"), errors: [{ messageId: 'runtime' }] },
     { ...at("import { $ } from 'bun'"), errors: [{ messageId: 'runtime' }] },
     { ...at("export * from '../modules/order/order.schema'"), errors: [{ messageId: 'schema' }] },
     { ...at("import { requiredEnv } from '/repo/src/env'"), errors: [{ messageId: 'outside' }] },

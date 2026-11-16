@@ -1,5 +1,6 @@
 import { TSESLint }      from '@typescript-eslint/utils'
 import type { TSESTree } from '@typescript-eslint/utils'
+import { isBuiltin }     from 'node:module'
 // --------------------------------------------------------
 import { fromNewt }      from '../../ast/ast'
 import { ROOT }          from '../../paths/paths'
@@ -49,7 +50,7 @@ export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server
     return importsOf((node, specifier) => {
       const path = resolved(context, specifier)
       const data = { path: specifier, context: own }
-      if (/^(bun|node):/.test(specifier) || specifier === 'bun') {
+      if (/^(bun|node):/.test(specifier) || specifier === 'bun' || isBuiltin(specifier)) {
         if (!isTypeOnly(node)) context.report({ node, messageId: 'runtime', data })
         return
       }
