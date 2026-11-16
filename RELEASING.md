@@ -1,10 +1,12 @@
 # Releasing
 
 `@newt-js/core`, `@newt-js/lint`, `@newt-js/cli` and `create-newt` are published together, at one
-version: the cli writes backends that depend on newt at its own version.
+version: the cli writes backends that depend on newt from its own version up, `^`.
 
 Before the first release, check on npm that the scope `@newt-js` and the name `create-newt` are
 yours to publish to, and that your npm account has 2FA on: `bun publish` asks for its code.
+`create-newt` 0.0.1 is on npm already, published to keep the name: the first release goes above
+it, 0.1.0 or more.
 
 ```sh
 git switch main && git pull                       # a clean main, up to date
