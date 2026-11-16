@@ -1,5 +1,5 @@
 import { Options }    from '../../commands/command'
-import { columns }    from '../columns/columns'
+import { columns }    from '../../text/columns/columns'
 import { optionFlag } from '../option-flag/option-flag'
 
 export function optionsHelp(options: Options): string[] {

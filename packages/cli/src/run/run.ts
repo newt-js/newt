@@ -3,7 +3,7 @@ import { parseArgs }        from 'node:util'
 import { Command }          from '../commands/command'
 import { Output }           from '../commands/command'
 import { newtHelp }         from '../help/newt-help/newt-help'
-import { GLOBAL_OPTIONS }   from '../options/global-options'
+import { NEWT_OPTIONS }     from '../options/newt-options'
 import { parseArgsOptions } from '../options/parse-args-options/parse-args-options'
 import { version }          from '../version/version'
 import { findCommand }      from './find-command/find-command'
@@ -18,7 +18,7 @@ export async function run(args: string[], { commands, cwd }: RunContext): Promis
   }
   let parsed
   try {
-    parsed = parseArgs({ args, allowPositionals: true, strict: true, options: parseArgsOptions(GLOBAL_OPTIONS) })
+    parsed = parseArgs({ args, allowPositionals: true, strict: true, options: parseArgsOptions(NEWT_OPTIONS) })
   } catch (error) {
     return { code: 1, text: `${(error as Error).message}\nRun newt --help.` }
   }

@@ -1,6 +1,9 @@
 import { describe }    from 'bun:test'
 import { expect }      from 'bun:test'
 import { test }        from 'bun:test'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir }      from 'node:os'
+import { join }        from 'node:path'
 // --------------------------------------------------------
 import { newtHelp }    from '../help/newt-help/newt-help'
 import { ADD_BACKEND } from '../testing/testing'
@@ -29,11 +32,13 @@ describe('run', () => {
 
   test('a command in the list shows in the help and runs', async () => {
     expect((await run([], CONTEXT)).text).toContain('init')
-    expect(await run(['init'], CONTEXT)).toEqual({ code: 0, text: 'init' })
+    expect(await run(['init'], CONTEXT)).toEqual({ code: 0, text: 'Nothing to do.' })
   })
 
   test('a command runs in the given folder', async () => {
-    expect(JSON.parse((await run(['add', 'backend', 'api'], CONTEXT)).text).cwd).toBe('/project')
+    const cwd = mkdtempSync(join(tmpdir(), 'newt-cli-run-'))
+    await run(['add', 'backend', 'api'], { ...CONTEXT, cwd })
+    expect(await Bun.file(join(cwd, 'api/options.json')).exists()).toBe(true)
   })
 
   test('an unknown command fails and says how to get help', async () => {

@@ -5,7 +5,7 @@ import { ADD_BACKEND } from '../../testing/testing'
 import { INIT }        from '../../testing/testing'
 import { commandHelp } from './command-help'
 
-test("commandHelp shows the command's arguments, summary and options, help included", () => {
+test("commandHelp shows the command's arguments, summary and options, the options of every command included", () => {
   expect(commandHelp(ADD_BACKEND)).toBe([
     'Usage: newt add backend <folder> [options]',
     '',
@@ -13,11 +13,18 @@ test("commandHelp shows the command's arguments, summary and options, help inclu
     '',
     'Options:',
     '      --db <adapter>  The database',
-    '      --force         Overwrite',
+    '      --install       Install dependencies',
+    '      --dry-run       Show what would change, writing nothing',
+    '      --json          Print the result as JSON',
     '  -h, --help          Show this help',
   ].join('\n'))
 })
 
-test('a command without options still has help', () => {
-  expect(commandHelp(INIT)).toEndWith('Options:\n  -h, --help  Show this help')
+test('a command without options of its own still has the options of every command', () => {
+  expect(commandHelp(INIT)).toEndWith([
+    'Options:',
+    '      --dry-run  Show what would change, writing nothing',
+    '      --json     Print the result as JSON',
+    '  -h, --help     Show this help',
+  ].join('\n'))
 })

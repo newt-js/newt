@@ -1,6 +1,6 @@
-import { Command }     from '../../commands/command'
-import { HELP_OPTION } from '../../options/global-options'
-import { optionsHelp } from '../options-help/options-help'
+import { Command }         from '../../commands/command'
+import { COMMAND_OPTIONS } from '../../options/newt-options'
+import { optionsHelp }     from '../options-help/options-help'
 
 export function commandHelp(command: Command): string {
   return [
@@ -9,6 +9,6 @@ export function commandHelp(command: Command): string {
     command.summary,
     '',
     'Options:',
-    ...optionsHelp({ ...command.options, help: HELP_OPTION }),
+    ...optionsHelp({ ...command.options, ...COMMAND_OPTIONS }),
   ].join('\n')
 }

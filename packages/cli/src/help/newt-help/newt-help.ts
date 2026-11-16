@@ -1,8 +1,8 @@
-import { Command }        from '../../commands/command'
-import { GLOBAL_OPTIONS } from '../../options/global-options'
-import { version }        from '../../version/version'
-import { columns }        from '../columns/columns'
-import { optionsHelp }    from '../options-help/options-help'
+import { Command }      from '../../commands/command'
+import { NEWT_OPTIONS } from '../../options/newt-options'
+import { columns }      from '../../text/columns/columns'
+import { version }      from '../../version/version'
+import { optionsHelp }  from '../options-help/options-help'
 
 export async function newtHelp(commands: Command[]): Promise<string> {
   const sorted = commands.toSorted((a, b) => a.name.localeCompare(b.name))
@@ -17,7 +17,7 @@ export async function newtHelp(commands: Command[]): Promise<string> {
     ...commandsHelp,
     '',
     'Options:',
-    ...optionsHelp(GLOBAL_OPTIONS),
+    ...optionsHelp(NEWT_OPTIONS),
     ...footer,
   ].join('\n')
 }
