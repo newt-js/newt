@@ -11,3 +11,6 @@ bunx newt add context sales
 bunx newt add module sales/order
 bunx newt --help
 ```
+
+`bunx newt` runs the project's cli once `bun install` has run in it; before that, or outside a
+project, use `bunx @newt-js/cli`: npm's `newt` is another package.
