@@ -20,7 +20,7 @@ import { SRC_BACKEND_TEST_TS }   from '../files/src-backend-test-ts'
 import { srcBackendTs }          from '../files/src-backend-ts'
 import { SRC_CONTEXTS_TS }       from '../files/src-contexts-ts'
 import { SRC_INDEX_TS }          from '../files/src-index-ts'
-import { srcMigrationsTestTs }   from '../files/src-migrations-test-ts'
+import { srcTestDatabaseTs }     from '../files/src-test-database-ts'
 import { TSCONFIG_JSON }         from '../files/tsconfig-json'
 
 const TSCONFIG_KEPT = { needs: ['"bun"', '"preserve"', '"bundler"'], warning: 'newt\'s code needs in its compilerOptions types: ["bun"], module: "Preserve" and moduleResolution: "bundler"' }
@@ -41,8 +41,8 @@ export function backendTemplate({ folder, name, port, stores, versions, inMonore
     'src/backend.test.ts': SRC_BACKEND_TEST_TS,
     'src/contexts.ts': SRC_CONTEXTS_TS,
   }
-  const migrationsTest = srcMigrationsTestTs(stores.database)
-  if (migrationsTest) created['src/migrations.test.ts'] = migrationsTest
+  const testDatabase = srcTestDatabaseTs(stores.database)
+  if (testDatabase) created['src/test-database.ts'] = testDatabase
   return [
     { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions, inMonorepo) },
     { action: 'create', path: at('tsconfig.json'), content: TSCONFIG_JSON, kept: TSCONFIG_KEPT },

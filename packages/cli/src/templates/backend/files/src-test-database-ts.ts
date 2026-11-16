@@ -1,44 +1,45 @@
 import type { DatabaseKind } from '../../stores/store-databases'
 
 const SERVERS = {
-  postgres: { className: 'PostgresDatabase', module: 'postgres', name: 'Postgres', create: '`CREATE DATABASE "${name}"`', drop: '`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`' },
-  mysql: { className: 'MysqlDatabase', module: 'mysql', name: 'MySQL', create: '`CREATE DATABASE \\`${name}\\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin`', drop: '`DROP DATABASE IF EXISTS \\`${name}\\``' },
+  postgres: { className: 'PostgresDatabase', module: 'postgres', create: '`CREATE DATABASE "${name}"`', drop: '`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`' },
+  mysql: { className: 'MysqlDatabase', module: 'mysql', create: '`CREATE DATABASE \\`${name}\\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin`', drop: '`DROP DATABASE IF EXISTS \\`${name}\\``' },
 }
 
-/** src/migrations.test.ts: every context's migrations on a real server, on a database of their own, when TEST_DATABASE_URL names one. */
-export function srcMigrationsTestTs(database: DatabaseKind): string | null {
+/** src/test-database.ts: a module test's database, in memory, or a new one on TEST_DATABASE_URL's server with the context's migrations. */
+export function srcTestDatabaseTs(database: DatabaseKind): string | null {
   if (database !== 'postgres' && database !== 'mysql') return null
   const server = SERVERS[database]
   return `import { SQL } from 'bun'
-import { test } from 'bun:test'
-import { dirname, join } from 'node:path'
+import type { Database } from '@newt-js/core/application'
+import { MemoryDatabase } from '@newt-js/core/database/memory'
 import { ${server.className} } from '@newt-js/core/database/${server.module}'
 
 const serverUrl = Bun.env.TEST_DATABASE_URL
 
-async function onDatabaseOfItsOwn(run: (url: string) => Promise<void>): Promise<void> {
+/**
+ * A database for a test, and how to drop it once the test has closed it. Without
+ * TEST_DATABASE_URL, one in memory; with it, a new one on that server, with the
+ * context's migrations, so the tests try the SQL too.
+ */
+export async function testDatabase(migrations: string): Promise<{ database: Database, drop: () => Promise<void> }> {
+  if (!serverUrl) {
+    return { database: new MemoryDatabase(), drop: async () => {} }
+  }
   const name = \`test_\${crypto.randomUUID().replaceAll('-', '')}\`
-  const admin = new SQL(serverUrl!)
+  const admin = new SQL(serverUrl)
   await admin.unsafe(${server.create})
-  try {
-    const url = new URL(serverUrl!)
-    url.pathname = \`/\${name}\`
-    await run(url.href)
-  } finally {
+  const url = new URL(serverUrl)
+  url.pathname = \`/\${name}\`
+  const drop = async () => {
     await admin.unsafe(${server.drop})
     await admin.close()
   }
-}
-
-test.skipIf(!serverUrl)('every context\\'s migrations run on a real ${server.name}, skipped without TEST_DATABASE_URL', async () => {
-  const contexts = join(import.meta.dir, 'contexts')
-  const migrations = new Set((await Array.fromAsync(new Bun.Glob('*/migrations/*_up.sql').scan(contexts))).map(path => join(contexts, dirname(path))))
-  for (const folder of migrations) {
-    await onDatabaseOfItsOwn(async url => {
-      const database = await ${server.className}.open({ url, migrations: folder })
-      await database.close()
-    })
+  try {
+    return { database: await ${server.className}.open({ url: url.href, migrations }), drop }
+  } catch (error) {
+    await drop()
+    throw error
   }
-}, 60_000)
+}
 `
 }

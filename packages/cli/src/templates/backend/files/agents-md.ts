@@ -1,7 +1,7 @@
 import type { DatabaseKind } from '../../stores/store-databases'
 
-const MIGRATIONS_TEST = `- \`src/migrations.test.ts\`: every context's migrations on a real server. Set \`TEST_DATABASE_URL\`
-  (a server where it may create and drop databases) to run it; without it the test is skipped.
+const TEST_DATABASE = `- \`src/test-database.ts\`: the database of the modules' tests, in memory; with \`TEST_DATABASE_URL\`
+  (a server where they may create and drop databases), a new one there per test, with the context's migrations.
 `
 
 const MIGRATIONS_RULE = `A table changes only through a migration: a change to a module's schema needs the next pair in its context's
@@ -12,7 +12,7 @@ const MIGRATIONS_RULE = `A table changes only through a migration: a change to a
 const migrationsRule = (database: DatabaseKind) => {
   if (database === 'memory') return ''
   if (database === 'sqlite') return `${MIGRATIONS_RULE}The tests run them.\n`
-  return `${MIGRATIONS_RULE}The tests run in memory and miss them: only \`src/migrations.test.ts\` tries them.\n`
+  return `${MIGRATIONS_RULE}The tests run in memory and miss them, unless \`TEST_DATABASE_URL\` is set.\n`
 }
 
 export const agentsMd = (database: DatabaseKind) => `# Agents
@@ -28,7 +28,7 @@ A backend built with newt (@newt-js/core), on Bun.
 - \`src/auth.ts\`: \`authenticate\`, who calls the backend, for every context's router.
 - \`src/env.ts\`: \`requiredEnv\`, for the variables the backend cannot start without.
 - \`src/contexts.ts\`: the list of contexts the backend opens.
-${database === 'postgres' || database === 'mysql' ? MIGRATIONS_TEST : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/api/<context>/\`.
+${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/api/<context>/\`.
 
 ## Sign-in
 

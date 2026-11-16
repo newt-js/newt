@@ -68,28 +68,31 @@ describe('newt add module', () => {
   const SERVERS = [{ db: 'postgres', url: Bun.env.POSTGRES_TEST_URL }, { db: 'mysql', url: Bun.env.MYSQL_TEST_URL }]
 
   for (const { db, url } of SERVERS) {
-    test.skipIf(!url)(`on ${db}, its migration runs on a real server when TEST_DATABASE_URL is set, and a broken one fails`, async () => {
+    test.skipIf(!url)(`on ${db}, its tests run on a real server when TEST_DATABASE_URL is set, and a column the migration lacks fails them`, async () => {
       const backend = await backendWithContext(db)
       await run(ADD_MODULE, ['sales/order'], backend)
       await linkDependencies(backend)
-      const migrationsTest = () => Bun.spawn([process.execPath, 'test', 'src/migrations.test.ts'], { cwd: backend, env: { ...Bun.env, TEST_DATABASE_URL: url }, stdout: 'pipe', stderr: 'pipe' }).exited
-      expect(await migrationsTest()).toBe(0)
-      await Bun.write(join(backend, 'src/contexts/sales/migrations/00001_order_up.sql'), 'CRATE TABEL "order" (id TEXT);\n')
-      expect(await migrationsTest()).not.toBe(0)
+      const moduleTests = () => Bun.spawn([process.execPath, 'test', 'src/contexts'], { cwd: backend, env: { ...Bun.env, TEST_DATABASE_URL: url }, stdout: 'pipe', stderr: 'pipe' }).exited
+      expect(await moduleTests()).toBe(0)
+      const up = join(backend, 'src/contexts/sales/migrations/00001_order_up.sql')
+      await Bun.write(up, (await read(up)).replace(/\n\s+name .*\n/, '\n'))
+      expect(await moduleTests()).not.toBe(0)
     }, 60_000)
   }
 
-  test('without TEST_DATABASE_URL, the migrations test is skipped and says so', async () => {
+  test('without TEST_DATABASE_URL, the tests of a module on a server run in memory', async () => {
     const backend = await backendWithContext('postgres')
-    expect(await read(join(backend, 'src/migrations.test.ts'))).toContain("test.skipIf(!serverUrl)('every context\\'s migrations run on a real Postgres, skipped without TEST_DATABASE_URL'")
-    expect(await read(join(backend, 'AGENTS.md'))).toContain('Set `TEST_DATABASE_URL`')
-    expect(await Bun.file(join(await backendWithContext('sqlite'), 'src/migrations.test.ts')).exists()).toBe(false)
+    await run(ADD_MODULE, ['sales/order'], backend)
+    expect(await read(join(backend, 'src/test-database.ts'))).toContain('return { database: new MemoryDatabase(), drop: async () => {} }')
+    expect(await read(join(backend, 'src/contexts/sales/modules/order/order.module.test.ts'))).toContain("await testDatabase(join(import.meta.dir, '../../migrations'))")
+    expect(await read(join(backend, 'AGENTS.md'))).toContain('with `TEST_DATABASE_URL`')
+    expect(await Bun.file(join(await backendWithContext('sqlite'), 'src/test-database.ts')).exists()).toBe(false)
   })
 
   test("AGENTS.md says a schema change needs a migration, and which tests run it", async () => {
     const postgres = await read(join(await backendWithContext('postgres'), 'AGENTS.md'))
     expect(postgres).toContain('`<number>_<table>_up.sql` and `<number>_<table>_down.sql`')
-    expect(postgres).toContain('The tests run in memory and miss them')
+    expect(postgres).toContain('The tests run in memory and miss them, unless `TEST_DATABASE_URL` is set')
     expect(await read(join(await backendWithContext('sqlite'), 'AGENTS.md'))).toContain('The tests run them.')
   })
 

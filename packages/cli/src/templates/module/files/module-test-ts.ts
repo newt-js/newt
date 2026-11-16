@@ -3,15 +3,21 @@ import type { ModuleNames }  from '../../../names/module-names/module-names'
 import { withArticle }       from '../../../names/with-article/with-article'
 import type { DatabaseKind } from '../../stores/store-databases'
 
-/** On sqlite, the module's test runs the context's own migrations on a database in memory. */
-function databaseOf(database: DatabaseKind): { imports: string, open: string } {
+const MIGRATIONS = "join(import.meta.dir, '../../migrations')"
+
+/** On sqlite, the context's own migrations on a database in memory; on a server, src/test-database.ts's, real when TEST_DATABASE_URL is set. */
+function databaseOf(database: DatabaseKind): { imports: string, open: string, drop: boolean } {
   if (database === 'sqlite') {
     return {
       imports: "import { join } from 'node:path'\nimport { SqliteDatabase } from '@newt-js/core/database/sqlite'",
-      open: "await SqliteDatabase.open({ path: ':memory:', migrations: join(import.meta.dir, '../../migrations') })",
+      open: `await SqliteDatabase.open({ path: ':memory:', migrations: ${MIGRATIONS} })`,
+      drop: false,
     }
   }
-  return { imports: "import { MemoryDatabase } from '@newt-js/core/database/memory'", open: 'new MemoryDatabase()' }
+  if (database === 'postgres' || database === 'mysql') {
+    return { imports: "import { join } from 'node:path'\nimport { testDatabase } from '../../../../test-database'", open: `await testDatabase(${MIGRATIONS})`, drop: true }
+  }
+  return { imports: "import { MemoryDatabase } from '@newt-js/core/database/memory'", open: 'new MemoryDatabase()', drop: false }
 }
 
 export function moduleTestTs(names: ModuleNames, context: ContextNames, database: DatabaseKind): string {
@@ -30,9 +36,9 @@ let context: TestContext
 let router: HttpRouter
 let ${plural}: ${type}_Module
 let signedIn: boolean
-
+${opened.drop ? 'let dropDatabase: () => Promise<void>\n' : ''}
 beforeEach(async () => {
-  const database = ${opened.open}
+  ${opened.drop ? `const { database, drop } = ${opened.open}\n  dropDatabase = drop` : `const database = ${opened.open}`}
   context = testContext({ name: '${context.folder}', cluster: new MemoryCluster(), database })
   router = new HttpRouter({ database })
   signedIn = true
@@ -40,7 +46,7 @@ beforeEach(async () => {
   ${plural} = ${context.camel}Modules(context.base, router).${names.module}
 })
 
-afterEach(() => context.close())
+${opened.drop ? 'afterEach(async () => {\n  await context.close()\n  await dropDatabase()\n})' : 'afterEach(() => context.close())'}
 
 test('creates ${withArticle(words)} and reads it back', async () => {
   const created = await ${plural}.create({ name: ' First ' })
