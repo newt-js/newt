@@ -32,13 +32,13 @@ export type AddConstructorStatementChange = { action: 'add-constructor-statement
 
 export type WireModuleChange = { action: 'wire-module', path: string, module: string, declaration: string, imports: string[] }
 
-export type KeepLineBelowChange = { action: 'keep-line-below', path: string, line: string, below: string }
+export type OrderModulesChange = { action: 'order-modules', path: string }
 
 export type AppendBlockChange = { action: 'append-block', path: string, block: string, imports: string[] }
 
 export type AddClassMemberChange = { action: 'add-class-member', path: string, className: string, name: string, member: string, imports: string[] }
 
-export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[] }
+export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[], createArgument?: boolean }
 
 export type FileChange =
   | CreateChange
@@ -52,7 +52,7 @@ export type FileChange =
   | AddClassMemberChange
   | AddObjectPropertyChange
   | AppendBlockChange
-  | KeepLineBelowChange
+  | OrderModulesChange
   | WireModuleChange
   | AddConstructorStatementChange
 

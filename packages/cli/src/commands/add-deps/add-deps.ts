@@ -2,10 +2,11 @@ import { join }            from 'node:path'
 // --------------------------------------------------------
 import { moduleNames }     from '../../names/module-names/module-names'
 import { backendContexts } from '../../project/backend-contexts/backend-contexts'
+import { dependencyPath }  from '../../project/dependency-path/dependency-path'
 import { findBackend }     from '../../project/find-backend/find-backend'
 import { findModule }      from '../../project/find-module/find-module'
+import { moduleDepsGraph } from '../../project/module-deps-graph/module-deps-graph'
 import { moduleLines }     from '../../templates/module/module-lines/module-lines'
-import { initializedLine } from '../../templates/module/module-template/module-template'
 import { depsHead }        from '../../templates/pieces/deps-ts'
 import { depsTs }          from '../../templates/pieces/deps-ts'
 import type { FileChange } from '../command'
@@ -34,16 +35,16 @@ export const ADD_DEPS = defineCommand({
     if (!found?.modules.includes(used.folder)) {
       throw new CommandError(`The context ${context.folder} has no module ${used.folder}: add it with newt add module ${context.folder}/${used.folder}`)
     }
-    const usedDeps = Bun.file(join(cwd, folder, '..', used.folder, `${used.folder}.deps.ts`))
-    if (await usedDeps.exists() && (await usedDeps.text()).includes(`  ${module.module}: `)) {
-      throw new CommandError(`${used.folder} uses ${module.folder} already: two modules never use each other`)
+    const graph = await moduleDepsGraph(join(cwd, folder, '../..'), found.modules)
+    const cycle = dependencyPath(graph, used.module, module.module)
+    if (cycle) {
+      throw new CommandError(`${[module.module, ...cycle].join(' → ')} would be a cycle: modules never use each other, even through others`)
     }
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const modules = join(folder, '../..', `${context.folder}-modules.ts`)
     const before = moduleLines(module, false)
     const after = moduleLines(module, true)
     const initialize = `${module.type}_Module.initialize`
-    const testLine = `  ${module.plural} = ${initialize}(context.base, router)`
     const changes: FileChange[] = [
       { action: 'create', path: file('.deps.ts'), content: depsTs(module) },
       {
@@ -61,10 +62,8 @@ export const ADD_DEPS = defineCommand({
         with: after[line],
         imports: [`import type { ${module.type}_Deps } from './${module.folder}.deps'`],
       })),
-      { action: 'replace-line', path: modules, line: initializedLine(module), with: initializedLine(module, ', {}'), imports: [] },
-      { action: 'add-object-property', path: modules, call: initialize, argument: 2, key: used.module, value: used.module, imports: [] },
-      { action: 'keep-line-below', path: modules, line: `  const ${module.module} =`, below: `  const ${used.module} =` },
-      { action: 'replace-line', path: file('.module.test.ts'), line: testLine, with: testLine.replace('router)', 'router, {})'), imports: [] },
+      { action: 'add-object-property', path: modules, call: initialize, argument: 2, key: used.module, value: used.module, imports: [], createArgument: true },
+      { action: 'order-modules', path: modules },
       {
         action: 'add-object-property',
         path: file('.module.test.ts'),
@@ -73,6 +72,7 @@ export const ADD_DEPS = defineCommand({
         key: used.module,
         value: `${used.type}_Module.initialize(context.base, router)`,
         imports: [`import { ${used.type}_Module } from '../${used.folder}/${used.folder}.module'`],
+        createArgument: true,
       },
     ]
     return { changes, nextSteps: [`call it in a use case of ${module.folder}: this.deps.${used.module}`, `bun test ${folder}`] }
