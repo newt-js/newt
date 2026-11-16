@@ -65,8 +65,9 @@ describe('runCommand', () => {
     expect((JSON.parse(output.text) as { error: string }).error).toEndWith('Run newt add backend --help.')
   })
 
-  test('any other error is a bug, and is not hidden', async () => {
-    const crashing = defineCommand({ name: 'crash', summary: '', run: async () => { throw new TypeError('bug') } })
-    await expect(runCommand(crashing, [], { cwd: emptyFolder(), ask: null })).rejects.toThrow('bug')
+  test('any other error fails with its message, as JSON with --json', async () => {
+    const crashing = defineCommand({ name: 'crash', summary: '', run: async () => { throw new Error('EACCES: permission denied') } })
+    expect(await runCommand(crashing, [], { cwd: emptyFolder(), ask: null })).toEqual({ code: 1, text: 'newt crash failed: EACCES: permission denied', json: false })
+    expect(JSON.parse((await runCommand(crashing, ['--json'], { cwd: emptyFolder(), ask: null })).text)).toEqual({ error: 'newt crash failed: EACCES: permission denied' })
   })
 })

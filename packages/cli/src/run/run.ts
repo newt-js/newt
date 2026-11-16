@@ -13,10 +13,15 @@ import { runCommand }          from './run-command/run-command'
 
 export type RunContext = CommandContext & { commands: Command[] }
 
+/** Flags every command takes, which may come before its name too: newt --json add module … */
+const BEFORE_COMMAND = new Set(['--json', '--dry-run'])
+
 export async function run(args: string[], { commands, ...context }: RunContext): Promise<Output> {
-  const found = findCommand(args, commands)
+  const first = args.findIndex(arg => !BEFORE_COMMAND.has(arg))
+  const leading = first === -1 ? args : args.slice(0, first)
+  const found = findCommand(args.slice(leading.length), commands)
   if (found) {
-    return runCommand(found.command, found.rest, context)
+    return runCommand(found.command, [...found.rest, ...leading], context)
   }
   const json = args.includes('--json')
   const failed = (message: string): Output => ({ code: 1, text: errorReport(message, json), json })
@@ -28,11 +33,11 @@ export async function run(args: string[], { commands, ...context }: RunContext):
   }
   const { values, positionals } = parsed
   if (values.version) {
-    return { code: 0, text: await version() }
+    return json ? { code: 0, text: JSON.stringify({ version: await version() }, null, 2), json } : { code: 0, text: await version() }
   }
   const [command] = positionals
   if (values.help || command === undefined) {
-    return { code: 0, text: await newtHelp(commands) }
+    return json ? { code: 0, text: JSON.stringify({ help: await newtHelp(commands) }, null, 2), json } : { code: 0, text: await newtHelp(commands) }
   }
   return failed(`Unknown command '${command}'. Run newt --help.`)
 }

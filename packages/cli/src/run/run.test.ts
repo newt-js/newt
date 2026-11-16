@@ -50,6 +50,19 @@ describe('run', () => {
     expect(await run(['--nope', '--json'], CONTEXT)).toMatchObject({ code: 1, json: true })
   })
 
+  test('--json and --dry-run may come before the command', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'newt-cli-run-'))
+    const output = await run(['--json', '--dry-run', 'add', 'backend', 'api'], { ...CONTEXT, cwd })
+    expect(output).toMatchObject({ code: 0, json: true })
+    expect((JSON.parse(output.text) as { dryRun: boolean }).dryRun).toBe(true)
+    expect(await Bun.file(join(cwd, 'api/options.json')).exists()).toBe(false)
+  })
+
+  test('with --json, the version and the help are JSON too', async () => {
+    expect(JSON.parse((await run(['--version', '--json'], CONTEXT)).text)).toEqual({ version: await version() })
+    expect(JSON.parse((await run(['--help', '--json'], CONTEXT)).text)).toEqual({ help: await newtHelp(CONTEXT.commands) })
+  })
+
   test('an unknown option fails and says how to get help', async () => {
     const output = await run(['--nope'], CONTEXT)
     expect(output.code).toBe(1)

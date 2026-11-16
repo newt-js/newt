@@ -39,7 +39,7 @@ export async function runCommand(command: Command, args: string[], { cwd, ask }:
     const report = await applyResult(result, cwd, dryRun === true)
     return { code: 0, text: json ? jsonReport(report) : humanReport(report), json }
   } catch (error) {
-    if (!(error instanceof CommandError)) throw error
-    return failed(error.message)
+    if (error instanceof CommandError) return failed(error.message)
+    return failed(`newt ${command.name} failed: ${(error as Error).message ?? String(error)}`)
   }
 }
