@@ -22,6 +22,16 @@ describe('addConstructorStatement', () => {
     expect(await edited('class M {\n  constructor() {\n    this.a = 1\n  }\n}\n')).toBe('class M {\n  constructor() {\n    this.a = 1\n    this.b = 2\n  }\n}\n')
   })
 
+  test('into an empty constructor, the one with a body of its overloads, and after a comment', async () => {
+    expect(await edited('class M {\n  constructor() {}\n}\n')).toBe('class M {\n  constructor() {\n    this.b = 2\n  }\n}\n')
+    expect(await edited('class M {\n  constructor()\n  constructor() {\n    this.a = 1\n  }\n}\n')).toBe('class M {\n  constructor()\n  constructor() {\n    this.a = 1\n    this.b = 2\n  }\n}\n')
+    expect(await edited('class M {\n  constructor() {\n    this.a = 1 // why\n  }\n}\n')).toBe('class M {\n  constructor() {\n    this.a = 1 // why\n    this.b = 2\n  }\n}\n')
+  })
+
+  test('one it has already, with a semicolon too, is left alone', async () => {
+    expect(await edited('class M {\n  constructor() {\n    this.b = 2;\n  }\n}\n')).toBe('class M {\n  constructor() {\n    this.b = 2;\n  }\n}\n')
+  })
+
   test('one it has already is left alone', async () => {
     const text = 'class M {\n  constructor() {\n    this.b = 2\n  }\n}\n'
     expect(await edited(text)).toBe(text)

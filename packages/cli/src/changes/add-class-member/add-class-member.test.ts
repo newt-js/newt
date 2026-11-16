@@ -41,6 +41,13 @@ describe('addClassMember', () => {
     expect((await addClassMember(CHANGE, diskFiles(cwd))).status).toBe('skipped')
   })
 
+  test('a member of that name, however it is written, is the same', async () => {
+    for (const written of ['#rename = 1', "'rename'() {}", "['rename'] = 1"]) {
+      const cwd = await folderWith(`export class Order_Module extends Module {\n  ${written}\n}\n`)
+      expect((await addClassMember(CHANGE, diskFiles(cwd))).status).toBe('skipped')
+    }
+  })
+
   test('without the class, changes nothing and says what to add', async () => {
     const cwd = await folderWith('export const x = 1\n')
     const outcome = await addClassMember(CHANGE, diskFiles(cwd))

@@ -1,4 +1,6 @@
 import { default as ts } from 'typescript'
+// --------------------------------------------------------
+import { endOfLine }     from '../end-of-line/end-of-line'
 
 /** `text` with a property added at the end of an object, on its line or on one of its own, as the object is written. */
 export function withProperty(text: string, source: ts.SourceFile, object: ts.ObjectLiteralExpression, property: string): string {
@@ -14,8 +16,13 @@ export function withProperty(text: string, source: ts.SourceFile, object: ts.Obj
     return `${text.slice(0, last.getEnd())}, ${property}${text.slice(last.getEnd())}`
   }
   const indent = /([ \t]*)$/.exec(text.slice(0, last.getStart(source)))?.[1] ?? ''
-  const comma = text.indexOf(',', last.getEnd())
-  const hasComma = comma !== -1 && text.slice(last.getEnd(), comma).trim() === ''
-  const end = hasComma ? comma + 1 : last.getEnd()
-  return `${text.slice(0, end)}${hasComma ? '' : ','}\n${indent}${property},${text.slice(end)}`
+  const { at, comma } = endOfLine(text, last.getEnd())
+  if (text[at] !== '\n') {
+    // The object closes on its last property's line: the new one goes before the close, as the last.
+    const closing = object.getEnd() - 1
+    const before = text.slice(0, closing).replace(/[ \t]*$/, '')
+    return `${before}${before.endsWith(',') ? '' : ','}\n${indent}${property} ${text.slice(closing)}`
+  }
+  const withComma = comma ? text.slice(0, at) : `${text.slice(0, last.getEnd())},${text.slice(last.getEnd(), at)}`
+  return `${withComma}\n${indent}${property},${text.slice(at)}`
 }

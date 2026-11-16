@@ -5,7 +5,14 @@ import { addedImports }              from '../added-imports/added-imports'
 import type { ChangeOutcome }        from '../change-outcome'
 import type { VirtualFiles }         from '../virtual-files/virtual-files'
 
-const memberName = (member: ts.ClassElement) => member.name && ts.isIdentifier(member.name) ? member.name.text : undefined
+function memberName(member: ts.ClassElement): string | undefined {
+  const name = member.name
+  if (!name) return undefined
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name)) return name.text
+  if (ts.isPrivateIdentifier(name)) return name.text.slice(1)
+  if (ts.isComputedPropertyName(name) && ts.isStringLiteral(name.expression)) return name.expression.text
+  return undefined
+}
 
 /** Adds a member at the end of a class, with its imports; one the class has already is left alone. */
 export async function addClassMember(change: AddClassMemberChange, files: VirtualFiles): Promise<ChangeOutcome> {
