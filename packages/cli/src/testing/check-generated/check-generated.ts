@@ -4,7 +4,7 @@ import { linkDependencies } from '../link-dependencies/link-dependencies'
 
 const STEPS = {
   lint: (folder: string) => ['--bun', join(folder, 'node_modules/eslint/bin/eslint.js'), '.'],
-  typecheck: () => ['check'],
+  typecheck: () => ['check', '-b'],
   tests: () => ['test'],
 }
 

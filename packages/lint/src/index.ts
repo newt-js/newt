@@ -12,6 +12,7 @@ import { assertUsesTree }          from './rules/context-imports/context-imports
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
+import { frontendImports }         from './rules/frontend-imports/frontend-imports'
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
@@ -33,6 +34,7 @@ export const plugin = {
     'context-imports': contextImports,
     'entity-method-params': entityMethodParams,
     'framework-tables': frameworkTables,
+    'frontend-imports': frontendImports,
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
@@ -120,6 +122,13 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     ignores: [MODULES],
     rules: { 'newt/module-imports': 'error' },
   }] : []
+  const frontendRules: Linter.Config[] = contexts ? [{
+    // Frontends are .ts and .tsx.
+    files: [`${inside ? `${inside}/` : ''}*/frontend/**/*.{ts,tsx}`],
+    languageOptions: { parser: tseslint.parser },
+    plugins: { newt: plugin },
+    rules: { 'newt/frontend-imports': ['error', { folder: given }] },
+  }] : []
   return defineConfig(
     { ignores: ['**/dist/**', '**/node_modules/**'] },
     {
@@ -143,6 +152,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       },
     },
     ...contextRules,
+    ...frontendRules,
     {
       // A module's file among those it lints: an inner list is every pattern of it at once.
       files: files.map(pattern => [pattern, MODULES]),

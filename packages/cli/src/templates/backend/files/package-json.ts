@@ -9,7 +9,7 @@ export function packageJson(name: string, versions: TemplateVersions): Record<st
       dev: 'bun --watch src/index.ts',
       start: 'bun src/index.ts',
       test: 'bun test',
-      typecheck: 'bun check',
+      typecheck: 'bun check -b',
       lint: 'bun --bun eslint',
     },
     dependencies: {
