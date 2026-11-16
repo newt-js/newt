@@ -37,6 +37,7 @@ export const ADD_ROUTE = defineCommand({
     if (!PATH.test(path)) throw new CommandError(`'${path}' is not a path: it starts with / and has letters, digits and / : _ - alone`)
     if (path.startsWith('/api/')) throw new CommandError(`'${path}' starts with /api, which every route is under already: give --path ${path.slice('/api'.length)}`)
     if (!path.startsWith(`/${context.folder}/`)) throw new CommandError(`'${path}' is not under /${context.folder}/: a module's routes start with its context`)
+    if (path === `/${context.folder}/files` || path.startsWith(`/${context.folder}/files/`)) throw new CommandError(`'${path}' is where the files of ${context.folder} are served: give the route another --path`)
     const segments = path.split('/').slice(1)
     if (segments.some(segment => segment === '' || segment === ':')) throw new CommandError(`'${path}' has an empty segment: no // and no / at the end`)
     const params = segments.filter(segment => segment.startsWith(':'))

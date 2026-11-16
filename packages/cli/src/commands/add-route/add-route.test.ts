@@ -104,6 +104,7 @@ describe('newt add route', () => {
   test("refuses a path outside its context's", async () => {
     const backend = await moduleProject()
     expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/orders/new'], backend)).text).toBe("'/orders/new' is not under /sales/: a module's routes start with its context")
+    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/sales/files/x'], backend)).text).toBe("'/sales/files/x' is where the files of sales are served: give the route another --path")
   })
 
   test('refuses /api, empty segments, a last / and a param given twice', async () => {

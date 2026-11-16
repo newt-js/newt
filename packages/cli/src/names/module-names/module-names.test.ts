@@ -19,6 +19,10 @@ test('plurals in English', () => {
   expect(['order', 'box', 'category', 'day', 'batch'].map(folder => moduleNames(folder).path)).toEqual(['orders', 'boxes', 'categories', 'days', 'batches'])
 })
 
+test("refuses a module whose routes would be the context's files", () => {
+  expect(() => moduleNames('file')).toThrow("'file' cannot name a module: its routes would be under /<context>/files")
+})
+
 test('refuses a name that is not lowercase words joined by -', () => {
   expect(() => moduleNames('Order')).toThrow("'Order' cannot name a module")
 })

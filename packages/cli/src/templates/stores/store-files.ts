@@ -28,7 +28,7 @@ export const STORE_FILES = {
     inMemory: 'new MemoryStorage()',
     memoryImports: ["import { MemoryStorage } from '@newt-js/core/files/memory'"],
     constants: 'const MAX_UPLOAD_BYTES = 100 * 1024 * 1024\n',
-    body: `  const path = \`/files/\${context}\`
+    body: `  const path = \`/\${context}/files\`
   const storage = await LocalStorage.open({
     folder: Bun.env[\`\${envOf(context)}_FILES\`] ?? \`data/files/\${context}\`,
     baseUrl: \`\${requiredEnv('PUBLIC_URL')}\${router.prefix}\${path}\`,

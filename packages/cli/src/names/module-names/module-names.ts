@@ -29,6 +29,7 @@ export function moduleNames(folder: string): ModuleNames {
   if (TEMPLATE_VARIABLES.has(camel(words)) || TEMPLATE_VARIABLES.has(camel(plural)) || TEMPLATE_TYPES.has(capital(camel(words)))) {
     refuse("its code would take a name newt's generated code uses for something else; name it by what it holds")
   }
+  if (plural.join('-') === 'files') refuse("its routes would be under /<context>/files, where the context's files are served; name it by what it holds")
   if (folder.startsWith('newt-')) refuse('its table would start with newt_, and those tables are newt\'s own')
   if (words.join('_').length > MAX_TABLE) refuse(`its table would have more than ${MAX_TABLE} characters, more than databases take`)
   return {
