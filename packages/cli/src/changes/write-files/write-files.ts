@@ -1,11 +1,12 @@
-import { mkdir }        from 'node:fs/promises'
-import { rm }           from 'node:fs/promises'
-import { stat }         from 'node:fs/promises'
-import { dirname }      from 'node:path'
-import { join }         from 'node:path'
+import { mkdir }          from 'node:fs/promises'
+import { rm }             from 'node:fs/promises'
+import { stat }           from 'node:fs/promises'
+import { dirname }        from 'node:path'
+import { join }           from 'node:path'
 // --------------------------------------------------------
-import { CommandError } from '../../commands/command-error/command-error'
-import { blockedPath }  from '../blocked-path/blocked-path'
+import { CommandError }   from '../../commands/command-error/command-error'
+import { blockedPath }    from '../blocked-path/blocked-path'
+import { outsideProject } from '../outside-project/outside-project'
 
 const exists = (path: string) => stat(path).then(() => true, () => false)
 
@@ -18,7 +19,8 @@ async function missingFolders(path: string): Promise<string[]> {
 
 /** Checks that every file can be written, then writes them; `dryRun` only checks. When a write fails, puts back what it wrote, so it writes all or none. */
 export async function writeFiles(cwd: string, changed: Map<string, string | null>, dryRun: boolean): Promise<void> {
-  const blocked = (await Promise.all([...changed].filter(([, content]) => content !== null).map(([path]) => blockedPath(cwd, path))))
+  const written = [...changed].filter(([, content]) => content !== null).map(([path]) => path)
+  const blocked = (await Promise.all(written.map(async path => await outsideProject(cwd, path) ?? await blockedPath(cwd, path))))
     .filter(why => why !== null)
   if (blocked.length > 0) throw new CommandError(`newt wrote nothing: ${blocked.join('; ')}`)
   if (dryRun) return

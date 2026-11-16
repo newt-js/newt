@@ -3,6 +3,7 @@ import { test }        from 'bun:test'
 import { chmodSync }   from 'node:fs'
 import { existsSync }  from 'node:fs'
 import { mkdtempSync } from 'node:fs'
+import { symlinkSync } from 'node:fs'
 import { tmpdir }      from 'node:os'
 import { join }        from 'node:path'
 // --------------------------------------------------------
@@ -45,4 +46,28 @@ test('when a write fails, what it wrote is put back', async () => {
   await expect(writeFiles(cwd, changed, false)).rejects.toThrow('newt wrote nothing: it could not write')
   expect(await Bun.file(join(cwd, 'kept.ts')).text()).toBe('before')
   expect(existsSync(join(cwd, 'src'))).toBe(false)
+})
+
+test('writes nothing through a link out of the project, a file or a folder, nor through a link to nothing', async () => {
+  const outside = emptyFolder()
+  await Bun.write(join(outside, 'shared.ts'), 'export {}\n')
+  const cwd = emptyFolder()
+  await Bun.write(join(cwd, 'package.json'), '{}')
+  symlinkSync(join(outside, 'shared.ts'), join(cwd, 'linked.ts'))
+  symlinkSync(outside, join(cwd, 'src'))
+  symlinkSync(join(outside, 'gone.ts'), join(cwd, 'gone.ts'))
+  await expect(writeFiles(cwd, new Map([['linked.ts', 'x']]), false)).rejects.toThrow('linked.ts is a link out of the project')
+  await expect(writeFiles(cwd, new Map([['src/a.ts', 'x']]), false)).rejects.toThrow('src/a.ts is a link out of the project')
+  await expect(writeFiles(cwd, new Map([['gone.ts', 'x']]), false)).rejects.toThrow('gone.ts is a link to nothing')
+  expect(await Bun.file(join(outside, 'shared.ts')).text()).toBe('export {}\n')
+  expect(existsSync(join(outside, 'a.ts'))).toBe(false)
+})
+
+test('writes through a link that stays in the project', async () => {
+  const cwd = emptyFolder()
+  await Bun.write(join(cwd, 'package.json'), '{}')
+  await Bun.write(join(cwd, 'real/a.ts'), '')
+  symlinkSync(join(cwd, 'real'), join(cwd, 'linked'))
+  await writeFiles(cwd, new Map([['linked/a.ts', 'x']]), false)
+  expect(await Bun.file(join(cwd, 'real/a.ts')).text()).toBe('x')
 })
