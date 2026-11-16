@@ -37,6 +37,7 @@ export function packageJson(name: string, versions: TemplateVersions, inMonorepo
       '@newt-js/lint': versions.newt,
       '@types/bun': versions.bunTypes,
       'eslint': versions.eslint,
+      'typescript': versions.typescript,
     },
     ...inMonorepo ? {} : { overrides: lintOverrides(versions) },
   }

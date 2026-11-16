@@ -40,6 +40,12 @@ async function fromTarballs(project: string, tarballs: Record<string, string>): 
   await Bun.write(file, `${JSON.stringify({ ...manifest, overrides: { ...manifest.overrides, ...tarballs } }, null, 2)}\n`)
 }
 
+/** The TypeScript a project's editor and `bunx tsc` find is the 7 its package.json asks for, not the lint's 6. */
+async function topTypescriptIs7(project: string): Promise<void> {
+  const { version } = await Bun.file(join(project, 'node_modules/typescript/package.json')).json() as { version: string }
+  if (!version.startsWith('7.')) throw new Error(`${project}'s node_modules/typescript is ${version}, not 7`)
+}
+
 const keep = Bun.argv.includes('--keep')
 const work = await mkdtemp(join(tmpdir(), 'newt-packs-'))
 try {
@@ -54,21 +60,17 @@ try {
   for (const args of [['add', 'context', 'sales'], ['add', 'module', 'sales/order'], ['add', 'use-case', 'sales/order', 'mark-paid']]) {
     await $`bunx newt ${args}`.cwd(app).quiet()
   }
+  await topTypescriptIs7(app)
   for (const script of ['typecheck', 'test', 'lint']) {
     await $`bun run ${script}`.cwd(app)
   }
-  const { devDependencies } = await Bun.file(join(ROOT, 'package.json')).json() as Manifest
-  await $`bun add -d typescript@${devDependencies!.typescript!}`.cwd(app).quiet()
-  for (const script of ['typecheck', 'lint']) {
-    await $`bun run ${script}`.cwd(app)
-  }
-  // A monorepo, hoisted as an older lockfile or linker = "hoisted" leaves it, with TypeScript 7 at its root.
+  // A monorepo, hoisted as an older lockfile or linker = "hoisted" leaves it.
   await $`${join(tool, 'node_modules/.bin/create-newt')} mono --monorepo`.cwd(work).quiet()
   const mono = join(work, 'mono')
   await fromTarballs(mono, tarballs)
   await fromTarballs(join(mono, 'apps/api'), tarballs)
   await $`bun install --linker hoisted`.cwd(mono).quiet()
-  await $`bun add -d --linker hoisted typescript@${devDependencies!.typescript!}`.cwd(mono).quiet()
+  await topTypescriptIs7(mono)
   await $`bunx newt add context sales`.cwd(join(mono, 'apps/api')).quiet()
   for (const script of ['typecheck', 'test', 'lint']) {
     await $`bun run ${script}`.cwd(mono)

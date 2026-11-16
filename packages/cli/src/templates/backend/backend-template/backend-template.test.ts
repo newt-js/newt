@@ -11,7 +11,7 @@ import { backendTemplate }  from './backend-template'
 
 const STORES = { cluster: 'memory' as const, database: 'sqlite' as const, files: 'local' as const }
 
-const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0', react: '19.0.0', reactDom: '19.0.0', reactTypes: '19.0.0', reactDomTypes: '19.0.0', lintTypescript: 'npm:@typescript/typescript6@6.0.2' }
+const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0', react: '19.0.0', reactDom: '19.0.0', reactTypes: '19.0.0', reactDomTypes: '19.0.0', lintTypescript: 'npm:@typescript/typescript6@6.0.2', typescript: '7.0.2' }
 
 const BACKEND_COMMAND = defineCommand({
   name: 'backend',
