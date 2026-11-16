@@ -11,6 +11,11 @@ describe('workspacesChange', () => {
     expect(workspacesChange(root(['apps/*']), '/repo/apps/api', '/repo')).toBeNull()
     expect(workspacesChange(root(['apps/api']), '/repo/apps/api', '/repo')).toBeNull()
     expect(workspacesChange(root(['apps/*/']), '/repo/apps/api', '/repo')).toBeNull()
+    expect(workspacesChange(root(['./apps/*']), '/repo/apps/api', '/repo')).toBeNull()
+  })
+
+  test('refuses a folder the workspaces leave out', () => {
+    expect(() => workspacesChange(root(['apps/*', '!apps/legacy']), '/repo/apps/legacy', '/repo')).toThrow('leave apps/legacy out with "!apps/legacy"')
   })
 
   test("adds a pattern for the folder's parent", () => {
