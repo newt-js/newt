@@ -60,6 +60,14 @@ describe('newt add frontend', () => {
     expect(await read(join(backend, 'src/frontends.ts'))).toContain("app: join(import.meta.dir, '../../it\\'s/dist') }")
   })
 
+  test('refuses a second frontend for a context, built or not', async () => {
+    const backend = await moduleProject()
+    await addFrontend(['sales', '--built', 'web/dist'], backend)
+    await addFrontend(['sales', '--built', 'web/dist'], backend)
+    expect((await addFrontend(['sales'], backend)).text).toBe('src/frontends.ts serves a frontend at /sales already: take it out of it first to serve another')
+    expect((await addFrontend(['sales', '--built', 'other/dist'], backend)).code).toBe(1)
+  })
+
   test('--built warns while the folder has no index.html', async () => {
     const output = await addFrontend(['sales', '--built', '../web/dist', '--dry-run'], await moduleProject())
     expect(output.text).toContain('Warnings:\n  ../web/dist has no index.html yet: the backend answers 503 at /sales until it is built')

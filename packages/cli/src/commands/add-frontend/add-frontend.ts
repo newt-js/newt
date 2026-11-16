@@ -9,6 +9,7 @@ import { findBackend }           from '../../project/find-backend/find-backend'
 import { builtFrontendTemplate } from '../../templates/frontend/frontend-template/frontend-template'
 import { frontendTemplate }      from '../../templates/frontend/frontend-template/frontend-template'
 import { templateVersions }      from '../../templates/template-versions/template-versions'
+import type { FileChange }       from '../command'
 import { defineCommand }         from '../command'
 import { CommandError }          from '../command-error/command-error'
 
@@ -30,18 +31,27 @@ export const ADD_FRONTEND = defineCommand({
     if (!(await backendContexts(backend)).some(each => each.name === context)) {
       throw new CommandError(`The backend has no context ${context}: add it with newt add context ${context}`)
     }
+    const frontends = await Bun.file(join(backend, 'src/frontends.ts')).text().catch(() => '')
+    const mounted = (changes: FileChange[]) => {
+      const line = changes.find(change => change.action === 'insert-lines' && change.path.endsWith('frontends.ts'))
+      const again = line?.action === 'insert-lines' && line.lines.every(each => frontends.includes(each))
+      if (!again && frontends.includes(`path: '/${context}'`)) {
+        throw new CommandError(`src/frontends.ts serves a frontend at /${context} already: take it out of it first to serve another`)
+      }
+      return changes
+    }
     if (options.built !== undefined) {
       const built = resolve(cwd, options.built)
       const fromSrc = relative(join(backend, 'src'), built).split(sep).join('/')
       const unbuilt = await Bun.file(join(built, 'index.html')).exists() ? [] : [`${options.built} has no index.html yet: the backend answers 503 at /${context} until it is built`]
       return {
-        changes: builtFrontendTemplate({ backend: relative(cwd, backend), context: names, fromSrc }),
+        changes: mounted(builtFrontendTemplate({ backend: relative(cwd, backend), context: names, fromSrc })),
         warnings: unbuilt,
         nextSteps: [`build it into ${options.built}, then bun run dev, and open /${context}`],
       }
     }
     return {
-      changes: frontendTemplate({ backend: relative(cwd, backend), context: names, versions: await templateVersions() }),
+      changes: mounted(frontendTemplate({ backend: relative(cwd, backend), context: names, versions: await templateVersions() })),
       nextSteps: ['bun install', `bun run dev, and open /${context}`],
     }
   },
