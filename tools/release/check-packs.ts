@@ -9,6 +9,9 @@ import { PACKAGES } from './packages'
 
 const ROOT = join(import.meta.dir, '../..')
 
+/** What only newt's own tests use, which no package ships. */
+const TEST_ONLY = /\.test\.tsx?$|\/contract\/|\/fixtures[^/]*\/|\/database\/[^/]+\/testing\//
+
 type Manifest = { dependencies?: Record<string, string>, devDependencies?: Record<string, string> }
 
 /** Every package, packed as npm would get it: `workspace:*` turned into its version. */
@@ -18,6 +21,8 @@ async function packed(into: string): Promise<Record<string, string>> {
     await $`bun pm pack --destination ${into} --quiet`.cwd(join(ROOT, folder))
     const [tarball] = await Array.fromAsync(new Bun.Glob(`${name.replace('@', '').replace('/', '-')}-[0-9]*.tgz`).scan({ cwd: into, absolute: true }))
     if (!tarball) throw new Error(`${folder} packed no tarball`)
+    const shipped = (await $`tar -tzf ${tarball}`.text()).split('\n').filter(path => TEST_ONLY.test(path))
+    if (shipped.length > 0) throw new Error(`${folder} ships what only its tests use:\n${shipped.join('\n')}`)
     tarballs[name] = `file:${tarball}`
   }
   return tarballs
