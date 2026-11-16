@@ -3,7 +3,7 @@ import { dirname }  from 'node:path'
 import { join }     from 'node:path'
 
 /** Finds the project's own cli, when it is not this one (`self`). */
-export async function localCli(cwd: string, self: string): Promise<string | null> {
+export async function findLocalCli(cwd: string, self: string): Promise<string | null> {
   const own = await realpath(self)
   for (let folder = cwd; ; folder = dirname(folder)) {
     const manifest = Bun.file(join(folder, 'node_modules/@newt-js/cli/package.json'))
