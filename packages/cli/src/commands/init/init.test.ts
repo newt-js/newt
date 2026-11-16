@@ -1,6 +1,7 @@
 import { describe }            from 'bun:test'
 import { expect }              from 'bun:test'
 import { test }                from 'bun:test'
+import { mkdir }               from 'node:fs/promises'
 import { mkdtemp }             from 'node:fs/promises'
 import { tmpdir }              from 'node:os'
 import { join }                from 'node:path'
@@ -9,6 +10,7 @@ import { runCommand }          from '../../run/run-command/run-command'
 import { writeBunInitProject } from '../../testing/bun-init-project/bun-init-project'
 import { checkGenerated }      from '../../testing/check-generated/check-generated'
 import { generate }            from '../../testing/generate/generate'
+import { monorepoProject }     from '../../testing/monorepo-project/monorepo-project'
 import { ADD_CONTEXT }         from '../add-context/add-context'
 import { ADD_FRONTEND }        from '../add-frontend/add-frontend'
 import { ADD_MODULE }          from '../add-module/add-module'
@@ -162,6 +164,15 @@ describe('newt init', () => {
       expect(await checkGenerated(folder)).toEqual([])
     }, 30_000)
   }
+
+  test('inside a monorepo, refuses and says to add the backend to it; over its own monorepo, runs again', async () => {
+    const root = await monorepoProject(['apps/*'])
+    await mkdir(join(root, 'apps'))
+    expect((await runCommand(INIT, ['api'], { cwd: join(root, 'apps'), ask: null })).text).toBe('api is inside the monorepo at ..: add the backend to it with newt add backend api')
+    const made = join(await generate(INIT, ['acme', '--monorepo']), 'acme')
+    expect((await runCommand(INIT, ['.', '--monorepo'], { cwd: made, ask: null })).code).toBe(0)
+    expect((await runCommand(INIT, ['.'], { cwd: join(made, 'apps/api'), ask: null })).text).toBe('. is inside the monorepo at ../..: add the backend to it with newt add backend .')
+  })
 
   test('refuses a database or a storage there is not', async () => {
     expect((await runCommand(INIT, ['shop', '--db', 'mongo'], { cwd: await emptyFolder(), ask: null })).text).toBe("'mongo' is not a database: sqlite, postgres, mysql, memory")
