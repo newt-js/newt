@@ -18,7 +18,11 @@ export type CompleteJsonChange = { action: 'complete-json', path: string, values
 
 export type EnsureLinesChange = { action: 'ensure-lines', path: string, lines: string[] }
 
-export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange
+export type RemoveUnchangedChange = { action: 'remove-unchanged', path: string, content: string, why: string }
+
+export type RemoveJsonKeyChange = { action: 'remove-json-key', path: string, key: string, value: unknown, whenMissing: string }
+
+export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange | RemoveUnchangedChange | RemoveJsonKeyChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }
 

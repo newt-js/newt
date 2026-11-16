@@ -1,1 +1,1 @@
-export const CLAUDE_MD = '@AGENTS.md\n'
+export const CLAUDE_MD = ['@AGENTS.md']

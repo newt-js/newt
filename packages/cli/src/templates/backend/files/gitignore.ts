@@ -1,4 +1,1 @@
-export const GITIGNORE = `node_modules
-.env
-data
-`
+export const GITIGNORE = ['node_modules', '.env', 'data']

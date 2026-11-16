@@ -1,7 +1,7 @@
 import type { TemplateVersions } from '../../template-versions/template-versions'
 
-export function packageJson(name: string, versions: TemplateVersions): string {
-  return `${JSON.stringify({
+export function packageJson(name: string, versions: TemplateVersions): Record<string, unknown> {
+  return {
     name,
     private: true,
     type: 'module',
@@ -22,5 +22,5 @@ export function packageJson(name: string, versions: TemplateVersions): string {
       '@types/bun': versions.bunTypes,
       'eslint': versions.eslint,
     },
-  }, null, 2)}\n`
+  }
 }

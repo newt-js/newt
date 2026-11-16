@@ -1,7 +1,8 @@
 import { join }                  from 'node:path'
 // --------------------------------------------------------
-import type { CreateChange }     from '../../../commands/command'
+import type { FileChange }       from '../../../commands/command'
 import type { TemplateVersions } from '../../template-versions/template-versions'
+import { BUN_INIT_INDEX_TS }     from '../bun-init/bun-init'
 import { AGENTS_MD }             from '../files/agents-md'
 import { CLAUDE_MD }             from '../files/claude-md'
 import { env }                   from '../files/env'
@@ -16,20 +17,25 @@ import { TSCONFIG_JSON }         from '../files/tsconfig-json'
 
 export type BackendTemplateOptions = { folder: string, name: string, port: number, versions: TemplateVersions }
 
-export function backendTemplate({ folder, name, port, versions }: BackendTemplateOptions): CreateChange[] {
-  const files: Record<string, string> = {
-    'package.json': packageJson(name, versions),
+export function backendTemplate({ folder, name, port, versions }: BackendTemplateOptions): FileChange[] {
+  const at = (path: string) => join(folder, path)
+  const created: Record<string, string> = {
     'tsconfig.json': TSCONFIG_JSON,
     'eslint.config.ts': ESLINT_CONFIG_TS,
-    '.gitignore': GITIGNORE,
     '.env': env(port),
     '.env.example': env(port),
     'AGENTS.md': AGENTS_MD,
-    'CLAUDE.md': CLAUDE_MD,
     'src/index.ts': SRC_INDEX_TS,
     'src/backend.ts': SRC_BACKEND_TS,
     'src/backend.test.ts': SRC_BACKEND_TEST_TS,
     'src/contexts.ts': SRC_CONTEXTS_TS,
   }
-  return Object.entries(files).map(([path, content]) => ({ action: 'create', path: join(folder, path), content }))
+  return [
+    { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions) },
+    ...Object.entries(created).map(([path, content]): FileChange => ({ action: 'create', path: at(path), content })),
+    { action: 'ensure-lines', path: at('.gitignore'), lines: GITIGNORE },
+    { action: 'ensure-lines', path: at('CLAUDE.md'), lines: CLAUDE_MD },
+    { action: 'remove-unchanged', path: at('index.ts'), content: BUN_INIT_INDEX_TS, why: 'the backend starts at src/index.ts' },
+    { action: 'remove-json-key', path: at('package.json'), key: 'module', value: 'index.ts', whenMissing: at('index.ts') },
+  ]
 }

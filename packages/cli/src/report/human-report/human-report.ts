@@ -2,8 +2,8 @@ import { columns }         from '../../text/columns/columns'
 import type { FileReport } from '../report'
 import type { Report }     from '../report'
 
-const DONE = { created: 'created', updated: 'updated', skipped: 'skipped' }
-const PLANNED = { created: 'will create', updated: 'will update', skipped: 'will skip' }
+const DONE = { created: 'created', updated: 'updated', removed: 'removed', skipped: 'skipped' }
+const PLANNED = { created: 'will create', updated: 'will update', removed: 'will remove', skipped: 'will skip' }
 
 function fileLine(file: FileReport, dryRun: boolean): [string, string] {
   const path = file.note ? `${file.path} (${file.note})` : file.path

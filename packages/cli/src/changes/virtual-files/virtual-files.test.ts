@@ -31,4 +31,15 @@ describe('virtualFiles', () => {
     expect(await files.read('a.txt')).toBe('a')
     expect(await Bun.file(join(cwd, 'a.txt')).exists()).toBe(false)
   })
+
+  test('removes from disk, and in a dry run only remembers it', async () => {
+    const cwd = emptyFolder()
+    await Bun.write(join(cwd, 'a.txt'), 'a')
+    const dry = virtualFiles(cwd, true)
+    await dry.remove('a.txt')
+    expect(await dry.read('a.txt')).toBeNull()
+    expect(await Bun.file(join(cwd, 'a.txt')).exists()).toBe(true)
+    await virtualFiles(cwd, false).remove('a.txt')
+    expect(await Bun.file(join(cwd, 'a.txt')).exists()).toBe(false)
+  })
 })

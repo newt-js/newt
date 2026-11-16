@@ -1,14 +1,15 @@
-import { describe }       from 'bun:test'
-import { expect }         from 'bun:test'
-import { test }           from 'bun:test'
-import { mkdtemp }        from 'node:fs/promises'
-import { tmpdir }         from 'node:os'
-import { join }           from 'node:path'
+import { describe }            from 'bun:test'
+import { expect }              from 'bun:test'
+import { test }                from 'bun:test'
+import { mkdtemp }             from 'node:fs/promises'
+import { tmpdir }              from 'node:os'
+import { join }                from 'node:path'
 // --------------------------------------------------------
-import { runCommand }     from '../../run/run-command/run-command'
-import { checkGenerated } from '../../testing/check-generated/check-generated'
-import { generate }       from '../../testing/generate/generate'
-import { INIT }           from './init'
+import { runCommand }          from '../../run/run-command/run-command'
+import { writeBunInitProject } from '../../testing/bun-init-project/bun-init-project'
+import { checkGenerated }      from '../../testing/check-generated/check-generated'
+import { generate }            from '../../testing/generate/generate'
+import { INIT }                from './init'
 
 const emptyFolder = () => mkdtemp(join(tmpdir(), 'newt-cli-init-'))
 
@@ -52,5 +53,30 @@ describe('newt init', () => {
     const json = await runCommand(INIT, ['--json'], { cwd: await emptyFolder(), ask: async () => 'shop' })
     expect(json.code).toBe(1)
     expect(JSON.parse(json.text).error).toStartWith("newt init needs the backend's name")
+  })
+
+  test('over what bun init leaves, makes it a backend whose lint, types and tests pass', async () => {
+    const folder = join(await emptyFolder(), 'shop')
+    await writeBunInitProject(folder)
+    const output = await runCommand(INIT, ['.', '--json'], { cwd: folder, ask: null })
+    const report = JSON.parse(output.text) as { files: { path: string, status: string }[], warnings: string[] }
+    const statusOf = (path: string) => report.files.filter(file => file.path === path).map(file => file.status)
+    expect(statusOf('package.json')).toEqual(['updated', 'updated'])
+    expect(statusOf('tsconfig.json')).toEqual(['skipped'])
+    expect(statusOf('index.ts')).toEqual(['removed'])
+    expect(statusOf('.gitignore')).toEqual(['updated'])
+    expect(statusOf('CLAUDE.md')).toEqual(['updated'])
+    expect(report.warnings).toEqual(['package.json: devDependencies.@types/bun is "latest", newt\'s is "1.4.4"; newt left it as it is'])
+    expect(await Bun.file(join(folder, 'package.json')).json()).not.toHaveProperty('module')
+    expect(await Bun.file(join(folder, 'README.md')).text()).toStartWith('# shop')
+    expect(await checkGenerated(folder)).toEqual([])
+  }, 30_000)
+
+  test("over bun init's index.ts changed by its owner, keeps it and warns", async () => {
+    const folder = await emptyFolder()
+    await writeBunInitProject(folder, { 'index.ts': 'console.log("mine")\n' })
+    const output = await runCommand(INIT, ['.', '--json'], { cwd: folder, ask: null })
+    expect(JSON.parse(output.text).warnings).toContain('index.ts was changed, so newt left it, though the backend starts at src/index.ts')
+    expect((await Bun.file(join(folder, 'package.json')).json()).module).toBe('index.ts')
   })
 })
