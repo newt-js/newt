@@ -12,6 +12,7 @@ import { assertUsesTree }          from './rules/context-imports/context-imports
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
+import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
 import { keepNoDisable }           from './rules/no-disable/keep-no-disable'
@@ -32,6 +33,7 @@ export const plugin = {
     'context-imports': contextImports,
     'entity-method-params': entityMethodParams,
     'framework-tables': frameworkTables,
+    'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
     'no-disable': noDisable,
@@ -145,6 +147,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       // A module's file among those it lints: an inner list is every pattern of it at once.
       files: files.map(pattern => [pattern, MODULES]),
       rules: {
+        'newt/module-entity': 'error',
         'newt/module-files': 'error',
         'newt/module-imports': 'error',
         'newt/entity-method-params': 'error',
