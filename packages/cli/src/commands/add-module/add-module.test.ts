@@ -126,6 +126,12 @@ describe('newt add module', () => {
     expect(output.text).toEndWith("Next steps:\n  bun test src/contexts/sales/modules/order\n  its routes ask for a session: write authenticate in src/auth.ts to call them from outside the tests")
   })
 
+  test("from another folder, points at the backend's own src/auth.ts", async () => {
+    const backend = await backendWithContext()
+    const output = await run(ADD_MODULE, ['sales/order', '--backend', 'shop', '--dry-run'], join(backend, '..'))
+    expect(output.text).toContain('write authenticate in shop/src/auth.ts')
+  })
+
   test('refuses a context the backend has not, or names that are not', async () => {
     const backend = await backendWithContext()
     expect((await run(ADD_MODULE, ['billing/invoice'], backend)).text).toBe('The backend has no context billing: add it with newt add context billing')
