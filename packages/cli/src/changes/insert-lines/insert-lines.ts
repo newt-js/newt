@@ -12,11 +12,13 @@ export function withImports(lines: string[], imports: string[]): string[] {
   return [...lines.slice(0, last + 1), ...missing, ...lines.slice(last + 1)]
 }
 
-/** Inserts lines just before or after a line of a file, with their imports; where that line is not, it changes nothing and says what to add. */
+const holdsBlock = (current: string[], block: string[]) => current.some((_, at) => block.every((line, offset) => current[at + offset] === line))
+
+/** Inserts a block of lines just before or after a line of a file, with their imports; where that line is not, it changes nothing and says what to add. */
 export async function insertLines({ path, anchor, position, lines, imports }: InsertLinesChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const current = text?.split('\n') ?? []
-  if (lines.every(line => current.includes(line)) && imports.every(line => current.includes(line))) {
+  if (holdsBlock(current, lines) && imports.every(line => current.includes(line))) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
   const found = current.indexOf(anchor)
@@ -25,7 +27,7 @@ export async function insertLines({ path, anchor, position, lines, imports }: In
     const what = [...imports, ...lines.map(line => line.trim())].join('; ')
     return { status: 'skipped', note: 'not as newt wrote it', warnings: [`${path} is not as newt wrote it, so newt did not change it: add ${what}`] }
   }
-  const inserted = [...current.slice(0, at), ...lines.filter(line => !current.includes(line)), ...current.slice(at)]
+  const inserted = holdsBlock(current, lines) ? current : [...current.slice(0, at), ...lines, ...current.slice(at)]
   await files.write(path, withImports(inserted, imports).join('\n'))
   return { status: 'updated', warnings: [] }
 }

@@ -52,4 +52,12 @@ describe('insertLines', () => {
     expect((await insertLines(CHANGE, virtualFiles(cwd, true))).status).toBe('updated')
     expect(await Bun.file(join(cwd, 'f.ts')).text()).toBe(FILE)
   })
+
+  test('a block whose lines are elsewhere in the file is inserted whole', async () => {
+    const cwd = await folderWith('function f() {\n  return list\n}\n')
+    const block = { ...CHANGE, imports: [], anchor: 'function f() {', position: 'after' as const, lines: ['  g()', '}', 'function h() {'] }
+    expect((await insertLines(block, virtualFiles(cwd, false))).status).toBe('updated')
+    expect(await Bun.file(join(cwd, 'f.ts')).text()).toBe('function f() {\n  g()\n}\nfunction h() {\n  return list\n}\n')
+    expect((await insertLines(block, virtualFiles(cwd, false))).status).toBe('skipped')
+  })
 })

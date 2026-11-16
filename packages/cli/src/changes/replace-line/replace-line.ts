@@ -7,7 +7,7 @@ import type { VirtualFiles }      from '../virtual-files/virtual-files'
 export async function replaceLine(change: ReplaceLineChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const { path, line, imports } = change
   const current = (await files.read(path))?.split('\n') ?? []
-  if (current.includes(change.with) && imports.every(each => current.includes(each))) {
+  if (current.includes(change.with) && !current.includes(line) && imports.every(each => current.includes(each))) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
   const at = current.indexOf(line)

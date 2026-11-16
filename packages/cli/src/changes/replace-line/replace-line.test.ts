@@ -39,4 +39,9 @@ describe('replaceLine', () => {
       warnings: ["f.ts is not as newt wrote it, so newt did not change it: write import { b } from 'b'; const x = a(b)"],
     })
   })
+
+  test('not up to date while the old line is still there', async () => {
+    const cwd = await folderWith("import { b } from 'b'\nconst x = a()\nconst x = a(b)\n")
+    expect((await replaceLine(CHANGE, virtualFiles(cwd, false))).status).toBe('updated')
+  })
 })

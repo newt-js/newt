@@ -34,6 +34,16 @@ describe('newt add route', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test('a second route that answers 204 is written whole', async () => {
+    const backend = await moduleProject()
+    await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', '0 3 * * *'], backend)
+    await run(ADD_SCHEDULE, ['sales/order', 'reindex', '--cron', '0 4 * * *'], backend)
+    await run(ADD_ROUTE, ['sales/order', 'purge', '--method', 'delete', '--path', '/orders/purge'], backend)
+    await run(ADD_ROUTE, ['sales/order', 'reindex', '--path', '/orders/reindex'], backend)
+    expect(await read(backend, 'order.routes.ts')).toContain("  router.post('/orders/reindex', async () => {\n    await orders.reindex()\n    return new Response(null, { status: 204 })\n  })")
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
   test('without an id in its path, the body goes to the use case as it came', async () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
