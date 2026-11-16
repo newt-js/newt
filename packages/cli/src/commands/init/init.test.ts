@@ -194,4 +194,14 @@ describe('newt init', () => {
     }
     expect(await Bun.file(join(folder, 'shop/package.json')).exists()).toBe(false)
   })
+
+  test('again with other choices, keeps what is there and says how to change it', async () => {
+    const folder = await emptyFolder()
+    await runCommand(INIT, ['shop'], { cwd: folder, ask: null })
+    const report = JSON.parse((await runCommand(INIT, ['shop', '--db', 'postgres', '--port', '4000', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
+    expect(report.warnings).toEqual([
+      'shop/src/stores.ts opens sqlite, and newt kept it: change it by hand to open postgres',
+      'shop/.env has PORT=3000, and newt kept it: write PORT=4000 in it',
+    ])
+  })
 })

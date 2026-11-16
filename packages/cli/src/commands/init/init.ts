@@ -12,6 +12,7 @@ import { defineCommand }      from '../command'
 import { CommandError }       from '../command-error/command-error'
 import { DEFAULT_BACKEND }    from './backend-in-root/backend-in-root'
 import { backendInRoot }      from './backend-in-root/backend-in-root'
+import { keptChoices }        from './kept-choices/kept-choices'
 import { projectFolder }      from './project-folder/project-folder'
 import { askProjectKind }     from './project-kind/project-kind'
 
@@ -38,7 +39,10 @@ export const INIT = defineCommand({
     const changes = kind === 'monorepo'
       ? monorepoTemplate({ folder, name, backend: backendInRoot(options.backend), port, stores, versions })
       : backendTemplate({ folder, name, port, stores, versions })
-    const warnings = (await otherEslintConfigs(join(cwd, backendFolder))).map(other => eslintWarning(join(backendFolder, other)))
+    const warnings = [
+      ...await keptChoices(join(cwd, backendFolder), backendFolder, options),
+      ...(await otherEslintConfigs(join(cwd, backendFolder))).map(other => eslintWarning(join(backendFolder, other))),
+    ]
     return { changes, warnings, nextSteps: [...folder === '.' ? [] : [`cd ${folder}`], 'bun install', 'bun run dev'] }
   },
 })
