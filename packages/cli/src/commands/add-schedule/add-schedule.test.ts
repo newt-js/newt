@@ -40,4 +40,13 @@ describe('newt add schedule', () => {
     expect((await run(ADD_SCHEDULE, ['sales/order', 'mark-paid', '--cron', '0 3 * * *'], backend)).text).toBe('markPaid takes an input, and a schedule gives none: name a use case of its own')
     expect((await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', 'daily'], backend)).text).toStartWith("'daily' is not a cron")
   })
+
+  test('refuses a second cron for a use case on one already, and writes nothing', async () => {
+    const backend = await moduleProject()
+    await run(ADD_SCHEDULE, ['sales/order', 'purge-expired', '--cron', '0 3 * * *'], backend)
+    const module = await read(backend, 'order.module.ts')
+    const output = await run(ADD_SCHEDULE, ['sales/order', 'purge-expired', '--cron', '0 4 * * *'], backend)
+    expect(output).toMatchObject({ code: 1, text: "purgeExpired runs at '0 3 * * *' already: change that cron in order.module.ts, or schedule a use case of its own" })
+    expect(await read(backend, 'order.module.ts')).toBe(module)
+  })
 })

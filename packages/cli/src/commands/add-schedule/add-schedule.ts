@@ -35,6 +35,10 @@ export const ADD_SCHEDULE = defineCommand({
       throw new CommandError(`${useCase.camel} takes an input, and a schedule gives none: name a use case of its own`)
     }
     const field = `${useCase.camel}Schedule`
+    const scheduled = new RegExp(`this\\.${field} = base\\.schedules\\.define\\([^,]+,\\s*(['"])(.*?)\\1`).exec(code)
+    if (scheduled && scheduled[2] !== cron) {
+      throw new CommandError(`${useCase.camel} runs at '${scheduled[2]}' already: change that cron in ${module.folder}.module.ts, or schedule a use case of its own`)
+    }
     const changes: FileChange[] = [
       { action: 'add-class-member', path: file('.module.ts'), className: `${module.type}_Module`, name: field, member: `  readonly ${field}`, imports: [] },
       { action: 'add-constructor-statement', path: file('.module.ts'), className: `${module.type}_Module`, statement: `this.${field} = base.schedules.define('${module.module}.${useCase.camel}', ${quoted(cron)})` },
