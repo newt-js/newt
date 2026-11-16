@@ -105,4 +105,22 @@ describe('newt add route', () => {
     const backend = await moduleProject()
     expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/orders/new'], backend)).text).toBe("'/orders/new' is not under /sales/: a module's routes start with its context")
   })
+
+  test('refuses /api, empty segments, a last / and a param given twice', async () => {
+    const backend = await moduleProject()
+    const refused = async (path: string) => (await run(ADD_ROUTE, ['sales/order', 'create', '--path', path], backend)).text
+    expect(await refused('/api/sales/orders/new')).toBe("'/api/sales/orders/new' starts with /api, which every route is under already: give --path /sales/orders/new")
+    expect(await refused('/sales//orders')).toBe("'/sales//orders' has an empty segment: no // and no / at the end")
+    expect(await refused('/sales/orders/')).toBe("'/sales/orders/' has an empty segment: no // and no / at the end")
+    expect(await refused('/sales/orders/:id/:id')).toBe("'/sales/orders/:id/:id' has :id twice: name each param once")
+  })
+
+  test('a param that only starts like :id is not the id, and says it is not used', async () => {
+    const backend = await moduleProject()
+    await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
+    const report = JSON.parse((await run(ADD_ROUTE, ['sales/order', 'mark-paid', '--path', '/sales/orders/:idx/pay', '--json'], backend)).text) as { warnings: string[] }
+    expect(report.warnings).toContain(':idx of /sales/orders/:idx/pay is not given to markPaid: read it in order.routes.ts, request.params.idx')
+    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/sales/orders/:idx/pay', async request => Response.json(await orders.markPaid(await bodyOf(request))))")
+    expect(await checkGenerated(backend, { tests: false })).toEqual([])
+  }, 30_000)
 })

@@ -6,7 +6,7 @@ export type RouteShape = { method: string, path: string, takesInput: boolean, re
 
 /** A route that calls a use case: with the id of its path, or its body as it came, and answers what it tells. */
 export function routeLine({ type, plural }: ModuleNames, useCase: PieceNames, { method, path, takesInput, returnsNothing }: RouteShape): string {
-  const input = !takesInput ? '' : path.includes(':id') ? `{ id: ${type}Id.from(request.params.id) }` : 'await bodyOf(request)'
+  const input = !takesInput ? '' : path.split('/').includes(':id') ? `{ id: ${type}Id.from(request.params.id) }` : 'await bodyOf(request)'
   const call = `await ${plural}.${useCase.camel}(${input})`
   const answer = returnsNothing ? `{\n    ${call}\n    return new Response(null, { status: 204 })\n  }` : `Response.json(${call})`
   const uses = input === '' ? '()' : 'request'
@@ -15,7 +15,7 @@ export function routeLine({ type, plural }: ModuleNames, useCase: PieceNames, { 
 
 /** A test that calls the route, on a new entity when its path takes an id. */
 export function routeTest({ plural }: ModuleNames, useCase: PieceNames, { method, path, returnsNothing }: RouteShape): string {
-  const url = path.replace(':id', '${created.id}')
+  const url = path.split('/').map(segment => segment === ':id' ? '${created.id}' : segment).join('/')
   return `test('${method.toUpperCase()} ${path} calls ${useCase.camel}', async () => {
   const created = await ${plural}.create({ name: 'First' })
 
