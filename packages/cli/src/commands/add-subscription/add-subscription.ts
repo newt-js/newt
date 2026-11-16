@@ -3,6 +3,7 @@ import { join }             from 'node:path'
 import { codeTokens }       from '../../changes/code-tokens/code-tokens'
 import { indexOfTokens }    from '../../changes/index-of-tokens/index-of-tokens'
 import { pieceNames }       from '../../names/piece-names/piece-names'
+import { useCaseNames }     from '../../names/use-case-names/use-case-names'
 import { findModule }       from '../../project/find-module/find-module'
 import { useCaseOf }        from '../../project/use-case-of/use-case-of'
 import { reactionLine }     from '../../templates/pieces/subscription-ts'
@@ -27,7 +28,7 @@ export const ADD_SUBSCRIPTION = defineCommand({
     const [given, name, ...rest] = args
     if (name === undefined || options.on === undefined || rest.length > 0) throw new CommandError(USAGE)
     const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
-    const useCase = pieceNames(name, 'a use case')
+    const useCase = useCaseNames(name)
     const event = pieceNames(options.on, 'an event')
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')

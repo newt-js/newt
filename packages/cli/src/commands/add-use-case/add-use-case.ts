@@ -1,16 +1,13 @@
-import { join }           from 'node:path'
+import { join }          from 'node:path'
 // --------------------------------------------------------
-import { pieceNames }     from '../../names/piece-names/piece-names'
-import { RESERVED_WORDS } from '../../names/reserved-words/reserved-words'
-import { classMembers }   from '../../project/class-members/class-members'
-import { findModule }     from '../../project/find-module/find-module'
-import { useCaseMember }  from '../../templates/pieces/use-case-ts'
-import { useCaseSchema }  from '../../templates/pieces/use-case-ts'
-import { useCaseTest }    from '../../templates/pieces/use-case-ts'
-import { defineCommand }  from '../command'
-import { CommandError }   from '../command-error/command-error'
-
-const MODULE_MEMBERS = ['name', 'useCaseRunner', 'on']
+import { useCaseNames }  from '../../names/use-case-names/use-case-names'
+import { classMembers }  from '../../project/class-members/class-members'
+import { findModule }    from '../../project/find-module/find-module'
+import { useCaseMember } from '../../templates/pieces/use-case-ts'
+import { useCaseSchema } from '../../templates/pieces/use-case-ts'
+import { useCaseTest }   from '../../templates/pieces/use-case-ts'
+import { defineCommand } from '../command'
+import { CommandError }  from '../command-error/command-error'
 
 const USAGE = 'newt add use-case takes the module and the use case, as in newt add use-case sales/order mark-paid'
 
@@ -27,7 +24,7 @@ export const ADD_USE_CASE = defineCommand({
     const [given, name, ...rest] = args
     if (name === undefined || rest.length > 0) throw new CommandError(USAGE)
     const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
-    const useCase = pieceNames(name, 'a use case')
+    const useCase = useCaseNames(name)
     if (READS.includes(useCase.camel)) {
       throw new CommandError(`${useCase.camel} is one of the reads newt's lint shapes (${READS.join(', ')}): name a use case by what it does`)
     }
@@ -36,9 +33,6 @@ export const ADD_USE_CASE = defineCommand({
     const schema = (await Bun.file(join(cwd, file('.schema.ts'))).text().catch(() => '')).replaceAll('\r\n', '\n')
     const again = schema.includes(useCaseSchema(module, useCase))
     if (!again) {
-      if (MODULE_MEMBERS.includes(useCase.camel) || RESERVED_WORDS.has(useCase.camel)) {
-        throw new CommandError(`'${name}' cannot name a use case: ${useCase.camel} is a name every module or JavaScript keeps; name it by what it does`)
-      }
       if (classMembers(code, `${module.type}_Module`).includes(useCase.camel)) {
         throw new CommandError(`${module.type}_Module has ${useCase.camel} already: name the use case by what else it does`)
       }

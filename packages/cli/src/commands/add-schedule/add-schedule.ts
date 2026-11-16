@@ -1,7 +1,8 @@
 import { join }             from 'node:path'
 // --------------------------------------------------------
-import { pieceNames }       from '../../names/piece-names/piece-names'
+import { useCaseNames }     from '../../names/use-case-names/use-case-names'
 import { cronOf }           from '../../options/cron-of/cron-of'
+import { classMembers }     from '../../project/class-members/class-members'
 import { findModule }       from '../../project/find-module/find-module'
 import { useCaseOf }        from '../../project/use-case-of/use-case-of'
 import { scheduleTest }     from '../../templates/pieces/schedule-ts'
@@ -28,10 +29,14 @@ export const ADD_SCHEDULE = defineCommand({
     if (name === undefined || options.cron === undefined || rest.length > 0) throw new CommandError(USAGE)
     const cron = cronOf(options.cron)
     const { folder, module, context } = await findModule(given, cwd, options.backend, USAGE)
-    const useCase = pieceNames(name, 'a use case')
+    const useCase = useCaseNames(name)
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
-    if ((useCaseOf(code, `${module.type}_Module`, useCase.camel)?.inputs ?? 0) > 0) {
+    const existing = useCaseOf(code, `${module.type}_Module`, useCase.camel)
+    if (!existing && classMembers(code, `${module.type}_Module`).includes(useCase.camel)) {
+      throw new CommandError(`${module.type}_Module has ${useCase.camel} already, and it is not a use case: name the use case by what it does`)
+    }
+    if ((existing?.inputs ?? 0) > 0) {
       throw new CommandError(`${useCase.camel} takes an input, and a schedule gives none: name a use case of its own`)
     }
     const field = `${useCase.camel}Schedule`

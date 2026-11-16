@@ -41,6 +41,12 @@ describe('newt add schedule', () => {
     expect((await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', 'daily'], backend)).text).toStartWith("'daily' is not a cron")
   })
 
+  test("refuses the names a module keeps, and a member of the module that is not a use case", async () => {
+    const backend = await moduleProject()
+    expect((await run(ADD_SCHEDULE, ['sales/order', 'on', '--cron', '0 3 * * *'], backend)).text).toStartWith("'on' cannot name a use case")
+    expect((await run(ADD_SCHEDULE, ['sales/order', 'orders', '--cron', '0 3 * * *'], backend)).text).toBe('Order_Module has orders already, and it is not a use case: name the use case by what it does')
+  })
+
   test('refuses a second cron for a use case on one already, and writes nothing', async () => {
     const backend = await moduleProject()
     await run(ADD_SCHEDULE, ['sales/order', 'purge-expired', '--cron', '0 3 * * *'], backend)

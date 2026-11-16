@@ -1,6 +1,6 @@
 import { join }            from 'node:path'
 // --------------------------------------------------------
-import { pieceNames }      from '../../names/piece-names/piece-names'
+import { useCaseNames }    from '../../names/use-case-names/use-case-names'
 import { findModule }      from '../../project/find-module/find-module'
 import { routeFileWith }   from '../../project/route-file-with/route-file-with'
 import { useCaseOf }       from '../../project/use-case-of/use-case-of'
@@ -32,7 +32,7 @@ export const ADD_ROUTE = defineCommand({
     const method = (options.method ?? 'post').toLowerCase()
     if (!METHODS.includes(method)) throw new CommandError(`'${options.method}' is not a method: ${METHODS.join(', ')}`)
     const { backend, folder, module, context } = await findModule(given, cwd, options.backend, USAGE)
-    const useCase = pieceNames(name, 'a use case')
+    const useCase = useCaseNames(name)
     const path = options.path ?? `/${context.folder}/${module.path}/:id/${useCase.folder}`
     if (!PATH.test(path)) throw new CommandError(`'${path}' is not a path: it starts with / and has letters, digits and / : _ - alone`)
     if (path.startsWith('/api/')) throw new CommandError(`'${path}' starts with /api, which every route is under already: give --path ${path.slice('/api'.length)}`)
