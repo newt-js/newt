@@ -7,6 +7,7 @@ import { join }             from 'node:path'
 // --------------------------------------------------------
 import { runCommand }       from '../../run/run-command/run-command'
 import { checkGenerated }   from '../../testing/check-generated/check-generated'
+import { freePorts }        from '../../testing/free-ports/free-ports'
 import { generate }         from '../../testing/generate/generate'
 import { linkDependencies } from '../../testing/link-dependencies/link-dependencies'
 import { UTILS_INDEX_TS }   from '../../testing/monorepo-project/monorepo-project'
@@ -51,16 +52,17 @@ describe('newt add backend', () => {
 
   test('each backend added takes a port of its own, and they run at once', async () => {
     const root = await monorepoProject()
-    await addBackend(['apps/orders', '--port', '4310'], root)
+    const port = freePorts([10])
+    await addBackend(['apps/orders', '--port', String(port)], root)
     await addBackend(['apps/billing'], root)
-    expect(await Bun.file(join(root, 'apps/billing/.env')).text()).toStartWith('PORT=4320\n')
+    expect(await Bun.file(join(root, 'apps/billing/.env')).text()).toStartWith(`PORT=${port + 10}\n`)
     const backends = await Promise.all(['apps/orders', 'apps/billing'].map(async folder => {
       await linkDependencies(join(root, folder))
       return Bun.spawn([process.execPath, 'src/index.ts'], { cwd: join(root, folder), stdout: 'ignore', stderr: 'ignore' })
     }))
     try {
-      for (const port of [4310, 4320]) {
-        expect(await healthOn(port)).toBe(200)
+      for (const each of [port, port + 10]) {
+        expect(await healthOn(each)).toBe(200)
       }
     } finally {
       for (const backend of backends) backend.kill()
