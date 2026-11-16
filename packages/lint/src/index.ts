@@ -108,7 +108,10 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
   const inContexts = contexts && files.map(pattern => [pattern, `${inside ? `${inside}/` : ''}**/*.ts`])
   const contextRules: Linter.Config[] = contexts && inContexts ? [{
     files: inContexts,
-    rules: { 'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }] },
+    rules: {
+      'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }],
+      'newt/route-context': ['error', { folder: given }],
+    },
   }, {
     // A context's file outside its modules imports what it composes, but its barrels re-export only what a module offers.
     files: inContexts,
@@ -159,12 +162,13 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/module-entity': 'error',
         'newt/module-files': 'error',
         'newt/module-imports': 'error',
-        'newt/route-context': 'error',
         'newt/entity-method-params': 'error',
         'newt/reaction-queue': 'error',
         'newt/schema-imports': 'error',
         'newt/use-case-files': 'error',
         'newt/module-transactions': 'error',
+        // With the folder of the contexts, every file of a context's is checked above.
+        ...contexts ? {} : { 'newt/route-context': 'error' },
       },
     },
   )
