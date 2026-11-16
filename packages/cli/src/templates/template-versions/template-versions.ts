@@ -4,7 +4,7 @@ export type TemplateVersions = { newt: string, zod: string, eslint: string, bunT
 
 const MANIFEST = join(import.meta.dir, '../../../package.json')
 
-/** newt's packages from this cli's version up, `^`, so patches reach them; the others at the ones it is tested with. */
+/** newt's packages with `^` on this cli's version: while newt is 0.x, the patches of its minor. The others at the ones it is tested with. */
 export async function templateVersions(): Promise<TemplateVersions> {
   const { version, dependencies, devDependencies } = await Bun.file(MANIFEST).json() as { version: string, dependencies: Record<string, string>, devDependencies: Record<string, string> }
   return {
