@@ -8,10 +8,19 @@ export function scheduledUseCase(useCase: PieceNames): string {
   }`
 }
 
+/** The schedule is declared with its cron, and once a year has gone by it has fired and its use case has run. */
 export function scheduleTest({ module }: ModuleNames, useCase: PieceNames, cron: string, context: string): string {
-  return `test('${useCase.camel} runs at ${cron}', () => {
+  return `test('${useCase.camel} runs at ${cron}', async () => {
   const described = describeApplication([context.base]).contexts.find(each => each.name === '${context}')
   const events = described?.modules.find(each => each.name === '${module}')?.events ?? []
   expect(events).toContainEqual(expect.objectContaining({ name: '${module}.${useCase.camel}', schedule: { cron: ${quoted(cron)} } }))
+
+  await context.base.schedules.tick()
+  context.clock.advance(366 * 24 * 60 * 60 * 1000)
+  await context.base.schedules.tick()
+  await context.settle()
+
+  const queued = await context.base.database.outbox.list()
+  expect(queued.find(each => each.queue === '${module}.${useCase.camel}.on.${module}.${useCase.camel}')?.status).toBe('done')
 })`
 }

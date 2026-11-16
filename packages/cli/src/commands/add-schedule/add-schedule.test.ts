@@ -27,6 +27,19 @@ describe('newt add schedule', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test('its test fails when the schedule is not registered, or its use case throws', async () => {
+    const backend = await moduleProject()
+    await run(ADD_SCHEDULE, ['sales/order', 'purge-expired', '--cron', '0 3 * * *'], backend)
+    const workers = join(backend, ORDER_MODULE, 'order.workers.ts')
+    const registered = await Bun.file(workers).text()
+    await Bun.write(workers, registered.replace("  orders.on(orders.purgeExpiredSchedule, 'purgeExpired')\n", ''))
+    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('purgeExpired runs at 0 3 * * *')
+    await Bun.write(workers, registered)
+    const module = join(backend, ORDER_MODULE, 'order.module.ts')
+    await Bun.write(module, (await Bun.file(module).text()).replace('  async purgeExpired(): Promise<void> {\n', "  async purgeExpired(): Promise<void> {\n    throw new Error('broken')\n"))
+    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('purgeExpired runs at 0 3 * * *')
+  }, 30_000)
+
   test('run again, it changes nothing', async () => {
     const backend = await moduleProject()
     await run(ADD_SCHEDULE, ['sales/order', 'purge-expired', '--cron', '0 3 * * *'], backend)

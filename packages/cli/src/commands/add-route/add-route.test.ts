@@ -26,6 +26,18 @@ describe('newt add route', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test('its tests fail when the route calls another use case, or is public', async () => {
+    const backend = await moduleProject()
+    await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
+    await run(ADD_ROUTE, ['sales/order', 'mark-paid'], backend)
+    const routes = join(backend, ORDER_MODULE, 'order.routes.ts')
+    const written = await Bun.file(routes).text()
+    await Bun.write(routes, written.replace('await orders.markPaid({', 'await orders.get({'))
+    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /sales/orders/:id/mark-paid calls markPaid')
+    await Bun.write(routes, written.replace("OrderId.from(request.params.id) })))", "OrderId.from(request.params.id) })), { public: true })"))
+    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /sales/orders/:id/mark-paid answers 401 to who has not signed in')
+  }, 30_000)
+
   test('a use case that takes nothing and tells nothing answers 204', async () => {
     const backend = await moduleProject()
     await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', '0 3 * * *'], backend)

@@ -71,7 +71,7 @@ export const ADD_ROUTE = defineCommand({
         lines: routeLine(module, useCase, shape).split('\n'),
         imports: [`import { ${module.type}Id } from './value-objects/${module.folder}-id'`],
       } satisfies FileChange],
-      ...testable ? [{ action: 'append-block' as const, path: file('.module.test.ts'), block: routeTest(module, useCase, shape), imports: [] }] : [],
+      ...testable ? [{ action: 'append-block' as const, path: file('.module.test.ts'), block: routeTest(module, useCase, shape), imports: ["import { spyOn } from 'bun:test'"] }] : [],
     ]
     const untested = testable ? [] : [`${method.toUpperCase()} ${path} takes a body, so newt wrote no test for it: write one in ${module.folder}.module.test.ts`]
     const unused = params.filter(param => param !== ':id' || !shape.takesInput).map(param => `${param} of ${path} is not given to ${useCase.camel}: read it in ${module.folder}.routes.ts, request.params.${param.slice(1)}`)

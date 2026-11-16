@@ -13,13 +13,24 @@ export function routeLine({ type, plural }: ModuleNames, useCase: PieceNames, { 
   return `  router.${method}(${quoted(path)}, async ${uses} => ${answer})`
 }
 
-/** A test that calls the route, on a new entity when its path takes an id. */
-export function routeTest({ plural }: ModuleNames, useCase: PieceNames, { method, path, returnsNothing }: RouteShape): string {
+/** Tests that call the route, on a new entity when its path takes an id: it calls its use case with it, and refuses who has not signed in. */
+export function routeTest({ plural }: ModuleNames, useCase: PieceNames, { method, path, takesInput, returnsNothing }: RouteShape): string {
   const url = path.split('/').map(segment => segment === ':id' ? '${created.id}' : segment).join('/')
-  return `test('${method.toUpperCase()} ${path} calls ${useCase.camel}', async () => {
-  const created = await ${plural}.create({ name: 'First' })
+  const verb = method.toUpperCase()
+  const create = path.split('/').includes(':id') ? `\n  const created = await ${plural}.create({ name: 'First' })` : ''
+  const request = `router.answer(new Request(\`http://backend.test/api${url}\`, { method: '${verb}' }))`
+  return `test('${verb} ${path} calls ${useCase.camel}', async () => {${create}
+  const called = spyOn(${plural}, '${useCase.camel}')
 
-  const response = await router.answer(new Request(\`http://backend.test/api${url}\`, { method: '${method.toUpperCase()}' }))
+  const response = await ${request}
   expect(response?.status).toBe(${returnsNothing ? 204 : 200})
+  expect(called).toHaveBeenCalledWith(${takesInput ? '{ id: created.id }' : ''})
+})
+
+test('${verb} ${path} answers 401 to who has not signed in', async () => {${create}
+  signedIn = false
+
+  const response = await ${request}
+  expect(response?.status).toBe(401)
 })`
 }
