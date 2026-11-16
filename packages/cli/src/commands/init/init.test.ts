@@ -35,6 +35,18 @@ describe('newt init', () => {
     expect(await Bun.file(join(folder, 'shop/package.json')).text()).toBe(before)
   })
 
+  test('with --cluster valkey, a backend that shares through Valkey, whose lint, types and tests pass', async () => {
+    const folder = join(await generate(INIT, ['shop', '--cluster', 'valkey']), 'shop')
+    expect(await Bun.file(join(folder, 'src/backend.ts')).text()).toContain('new ValkeyCluster(Bun.env.VALKEY_URL)')
+    expect(await Bun.file(join(folder, '.env.example')).text()).toBe('PORT=3000\nVALKEY_URL=redis://localhost:6379\n')
+    expect(await checkGenerated(folder)).toEqual([])
+  }, 30_000)
+
+  test('refuses a cluster there is not', async () => {
+    const output = await runCommand(INIT, ['shop', '--cluster', 'redis'], { cwd: await emptyFolder(), ask: null })
+    expect(output).toEqual({ code: 1, text: "'redis' is not a cluster: memory or valkey" })
+  })
+
   test('serves on the port told', async () => {
     const folder = await generate(INIT, ['shop', '--port', '3010'])
     expect(await Bun.file(join(folder, 'shop/.env')).text()).toBe('PORT=3010\n')

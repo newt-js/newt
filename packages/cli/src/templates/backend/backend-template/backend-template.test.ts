@@ -14,7 +14,7 @@ const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4
 const BACKEND_COMMAND = defineCommand({
   name: 'backend',
   summary: 'The backend template',
-  run: async () => ({ changes: backendTemplate({ folder: '.', name: 'shop', port: 3000, versions: await templateVersions() }) }),
+  run: async () => ({ changes: backendTemplate({ folder: '.', name: 'shop', port: 3000, cluster: 'memory', versions: await templateVersions() }) }),
 })
 
 const changeTo = (changes: FileChange[], path: string) => changes.find(change => change.path === path)
@@ -25,7 +25,7 @@ describe('backendTemplate', () => {
   }, 30_000)
 
   test('what it does to each file, in the folder given', () => {
-    expect(backendTemplate({ folder: 'apps/shop', name: 'shop', port: 3000, versions: VERSIONS }).map(change => `${change.action} ${change.path}`)).toEqual([
+    expect(backendTemplate({ folder: 'apps/shop', name: 'shop', port: 3000, cluster: 'memory', versions: VERSIONS }).map(change => `${change.action} ${change.path}`)).toEqual([
       'complete-json apps/shop/package.json',
       'create apps/shop/tsconfig.json',
       'create apps/shop/eslint.config.ts',
@@ -44,7 +44,7 @@ describe('backendTemplate', () => {
   })
 
   test('its package is named as told, with newt at its version and the rest at theirs', () => {
-    const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, versions: VERSIONS }), 'package.json')
+    const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, cluster: 'memory', versions: VERSIONS }), 'package.json')
     expect(change?.action === 'complete-json' && change.values).toMatchObject({
       name: 'shop',
       dependencies: { '@newt-js/core': '1.2.3', 'zod': '4.0.0' },
@@ -53,7 +53,7 @@ describe('backendTemplate', () => {
   })
 
   test('its port in .env and .env.example', () => {
-    const changes = backendTemplate({ folder: '.', name: 'shop', port: 3010, versions: VERSIONS })
+    const changes = backendTemplate({ folder: '.', name: 'shop', port: 3010, cluster: 'memory', versions: VERSIONS })
     for (const path of ['.env', '.env.example']) {
       const change = changeTo(changes, path)
       expect(change?.action === 'create' && change.content).toBe('PORT=3010\n')
