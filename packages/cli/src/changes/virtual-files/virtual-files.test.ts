@@ -37,4 +37,13 @@ describe('virtualFiles', () => {
     await files.write('a.txt', 'a2')
     expect([...files.changed()]).toEqual([['b.txt', 'b'], ['a.txt', 'a2']])
   })
+
+  test('gives a file with \\r\\n as \\n, and keeps its \\r\\n when it changes', async () => {
+    const cwd = emptyFolder()
+    await Bun.write(join(cwd, 'a.ts'), 'a\r\nb\r\n')
+    const files = virtualFiles(cwd)
+    expect(await files.read('a.ts')).toBe('a\nb\n')
+    await files.write('a.ts', 'a\nb\nc\n')
+    expect(files.changed().get('a.ts')).toBe('a\r\nb\r\nc\r\n')
+  })
 })

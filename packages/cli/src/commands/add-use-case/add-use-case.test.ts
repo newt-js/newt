@@ -58,4 +58,16 @@ describe('newt add use-case', () => {
       expect(await Bun.file(join(backend, ORDER_MODULE, 'order.schema.ts')).text()).toBe(before)
     }
   })
+
+  test('run again on files with \\r\\n, changes nothing and keeps their line endings', async () => {
+    const backend = await moduleProject()
+    await addUseCase(['sales/order', 'ship'], backend)
+    for (const file of ['order.schema.ts', 'order.module.ts', 'order.module.test.ts']) {
+      await Bun.write(join(backend, ORDER_MODULE, file), (await read(backend, file)).replaceAll('\n', '\r\n'))
+    }
+    const again = JSON.parse((await addUseCase(['sales/order', 'ship', '--json'], backend)).text) as { files: { status: string }[] }
+    expect(again.files.filter(file => file.status !== 'skipped')).toEqual([])
+    await addUseCase(['sales/order', 'cancel'], backend)
+    expect(await read(backend, 'order.schema.ts')).not.toMatch(/[^\r]\n/)
+  })
 })

@@ -33,7 +33,7 @@ export const ADD_USE_CASE = defineCommand({
     }
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
-    const schema = await Bun.file(join(cwd, file('.schema.ts'))).text().catch(() => '')
+    const schema = (await Bun.file(join(cwd, file('.schema.ts'))).text().catch(() => '')).replaceAll('\r\n', '\n')
     const again = schema.includes(useCaseSchema(module, useCase))
     if (!again) {
       if (MODULE_MEMBERS.includes(useCase.camel) || RESERVED_WORDS.has(useCase.camel)) {
