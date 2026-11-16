@@ -18,7 +18,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # The tests of Postgres, MySQL, Valkey and S3 run against these, never skipped. A fresh MySQL
+    # The tests of Postgres, MySQL, Valkey and S3 run against these: publish.ts fails if CI skips any. A fresh MySQL
     # takes root's password over TLS alone; newt's text needs a database of LOCALE C.
     env:
       POSTGRES_TEST_URL: postgres://postgres:postgres@localhost:5432/postgres

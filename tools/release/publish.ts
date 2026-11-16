@@ -32,7 +32,10 @@ if (publishing) {
 }
 
 for (const script of ['typecheck', 'test', 'lint', 'check-packs']) {
-  await $`bun run ${script}`.cwd(ROOT)
+  const ran = await $`bun run ${script}`.cwd(ROOT)
+  // CI runs every service the tests need, so a test skipped there is one nobody would notice gone.
+  const skipped = script === 'test' && Bun.env.CI ? /^\s*(\d+) skip$/m.exec(ran.stderr.toString()) : null
+  if (skipped) refuse(`${skipped[1]} tests were skipped, and in CI every test runs: start the service they wait for, or set the variable they read`)
 }
 const tag = version.includes('-') ? ['--tag', 'next'] : []
 for (const [at, { name, folder }] of PACKAGES.entries()) {
