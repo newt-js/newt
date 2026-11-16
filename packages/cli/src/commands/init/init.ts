@@ -1,3 +1,4 @@
+import { dirname }            from 'node:path'
 import { join }               from 'node:path'
 import { relative }           from 'node:path'
 import { resolve }            from 'node:path'
@@ -43,6 +44,9 @@ export const INIT = defineCommand({
     }
     if (root && !(kind === 'monorepo' && root.folder === target)) {
       throw new CommandError(`${folder} is inside the monorepo at ${relative(cwd, root.folder) || '.'}: add the backend to it with newt add backend ${relative(cwd, target) || '.'}`)
+    }
+    for (let above = dirname(target); above !== dirname(above); above = dirname(above)) {
+      if (await isBackend(above)) throw new CommandError(`${folder} is inside the backend at ${relative(cwd, above) || '.'}: make the project in a folder of its own`)
     }
     if (kind === 'monorepo' && await isBackend(target)) {
       throw new CommandError(`${folder} is a backend: a monorepo goes in a folder of its own, with this backend moved into it by hand`)

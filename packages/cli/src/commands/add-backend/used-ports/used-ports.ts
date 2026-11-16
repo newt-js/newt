@@ -4,7 +4,7 @@ import { join }               from 'node:path'
 import { envValues }          from '../../../project/env-values/env-values'
 import type { WorkspaceRoot } from '../../../project/find-workspace-root/find-workspace-root'
 
-const ENV_FILES = ['.env', '.env.example']
+const ENV_FILES = ['.env', '.env.local', '.env.example']
 
 /** The ports the monorepo's workspaces serve on, by their .env, and which workspace has each. */
 export async function usedPorts(root: WorkspaceRoot): Promise<Map<number, string>> {

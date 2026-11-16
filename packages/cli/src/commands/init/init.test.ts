@@ -239,6 +239,12 @@ describe('newt init', () => {
     expect(await Bun.file(join(folder, 'shop/.env')).text()).toBe(env)
   })
 
+  test('inside a backend is refused', async () => {
+    const folder = await emptyFolder()
+    await runCommand(INIT, ['shop'], { cwd: folder, ask: null })
+    expect((await runCommand(INIT, ['inner'], { cwd: join(folder, 'shop/src'), ask: null })).text).toBe('inner is inside the backend at ..: make the project in a folder of its own')
+  })
+
   test('--monorepo over a backend is refused', async () => {
     const folder = await emptyFolder()
     await runCommand(INIT, ['shop'], { cwd: folder, ask: null })

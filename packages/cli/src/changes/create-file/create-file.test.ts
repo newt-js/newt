@@ -26,3 +26,8 @@ test('keeps one that is there, warning when it lacks what newt needs of it', asy
   expect(await createFile(change, diskFiles(await folderWith('start(1)\n')))).toEqual({ status: 'skipped', note: 'already exists', warnings: [] })
   expect((await createFile(change, diskFiles(await folderWith('mine()\n')))).warnings).toEqual(['a.ts was there already, so newt kept it: it should start'])
 })
+
+test('what it needs is found whatever its case', async () => {
+  const change = { action: 'create' as const, path: 'tsconfig.json', content: '', kept: { needs: ['"bundler"'], warning: 'bundler' } }
+  expect((await createFile(change, diskFiles(await folderWith('{ "moduleResolution": "Bundler" }')))).warnings).toEqual([])
+})

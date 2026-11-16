@@ -6,7 +6,7 @@ import type { VirtualFiles }  from '../virtual-files/virtual-files'
 export async function createFile({ path, content, kept }: CreateChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   if (text !== null) {
-    const lacking = kept && !kept.needs.every(needed => text.includes(needed))
+    const lacking = kept && !kept.needs.every(needed => text.toLowerCase().includes(needed.toLowerCase()))
     return { status: 'skipped', note: 'already exists', warnings: lacking ? [`${path} was there already, so newt kept it: ${kept.warning}`] : [] }
   }
   await files.write(path, content)
