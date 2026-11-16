@@ -25,7 +25,7 @@ function isTypeOnly(source: TSESTree.Node): boolean {
 }
 
 /** A frontend imports its own files, and only types from its context's schemas and from newt. */
-export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server', [{ folder: string }]> = {
+export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server' | 'runtime', [{ folder: string }]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
   meta: {
     type: 'problem',
@@ -34,6 +34,7 @@ export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server
       outside: "'{{path}}' is outside {{context}}'s frontend: a frontend imports its own files and, as types, its context's schemas, never the server's code.",
       schema: "'{{path}}' is a schema of {{context}}: import its types alone, `import type`, so the server's code never reaches the browser.",
       server: "'{{path}}' is newt's code, which runs in the server: a frontend imports only its types, `import type`.",
+      runtime: "'{{path}}' is Bun's or Node's, which a browser has not: a frontend imports only its types, `import type`.",
     },
     schema: [{ type: 'object', properties: { folder: { type: 'string' } }, required: ['folder'], additionalProperties: false }],
   },
@@ -48,6 +49,10 @@ export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server
     return importsOf((node, specifier) => {
       const path = resolved(context, specifier)
       const data = { path: specifier, context: own }
+      if (/^(bun|node):/.test(specifier) || specifier === 'bun') {
+        if (!isTypeOnly(node)) context.report({ node, messageId: 'runtime', data })
+        return
+      }
       if (path === null) {
         if (fromNewt(specifier) && !isTypeOnly(node)) context.report({ node, messageId: 'server', data })
         return

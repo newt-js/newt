@@ -22,6 +22,7 @@ tester.run('frontend-imports', asRule(frontendImports), {
     at("export { type OrderDTO } from '../modules/order/order.schema'"),
     at("type Order = import('../modules/order/order.schema').OrderDTO"),
     at("import type { Page } from '@newt-js/core'"),
+    at("import type { BunFile } from 'bun'"),
     at("import { Order_Module } from './modules/order/order.module'", `${FOLDER}/sales/sales-modules.ts`),
   ],
   invalid: [
@@ -32,6 +33,9 @@ tester.run('frontend-imports', asRule(frontendImports), {
     { ...at("import { requiredEnv } from '../../../env'"), errors: [{ messageId: 'outside' }] },
     { ...at("import { Email } from '@newt-js/core'"), errors: [{ messageId: 'server', data: { path: '@newt-js/core', context: 'sales' } }] },
     { ...at("const lazy = import('@newt-js/core/http')"), errors: [{ messageId: 'server' }] },
+    { ...at("import { Database } from 'bun:sqlite'"), errors: [{ messageId: 'runtime', data: { path: 'bun:sqlite', context: 'sales' } }] },
+    { ...at("import { readFile } from 'node:fs/promises'"), errors: [{ messageId: 'runtime' }] },
+    { ...at("import { $ } from 'bun'"), errors: [{ messageId: 'runtime' }] },
     { ...at("export * from '../modules/order/order.schema'"), errors: [{ messageId: 'schema' }] },
     { ...at("import { requiredEnv } from '/repo/src/env'"), errors: [{ messageId: 'outside' }] },
   ],
