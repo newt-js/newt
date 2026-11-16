@@ -1,0 +1,18 @@
+{
+  "name": "@newt-js/cli",
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "newt": "./src/bin.ts"
+  },
+  "engines": {
+    "bun": ">=1.4.0"
+  },
+  "devDependencies": {
+    "@newt-js/core": "workspace:*",
+    "@newt-js/lint": "workspace:*",
+    "@types/bun": "1.4.4",
+    "eslint": "10.12.0",
+    "zod": "4.3.6"
+  }
+}
