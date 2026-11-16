@@ -9,7 +9,7 @@ import { STORE_FILES }        from '../../stores/store-files'
 import { contextModulesTs }   from '../files/context-modules-ts'
 import { contextTs }          from '../files/context-ts'
 
-export type ContextTemplateOptions = { backend: string, packageName: string, names: ContextNames, stores: BackendStores }
+export type ContextTemplateOptions = { backend: string, packageName: string, names: ContextNames, stores: Required<{ [K in keyof BackendStores]: NonNullable<BackendStores[K]> }> }
 
 export const RETURN_CONTEXTS = '  return contexts'
 

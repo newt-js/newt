@@ -20,10 +20,15 @@ test('the kinds its stores.ts imports, whatever its comments name', async () => 
 
 test('refuses a stores.ts that imports two databases', async () => {
   const both = `${IMPORTS}import { SqliteDatabase } from '@newt-js/core/database/sqlite'\n`
-  expect(backendStores(await backendWith(both))).rejects.toThrow('src/stores.ts imports SqliteDatabase and PostgresDatabase')
+  await expect(backendStores(await backendWith(both))).rejects.toThrow('src/stores.ts imports SqliteDatabase and PostgresDatabase')
 })
 
-test('null without a stores.ts, or one that opens none of newt\'s', async () => {
-  expect(await backendStores(await backendWith(null))).toBeNull()
-  expect(await backendStores(await backendWith('openMine()'))).toBeNull()
+test('each undefined without a stores.ts, or one that opens none of newt\'s', async () => {
+  expect(await backendStores(await backendWith(null))).toEqual({ database: undefined, files: undefined })
+  expect(await backendStores(await backendWith('openMine()'))).toEqual({ database: undefined, files: undefined })
+})
+
+test('the database apart from the files, and no import of a type alone', async () => {
+  const mine = "import { SqliteDatabase } from '@newt-js/core/database/sqlite'\nimport { MyStorage } from './my-storage'\nimport type { PostgresDatabase } from '@newt-js/core/database/postgres'\n"
+  expect(await backendStores(await backendWith(mine))).toEqual({ database: 'sqlite', files: undefined })
 })

@@ -26,10 +26,12 @@ export const ADD_CONTEXT = defineCommand({
       throw new CommandError("'api' cannot name a context: its frontend would be served at /api, where the backend's routes are")
     }
     const backend = await findBackend(cwd, options.backend)
-    const stores = await backendStores(backend)
-    if (!stores) {
-      throw new CommandError('The backend has no src/stores.ts that newt can read: newt init writes it, with the database and the files every context opens')
+    const { database, files } = await backendStores(backend)
+    if (!database || !files) {
+      const missing = [...database ? [] : ['database'], ...files ? [] : ['storage']].join(' nor any ')
+      throw new CommandError(`The backend's src/stores.ts opens no ${missing} of newt's, so newt cannot tell what each context opens: newt init writes it, with the database and the files every context opens`)
     }
+    const stores = { database, files }
     return {
       changes: contextTemplate({ backend: relative(cwd, backend), packageName: await backendPackageName(backend), names, stores }),
       nextSteps: [

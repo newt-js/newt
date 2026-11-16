@@ -31,7 +31,7 @@ export const ADD_MODULE = defineCommand({
     if (!(await backendContexts(backend)).some(each => each.name === context)) {
       throw new CommandError(`The backend has no context ${context}: add it with newt add context ${context}`)
     }
-    const database = (await backendStores(backend))?.database
+    const { database } = await backendStores(backend)
     if (database === undefined) {
       throw new CommandError(`The backend's src/stores.ts opens no database of newt's, so newt cannot tell in which SQL to write the table of ${module}`)
     }

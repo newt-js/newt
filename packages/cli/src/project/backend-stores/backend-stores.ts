@@ -7,27 +7,27 @@ import { STORE_DATABASES }   from '../../templates/stores/store-databases'
 import type { FilesKind }    from '../../templates/stores/store-files'
 import { STORE_FILES }       from '../../templates/stores/store-files'
 
-export type BackendStores = { database: DatabaseKind, files: FilesKind }
+export type BackendStores = { database: DatabaseKind | undefined, files: FilesKind | undefined }
 
 type Kinds<K extends string> = Record<K, { className: string, imports: string[] }>
 
 const moduleOf = (line: string) => /from '([^']+)'/.exec(line)?.[1]
 
-/** The names each module of `code` is imported for. */
+/** The names each module of `code` is imported for, as values: an import of a type alone opens nothing. */
 function importedNames(code: string): Set<string> {
   const source = ts.createSourceFile('stores.ts', code, ts.ScriptTarget.Latest, true)
   const names = new Set<string>()
   for (const statement of source.statements) {
     if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue
     const bindings = statement.importClause?.namedBindings
-    if (!bindings || !ts.isNamedImports(bindings)) continue
-    for (const each of bindings.elements) names.add(`${statement.moduleSpecifier.text}#${(each.propertyName ?? each.name).text}`)
+    if (!bindings || !ts.isNamedImports(bindings) || statement.importClause.isTypeOnly) continue
+    for (const each of bindings.elements.filter(element => !element.isTypeOnly)) names.add(`${statement.moduleSpecifier.text}#${(each.propertyName ?? each.name).text}`)
   }
   return names
 }
 
-/** The kinds of database and files a backend's src/stores.ts imports; null without one newt can read; refuses more than one of either. */
-export async function backendStores(backend: string): Promise<BackendStores | null> {
+/** The kinds of database and files a backend's src/stores.ts imports, each apart: undefined when it has none of newt's; refuses more than one of either. */
+export async function backendStores(backend: string): Promise<BackendStores> {
   const file = Bun.file(join(backend, 'src/stores.ts'))
   const imported = importedNames(await file.exists() ? await file.text() : '')
   const found = <K extends string>(kinds: Kinds<K>, what: string) => {
@@ -37,7 +37,5 @@ export async function backendStores(backend: string): Promise<BackendStores | nu
     }
     return all[0]
   }
-  const database = found(STORE_DATABASES, 'database')
-  const files = found(STORE_FILES, 'storage')
-  return database && files ? { database, files } : null
+  return { database: found(STORE_DATABASES, 'database'), files: found(STORE_FILES, 'storage') }
 }

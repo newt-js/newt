@@ -12,8 +12,8 @@ export async function keptChoices(backend: string, folder: string, asked: AskedC
   const port = env === null ? undefined : envValues(env).get('PORT')
   const at = (file: string) => join(folder, file)
   return [
-    ...stores && asked.db !== undefined && asked.db !== stores.database ? [`${at('src/stores.ts')} opens ${stores.database}, and newt kept it: change it by hand to open ${asked.db}`] : [],
-    ...stores && asked.files !== undefined && asked.files !== stores.files ? [`${at('src/stores.ts')} keeps files in ${stores.files}, and newt kept it: change it by hand to keep them in ${asked.files}`] : [],
+    ...stores?.database && asked.db !== undefined && asked.db !== stores.database ? [`${at('src/stores.ts')} opens ${stores.database}, and newt kept it: change it by hand to open ${asked.db}`] : [],
+    ...stores?.files && asked.files !== undefined && asked.files !== stores.files ? [`${at('src/stores.ts')} keeps files in ${stores.files}, and newt kept it: change it by hand to keep them in ${asked.files}`] : [],
     ...port !== undefined && asked.port !== undefined && Number(asked.port) !== Number(port) ? [`${at('.env')} has PORT=${port}, and newt kept it: write PORT=${asked.port} in it`] : [],
   ]
 }
