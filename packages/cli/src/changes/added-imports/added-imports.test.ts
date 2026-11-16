@@ -29,3 +29,12 @@ test('after a shebang, and past the comment of the last import', () => {
   expect(addedImports('#!/usr/bin/env bun\nconst x = 1\n', ["import { b } from 'b'"])).toBe("#!/usr/bin/env bun\nimport { b } from 'b'\n\nconst x = 1\n")
   expect(addedImports("import { a } from 'a' // why\n", ["import { b } from 'b'"])).toBe("import { a } from 'a' // why\nimport { b } from 'b'\n")
 })
+
+test('a module written with .ts or /index is the same module', () => {
+  expect(addedImports("import { A } from './x.ts'\n", ["import { A } from './x'"])).toBe("import { A } from './x.ts'\n")
+  expect(addedImports("import { A } from './x/index'\n", ["import { A } from './x'"])).toBe("import { A } from './x/index'\n")
+})
+
+test('a name imported as another is not the name newt needs', () => {
+  expect(() => addedImports("import { Z as A } from './x'\n", ["import { A } from './x'"])).toThrow("the file imports Z as A from './x' already")
+})

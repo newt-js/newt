@@ -28,6 +28,10 @@ describe('addConstructorStatement', () => {
     expect(await edited('class M {\n  constructor() {\n    this.a = 1 // why\n  }\n}\n')).toBe('class M {\n  constructor() {\n    this.a = 1 // why\n    this.b = 2\n  }\n}\n')
   })
 
+  test('into a constructor whose body is a comment alone, keeping it', async () => {
+    expect(await edited('class M {\n  constructor() {\n    // set up below\n  }\n}\n')).toBe('class M {\n  constructor() {\n    // set up below\n    this.b = 2\n  }\n}\n')
+  })
+
   test('one it has already, with a semicolon too, is left alone', async () => {
     expect(await edited('class M {\n  constructor() {\n    this.b = 2;\n  }\n}\n')).toBe('class M {\n  constructor() {\n    this.b = 2;\n  }\n}\n')
   })

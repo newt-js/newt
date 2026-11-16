@@ -22,7 +22,8 @@ export async function addConstructorStatement({ path, className, statement }: Ad
   if (!last) {
     const start = body.getStart(source)
     const closing = /^[ \t]*/.exec(text.slice(text.lastIndexOf('\n', start) + 1))![0]
-    await files.write(path, `${text.slice(0, start)}{\n${closing}  ${statement}\n${closing}}${text.slice(body.getEnd())}`)
+    const inside = text.slice(start + 1, body.getEnd() - 1).trimEnd()
+    await files.write(path, `${text.slice(0, start)}{${inside}\n${closing}  ${statement}\n${closing}}${text.slice(body.getEnd())}`)
     return { status: 'updated', warnings: [] }
   }
   const indent = /([ \t]*)$/.exec(text.slice(0, last.getStart(source)))?.[1] ?? '    '

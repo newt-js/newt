@@ -13,6 +13,11 @@ export function jsonInsertion(text: string, source: ts.SourceFile, container: Co
   const closing = /([ \t]*)\S?$/.exec(text.slice(0, end - 1))?.[1] ?? ''
   const last = items.at(-1)
   if (!last) {
+    const kept = text.slice(start + 1, end - 1).trimEnd()
+    if (kept.trim() !== '') {
+      const added = multiline ? `\n${closing}${unit}${entries.join(`,\n${closing}${unit}`)}\n${closing}` : ` ${entries.join(', ')} `
+      return { from: start + 1, to: end - 1, text: `${kept}${added}` }
+    }
     const inside = multiline ? `\n${closing}${unit}${entries.join(`,\n${closing}${unit}`)}\n${closing}` : entries.join(', ')
     return { from: start + 1, to: end - 1, text: inside }
   }

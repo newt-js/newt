@@ -22,6 +22,12 @@ describe('completeJson', () => {
     expect(await Bun.file(join(cwd, 'package.json')).text()).toBe('{\n    "name": "shop",\n    "type": "module"\n}\n')
   })
 
+  test('fills an object holding a comment alone, keeping the comment', async () => {
+    const cwd = await folderWith('tsconfig.json', '{\n  "compilerOptions": {\n    // to come\n  }\n}\n')
+    await completeJson('tsconfig.json', { compilerOptions: { strict: true } }, diskFiles(cwd))
+    expect(await Bun.file(join(cwd, 'tsconfig.json')).text()).toBe('{\n  "compilerOptions": {\n    // to come\n    "strict": true\n  }\n}\n')
+  })
+
   test('warns of a value that differs, and leaves it', async () => {
     const cwd = await folderWith('package.json', '{ "type": "commonjs" }')
     expect(await completeJson('package.json', { type: 'module' }, diskFiles(cwd))).toEqual({
