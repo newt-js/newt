@@ -59,6 +59,16 @@ describe('newt add deps', () => {
     expect(modules.indexOf('const alpha =')).toBeLessThan(modules.indexOf('const charlie ='))
   })
 
+  test('a module using one that uses another: every module\'s tests compile and pass, and no test was edited', async () => {
+    const backend = await moduleProject()
+    for (const module of ['alpha', 'bravo', 'charlie']) await run(ADD_MODULE, [`sales/${module}`], backend)
+    const test = await read(backend, 'modules/bravo/bravo.module.test.ts')
+    await run(ADD_DEPS, ['sales/bravo', 'charlie'], backend)
+    await run(ADD_DEPS, ['sales/alpha', 'bravo'], backend)
+    expect(await read(backend, 'modules/bravo/bravo.module.test.ts')).toBe(test)
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
   test('refuses a cycle through other modules', async () => {
     const backend = await moduleProject()
     for (const module of ['alpha', 'bravo', 'charlie']) await run(ADD_MODULE, [`sales/${module}`], backend)

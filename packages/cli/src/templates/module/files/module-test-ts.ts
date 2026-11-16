@@ -1,15 +1,17 @@
-import type { ModuleNames } from '../../../names/module-names/module-names'
-import { withArticle }      from '../../../names/with-article/with-article'
+import type { ContextNames } from '../../../names/context-names/context-names'
+import type { ModuleNames }  from '../../../names/module-names/module-names'
+import { withArticle }       from '../../../names/with-article/with-article'
 
-export function moduleTestTs(names: ModuleNames, context: string): string {
+export function moduleTestTs(names: ModuleNames, context: ContextNames): string {
   const { folder, type, plural, words } = names
-  const path = `${context}/${names.path}`
+  const path = `${context.folder}/${names.path}`
   return `import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { testContext, type TestContext } from '@newt-js/core/application/testing'
 import { MemoryCluster } from '@newt-js/core/cluster/memory'
 import { MemoryDatabase } from '@newt-js/core/database/memory'
 import { HttpRouter } from '@newt-js/core/http'
-import { ${type}_Module } from './${folder}.module'
+import { ${context.camel}Modules } from '../../${context.folder}-modules'
+import type { ${type}_Module } from './${folder}.module'
 
 let context: TestContext
 let router: HttpRouter
@@ -17,10 +19,10 @@ let ${plural}: ${type}_Module
 
 beforeEach(() => {
   const database = new MemoryDatabase()
-  context = testContext({ name: '${context}', cluster: new MemoryCluster(), database })
+  context = testContext({ name: '${context.folder}', cluster: new MemoryCluster(), database })
   router = new HttpRouter({ database })
   router.authenticateWith(async () => ({ userId: 'tester' }))
-  ${plural} = ${type}_Module.initialize(context.base, router)
+  ${plural} = ${context.camel}Modules(context.base, router).${names.module}
 })
 
 afterEach(() => context.close())

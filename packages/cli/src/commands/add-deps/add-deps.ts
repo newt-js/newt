@@ -64,16 +64,6 @@ export const ADD_DEPS = defineCommand({
       })),
       { action: 'add-object-property', path: modules, call: initialize, argument: 2, key: used.module, value: used.module, imports: [], createArgument: true },
       { action: 'order-modules', path: modules },
-      {
-        action: 'add-object-property',
-        path: file('.module.test.ts'),
-        call: initialize,
-        argument: 2,
-        key: used.module,
-        value: `${used.type}_Module.initialize(context.base, router)`,
-        imports: [`import { ${used.type}_Module } from '../${used.folder}/${used.folder}.module'`],
-        createArgument: true,
-      },
     ]
     return { changes, nextSteps: [`call it in a use case of ${module.folder}: this.deps.${used.module}`, `bun test ${folder}`] }
   },
