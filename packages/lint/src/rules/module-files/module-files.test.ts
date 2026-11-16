@@ -21,13 +21,12 @@ tester.run('module-files', asRule(moduleFiles), {
     ...FILES.map(file => ({ code: '', filename: `${MODULE}/${file}` })),
     { code: '', filename: '/repo/src/contexts/ws/ws.context.ts' },
     { code: '', filename: '/repo/examples/shop/modules/order/order.workers.ts' },
-    // Another entity of the module, beside its repository.
-    { code: '', filename: join(CARD, 'card-counter.ts') },
-    { code: '', filename: join(CARD, 'card-counter.repository.ts') },
   ],
   invalid: [
     { code: '', filename: `${MODULE}/helpers.ts`, errors: [{ messageId: 'file' }] },
-    // An entity with no repository, a repository with no entity, a file of another module's name.
+    // A second entity of the module, with or without its repository: a module keeps one.
+    { code: '', filename: join(CARD, 'card-counter.ts'), errors: [{ messageId: 'file' }] },
+    { code: '', filename: join(CARD, 'card-counter.repository.ts'), errors: [{ messageId: 'file' }] },
     { code: '', filename: join(CARD, 'card-orphan.ts'), errors: [{ messageId: 'file' }] },
     { code: '', filename: join(CARD, 'card-ghost.repository.ts'), errors: [{ messageId: 'file' }] },
     { code: '', filename: join(CARD, 'board-counter.ts'), errors: [{ messageId: 'file' }] },

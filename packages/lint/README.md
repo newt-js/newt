@@ -40,6 +40,7 @@ Every rule is an `error`: a warning does not stop an agent.
 | Rule | Checks |
 |---|---|
 | `newt/module-files` | A module has only its own files, named after it: `.module`, `.ts` (the entity), `.schema`, `.repository`, `.routes`, `.workers`, `.deps`, `-options`, its tests, and the folders `events/`, `errors/`, `value-objects/` and `services/`. |
+| `newt/module-entity` | A module keeps one entity, the root of its aggregate: only its `<m>.ts` declares a class that extends `Entity`, and only one. Another entity is a module of its own, referenced by its id. |
 | `newt/module-imports` | A module imports from another only its module, its schema, its events and its errors. |
 | `newt/context-imports` | A context imports only the contexts it says it uses, never in a cycle. |
 | `newt/schema-imports` | A module's schema imports only zod, `@newt-js/core` (its root), the module's value objects and other modules' schemas. |
