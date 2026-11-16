@@ -1,6 +1,6 @@
-import { CLUSTERS }         from '../../../templates/backend/clusters'
-import type { ClusterName } from '../../../templates/backend/clusters'
-import { CommandError }     from '../../command-error/command-error'
+import { CommandError }     from '../../commands/command-error/command-error'
+import { CLUSTERS }         from '../../templates/backend/clusters'
+import type { ClusterName } from '../../templates/backend/clusters'
 
 export const DEFAULT_CLUSTER: ClusterName = 'memory'
 
