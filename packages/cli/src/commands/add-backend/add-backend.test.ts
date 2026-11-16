@@ -130,6 +130,22 @@ describe('newt add backend', () => {
     expect((await addBackend(['packages/utils'], root)).text).toBe('packages/utils is a package already, and not a newt backend: put the backend in a folder of its own')
   })
 
+  test('refuses a folder in node_modules, or one that holds a workspace', async () => {
+    const root = await monorepoProject(['apps/**', '!apps/legacy'])
+    await addBackend(['apps/one'], root)
+    expect((await addBackend(['node_modules/x'], root)).text).toBe('node_modules/x is in node_modules, where bun install puts packages: put the backend in a folder of its own, as apps/api')
+    expect((await addBackend(['apps'], root)).text).toBe('apps holds the workspace apps/one: put the backend in a folder of its own beside it')
+  })
+
+  test('a dependency in a workspace, or a folder a ! pattern leaves out, is no workspace', async () => {
+    const root = await monorepoProject(['apps/**', '!apps/legacy'])
+    await addBackend(['apps/one'], root)
+    await Bun.write(join(root, 'apps/one/node_modules/zod/package.json'), JSON.stringify({ name: 'zod' }))
+    await Bun.write(join(root, 'apps/legacy/package.json'), JSON.stringify({ name: 'two' }))
+    expect((await addBackend(['apps/zod'], root)).code).toBe(0)
+    expect((await addBackend(['apps/two'], root)).code).toBe(0)
+  })
+
   test('takes one folder', async () => {
     const root = await monorepoProject()
     expect((await addBackend([], root)).text).toBe('newt add backend takes the folder of the backend, as in newt add backend apps/api')

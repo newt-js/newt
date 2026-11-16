@@ -2,6 +2,7 @@ import { basename }           from 'node:path'
 import { join }               from 'node:path'
 import { relative }           from 'node:path'
 import { resolve }            from 'node:path'
+import { sep }                from 'node:path'
 // --------------------------------------------------------
 import { checkedName }        from '../../names/checked-name/checked-name'
 import { BACKEND_OPTIONS }    from '../../options/backend-options'
@@ -39,11 +40,19 @@ export const ADD_BACKEND = defineCommand({
     if (relative(root.folder, folder).startsWith('..') || folder === root.folder) {
       throw new CommandError(`${given} is not inside the monorepo at ${root.folder}`)
     }
+    if (relative(root.folder, folder).split(sep).includes('node_modules')) {
+      throw new CommandError(`${given} is in node_modules, where bun install puts packages: put the backend in a folder of its own, as apps/api`)
+    }
     const name = checkedName(basename(folder))
     if (await Bun.file(join(folder, 'package.json')).exists() && !await isBackend(folder)) {
       throw new CommandError(`${given} is a package already, and not a newt backend: put the backend in a folder of its own`)
     }
-    for (const other of await workspaceFolders(root)) {
+    const others = await workspaceFolders(root)
+    const held = others.find(other => other.startsWith(`${folder}${sep}`))
+    if (held) {
+      throw new CommandError(`${given} holds the workspace ${relative(cwd, held)}: put the backend in a folder of its own beside it`)
+    }
+    for (const other of others) {
       if (other === folder) continue
       const manifest = await Bun.file(join(other, 'package.json')).json().catch(() => ({})) as { name?: unknown }
       if (manifest.name === name) {
