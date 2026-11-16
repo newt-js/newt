@@ -4,6 +4,7 @@ import { pieceNames }    from '../../names/piece-names/piece-names'
 import { ERROR_KINDS }   from '../../options/error-kind-of/error-kind-of'
 import { errorKindOf }   from '../../options/error-kind-of/error-kind-of'
 import { findModule }    from '../../project/find-module/find-module'
+import { errorCode }     from '../../templates/pieces/error-ts'
 import { errorTs }       from '../../templates/pieces/error-ts'
 import { defineCommand } from '../command'
 import { CommandError }  from '../command-error/command-error'
@@ -26,6 +27,13 @@ export const ADD_ERROR = defineCommand({
     const error = pieceNames(name, 'an error')
     if (Object.values(ERROR_KINDS).includes(error.type as never) || error.type === 'KnownError') {
       throw new CommandError(`'${name}' cannot name an error: ${error.type} is the class newt's errors extend; name it by what went wrong, as in order-already-paid`)
+    }
+    const code = errorCode(module, error)
+    const errors = join(cwd, folder, 'errors')
+    for await (const file of new Bun.Glob('*.ts').scan(errors)) {
+      if (file !== `${error.folder}.ts` && (await Bun.file(join(errors, file)).text()).includes(`'${code}'`)) {
+        throw new CommandError(`errors/${file} has the code ${code} already: name the error by what else went wrong`)
+      }
     }
     return {
       changes: [{ action: 'create', path: join(folder, 'errors', `${error.folder}.ts`), content: errorTs(module, error, kind) }],

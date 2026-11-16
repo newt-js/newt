@@ -47,4 +47,8 @@ describe('newt add error', () => {
   test('refuses the name of the class it would extend', async () => {
     expect((await addError(['sales/order', 'validation-error', '--kind', 'validation'], await moduleProject())).text).toStartWith("'validation-error' cannot name an error")
   })
+
+  test('refuses a code another error of the module has', async () => {
+    expect((await addError(['sales/order', 'not-found', '--kind', 'not-found'], await moduleProject())).text).toBe('errors/order-not-found.ts has the code order.not_found already: name the error by what else went wrong')
+  })
 })
