@@ -55,6 +55,7 @@ describe('defineEvent', () => {
 
   test('takes brands on strings and numbers alone', () => {
     defineEvent('order.weighed', z.object({ grams: z.number().brand<'Grams'>() }))
+    defineEvent('order.moved', z.object({ to: z.enum(['shop', 'store']).brand<'Place'>(), by: z.literal('van').brand<'Vehicle'>() }))
     // @ts-expect-error a brand on a boolean is not one a value object makes
     defineEvent('order.flagged', z.object({ urgent: z.boolean().brand<'Urgent'>() }))
   })
