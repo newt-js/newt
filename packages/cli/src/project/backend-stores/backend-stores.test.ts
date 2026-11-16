@@ -12,8 +12,15 @@ async function backendWith(stores: string | null): Promise<string> {
   return backend
 }
 
-test('the kinds its stores.ts opens', async () => {
-  expect(await backendStores(await backendWith('PostgresDatabase.open() … S3Storage.open()'))).toEqual({ database: 'postgres', files: 's3' })
+const IMPORTS = "import { PostgresDatabase } from '@newt-js/core/database/postgres'\nimport { S3Storage } from '@newt-js/core/files/s3'\n"
+
+test('the kinds its stores.ts imports, whatever its comments name', async () => {
+  expect(await backendStores(await backendWith(`${IMPORTS}// moved off SqliteDatabase in 2026\n`))).toEqual({ database: 'postgres', files: 's3' })
+})
+
+test('refuses a stores.ts that imports two databases', async () => {
+  const both = `${IMPORTS}import { SqliteDatabase } from '@newt-js/core/database/sqlite'\n`
+  expect(backendStores(await backendWith(both))).rejects.toThrow('src/stores.ts imports SqliteDatabase and PostgresDatabase')
 })
 
 test('null without a stores.ts, or one that opens none of newt\'s', async () => {
