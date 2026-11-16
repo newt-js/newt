@@ -11,5 +11,9 @@ test("newt's packages at the cli's version, the others at the cli's own", async 
     zod: devDependencies.zod!,
     eslint: devDependencies.eslint!,
     bunTypes: devDependencies['@types/bun']!,
+    react: devDependencies.react!,
+    reactDom: devDependencies['react-dom']!,
+    reactTypes: devDependencies['@types/react']!,
+    reactDomTypes: devDependencies['@types/react-dom']!,
   })
 })

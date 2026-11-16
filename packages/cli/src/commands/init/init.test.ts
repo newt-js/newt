@@ -78,7 +78,10 @@ describe('newt init', () => {
     expect(statusOf('index.ts')).toEqual(['removed'])
     expect(statusOf('.gitignore')).toEqual(['updated'])
     expect(statusOf('CLAUDE.md')).toEqual(['updated'])
-    expect(report.warnings).toEqual(['package.json: devDependencies.@types/bun is "latest", newt\'s is "1.4.4"; newt left it as it is'])
+    expect(report.warnings).toEqual([
+      'package.json: scripts.typecheck is "bun check", newt\'s is "bun check -b"; newt left it as it is',
+      'package.json: devDependencies.@types/bun is "latest", newt\'s is "1.4.4"; newt left it as it is',
+    ])
     expect(await Bun.file(join(folder, 'package.json')).json()).not.toHaveProperty('module')
     expect(await Bun.file(join(folder, 'README.md')).text()).toStartWith('# shop')
     expect(await checkGenerated(folder)).toEqual([])

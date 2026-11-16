@@ -9,7 +9,7 @@ import { generate }         from '../../../testing/generate/generate'
 import { templateVersions } from '../../template-versions/template-versions'
 import { backendTemplate }  from './backend-template'
 
-const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0' }
+const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0', react: '19.0.0', reactDom: '19.0.0', reactTypes: '19.0.0', reactDomTypes: '19.0.0' }
 
 const BACKEND_COMMAND = defineCommand({
   name: 'backend',
