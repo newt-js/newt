@@ -21,6 +21,7 @@ import { noDisable }               from './rules/no-disable/no-disable'
 import { reactionQueue }           from './rules/reaction-queue/reaction-queue'
 import { repositoryPublicMethods } from './rules/repository-public-methods/repository-public-methods'
 import { routeBodyUnchecked }      from './rules/route-body-unchecked/route-body-unchecked'
+import { routeContext }            from './rules/route-context/route-context'
 import { schemaImports }           from './rules/schema-imports/schema-imports'
 import { useCaseFiles }            from './rules/use-case-files/use-case-files'
 import { useCaseParams }           from './rules/use-case-params/use-case-params'
@@ -42,6 +43,7 @@ export const plugin = {
     'reaction-queue': reactionQueue,
     'repository-public-methods': repositoryPublicMethods,
     'route-body-unchecked': routeBodyUnchecked,
+    'route-context': routeContext,
     'schema-imports': schemaImports,
     'use-case-files': useCaseFiles,
     'use-case-params': useCaseParams,
@@ -166,6 +168,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/module-entity': 'error',
         'newt/module-files': 'error',
         'newt/module-imports': 'error',
+        'newt/route-context': 'error',
         'newt/entity-method-params': 'error',
         'newt/reaction-queue': 'error',
         'newt/schema-imports': 'error',

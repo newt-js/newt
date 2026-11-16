@@ -40,7 +40,7 @@ describe('newt add module', () => {
     const modules = await read(join(backend, 'src/contexts/sales/sales-modules.ts'))
     expect(modules).toContain('  const order = Order_Module.initialize(base, router)\n  const priceChange = PriceChange_Module.initialize(base, router)\n  return {\n    order,\n    priceChange,\n  }')
     expect(modules).toContain("import { PriceChange_Module } from './modules/price-change/price-change.module'")
-    expect(await read(join(backend, 'src/contexts/sales/modules/price-change/price-change.routes.ts'))).toContain("router.post('/price-changes'")
+    expect(await read(join(backend, 'src/contexts/sales/modules/price-change/price-change.routes.ts'))).toContain("router.post('/sales/price-changes'")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

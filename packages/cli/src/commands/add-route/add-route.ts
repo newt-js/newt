@@ -22,7 +22,7 @@ export const ADD_ROUTE = defineCommand({
   args: '<context>/<module> <use-case>',
   options: {
     method: { type: 'string', value: 'method', description: `${METHODS.join(', ')}; post by default` },
-    path: { type: 'string', value: 'path', description: 'Its path under /api; /<module>s/:id/<use-case> by default' },
+    path: { type: 'string', value: 'path', description: 'Its path under /api, starting with its context; /<context>/<module>s/:id/<use-case> by default' },
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },
   run: async ({ args, cwd, options }) => {
@@ -30,10 +30,11 @@ export const ADD_ROUTE = defineCommand({
     if (name === undefined || rest.length > 0) throw new CommandError(USAGE)
     const method = (options.method ?? 'post').toLowerCase()
     if (!METHODS.includes(method)) throw new CommandError(`'${options.method}' is not a method: ${METHODS.join(', ')}`)
-    const { backend, folder, module } = await findModule(given, cwd, options.backend, USAGE)
+    const { backend, folder, module, context } = await findModule(given, cwd, options.backend, USAGE)
     const useCase = pieceNames(name, 'a use case')
-    const path = options.path ?? `/${module.path}/:id/${useCase.folder}`
+    const path = options.path ?? `/${context.folder}/${module.path}/:id/${useCase.folder}`
     if (!PATH.test(path)) throw new CommandError(`'${path}' is not a path: it starts with / and has letters, digits and / : _ - alone`)
+    if (!path.startsWith(`/${context.folder}/`)) throw new CommandError(`'${path}' is not under /${context.folder}/: a module's routes start with its context`)
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
     const signature = new RegExp(`async ${useCase.camel}\\(([^)]*)\\): Promise<([^>]+)>`).exec(code)

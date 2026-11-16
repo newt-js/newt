@@ -61,6 +61,7 @@ Every rule is an `error`: a warning does not stop an agent.
 |---|---|
 | `newt/entity-method-params` | An entity takes its own `Props`, never a DTO nor an object written in place. |
 | `newt/repository-public-methods` | A repository declares no public method of its own: `persist`, `find`, `count`, `paginate` and `purge` are all it has. |
+| `newt/route-context` | A module's routes start with its context (`/shop/orders`), so two contexts never take the same path. |
 | `newt/route-body-unchecked` | A route passes the body to a use case as it came, never asserting its type. |
 | `newt/reaction-queue` | A reaction's queue names the module that reacts, the use case it calls and the event. |
 | `newt/framework-tables` | An application never names a table `newt_…`, to `records('…')` or in SQL. |

@@ -1,7 +1,9 @@
 import type { ModuleNames } from '../../../names/module-names/module-names'
 import { withArticle }      from '../../../names/with-article/with-article'
 
-export function moduleTestTs({ folder, type, plural, path, words }: ModuleNames, context: string): string {
+export function moduleTestTs(names: ModuleNames, context: string): string {
+  const { folder, type, plural, words } = names
+  const path = `${context}/${names.path}`
   return `import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { testContext, type TestContext } from '@newt-js/core/application/testing'
 import { MemoryCluster } from '@newt-js/core/cluster/memory'
