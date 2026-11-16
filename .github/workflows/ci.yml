@@ -12,6 +12,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # The tests of Postgres, MySQL, Valkey and S3 run against these, never skipped. A fresh MySQL
     # takes root's password over TLS alone; newt's text needs a database of LOCALE C.
     env:
@@ -38,12 +39,13 @@ jobs:
         ports: ['6379:6379']
         options: --health-cmd "valkey-cli ping" --health-interval 2s --health-retries 30
     steps:
-      # MinIO needs a command, which a service cannot take.
+      # MinIO needs a command, which a service cannot take. The image carries mc, which makes the bucket.
       - name: MinIO
         run: |
-          docker run -d --name minio -p 9000:9000 -e MINIO_ROOT_USER=newt -e MINIO_ROOT_PASSWORD=newt-secret minio/minio server /data
-          until curl -sf http://localhost:9000/minio/health/live; do sleep 1; done
-          docker run --rm --network host --entrypoint sh minio/mc -c 'mc alias set local http://localhost:9000 newt newt-secret && mc mb local/newt-test'
+          docker run -d --name minio -p 9000:9000 -e MINIO_ROOT_USER=newt -e MINIO_ROOT_PASSWORD=newt-secret pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data
+          timeout 60 sh -c 'until curl -sf http://localhost:9000/minio/health/live; do sleep 1; done'
+          docker exec minio mc alias set local http://localhost:9000 newt newt-secret
+          docker exec minio mc mb local/newt-test
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
