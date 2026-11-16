@@ -8,8 +8,8 @@ import { join }          from 'node:path'
 // --------------------------------------------------------
 import { defineCommand } from '../../commands/command'
 import { commandHelp }   from '../../help/command-help/command-help'
-import { ADD_BACKEND }   from '../../testing/testing'
-import { BROKEN }        from '../../testing/testing'
+import { ADD_BACKEND }   from '../../testing/fake-commands'
+import { BROKEN }        from '../../testing/fake-commands'
 import { runCommand }    from './run-command'
 
 const emptyFolder = () => mkdtempSync(join(tmpdir(), 'newt-cli-run-'))

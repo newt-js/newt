@@ -1,8 +1,8 @@
 import { expect }      from 'bun:test'
 import { test }        from 'bun:test'
 // --------------------------------------------------------
-import { ADD_BACKEND } from '../../testing/testing'
-import { INIT }        from '../../testing/testing'
+import { ADD_BACKEND } from '../../testing/fake-commands'
+import { INIT }        from '../../testing/fake-commands'
 import { version }     from '../../version/version'
 import { newtHelp }    from './newt-help'
 

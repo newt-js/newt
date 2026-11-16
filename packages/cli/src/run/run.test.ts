@@ -6,8 +6,8 @@ import { tmpdir }      from 'node:os'
 import { join }        from 'node:path'
 // --------------------------------------------------------
 import { newtHelp }    from '../help/newt-help/newt-help'
-import { ADD_BACKEND } from '../testing/testing'
-import { INIT }        from '../testing/testing'
+import { ADD_BACKEND } from '../testing/fake-commands'
+import { INIT }        from '../testing/fake-commands'
 import { version }     from '../version/version'
 import { run }         from './run'
 

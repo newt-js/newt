@@ -1,9 +1,9 @@
 import { expect }      from 'bun:test'
 import { test }        from 'bun:test'
 // --------------------------------------------------------
-import { ADD }         from '../../testing/testing'
-import { ADD_BACKEND } from '../../testing/testing'
-import { INIT }        from '../../testing/testing'
+import { ADD }         from '../../testing/fake-commands'
+import { ADD_BACKEND } from '../../testing/fake-commands'
+import { INIT }        from '../../testing/fake-commands'
 import { findCommand } from './find-command'
 
 const COMMANDS = [ADD, ADD_BACKEND, INIT]

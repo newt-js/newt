@@ -1,8 +1,8 @@
 import { expect }      from 'bun:test'
 import { test }        from 'bun:test'
 // --------------------------------------------------------
-import { ADD_BACKEND } from '../../testing/testing'
-import { INIT }        from '../../testing/testing'
+import { ADD_BACKEND } from '../../testing/fake-commands'
+import { INIT }        from '../../testing/fake-commands'
 import { commandHelp } from './command-help'
 
 test("commandHelp shows the command's arguments, summary and options, the options of every command included", () => {
