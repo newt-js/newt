@@ -16,8 +16,9 @@ async function handOverTo(projectCli: string, args: string[]): Promise<number> {
 
 const args = Bun.argv.slice(2)
 const projectCli = process.env[ALREADY_HANDED_OVER] ? null : await findLocalCli(process.cwd(), THIS_PACKAGE)
-if (projectCli) {
-  process.exit(await handOverTo(projectCli, args))
+if (projectCli?.warning) console.error(projectCli.warning)
+if (projectCli?.path) {
+  process.exit(await handOverTo(projectCli.path, args))
 }
 const { code, text } = await run(args, { commands: COMMANDS, cwd: process.cwd(), ask: process.stdin.isTTY ? terminalAsk : null })
 if (code === 0) console.log(text)
