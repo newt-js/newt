@@ -1,4 +1,10 @@
-export const AGENTS_MD = `# Agents
+import type { DatabaseKind } from '../../stores/store-databases'
+
+const MIGRATIONS_TEST = `- \`src/migrations.test.ts\`: every context's migrations on a real server. Set \`TEST_DATABASE_URL\`
+  (a server where it may create and drop databases) to run it; without it the test is skipped.
+`
+
+export const agentsMd = (database: DatabaseKind) => `# Agents
 
 A backend built with newt (@newt-js/core), on Bun.
 
@@ -10,7 +16,7 @@ A backend built with newt (@newt-js/core), on Bun.
   \`startBackend(0, { stores: 'memory' })\`: databases, files and cluster in memory, sqlite with its migrations.
 - \`src/env.ts\`: \`requiredEnv\`, for the variables the backend cannot start without.
 - \`src/contexts.ts\`: the list of contexts the backend opens.
-- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/api/<context>/\`.
+${database === 'postgres' || database === 'mysql' ? MIGRATIONS_TEST : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/api/<context>/\`.
 
 ## Rules
 

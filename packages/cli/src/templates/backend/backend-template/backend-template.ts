@@ -8,7 +8,7 @@ import { storesTs }              from '../../stores/stores-ts'
 import type { TemplateVersions } from '../../template-versions/template-versions'
 import { BUN_INIT_INDEX_TS }     from '../bun-init/bun-init'
 import { CLUSTERS }              from '../clusters'
-import { AGENTS_MD }             from '../files/agents-md'
+import { agentsMd }              from '../files/agents-md'
 import { CLAUDE_MD }             from '../files/claude-md'
 import { ENV_TS }                from '../files/env-ts'
 import { ESLINT_CONFIG_TS }      from '../files/eslint-config-ts'
@@ -18,6 +18,7 @@ import { SRC_BACKEND_TEST_TS }   from '../files/src-backend-test-ts'
 import { srcBackendTs }          from '../files/src-backend-ts'
 import { SRC_CONTEXTS_TS }       from '../files/src-contexts-ts'
 import { SRC_INDEX_TS }          from '../files/src-index-ts'
+import { srcMigrationsTestTs }   from '../files/src-migrations-test-ts'
 import { TSCONFIG_JSON }         from '../files/tsconfig-json'
 
 const TSCONFIG_KEPT = { needs: ['"bun"', '"preserve"', '"bundler"'], warning: 'newt\'s code needs in its compilerOptions types: ["bun"], module: "Preserve" and moduleResolution: "bundler"' }
@@ -31,13 +32,15 @@ export function backendTemplate({ folder, name, port, stores, versions, inMonore
   const variables = (example: boolean) => ({ PORT: String(port), ...CLUSTERS[stores.cluster].env, ...STORE_FILES[stores.files].env(port, example) })
   const created: Record<string, string> = {
     'eslint.config.ts': ESLINT_CONFIG_TS,
-    'AGENTS.md': AGENTS_MD,
+    'AGENTS.md': agentsMd(stores.database),
     'src/backend.ts': srcBackendTs(CLUSTERS[stores.cluster]),
     'src/stores.ts': storesTs(stores),
     ...storesNeedEnv(stores) ? { 'src/env.ts': ENV_TS } : {},
     'src/backend.test.ts': SRC_BACKEND_TEST_TS,
     'src/contexts.ts': SRC_CONTEXTS_TS,
   }
+  const migrationsTest = srcMigrationsTestTs(stores.database)
+  if (migrationsTest) created['src/migrations.test.ts'] = migrationsTest
   return [
     { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions, inMonorepo) },
     { action: 'create', path: at('tsconfig.json'), content: TSCONFIG_JSON, kept: TSCONFIG_KEPT },

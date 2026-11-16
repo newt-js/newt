@@ -1,16 +1,17 @@
-import { describe }       from 'bun:test'
-import { expect }         from 'bun:test'
-import { test }           from 'bun:test'
-import { join }           from 'node:path'
+import { describe }         from 'bun:test'
+import { expect }           from 'bun:test'
+import { test }             from 'bun:test'
+import { join }             from 'node:path'
 // --------------------------------------------------------
-import { runCommand }     from '../../run/run-command/run-command'
-import { checkGenerated } from '../../testing/check-generated/check-generated'
-import { generate }       from '../../testing/generate/generate'
-import { ADD_CONTEXT }    from '../add-context/add-context'
-import { ADD_DEPS }       from '../add-deps/add-deps'
-import type { Command }   from '../command'
-import { INIT }           from '../init/init'
-import { ADD_MODULE }     from './add-module'
+import { runCommand }       from '../../run/run-command/run-command'
+import { checkGenerated }   from '../../testing/check-generated/check-generated'
+import { generate }         from '../../testing/generate/generate'
+import { linkDependencies } from '../../testing/link-dependencies/link-dependencies'
+import { ADD_CONTEXT }      from '../add-context/add-context'
+import { ADD_DEPS }         from '../add-deps/add-deps'
+import type { Command }     from '../command'
+import { INIT }             from '../init/init'
+import { ADD_MODULE }       from './add-module'
 
 const run = (command: Command, args: string[], cwd: string) => runCommand(command, args, { cwd, ask: null })
 
@@ -61,6 +62,27 @@ describe('newt add module', () => {
     expect(await read(join(mysql, 'src/contexts/sales/migrations/00001_order_up.sql'))).toContain('CREATE TABLE `order` (\n  id VARCHAR(64) COLLATE utf8mb4_0900_bin PRIMARY KEY,')
     expect(await read(join(mysql, 'src/contexts/sales/migrations/00001_order_down.sql'))).toBe('DROP TABLE `order`;\n')
   }, 30_000)
+
+  const SERVERS = [{ db: 'postgres', url: Bun.env.POSTGRES_TEST_URL }, { db: 'mysql', url: Bun.env.MYSQL_TEST_URL }]
+
+  for (const { db, url } of SERVERS) {
+    test.skipIf(!url)(`on ${db}, its migration runs on a real server when TEST_DATABASE_URL is set, and a broken one fails`, async () => {
+      const backend = await backendWithContext(db)
+      await run(ADD_MODULE, ['sales/order'], backend)
+      await linkDependencies(backend)
+      const migrationsTest = () => Bun.spawn([process.execPath, 'test', 'src/migrations.test.ts'], { cwd: backend, env: { ...Bun.env, TEST_DATABASE_URL: url }, stdout: 'pipe', stderr: 'pipe' }).exited
+      expect(await migrationsTest()).toBe(0)
+      await Bun.write(join(backend, 'src/contexts/sales/migrations/00001_order_up.sql'), 'CRATE TABEL "order" (id TEXT);\n')
+      expect(await migrationsTest()).not.toBe(0)
+    }, 60_000)
+  }
+
+  test('without TEST_DATABASE_URL, the migrations test is skipped and says so', async () => {
+    const backend = await backendWithContext('postgres')
+    expect(await read(join(backend, 'src/migrations.test.ts'))).toContain("test.skipIf(!serverUrl)('every context\\'s migrations run on a real Postgres, skipped without TEST_DATABASE_URL'")
+    expect(await read(join(backend, 'AGENTS.md'))).toContain('Set `TEST_DATABASE_URL`')
+    expect(await Bun.file(join(await backendWithContext('sqlite'), 'src/migrations.test.ts')).exists()).toBe(false)
+  })
 
   test('run again, it changes nothing and makes no second migration', async () => {
     const backend = await backendWithContext()
