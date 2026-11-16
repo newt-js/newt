@@ -10,6 +10,7 @@ import { storesOf }           from '../../options/stores-of/stores-of'
 import { eslintWarning }      from '../../project/eslint-warning/eslint-warning'
 import { findWorkspaceRoot }  from '../../project/find-workspace-root/find-workspace-root'
 import { otherEslintConfigs } from '../../project/other-eslint-configs/other-eslint-configs'
+import { workspaceFolders }   from '../../project/workspace-folders/workspace-folders'
 import { backendTemplate }    from '../../templates/backend/backend-template/backend-template'
 import { templateVersions }   from '../../templates/template-versions/template-versions'
 import { defineCommand }      from '../command'
@@ -37,6 +38,13 @@ export const ADD_BACKEND = defineCommand({
       throw new CommandError(`${given} is not inside the monorepo at ${root.folder}`)
     }
     const name = checkedName(basename(folder))
+    for (const other of await workspaceFolders(root)) {
+      if (other === folder) continue
+      const manifest = await Bun.file(join(other, 'package.json')).json().catch(() => ({})) as { name?: unknown }
+      if (manifest.name === name) {
+        throw new CommandError(`${relative(cwd, other)} is named ${name} already, and two packages of a monorepo never share a name: put the backend in a folder of another name`)
+      }
+    }
     const workspaces = workspacesChange(root, folder, cwd)
     const used = await usedPorts(root)
     const port = options.port === undefined ? nextPort(used.keys()) : portOf(options.port)

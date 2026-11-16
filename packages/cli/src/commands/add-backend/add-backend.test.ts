@@ -112,6 +112,12 @@ describe('newt add backend', () => {
     expect((await addBackend(['apps/My Api'], root)).text).toBe("'My Api' cannot name a folder and a package: use lowercase letters, digits and - . _ ~, as in 'my-api'")
   })
 
+  test('refuses a folder named as another package of the monorepo', async () => {
+    const root = await monorepoProject(['apps/*', 'services/*'])
+    await addBackend(['apps/api'], root)
+    expect((await addBackend(['services/api'], root)).text).toBe('apps/api is named api already, and two packages of a monorepo never share a name: put the backend in a folder of another name')
+  })
+
   test('takes one folder', async () => {
     const root = await monorepoProject()
     expect((await addBackend([], root)).text).toBe('newt add backend takes the folder of the backend, as in newt add backend apps/api')
