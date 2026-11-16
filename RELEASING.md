@@ -20,7 +20,8 @@ git tag v0.1.0
 git push origin main v0.1.0
 ```
 
-`release:version` refuses a version that is not above the current one, and a tree with changes.
+`release:version` refuses a version that is not above the current one, one npm has for any of the
+packages, and a tree with changes.
 `release:publish --publish` refuses 0.0.0, a tree with changes, a branch other than main, and a
 version published already.
 

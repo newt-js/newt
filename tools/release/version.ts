@@ -1,8 +1,9 @@
 // bun tools/release/version.ts <version>: every published package at that version, and bun.lock with them.
-import { $ }        from 'bun'
-import { join }     from 'node:path'
+import { $ }           from 'bun'
+import { join }        from 'node:path'
 // --------------------------------------------------------
-import { PACKAGES } from './packages'
+import { PACKAGES }    from './packages'
+import { publishedAt } from './published-at'
 
 const ROOT = join(import.meta.dir, '../..')
 
@@ -24,6 +25,8 @@ const manifests = await Promise.all(PACKAGES.map(async ({ folder }) => {
 const current = (JSON.parse(manifests[0]!.text) as { version: string }).version
 if (Bun.semver.order(version!, current) !== 1) refuse(`${version} is not above ${current}, the version the packages are at`)
 if ((await $`git status --porcelain`.cwd(ROOT).text()).trim() !== '') refuse('The tree has changes not committed: a release commit holds the release alone')
+const taken = (await Promise.all(PACKAGES.map(async ({ name }) => await publishedAt(name, version!) ? name : null))).filter(Boolean)
+if (taken.length > 0) refuse(`npm has ${taken.map(name => `${name}@${version}`).join(', ')} already: choose a higher version`)
 
 for (const { file, text } of manifests) {
   await Bun.write(file, `${JSON.stringify({ ...JSON.parse(text) as Record<string, unknown>, version }, null, 2)}\n`)

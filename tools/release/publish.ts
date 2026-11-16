@@ -1,8 +1,9 @@
 // bun tools/release/publish.ts [--publish]: checks everything, then publishes each package in order; a dry run without --publish.
-import { $ }        from 'bun'
-import { join }     from 'node:path'
+import { $ }           from 'bun'
+import { join }        from 'node:path'
 // --------------------------------------------------------
-import { PACKAGES } from './packages'
+import { PACKAGES }    from './packages'
+import { publishedAt } from './published-at'
 
 const ROOT = join(import.meta.dir, '../..')
 
@@ -17,14 +18,17 @@ const versions = await Promise.all(PACKAGES.map(async ({ folder }) => (await Bun
 if (new Set(versions).size !== 1) refuse(`The packages are not at one version (${versions.join(', ')}): bun run release:version <version>`)
 const version = versions[0]!
 
-const isPublished = async (name: string) => (await fetch(`https://registry.npmjs.org/${name.replace('/', '%2F')}/${version}`)).ok
-const published = publishing ? await Promise.all(PACKAGES.map(({ name }) => isPublished(name))) : PACKAGES.map(() => false)
+const published = publishing ? await Promise.all(PACKAGES.map(({ name }) => publishedAt(name, version))) : PACKAGES.map(() => null)
 if (publishing) {
   if (version === '0.0.0') refuse('The packages are at 0.0.0: bun run release:version <version> first')
   if ((await $`git status --porcelain`.cwd(ROOT).text()).trim() !== '') refuse('The tree has changes not committed: commit the release first')
   const branch = (await $`git branch --show-current`.cwd(ROOT).text()).trim()
   if (branch !== 'main') refuse(`This is ${branch}: releases are published from main`)
   if (published.every(Boolean)) refuse(`${version} is published already: bun run release:version <a higher one>`)
+  // Only a publish of this commit that stopped halfway leaves a package on npm at this version.
+  const committed = new Date((await $`git log -1 --format=%cI`.cwd(ROOT).text()).trim())
+  const before = PACKAGES.filter((_, at) => published[at] && published[at] < committed)
+  if (before.length > 0) refuse(`${before.map(({ name }) => `${name}@${version}`).join(', ')} was on npm before this commit: bun run release:version <a higher one>`)
 }
 
 for (const script of ['typecheck', 'test', 'lint', 'check-packs']) {
