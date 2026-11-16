@@ -39,6 +39,8 @@ describe('newt add context', () => {
     const context = await read(join(backend, 'src/contexts/sales/sales.context.ts'))
     expect(context).toContain("const database = await openDatabase('sales', join(import.meta.dir, 'migrations'), stores)")
     expect(context).toContain("storage: await openStorage('sales', router, stores)")
+    expect(context).toContain('    router.authenticateWith(authenticate)\n')
+    expect(await read(join(backend, 'src/auth.ts'))).toContain('export const authenticate: Authenticator = async () => null')
     expect(await read(join(backend, 'src/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform, stores))\n  return contexts')
     expect(await read(join(backend, '.env'))).toEndWith('\nSALES_DATABASE=data/sales.sqlite\nSALES_FILES=data/files/sales\n')
     expect(await Bun.file(join(backend, '.env.test')).exists()).toBe(false)

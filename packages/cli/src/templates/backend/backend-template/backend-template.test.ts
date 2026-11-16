@@ -38,6 +38,7 @@ describe('backendTemplate', () => {
       'create apps/shop/src/backend.test.ts',
       'create apps/shop/src/contexts.ts',
       'create apps/shop/src/index.ts',
+      'create apps/shop/src/auth.ts',
       'complete-env apps/shop/.env',
       'complete-env apps/shop/.env.example',
       'ensure-lines apps/shop/.gitignore',

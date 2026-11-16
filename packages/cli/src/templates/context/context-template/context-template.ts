@@ -4,6 +4,8 @@ import type { FileChange }    from '../../../commands/command'
 import type { ContextNames }  from '../../../names/context-names/context-names'
 import { CONTEXTS_FOLDER }    from '../../../project/backend-contexts/backend-contexts'
 import type { BackendStores } from '../../../project/backend-stores/backend-stores'
+import { AUTH_KEPT }          from '../../backend/files/src-auth-ts'
+import { SRC_AUTH_TS }        from '../../backend/files/src-auth-ts'
 import { STORE_DATABASES }    from '../../stores/store-databases'
 import { STORE_FILES }        from '../../stores/store-files'
 import { contextModulesTs }   from '../files/context-modules-ts'
@@ -24,6 +26,7 @@ export function contextTemplate({ backend, packageName, names, stores }: Context
     { action: 'create', path: join(folder, `${names.folder}.context.ts`), content: contextTs(names) },
     { action: 'create', path: join(folder, `${names.folder}-modules.ts`), content: contextModulesTs(names) },
     { action: 'create', path: join(folder, 'migrations/.gitkeep'), content: '' },
+    { action: 'create', path: at('src/auth.ts'), content: SRC_AUTH_TS, kept: AUTH_KEPT },
     { action: 'complete-env', path: at('.env'), variables },
     { action: 'complete-env', path: at('.env.example'), variables },
     {

@@ -14,6 +14,8 @@ import { ENV_TS }                from '../files/env-ts'
 import { ESLINT_CONFIG_TS }      from '../files/eslint-config-ts'
 import { GITIGNORE }             from '../files/gitignore'
 import { packageJson }           from '../files/package-json'
+import { AUTH_KEPT }             from '../files/src-auth-ts'
+import { SRC_AUTH_TS }           from '../files/src-auth-ts'
 import { SRC_BACKEND_TEST_TS }   from '../files/src-backend-test-ts'
 import { srcBackendTs }          from '../files/src-backend-ts'
 import { SRC_CONTEXTS_TS }       from '../files/src-contexts-ts'
@@ -46,6 +48,7 @@ export function backendTemplate({ folder, name, port, stores, versions, inMonore
     { action: 'create', path: at('tsconfig.json'), content: TSCONFIG_JSON, kept: TSCONFIG_KEPT },
     ...Object.entries(created).map(([path, content]): FileChange => ({ action: 'create', path: at(path), content })),
     { action: 'create', path: at('src/index.ts'), content: SRC_INDEX_TS, kept: INDEX_KEPT },
+    { action: 'create', path: at('src/auth.ts'), content: SRC_AUTH_TS, kept: AUTH_KEPT },
     { action: 'complete-env', path: at('.env'), variables: variables(false) },
     { action: 'complete-env', path: at('.env.example'), variables: variables(true) },
     { action: 'ensure-lines', path: at('.gitignore'), lines: GITIGNORE },
