@@ -7,6 +7,7 @@ import { runCommand }     from '../../run/run-command/run-command'
 import { checkGenerated } from '../../testing/check-generated/check-generated'
 import { generate }       from '../../testing/generate/generate'
 import { ADD_CONTEXT }    from '../add-context/add-context'
+import { ADD_DEPS }       from '../add-deps/add-deps'
 import type { Command }   from '../command'
 import { INIT }           from '../init/init'
 import { ADD_MODULE }     from './add-module'
@@ -67,6 +68,15 @@ describe('newt add module', () => {
     const again = JSON.parse((await run(ADD_MODULE, ['sales/order', '--json'], backend)).text) as { files: { status: string }[] }
     expect(again.files.filter(file => file.status !== 'skipped')).toEqual([])
     expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_order_up.sql')).exists()).toBe(false)
+  })
+
+  test('run again after it took deps, it does not declare the module twice', async () => {
+    const backend = await backendWithContext()
+    await run(ADD_MODULE, ['sales/order'], backend)
+    await run(ADD_MODULE, ['sales/invoice'], backend)
+    await run(ADD_DEPS, ['sales/order', 'invoice'], backend)
+    await run(ADD_MODULE, ['sales/order'], backend)
+    expect((await read(join(backend, 'src/contexts/sales/sales-modules.ts'))).match(/const order =/g)).toHaveLength(1)
   })
 
   test('says what to do next, and that its routes ask for a session', async () => {

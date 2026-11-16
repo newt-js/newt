@@ -30,6 +30,8 @@ export type ReplaceLineChange = { action: 'replace-line', path: string, line: st
 
 export type AddConstructorStatementChange = { action: 'add-constructor-statement', path: string, className: string, statement: string }
 
+export type WireModuleChange = { action: 'wire-module', path: string, module: string, declaration: string, imports: string[] }
+
 export type KeepLineBelowChange = { action: 'keep-line-below', path: string, line: string, below: string }
 
 export type AppendBlockChange = { action: 'append-block', path: string, block: string, imports: string[] }
@@ -51,6 +53,7 @@ export type FileChange =
   | AddObjectPropertyChange
   | AppendBlockChange
   | KeepLineBelowChange
+  | WireModuleChange
   | AddConstructorStatementChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }

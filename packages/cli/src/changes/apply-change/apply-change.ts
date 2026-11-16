@@ -14,6 +14,7 @@ import { removeJsonKey }           from '../remove-json-key/remove-json-key'
 import { removeUnchanged }         from '../remove-unchanged/remove-unchanged'
 import { replaceLine }             from '../replace-line/replace-line'
 import type { VirtualFiles }       from '../virtual-files/virtual-files'
+import { wireModule }              from '../wire-module/wire-module'
 
 export function applyChange(change: FileChange, files: VirtualFiles): Promise<ChangeOutcome> {
   switch (change.action) {
@@ -29,6 +30,7 @@ export function applyChange(change: FileChange, files: VirtualFiles): Promise<Ch
     case 'add-object-property': return addObjectProperty(change, files)
     case 'append-block': return appendBlock(change, files)
     case 'keep-line-below': return keepLineBelow(change, files)
+    case 'wire-module': return wireModule(change, files)
     case 'add-constructor-statement': return addConstructorStatement(change, files)
   }
 }
