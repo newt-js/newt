@@ -26,7 +26,9 @@ export type CompleteEnvChange = { action: 'complete-env', path: string, variable
 
 export type InsertLinesChange = { action: 'insert-lines', path: string, before: string, lines: string[], imports: string[] }
 
-export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange | RemoveUnchangedChange | RemoveJsonKeyChange | CompleteEnvChange | InsertLinesChange
+export type ReplaceLineChange = { action: 'replace-line', path: string, line: string, with: string, imports: string[] }
+
+export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange | RemoveUnchangedChange | RemoveJsonKeyChange | CompleteEnvChange | InsertLinesChange | ReplaceLineChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }
 

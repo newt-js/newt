@@ -4,7 +4,7 @@ import type { VirtualFiles }      from '../virtual-files/virtual-files'
 
 const isImport = (line: string) => line.startsWith('import ')
 
-function withImports(lines: string[], imports: string[]): string[] {
+export function withImports(lines: string[], imports: string[]): string[] {
   const missing = imports.filter(line => !lines.includes(line))
   if (missing.length === 0) return lines
   const last = lines.findLastIndex(isImport)

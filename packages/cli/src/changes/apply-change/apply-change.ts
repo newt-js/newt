@@ -7,6 +7,7 @@ import { ensureLines }        from '../ensure-lines/ensure-lines'
 import { insertLines }        from '../insert-lines/insert-lines'
 import { removeJsonKey }      from '../remove-json-key/remove-json-key'
 import { removeUnchanged }    from '../remove-unchanged/remove-unchanged'
+import { replaceLine }        from '../replace-line/replace-line'
 import type { VirtualFiles }  from '../virtual-files/virtual-files'
 
 export function applyChange(change: FileChange, files: VirtualFiles): Promise<ChangeOutcome> {
@@ -18,5 +19,6 @@ export function applyChange(change: FileChange, files: VirtualFiles): Promise<Ch
     case 'remove-json-key': return removeJsonKey(change, files)
     case 'complete-env': return completeEnv(change.path, change.variables, files)
     case 'insert-lines': return insertLines(change, files)
+    case 'replace-line': return replaceLine(change, files)
   }
 }

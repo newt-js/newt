@@ -1,5 +1,6 @@
 import type { ContextNames }     from '../../../names/context-names/context-names'
 import type { DatabaseTemplate } from '../databases'
+import { baseLine }              from '../storage-template/storage-template'
 
 export function contextTs(names: ContextNames, database: DatabaseTemplate): string {
   const { folder, type, camel } = names
@@ -15,8 +16,8 @@ export class ${type}_Context extends BoundedContext {
 
   static async open(platform: Platform): Promise<ContextToRun> {
     const database = ${database.open(names)}
-    const base = new ContextBase({ name: '${folder}', platform, database })
     const router = new HttpRouter({ database })
+${baseLine(names, false)}
     return { context: new ${type}_Context(base, ${camel}Modules(base, router)), router }
   }
 }
