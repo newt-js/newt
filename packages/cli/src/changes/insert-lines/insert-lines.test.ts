@@ -60,4 +60,10 @@ describe('insertLines', () => {
     expect(await Bun.file(join(cwd, 'f.ts')).text()).toBe('function f() {\n  g()\n}\nfunction h() {\n  return list\n}\n')
     expect((await insertLines(block, virtualFiles(cwd, false))).status).toBe('skipped')
   })
+
+  test('adds an import after a multi-line import, and not one the file has under another shape', async () => {
+    const cwd = await folderWith("import {\n  a,\n  b,\n} from 'a'\n\nexport function f() {\n  const list = []\n  return list\n}\n")
+    await insertLines({ ...CHANGE, imports: ["import { b } from 'a'", "import { c } from 'c'"] }, virtualFiles(cwd, false))
+    expect(await Bun.file(join(cwd, 'f.ts')).text()).toStartWith("import {\n  a,\n  b,\n} from 'a'\nimport { c } from 'c'\n")
+  })
 })

@@ -1,16 +1,7 @@
 import type { InsertLinesChange } from '../../commands/command'
+import { addedImports }           from '../added-imports/added-imports'
 import type { ChangeOutcome }     from '../change-outcome'
 import type { VirtualFiles }      from '../virtual-files/virtual-files'
-
-const isImport = (line: string) => line.startsWith('import ')
-
-export function withImports(lines: string[], imports: string[]): string[] {
-  const missing = imports.filter(line => !lines.includes(line))
-  if (missing.length === 0) return lines
-  const last = lines.findLastIndex(isImport)
-  if (last === -1) return [...missing, '', ...lines]
-  return [...lines.slice(0, last + 1), ...missing, ...lines.slice(last + 1)]
-}
 
 const holdsBlock = (current: string[], block: string[]) => current.some((_, at) => block.every((line, offset) => current[at + offset] === line))
 
@@ -18,7 +9,7 @@ const holdsBlock = (current: string[], block: string[]) => current.some((_, at) 
 export async function insertLines({ path, anchor, position, lines, imports }: InsertLinesChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const current = text?.split('\n') ?? []
-  if (holdsBlock(current, lines) && imports.every(line => current.includes(line))) {
+  if (holdsBlock(current, lines) && addedImports(text ?? '', imports) === (text ?? '')) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
   const found = current.indexOf(anchor)
@@ -28,6 +19,6 @@ export async function insertLines({ path, anchor, position, lines, imports }: In
     return { status: 'skipped', note: 'not as newt wrote it', warnings: [`${path} is not as newt wrote it, so newt did not change it: add ${what}`] }
   }
   const inserted = holdsBlock(current, lines) ? current : [...current.slice(0, at), ...lines, ...current.slice(at)]
-  await files.write(path, withImports(inserted, imports).join('\n'))
+  await files.write(path, addedImports(inserted.join('\n'), imports))
   return { status: 'updated', warnings: [] }
 }
