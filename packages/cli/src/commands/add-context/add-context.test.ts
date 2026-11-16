@@ -66,15 +66,21 @@ describe('newt add context', () => {
       const backend = await backendProject('--db', db)
       const output = await addContext(['sales'], backend)
       expect(output.text).toContain(`create the database of sales in your ${db} server, as SALES_DATABASE_URL in .env says`)
-      expect(await read(join(backend, '.env.example'))).toMatch(/SALES_DATABASE_URL=.*\/shop_sales\n/)
+      expect(await read(join(backend, '.env.example'))).toMatch(/SALES_DATABASE_URL=.*\/shop__sales\n/)
       expect(await checkGenerated(backend)).toEqual([])
     }, 30_000)
   }
 
+  test('refuses a context whose database would be longer than servers take', async () => {
+    const backend = await backendProject('--db', 'postgres')
+    const name = 'a'.repeat(60)
+    expect((await addContext([name], backend)).text).toBe(`The database of ${name} would be shop__${name}, 66 characters, and servers take 63 at most: give the context a shorter name`)
+  })
+
   test('on s3, its bucket in .env, whose lint and types pass', async () => {
     const backend = await backendProject('--files', 's3')
     expect((await addContext(['sales'], backend)).text).toContain('set SALES_S3_BUCKET in .env to its bucket')
-    expect(await read(join(backend, '.env.example'))).toContain('SALES_S3_BUCKET=shop-sales\n')
+    expect(await read(join(backend, '.env.example'))).toContain('SALES_S3_BUCKET=shop--sales\n')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

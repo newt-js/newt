@@ -1,3 +1,6 @@
+/** A context's bucket, `<backend>--<context>`: the two apart by a mark neither name holds, so two backends never share one. */
+export const bucketName = (backend: string, folder: string) => [backend, folder].map(name => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')).join('--')
+
 export type StoreFiles = {
   imports: string[]
   constants: string
@@ -59,7 +62,7 @@ export const STORE_FILES = {
     usesEnvOf: true,
     needsEnv: true,
     className: 'S3Storage',
-    contextEnv: (env, folder, backend) => ({ [`${env}_S3_BUCKET`]: `${backend}-${folder}`.toLowerCase().replace(/[^a-z0-9-]+/g, '-') }),
+    contextEnv: (env, folder, backend) => ({ [`${env}_S3_BUCKET`]: bucketName(backend, folder) }),
     contextTestEnv: none,
   },
   memory: {

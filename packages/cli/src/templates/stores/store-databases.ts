@@ -3,7 +3,8 @@ type ContextVariables = (env: string, folder: string, backend: string) => Record
 
 const none: ContextVariables = () => ({})
 
-const databaseName = (backend: string, folder: string) => `${backend}_${folder}`.toLowerCase().replace(/[^a-z0-9_]+/g, '_')
+/** A context's database, `<backend>__<context>`: the two apart by a mark neither name holds, so two backends never share one. */
+export const databaseName = (backend: string, folder: string) => [backend, folder].map(name => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')).join('__')
 
 export type StoreDatabase = { imports: string[], open: string, inMemoryForTests: boolean, usesEnvOf: boolean, needsEnv: boolean, className: string, contextEnv: ContextVariables, contextTestEnv: ContextVariables }
 
