@@ -51,10 +51,13 @@ export async function orderModules(path: string, files: VirtualFiles): Promise<C
   if (text === null || order.every((each, at) => each === modules[at])) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
+  // A statement moves with the comments above it.
+  const startOf = (statement: ts.Statement) => ts.getLeadingCommentRanges(text, statement.getFullStart())?.[0]?.pos ?? statement.getStart(source)
   let edited = text
   for (let at = modules.length - 1; at >= 0; at--) {
     const slot = modules[at]!.statement
-    edited = `${edited.slice(0, slot.getStart(source))}${order[at]!.statement.getText(source)}${edited.slice(slot.getEnd())}`
+    const moved = order[at]!.statement
+    edited = `${edited.slice(0, startOf(slot))}${text.slice(startOf(moved), moved.getEnd())}${edited.slice(slot.getEnd())}`
   }
   await files.write(path, edited)
   return { status: 'updated', warnings: [] }
