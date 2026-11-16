@@ -60,4 +60,11 @@ describe('newt add event', () => {
       expect((await addEvent(['sales/order', name], backend)).text).toStartWith(`'${name}' cannot name an event: Order_`)
     }
   })
+
+  test('refuses a name that repeats the module, and says the one to give', async () => {
+    const backend = await moduleProject()
+    const output = await addEvent(['sales/order', 'order-cancelled'], backend)
+    expect(output.code).toBe(1)
+    expect(output.text).toStartWith("'order-cancelled' repeats the module: name it cancelled, and it becomes Order_Cancelled in events/order-cancelled.ts")
+  })
 })

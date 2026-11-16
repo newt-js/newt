@@ -26,6 +26,10 @@ export const ADD_EVENT = defineCommand({
     if (MODULE_TYPES.includes(event.type)) {
       throw new CommandError(`'${name}' cannot name an event: ${module.type}_${event.type} is the module's own; name it by what happened, as in shipped`)
     }
+    if (event.folder.startsWith(`${module.folder}-`)) {
+      const plain = event.folder.slice(module.folder.length + 1)
+      throw new CommandError(`'${name}' repeats the module: name it ${plain}, and it becomes ${module.type}_${pieceNames(plain, 'an event').type} in events/${module.folder}-${plain}.ts`)
+    }
     const schema = Bun.file(join(cwd, folder, `${module.folder}.schema.ts`))
     const hasSchema = await schema.exists() && (await schema.text()).includes(`export const ${module.type}Schema `)
     const type = `${module.type}_${event.type}`
