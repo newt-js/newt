@@ -38,7 +38,7 @@ describe('newt init', () => {
   test('with --cluster valkey, a backend that shares through Valkey, whose lint, types and tests pass', async () => {
     const folder = join(await generate(INIT, ['shop', '--cluster', 'valkey']), 'shop')
     expect(await Bun.file(join(folder, 'src/backend.ts')).text()).toContain('new ValkeyCluster(Bun.env.VALKEY_URL)')
-    expect(await Bun.file(join(folder, '.env.example')).text()).toBe('PORT=3000\nVALKEY_URL=redis://localhost:6379\n')
+    expect(await Bun.file(join(folder, '.env.example')).text()).toStartWith('PORT=3000\nVALKEY_URL=redis://localhost:6379\n')
     expect(await checkGenerated(folder)).toEqual([])
   }, 30_000)
 
@@ -49,7 +49,7 @@ describe('newt init', () => {
 
   test('serves on the port told', async () => {
     const folder = await generate(INIT, ['shop', '--port', '3010'])
-    expect(await Bun.file(join(folder, 'shop/.env')).text()).toBe('PORT=3010\n')
+    expect(await Bun.file(join(folder, 'shop/.env')).text()).toStartWith('PORT=3010\n')
   })
 
   test('says what to do next, from the folder it was run in', async () => {
@@ -134,5 +134,26 @@ describe('newt init', () => {
       return 'monorepo'
     } })
     expect(questions).toEqual([])
+  })
+
+  const COMBINATIONS = [
+    ...['sqlite', 'postgres', 'mysql', 'memory'].map(db => ({ db, files: 'local' })),
+    ...['s3', 'memory'].map(files => ({ db: 'sqlite', files })),
+  ]
+
+  for (const { db, files } of COMBINATIONS) {
+    test(`--db ${db} --files ${files}: src/stores.ts opens them, and the backend passes its lint, types and, without services, its tests`, async () => {
+      const folder = join(await generate(INIT, ['shop', '--db', db, '--files', files]), 'shop')
+      const stores = await Bun.file(join(folder, 'src/stores.ts')).text()
+      expect(stores).toContain('export function openDatabase(context: string, migrations: string): Promise<Database> {')
+      expect(stores).toContain('export async function openStorage(context: string, router: HttpRouter): Promise<StorageOptions> {')
+      const needsService = ['postgres', 'mysql'].includes(db) || files === 's3'
+      expect(await checkGenerated(folder, { tests: !needsService })).toEqual([])
+    }, 30_000)
+  }
+
+  test('refuses a database or a storage there is not', async () => {
+    expect((await runCommand(INIT, ['shop', '--db', 'mongo'], { cwd: await emptyFolder(), ask: null })).text).toBe("'mongo' is not a database: sqlite, postgres, mysql, memory")
+    expect((await runCommand(INIT, ['shop', '--files', 'ftp'], { cwd: await emptyFolder(), ask: null })).text).toBe("'ftp' is not a storage for files: local, s3, memory")
   })
 })

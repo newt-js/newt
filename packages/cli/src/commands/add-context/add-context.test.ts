@@ -23,8 +23,8 @@ describe('newt add context', () => {
     expect(await read(join(backend, 'src/contexts/sales/sales.context.ts'))).toContain("await SqliteDatabase.open({ path: Bun.env.SALES_DATABASE ?? 'data/sales.sqlite'")
     expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/.gitkeep')).exists()).toBe(true)
     expect(await read(join(backend, 'src/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform))\n  return contexts')
-    expect(await read(join(backend, '.env'))).toBe('PORT=3000\nSALES_DATABASE=data/sales.sqlite\n')
-    expect(await read(join(backend, '.env.test'))).toBe('SALES_DATABASE=:memory:\n')
+    expect(await read(join(backend, '.env'))).toEndWith('\nSALES_DATABASE=data/sales.sqlite\n')
+    expect(await read(join(backend, '.env.test'))).toEndWith('SALES_DATABASE=:memory:\n')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

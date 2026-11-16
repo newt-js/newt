@@ -9,12 +9,14 @@ import { generate }         from '../../../testing/generate/generate'
 import { templateVersions } from '../../template-versions/template-versions'
 import { backendTemplate }  from './backend-template'
 
+const STORES = { cluster: 'memory' as const, database: 'sqlite' as const, files: 'local' as const }
+
 const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0', react: '19.0.0', reactDom: '19.0.0', reactTypes: '19.0.0', reactDomTypes: '19.0.0' }
 
 const BACKEND_COMMAND = defineCommand({
   name: 'backend',
   summary: 'The backend template',
-  run: async () => ({ changes: backendTemplate({ folder: '.', name: 'shop', port: 3000, cluster: 'memory', versions: await templateVersions() }) }),
+  run: async () => ({ changes: backendTemplate({ folder: '.', name: 'shop', port: 3000, stores: STORES, versions: await templateVersions() }) }),
 })
 
 const changeTo = (changes: FileChange[], path: string) => changes.find(change => change.path === path)
@@ -25,7 +27,7 @@ describe('backendTemplate', () => {
   }, 30_000)
 
   test('what it does to each file, in the folder given', () => {
-    expect(backendTemplate({ folder: 'apps/shop', name: 'shop', port: 3000, cluster: 'memory', versions: VERSIONS }).map(change => `${change.action} ${change.path}`)).toEqual([
+    expect(backendTemplate({ folder: 'apps/shop', name: 'shop', port: 3000, stores: STORES, versions: VERSIONS }).map(change => `${change.action} ${change.path}`)).toEqual([
       'complete-json apps/shop/package.json',
       'create apps/shop/tsconfig.json',
       'create apps/shop/eslint.config.ts',
@@ -34,8 +36,11 @@ describe('backendTemplate', () => {
       'create apps/shop/AGENTS.md',
       'create apps/shop/src/index.ts',
       'create apps/shop/src/backend.ts',
+      'create apps/shop/src/stores.ts',
+      'create apps/shop/src/env.ts',
       'create apps/shop/src/backend.test.ts',
       'create apps/shop/src/contexts.ts',
+      'complete-env apps/shop/.env.test',
       'ensure-lines apps/shop/.gitignore',
       'ensure-lines apps/shop/CLAUDE.md',
       'remove-unchanged apps/shop/index.ts',
@@ -44,7 +49,7 @@ describe('backendTemplate', () => {
   })
 
   test('its package is named as told, with newt at its version and the rest at theirs', () => {
-    const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, cluster: 'memory', versions: VERSIONS }), 'package.json')
+    const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, stores: STORES, versions: VERSIONS }), 'package.json')
     expect(change?.action === 'complete-json' && change.values).toMatchObject({
       name: 'shop',
       dependencies: { '@newt-js/core': '1.2.3', 'zod': '4.0.0' },
@@ -52,11 +57,13 @@ describe('backendTemplate', () => {
     })
   })
 
-  test('its port in .env and .env.example', () => {
-    const changes = backendTemplate({ folder: '.', name: 'shop', port: 3010, cluster: 'memory', versions: VERSIONS })
-    for (const path of ['.env', '.env.example']) {
+  test('its port and the files\' variables in .env, and in .env.example without the secret', () => {
+    const changes = backendTemplate({ folder: '.', name: 'shop', port: 3010, stores: STORES, versions: VERSIONS })
+    const contentOf = (path: string) => {
       const change = changeTo(changes, path)
-      expect(change?.action === 'create' && change.content).toBe('PORT=3010\n')
+      return change?.action === 'create' ? change.content : ''
     }
+    expect(contentOf('.env')).toMatch(/^PORT=3010\nPUBLIC_URL=http:\/\/localhost:3010\nFILES_SECRET=[0-9a-f]{64}\n$/)
+    expect(contentOf('.env.example')).toBe('PORT=3010\nPUBLIC_URL=http://localhost:3010\nFILES_SECRET=\n')
   })
 })

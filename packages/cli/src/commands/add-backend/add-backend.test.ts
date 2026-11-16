@@ -46,14 +46,14 @@ describe('newt add backend', () => {
     const root = join(await generate(INIT, ['shop', '--monorepo']), 'shop')
     const report = JSON.parse((await addBackend(['apps/web', '--port', '3010', '--json'], root)).text) as { files: { path: string }[] }
     expect(report.files.map(file => file.path)).not.toContain('package.json')
-    expect(await Bun.file(join(root, 'apps/web/.env')).text()).toBe('PORT=3010\n')
+    expect(await Bun.file(join(root, 'apps/web/.env')).text()).toStartWith('PORT=3010\n')
   })
 
   test('each backend added takes a port of its own, and they run at once', async () => {
     const root = await monorepoProject()
     await addBackend(['apps/orders', '--port', '4310'], root)
     await addBackend(['apps/billing'], root)
-    expect(await Bun.file(join(root, 'apps/billing/.env')).text()).toBe('PORT=4320\n')
+    expect(await Bun.file(join(root, 'apps/billing/.env')).text()).toStartWith('PORT=4320\n')
     const backends = await Promise.all(['apps/orders', 'apps/billing'].map(async folder => {
       await linkDependencies(join(root, folder))
       return Bun.spawn([process.execPath, 'src/index.ts'], { cwd: join(root, folder), stdout: 'ignore', stderr: 'ignore' })

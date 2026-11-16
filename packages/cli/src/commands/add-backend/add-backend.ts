@@ -4,8 +4,8 @@ import { resolve }           from 'node:path'
 // --------------------------------------------------------
 import { checkedName }       from '../../names/checked-name/checked-name'
 import { BACKEND_OPTIONS }   from '../../options/backend-options'
-import { clusterOf }         from '../../options/cluster-of/cluster-of'
 import { portOf }            from '../../options/port-of/port-of'
+import { storesOf }          from '../../options/stores-of/stores-of'
 import { findWorkspaceRoot } from '../../project/find-workspace-root/find-workspace-root'
 import { backendTemplate }   from '../../templates/backend/backend-template/backend-template'
 import { templateVersions }  from '../../templates/template-versions/template-versions'
@@ -38,7 +38,7 @@ export const ADD_BACKEND = defineCommand({
     const used = await usedPorts(root)
     const port = options.port === undefined ? nextPort(used.keys()) : portOf(options.port)
     const sharing = used.get(port)
-    const backend = backendTemplate({ folder: relative(cwd, folder), name, port, cluster: clusterOf(options.cluster), versions: await templateVersions() })
+    const backend = backendTemplate({ folder: relative(cwd, folder), name, port, stores: storesOf(options), versions: await templateVersions() })
     return {
       changes: workspaces ? [workspaces, ...backend] : backend,
       warnings: sharing === undefined ? [] : [`Port ${port} is also ${sharing}'s: the two cannot run at once`],
