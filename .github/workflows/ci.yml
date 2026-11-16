@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# A push and the pull request of one branch are one run: the later one stops the other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -46,8 +51,8 @@ jobs:
           timeout 60 sh -c 'until curl -sf http://localhost:9000/minio/health/live; do sleep 1; done'
           docker exec minio mc alias set local http://localhost:9000 newt newt-secret
           docker exec minio mc mb local/newt-test
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.4
       - run: bun install --frozen-lockfile
