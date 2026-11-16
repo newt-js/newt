@@ -23,7 +23,7 @@ describe('newt add subscription', () => {
     expect((await run(ADD_SUBSCRIPTION, ['sales/order', 'mark-paid', '--on', 'created'], backend)).code).toBe(0)
     expect(await read(backend, 'order.workers.ts')).toContain("  orders.on(orders.events.created, 'markPaid', created => [{ id: created.id }])")
     expect(await read(backend, 'order.module.ts')).toContain('    registerOrderWorkers(module)\n    return module')
-    expect(await read(backend, 'order.module.test.ts')).toContain("job.queue === 'order.markPaid.on.order.created')?.status).toBe('done')")
+    expect(await read(backend, 'order.module.test.ts')).toContain("each.queue === 'order.markPaid.on.order.created')?.status).toBe('done')")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

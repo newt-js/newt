@@ -8,6 +8,9 @@ import { CommandError }  from '../command-error/command-error'
 
 const USAGE = 'newt add event takes the module and the event, as in newt add event sales/order shipped'
 
+/** What a module's own classes and types are called after it: Order_Module, Order_Repository, Order_Deps. */
+const MODULE_TYPES = ['Module', 'Repository', 'Deps']
+
 export const ADD_EVENT = defineCommand({
   name: 'add event',
   summary: 'Adds an event to a module, in its events/ folder',
@@ -20,6 +23,9 @@ export const ADD_EVENT = defineCommand({
     if (name === undefined || rest.length > 0) throw new CommandError(USAGE)
     const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
     const event = pieceNames(name, 'an event')
+    if (MODULE_TYPES.includes(event.type)) {
+      throw new CommandError(`'${name}' cannot name an event: ${module.type}_${event.type} is the module's own; name it by what happened, as in shipped`)
+    }
     const schema = Bun.file(join(cwd, folder, `${module.folder}.schema.ts`))
     const hasSchema = await schema.exists() && (await schema.text()).includes(`export const ${module.type}Schema `)
     const type = `${module.type}_${event.type}`

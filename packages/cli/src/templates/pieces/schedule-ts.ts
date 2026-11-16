@@ -10,8 +10,8 @@ export function scheduledUseCase(useCase: PieceNames): string {
 
 export function scheduleTest({ module }: ModuleNames, useCase: PieceNames, cron: string, context: string): string {
   return `test('${useCase.camel} runs at ${cron}', () => {
-  const sales = describeApplication([context.base]).contexts.find(each => each.name === '${context}')
-  const events = sales?.modules.find(each => each.name === '${module}')?.events ?? []
+  const described = describeApplication([context.base]).contexts.find(each => each.name === '${context}')
+  const events = described?.modules.find(each => each.name === '${module}')?.events ?? []
   expect(events).toContainEqual(expect.objectContaining({ name: '${module}.${useCase.camel}', schedule: { cron: ${quoted(cron)} } }))
 })`
 }

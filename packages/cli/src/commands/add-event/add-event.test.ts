@@ -53,4 +53,11 @@ describe('newt add event', () => {
     expect((await addEvent(['sales/order'], backend)).text).toBe('newt add event takes the module and the event, as in newt add event sales/order shipped')
     expect((await addEvent(['sales/order', 'Shipped'], backend)).text).toStartWith("'Shipped' cannot name an event")
   })
+
+  test("refuses a name that gives one of the module's own types", async () => {
+    const backend = await moduleProject()
+    for (const name of ['module', 'repository', 'deps']) {
+      expect((await addEvent(['sales/order', name], backend)).text).toStartWith(`'${name}' cannot name an event: Order_`)
+    }
+  })
 })
