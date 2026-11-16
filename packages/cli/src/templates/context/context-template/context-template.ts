@@ -29,7 +29,8 @@ export function contextTemplate({ backend, names, database }: ContextTemplateOpt
     {
       action: 'insert-lines',
       path: at('src/contexts.ts'),
-      before: RETURN_CONTEXTS,
+      anchor: RETURN_CONTEXTS,
+      position: 'before',
       lines: [`  contexts.push(await ${names.type}_Context.open(platform))`],
       imports: [`import { ${names.type}_Context } from './contexts/${names.folder}/${names.folder}.context'`],
     },

@@ -24,7 +24,7 @@ export type RemoveJsonKeyChange = { action: 'remove-json-key', path: string, key
 
 export type CompleteEnvChange = { action: 'complete-env', path: string, variables: Record<string, string> }
 
-export type InsertLinesChange = { action: 'insert-lines', path: string, before: string, lines: string[], imports: string[] }
+export type InsertLinesChange = { action: 'insert-lines', path: string, anchor: string, position: 'before' | 'after', lines: string[], imports: string[] }
 
 export type ReplaceLineChange = { action: 'replace-line', path: string, line: string, with: string, imports: string[] }
 

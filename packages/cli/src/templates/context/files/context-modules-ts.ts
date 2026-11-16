@@ -5,7 +5,8 @@ export function contextModulesTs({ type, camel }: ContextNames): string {
 import type { HttpRouter } from '@newt-js/core/http'
 
 export function ${camel}Modules(base: ContextBase, router: HttpRouter) {
-  return {}
+  return {
+  }
 }
 
 export type ${type}Modules = ReturnType<typeof ${camel}Modules>
