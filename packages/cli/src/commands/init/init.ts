@@ -38,6 +38,9 @@ export const INIT = defineCommand({
     }
     const target = resolve(cwd, folder)
     const root = await findWorkspaceRoot(target)
+    if (root && root.folder === target && kind === 'backend') {
+      throw new CommandError(`${folder} is a monorepo already: add a backend to it with newt add backend apps/<name>`)
+    }
     if (root && !(kind === 'monorepo' && root.folder === target)) {
       throw new CommandError(`${folder} is inside the monorepo at ${relative(cwd, root.folder) || '.'}: add the backend to it with newt add backend ${relative(cwd, target) || '.'}`)
     }

@@ -172,6 +172,13 @@ describe('newt init', () => {
     const made = join(await generate(INIT, ['acme', '--monorepo']), 'acme')
     expect((await runCommand(INIT, ['.', '--monorepo'], { cwd: made, ask: null })).code).toBe(0)
     expect((await runCommand(INIT, ['.'], { cwd: join(made, 'apps/api'), ask: null })).text).toBe('. is inside the monorepo at ../..: add the backend to it with newt add backend .')
+    expect((await runCommand(INIT, ['.'], { cwd: made, ask: null })).text).toBe('. is a monorepo already: add a backend to it with newt add backend apps/<name>')
+  })
+
+  test('a package of its own under a monorepo, which its workspaces do not take, is no part of it', async () => {
+    const root = await monorepoProject(['apps/*'])
+    await Bun.write(join(root, 'tools/x/package.json'), JSON.stringify({ name: 'x' }))
+    expect((await runCommand(INIT, ['.', '--dry-run'], { cwd: join(root, 'tools/x'), ask: null })).code).toBe(0)
   })
 
   test('refuses a database or a storage there is not', async () => {
