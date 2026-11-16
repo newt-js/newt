@@ -60,6 +60,13 @@ describe('newt add frontend', () => {
     expect(await read(join(backend, 'src/frontends.ts'))).toContain("app: join(import.meta.dir, '../../it\\'s/dist') }")
   })
 
+  test('--built refuses the backend or a folder that holds it', async () => {
+    const backend = await moduleProject()
+    for (const folder of ['.', '..', '/']) {
+      expect((await addFrontend(['sales', '--built', folder], backend)).text).toBe(`${folder} holds the backend, and everything in it would be served, .env too: give the folder the frontend is built into, as in web/dist`)
+    }
+  })
+
   test('refuses a second frontend for a context, built or not', async () => {
     const backend = await moduleProject()
     await addFrontend(['sales', '--built', 'web/dist'], backend)

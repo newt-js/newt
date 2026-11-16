@@ -45,6 +45,9 @@ export const ADD_FRONTEND = defineCommand({
     }
     if (options.built !== undefined) {
       const built = resolve(cwd, options.built)
+      if (backend === built || backend.startsWith(built.endsWith(sep) ? built : `${built}${sep}`)) {
+        throw new CommandError(`${options.built} holds the backend, and everything in it would be served, .env too: give the folder the frontend is built into, as in web/dist`)
+      }
       const fromSrc = relative(join(backend, 'src'), built).split(sep).join('/')
       const unbuilt = await Bun.file(join(built, 'index.html')).exists() ? [] : [`${options.built} has no index.html yet: the backend answers 503 at /${context} until it is built`]
       return {
