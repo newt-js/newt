@@ -118,6 +118,11 @@ describe('newt add backend', () => {
     expect((await addBackend(['services/api'], root)).text).toBe('apps/api is named api already, and two packages of a monorepo never share a name: put the backend in a folder of another name')
   })
 
+  test("refuses a folder that is another package, and not a backend", async () => {
+    const root = await monorepoProject()
+    expect((await addBackend(['packages/utils'], root)).text).toBe('packages/utils is a package already, and not a newt backend: put the backend in a folder of its own')
+  })
+
   test('takes one folder', async () => {
     const root = await monorepoProject()
     expect((await addBackend([], root)).text).toBe('newt add backend takes the folder of the backend, as in newt add backend apps/api')

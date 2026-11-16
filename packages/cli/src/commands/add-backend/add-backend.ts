@@ -9,6 +9,7 @@ import { portOf }             from '../../options/port-of/port-of'
 import { storesOf }           from '../../options/stores-of/stores-of'
 import { eslintWarning }      from '../../project/eslint-warning/eslint-warning'
 import { findWorkspaceRoot }  from '../../project/find-workspace-root/find-workspace-root'
+import { isBackend }          from '../../project/is-backend/is-backend'
 import { otherEslintConfigs } from '../../project/other-eslint-configs/other-eslint-configs'
 import { workspaceFolders }   from '../../project/workspace-folders/workspace-folders'
 import { backendTemplate }    from '../../templates/backend/backend-template/backend-template'
@@ -38,6 +39,9 @@ export const ADD_BACKEND = defineCommand({
       throw new CommandError(`${given} is not inside the monorepo at ${root.folder}`)
     }
     const name = checkedName(basename(folder))
+    if (await Bun.file(join(folder, 'package.json')).exists() && !await isBackend(folder)) {
+      throw new CommandError(`${given} is a package already, and not a newt backend: put the backend in a folder of its own`)
+    }
     for (const other of await workspaceFolders(root)) {
       if (other === folder) continue
       const manifest = await Bun.file(join(other, 'package.json')).json().catch(() => ({})) as { name?: unknown }
