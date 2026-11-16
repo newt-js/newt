@@ -62,7 +62,18 @@ try {
   for (const script of ['typecheck', 'lint']) {
     await $`bun run ${script}`.cwd(app)
   }
-  console.log(`The packed packages make a backend that passes its checks, with TypeScript 7 too${keep ? `: ${app}` : ''}`)
+  // A monorepo, hoisted as an older lockfile or linker = "hoisted" leaves it, with TypeScript 7 at its root.
+  await $`${join(tool, 'node_modules/.bin/create-newt')} mono --monorepo`.cwd(work).quiet()
+  const mono = join(work, 'mono')
+  await fromTarballs(mono, tarballs)
+  await fromTarballs(join(mono, 'apps/api'), tarballs)
+  await $`bun install --linker hoisted`.cwd(mono).quiet()
+  await $`bun add -d --linker hoisted typescript@${devDependencies!.typescript!}`.cwd(mono).quiet()
+  await $`bunx newt add context sales`.cwd(join(mono, 'apps/api')).quiet()
+  for (const script of ['typecheck', 'test', 'lint']) {
+    await $`bun run ${script}`.cwd(mono)
+  }
+  console.log(`The packed packages make a backend and a monorepo that pass their checks, with TypeScript 7 too${keep ? `: ${work}` : ''}`)
 } finally {
   if (!keep) await rm(work, { recursive: true, force: true })
 }

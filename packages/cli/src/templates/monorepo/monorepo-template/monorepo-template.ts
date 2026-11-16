@@ -26,6 +26,6 @@ export function monorepoTemplate({ folder, name, backend, port, stores, versions
     { action: 'remove-unchanged', path: at('index.ts'), content: BUN_INIT_INDEX_TS, why: 'the backends start in their workspaces' },
     { action: 'remove-json-key', path: at('package.json'), key: 'module', value: 'index.ts', whenMissing: at('index.ts') },
     { action: 'remove-unchanged', path: at('tsconfig.json'), content: BUN_INIT_TSCONFIG_JSON, why: 'each backend has its own tsconfig.json' },
-    ...backendTemplate({ folder: at(backend), name: basename(backend), port, stores, versions }),
+    ...backendTemplate({ folder: at(backend), name: basename(backend), port, stores, versions, inMonorepo: true }),
   ]
 }

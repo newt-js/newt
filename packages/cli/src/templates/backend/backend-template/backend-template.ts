@@ -24,9 +24,9 @@ const TSCONFIG_KEPT = { needs: ['"bun"', '"bundler"'], warning: 'newt\'s code ne
 
 const INDEX_KEPT = { needs: ['startBackend'], warning: 'it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT || 3000))' }
 
-export type BackendTemplateOptions = { folder: string, name: string, port: number, stores: Stores, versions: TemplateVersions }
+export type BackendTemplateOptions = { folder: string, name: string, port: number, stores: Stores, versions: TemplateVersions, inMonorepo?: boolean }
 
-export function backendTemplate({ folder, name, port, stores, versions }: BackendTemplateOptions): FileChange[] {
+export function backendTemplate({ folder, name, port, stores, versions, inMonorepo = false }: BackendTemplateOptions): FileChange[] {
   const at = (path: string) => join(folder, path)
   const variables = (example: boolean) => ({ PORT: String(port), ...CLUSTERS[stores.cluster].env, ...STORE_FILES[stores.files].env(port, example) })
   const created: Record<string, string> = {
@@ -39,7 +39,7 @@ export function backendTemplate({ folder, name, port, stores, versions }: Backen
     'src/contexts.ts': SRC_CONTEXTS_TS,
   }
   return [
-    { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions) },
+    { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions, inMonorepo) },
     { action: 'create', path: at('tsconfig.json'), content: TSCONFIG_JSON, kept: TSCONFIG_KEPT },
     ...Object.entries(created).map(([path, content]): FileChange => ({ action: 'create', path: at(path), content })),
     { action: 'create', path: at('src/index.ts'), content: SRC_INDEX_TS, kept: INDEX_KEPT },

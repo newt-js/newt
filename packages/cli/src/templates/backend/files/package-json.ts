@@ -13,7 +13,10 @@ const LINT_TYPESCRIPT_USERS = [
   'ts-api-utils',
 ]
 
-export function packageJson(name: string, versions: TemplateVersions): Record<string, unknown> {
+/** Bun reads overrides in the root's package.json alone: a monorepo's backend leaves them to it. */
+export const lintOverrides = (versions: TemplateVersions) => Object.fromEntries(LINT_TYPESCRIPT_USERS.map(name => [name, { typescript: versions.lintTypescript }]))
+
+export function packageJson(name: string, versions: TemplateVersions, inMonorepo: boolean): Record<string, unknown> {
   return {
     name,
     private: true,
@@ -35,6 +38,6 @@ export function packageJson(name: string, versions: TemplateVersions): Record<st
       '@types/bun': versions.bunTypes,
       'eslint': versions.eslint,
     },
-    overrides: Object.fromEntries(LINT_TYPESCRIPT_USERS.map(name => [name, { typescript: versions.lintTypescript }])),
+    ...inMonorepo ? {} : { overrides: lintOverrides(versions) },
   }
 }

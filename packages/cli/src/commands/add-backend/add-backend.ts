@@ -13,7 +13,7 @@ import { isBackend }          from '../../project/is-backend/is-backend'
 import { otherEslintConfigs } from '../../project/other-eslint-configs/other-eslint-configs'
 import { workspaceFolders }   from '../../project/workspace-folders/workspace-folders'
 import { backendTemplate }    from '../../templates/backend/backend-template/backend-template'
-import { rootCli }            from '../../templates/monorepo/files/root-package-json'
+import { rootDependencies }   from '../../templates/monorepo/files/root-package-json'
 import { templateVersions }   from '../../templates/template-versions/template-versions'
 import { defineCommand }      from '../command'
 import { CommandError }       from '../command-error/command-error'
@@ -55,9 +55,9 @@ export const ADD_BACKEND = defineCommand({
     const port = options.port === undefined ? nextPort(used.keys()) : portOf(options.port)
     const sharing = used.get(port)
     const versions = await templateVersions()
-    const backend = backendTemplate({ folder: relative(cwd, folder), name, port, stores: storesOf(options), versions })
+    const backend = backendTemplate({ folder: relative(cwd, folder), name, port, stores: storesOf(options), versions, inMonorepo: true })
     return {
-      changes: [...workspaces ? [workspaces] : [], { action: 'complete-json', path: relative(cwd, join(root.folder, 'package.json')), values: rootCli(versions) }, ...backend],
+      changes: [...workspaces ? [workspaces] : [], { action: 'complete-json', path: relative(cwd, join(root.folder, 'package.json')), values: rootDependencies(versions) }, ...backend],
       warnings: [
         ...sharing === undefined ? [] : [`Port ${port} is also ${sharing}'s: give one of them another PORT in its .env, or a request may reach either`],
         ...(await otherEslintConfigs(folder)).map(other => eslintWarning(join(relative(cwd, folder), other))),
