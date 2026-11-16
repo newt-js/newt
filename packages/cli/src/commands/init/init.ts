@@ -7,6 +7,7 @@ import { portOf }             from '../../options/port-of/port-of'
 import { storesOf }           from '../../options/stores-of/stores-of'
 import { eslintWarning }      from '../../project/eslint-warning/eslint-warning'
 import { findWorkspaceRoot }  from '../../project/find-workspace-root/find-workspace-root'
+import { isBackend }          from '../../project/is-backend/is-backend'
 import { otherEslintConfigs } from '../../project/other-eslint-configs/other-eslint-configs'
 import { backendTemplate }    from '../../templates/backend/backend-template/backend-template'
 import { monorepoTemplate }   from '../../templates/monorepo/monorepo-template/monorepo-template'
@@ -40,15 +41,19 @@ export const INIT = defineCommand({
     if (root && !(kind === 'monorepo' && root.folder === target)) {
       throw new CommandError(`${folder} is inside the monorepo at ${relative(cwd, root.folder) || '.'}: add the backend to it with newt add backend ${relative(cwd, target) || '.'}`)
     }
+    if (kind === 'monorepo' && await isBackend(target)) {
+      throw new CommandError(`${folder} is a backend: a monorepo goes in a folder of its own, with this backend moved into it by hand`)
+    }
     const port = portOf(options.port)
-    const stores = storesOf(options)
     const versions = await templateVersions()
     const backendFolder = kind === 'monorepo' ? join(folder, backendInRoot(options.backend)) : folder
+    const kept = await keptChoices(join(cwd, backendFolder), backendFolder, options, storesOf(options))
+    const stores = kept.stores
     const changes = kind === 'monorepo'
       ? monorepoTemplate({ folder, name, backend: backendInRoot(options.backend), port, stores, versions })
       : backendTemplate({ folder, name, port, stores, versions })
     const warnings = [
-      ...await keptChoices(join(cwd, backendFolder), backendFolder, options),
+      ...kept.warnings,
       ...(await otherEslintConfigs(join(cwd, backendFolder))).map(other => eslintWarning(join(backendFolder, other))),
     ]
     return { changes, warnings, nextSteps: [...folder === '.' ? [] : [`cd ${folder}`], 'bun install', 'bun run dev'] }

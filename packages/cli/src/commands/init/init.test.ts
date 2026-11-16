@@ -218,10 +218,20 @@ describe('newt init', () => {
   test('again with other choices, keeps what is there and says how to change it', async () => {
     const folder = await emptyFolder()
     await runCommand(INIT, ['shop'], { cwd: folder, ask: null })
-    const report = JSON.parse((await runCommand(INIT, ['shop', '--db', 'postgres', '--port', '4000', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
+    const env = await Bun.file(join(folder, 'shop/.env')).text()
+    const report = JSON.parse((await runCommand(INIT, ['shop', '--db', 'postgres', '--files', 's3', '--cluster', 'valkey', '--port', '4000', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
     expect(report.warnings).toEqual([
       'shop/src/stores.ts opens sqlite, and newt kept it: change it by hand to open postgres',
+      'shop/src/stores.ts keeps files in local, and newt kept it: change it by hand to keep them in s3',
+      'shop/src/backend.ts runs on the memory cluster, and newt kept it: change it by hand to run on valkey',
       'shop/.env has PORT=3000, and newt kept it: write PORT=4000 in it',
     ])
+    expect(await Bun.file(join(folder, 'shop/.env')).text()).toBe(env)
+  })
+
+  test('--monorepo over a backend is refused', async () => {
+    const folder = await emptyFolder()
+    await runCommand(INIT, ['shop'], { cwd: folder, ask: null })
+    expect((await runCommand(INIT, ['shop', '--monorepo'], { cwd: folder, ask: null })).text).toBe('shop is a backend: a monorepo goes in a folder of its own, with this backend moved into it by hand')
   })
 })
