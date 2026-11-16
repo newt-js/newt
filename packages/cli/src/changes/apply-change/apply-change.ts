@@ -1,4 +1,6 @@
 import type { FileChange }    from '../../commands/command'
+import { addClassMember }     from '../add-class-member/add-class-member'
+import { addObjectProperty }  from '../add-object-property/add-object-property'
 import type { ChangeOutcome } from '../change-outcome'
 import { completeEnv }        from '../complete-env/complete-env'
 import { completeJson }       from '../complete-json/complete-json'
@@ -20,5 +22,7 @@ export function applyChange(change: FileChange, files: VirtualFiles): Promise<Ch
     case 'complete-env': return completeEnv(change.path, change.variables, files)
     case 'insert-lines': return insertLines(change, files)
     case 'replace-line': return replaceLine(change, files)
+    case 'add-class-member': return addClassMember(change, files)
+    case 'add-object-property': return addObjectProperty(change, files)
   }
 }
