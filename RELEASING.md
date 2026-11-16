@@ -10,11 +10,11 @@ it, 0.1.0 or more.
 
 ```sh
 git switch main && git pull                       # a clean main, up to date
+bunx npm login                                    # once, on the machine that publishes
 bun run release:version 0.1.0                     # every package at 0.1.0, and bun.lock
-bun run release:publish                           # every check, check-packs, and a dry run of each publish
+bun run release:publish                           # every check, check-packs, and each package packed
 git add packages/*/package.json bun.lock
 git commit -m "release: 0.1.0"
-bunx npm login                                    # once, on the machine that publishes
 bun run release:publish --publish                 # publishes them, the ones others depend on first
 git tag v0.1.0
 git push origin main v0.1.0

@@ -30,13 +30,15 @@ if (publishing) {
 for (const script of ['typecheck', 'test', 'lint', 'check-packs']) {
   await $`bun run ${script}`.cwd(ROOT)
 }
-const flags = [...publishing ? ['--tolerate-republish'] : ['--dry-run'], ...version.includes('-') ? ['--tag', 'next'] : []]
+const tag = version.includes('-') ? ['--tag', 'next'] : []
 for (const [at, { name, folder }] of PACKAGES.entries()) {
   // A publish that stopped halfway is run again: the packages it published are left as they are.
   if (published[at]) {
     console.log(`${name}@${version} is published already`)
     continue
   }
-  await $`bun publish --access public ${flags}`.cwd(join(ROOT, folder))
+  // The dry run packs alone: it needs no npm login.
+  if (publishing) await $`bun publish --access public --tolerate-republish ${tag}`.cwd(join(ROOT, folder))
+  else await $`bun pm pack --dry-run`.cwd(join(ROOT, folder))
 }
 console.log(publishing ? `Published ${version}` : `Dry run of ${version}: nothing was published. With --publish, it is.`)

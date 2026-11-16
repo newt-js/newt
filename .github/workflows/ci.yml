@@ -1,4 +1,4 @@
-# Every push and pull request: types, tests, lint, check-packs and a dry run of the publish.
+# Every push and pull request: types, tests, lint, check-packs and each package packed.
 name: CI
 
 on:
