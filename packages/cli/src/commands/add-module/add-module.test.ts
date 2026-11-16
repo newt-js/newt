@@ -14,8 +14,8 @@ import { ADD_MODULE }     from './add-module'
 const run = (command: Command, args: string[], cwd: string) => runCommand(command, args, { cwd, ask: null })
 
 async function backendWithContext(db = 'sqlite'): Promise<string> {
-  const backend = join(await generate(INIT, ['shop']), 'shop')
-  await run(ADD_CONTEXT, ['sales', '--db', db], backend)
+  const backend = join(await generate(INIT, ['shop', '--db', db]), 'shop')
+  await run(ADD_CONTEXT, ['sales'], backend)
   return backend
 }
 

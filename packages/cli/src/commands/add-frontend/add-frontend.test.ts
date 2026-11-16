@@ -34,7 +34,7 @@ describe('newt add frontend', () => {
 
   test('two frontends, each at its context', async () => {
     const backend = await moduleProject()
-    await runCommand((await import('../add-context/add-context')).ADD_CONTEXT, ['billing', '--db', 'memory'], { cwd: backend, ask: null })
+    await runCommand((await import('../add-context/add-context')).ADD_CONTEXT, ['billing'], { cwd: backend, ask: null })
     await addFrontend(['sales'], backend)
     await addFrontend(['billing'], backend)
     const frontends = await read(join(backend, 'src/frontends.ts'))

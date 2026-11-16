@@ -1,6 +1,6 @@
 import { BACKEND_OPTIONS }  from '../../options/backend-options'
-import { clusterOf }        from '../../options/cluster-of/cluster-of'
 import { portOf }           from '../../options/port-of/port-of'
+import { storesOf }         from '../../options/stores-of/stores-of'
 import { backendTemplate }  from '../../templates/backend/backend-template/backend-template'
 import { monorepoTemplate } from '../../templates/monorepo/monorepo-template/monorepo-template'
 import { templateVersions } from '../../templates/template-versions/template-versions'
@@ -28,11 +28,11 @@ export const INIT = defineCommand({
       throw new CommandError('--backend says where a monorepo has its first backend: add --monorepo')
     }
     const port = portOf(options.port)
-    const cluster = clusterOf(options.cluster)
+    const stores = storesOf(options)
     const versions = await templateVersions()
     const changes = kind === 'monorepo'
-      ? monorepoTemplate({ folder, name, backend: backendInRoot(options.backend), port, cluster, versions })
-      : backendTemplate({ folder, name, port, cluster, versions })
+      ? monorepoTemplate({ folder, name, backend: backendInRoot(options.backend), port, stores, versions })
+      : backendTemplate({ folder, name, port, stores, versions })
     return { changes, nextSteps: [...folder === '.' ? [] : [`cd ${folder}`], 'bun install', 'bun run dev'] }
   },
 })

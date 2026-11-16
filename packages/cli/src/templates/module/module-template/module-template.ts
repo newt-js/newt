@@ -4,7 +4,7 @@ import type { FileChange }   from '../../../commands/command'
 import type { ContextNames } from '../../../names/context-names/context-names'
 import type { ModuleNames }  from '../../../names/module-names/module-names'
 import { CONTEXTS_FOLDER }   from '../../../project/backend-contexts/backend-contexts'
-import type { DatabaseName } from '../../context/databases'
+import type { DatabaseKind } from '../../stores/store-databases'
 import { entityTs }          from '../files/entity-ts'
 import { errorNotFoundTs }   from '../files/error-not-found-ts'
 import { eventCreatedTs }    from '../files/event-created-ts'
@@ -16,7 +16,7 @@ import { routesTs }          from '../files/routes-ts'
 import { schemaTs }          from '../files/schema-ts'
 import { moduleMigration }   from '../migrations'
 
-export type ModuleTemplateOptions = { backend: string, context: ContextNames, names: ModuleNames, database: DatabaseName, migration: string }
+export type ModuleTemplateOptions = { backend: string, context: ContextNames, names: ModuleNames, database: DatabaseKind, migration: string }
 
 export const RETURN_MODULES = '  return {'
 
