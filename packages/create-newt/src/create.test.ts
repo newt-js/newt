@@ -2,6 +2,7 @@ import { expect }   from 'bun:test'
 import { test }     from 'bun:test'
 import { mkdtemp }  from 'node:fs/promises'
 import { realpath } from 'node:fs/promises'
+import { symlink }  from 'node:fs/promises'
 import { tmpdir }   from 'node:os'
 import { dirname }  from 'node:path'
 import { join }     from 'node:path'
@@ -35,13 +36,16 @@ test('without a name nor a terminal, says how to give it', async () => {
 
 test('its bin runs it with Bun from Node, and without Bun says how to install it', async () => {
   const node = Bun.which('node')
-  if (!node) return
+  expect(node).not.toBeNull()
   const bin = join(import.meta.dir, 'create-newt.js')
   const cwd = await realpath(await mkdtemp(join(tmpdir(), 'create-newt-')))
-  const withBun = Bun.spawnSync([node, bin, 'shop'], { cwd, env: { ...process.env, PATH: `${dirname(process.execPath)}:${process.env.PATH}` } })
+  const withBun = Bun.spawnSync([node!, bin, 'shop'], { cwd, env: { ...process.env, PATH: `${dirname(process.execPath)}:${process.env.PATH}` } })
   expect(withBun.exitCode).toBe(0)
   expect(await Bun.file(join(cwd, 'shop/package.json')).exists()).toBe(true)
-  const withoutBun = Bun.spawnSync([node, bin, 'shop'], { cwd, env: { PATH: dirname(node) } })
+  // A folder that holds node alone: where node and bun share one, PATH without bun is that.
+  const nodeAlone = await realpath(await mkdtemp(join(tmpdir(), 'node-alone-')))
+  await symlink(node!, join(nodeAlone, 'node'))
+  const withoutBun = Bun.spawnSync([node!, bin, 'shop'], { cwd, env: { PATH: nodeAlone } })
   expect(withoutBun.exitCode).toBe(1)
   expect(withoutBun.stderr.toString()).toContain('https://bun.sh')
 })

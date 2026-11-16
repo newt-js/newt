@@ -5,9 +5,15 @@ import { fileURLToPath } from 'node:url'
 
 const bun = process.versions.bun ? process.execPath : 'bun'
 const create = fileURLToPath(new URL('./create.ts', import.meta.url))
-const { status, error } = spawnSync(bun, [create, ...process.argv.slice(2)], { stdio: 'inherit' })
-if (error) {
+// A shim on Windows, bun.cmd, runs through the shell.
+const { status, signal, error } = spawnSync(bun, [create, ...process.argv.slice(2)], { stdio: 'inherit', shell: process.platform === 'win32' && !process.versions.bun })
+if (error?.code === 'ENOENT') {
   console.error('newt runs on Bun, which is not installed here. Install it, as https://bun.sh says, and run bun create newt <name>')
   process.exit(1)
 }
+if (error) {
+  console.error(`newt could not start Bun: ${error.message}`)
+  process.exit(1)
+}
+if (signal) process.kill(process.pid, signal)
 process.exit(status ?? 1)
