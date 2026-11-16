@@ -40,7 +40,7 @@ export const ADD_MODULE = defineCommand({
       changes: moduleTemplate({ backend: relative(cwd, backend), context: contextName, names, database, migration }),
       nextSteps: [
         `bun test ${join(relative(cwd, backend), CONTEXTS_FOLDER, context, 'modules', module)}`,
-        `its routes ask for a session: give ${context}'s router an authenticator, router.authenticateWith(...), before calling them`,
+        'its routes ask for a session: write authenticate in src/auth.ts to call them from outside the tests',
       ],
     }
   },

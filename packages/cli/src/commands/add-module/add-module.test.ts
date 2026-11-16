@@ -109,7 +109,7 @@ describe('newt add module', () => {
 
   test('says what to do next, and that its routes ask for a session', async () => {
     const output = await run(ADD_MODULE, ['sales/order', '--dry-run'], await backendWithContext())
-    expect(output.text).toEndWith("Next steps:\n  bun test src/contexts/sales/modules/order\n  its routes ask for a session: give sales's router an authenticator, router.authenticateWith(...), before calling them")
+    expect(output.text).toEndWith("Next steps:\n  bun test src/contexts/sales/modules/order\n  its routes ask for a session: write authenticate in src/auth.ts to call them from outside the tests")
   })
 
   test('refuses a context the backend has not, or names that are not', async () => {
