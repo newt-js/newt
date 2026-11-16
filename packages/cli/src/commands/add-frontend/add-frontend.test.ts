@@ -47,6 +47,7 @@ describe('newt add frontend', () => {
     await Bun.write(join(backend, '../web/dist/index.html'), '<!doctype html><title>Web</title><div id="root"></div>\n')
     const output = await addFrontend(['sales', '--built', '../web/dist', '--json'], backend)
     expect(JSON.parse(output.text).warnings).toEqual([])
+    expect(JSON.parse(output.text).nextSteps).toEqual(['build it into ../web/dist for /sales/, as in vite build --base=/sales/, or its assets answer 404; then bun run dev, and open /sales/'])
     expect(await read(join(backend, 'src/frontends.ts'))).toContain("  { path: '/sales', app: join(import.meta.dir, '../../web/dist') },")
     expect(await Bun.file(join(backend, 'src/contexts/sales/frontend')).exists()).toBe(false)
     expect((await Bun.file(join(backend, 'package.json')).json()).dependencies).not.toHaveProperty('react')

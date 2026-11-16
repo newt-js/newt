@@ -20,7 +20,7 @@ export const ADD_FRONTEND = defineCommand({
   summary: 'Adds a React frontend to a context, served by the backend at /<context>',
   args: '<context>',
   options: {
-    built: { type: 'string', value: 'folder', description: 'A frontend built elsewhere, served as it is: the folder of its index.html' },
+    built: { type: 'string', value: 'folder', description: 'A frontend built elsewhere, served as it is: the folder of its index.html, built for /<context>/ (vite build --base=/<context>/)' },
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },
   run: async ({ args, cwd, options }) => {
@@ -53,7 +53,7 @@ export const ADD_FRONTEND = defineCommand({
       return {
         changes: mounted(builtFrontendTemplate({ backend: relative(cwd, backend), context: names, fromSrc })),
         warnings: unbuilt,
-        nextSteps: [`build it into ${options.built}, then bun run dev, and open /${context}`],
+        nextSteps: [`build it into ${options.built} for /${context}/, as in vite build --base=/${context}/, or its assets answer 404; then bun run dev, and open /${context}/`],
       }
     }
     return {
