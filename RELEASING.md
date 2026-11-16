@@ -32,4 +32,4 @@ published are left as they are, and the rest are published.
 A prerelease (`0.2.0-rc.1`) is published with the tag `next`, never as `latest`.
 
 `bun run check-packs` packs each package as npm gets it, makes a backend from them with
-`create-newt` and runs its typecheck, tests and lint. CI runs it on every push.
+`create-newt` and runs its typecheck, tests and lint. CI runs it on every pull request and every push to `main` or a `newt-cli/` branch.
