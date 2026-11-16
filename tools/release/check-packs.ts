@@ -12,7 +12,7 @@ const ROOT = join(import.meta.dir, '../..')
 /** What only newt's own tests use, which no package ships. */
 const TEST_ONLY = /\.test\.tsx?$|\/contract\/|\/fixtures[^/]*\/|\/database\/[^/]+\/testing\//
 
-type Manifest = { dependencies?: Record<string, string>, devDependencies?: Record<string, string> }
+type Manifest = { dependencies?: Record<string, string>, devDependencies?: Record<string, string>, overrides?: Record<string, unknown> }
 
 /** Every package, packed as npm would get it: `workspace:*` turned into its version. */
 async function packed(into: string): Promise<Record<string, string>> {
@@ -37,7 +37,7 @@ async function fromTarballs(project: string, tarballs: Record<string, string>): 
       if (tarballs[name]) manifest[field]![name] = tarballs[name]
     }
   }
-  await Bun.write(file, `${JSON.stringify({ ...manifest, overrides: tarballs }, null, 2)}\n`)
+  await Bun.write(file, `${JSON.stringify({ ...manifest, overrides: { ...manifest.overrides, ...tarballs } }, null, 2)}\n`)
 }
 
 const keep = Bun.argv.includes('--keep')
@@ -57,7 +57,12 @@ try {
   for (const script of ['typecheck', 'test', 'lint']) {
     await $`bun run ${script}`.cwd(app)
   }
-  console.log(`The packed packages make a backend that passes its checks${keep ? `: ${app}` : ''}`)
+  const { devDependencies } = await Bun.file(join(ROOT, 'package.json')).json() as Manifest
+  await $`bun add -d typescript@${devDependencies!.typescript!}`.cwd(app).quiet()
+  for (const script of ['typecheck', 'lint']) {
+    await $`bun run ${script}`.cwd(app)
+  }
+  console.log(`The packed packages make a backend that passes its checks, with TypeScript 7 too${keep ? `: ${app}` : ''}`)
 } finally {
   if (!keep) await rm(work, { recursive: true, force: true })
 }

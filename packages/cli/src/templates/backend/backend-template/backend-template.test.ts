@@ -11,7 +11,7 @@ import { backendTemplate }  from './backend-template'
 
 const STORES = { cluster: 'memory' as const, database: 'sqlite' as const, files: 'local' as const }
 
-const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0', react: '19.0.0', reactDom: '19.0.0', reactTypes: '19.0.0', reactDomTypes: '19.0.0' }
+const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0', react: '19.0.0', reactDom: '19.0.0', reactTypes: '19.0.0', reactDomTypes: '19.0.0', lintTypescript: 'npm:@typescript/typescript6@6.0.2' }
 
 const BACKEND_COMMAND = defineCommand({
   name: 'backend',
@@ -46,6 +46,13 @@ describe('backendTemplate', () => {
       'remove-unchanged apps/shop/index.ts',
       'remove-json-key apps/shop/package.json',
     ])
+  })
+
+  test("the lint's parser stack gets TypeScript 6, whatever TypeScript the project has", () => {
+    const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, stores: STORES, versions: VERSIONS }), 'package.json')
+    const overrides = (change?.action === 'complete-json' ? change.values.overrides : {}) as Record<string, unknown>
+    expect(overrides['@typescript-eslint/typescript-estree']).toEqual({ typescript: 'npm:@typescript/typescript6@6.0.2' })
+    expect(overrides).not.toHaveProperty('typescript')
   })
 
   test('its package is named as told, with newt at its version and the rest at theirs', () => {
