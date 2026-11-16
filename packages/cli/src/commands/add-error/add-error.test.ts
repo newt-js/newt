@@ -51,4 +51,10 @@ describe('newt add error', () => {
   test('refuses a code another error of the module has', async () => {
     expect((await addError(['sales/order', 'not-found', '--kind', 'not-found'], await moduleProject())).text).toBe('errors/order-not-found.ts has the code order.not_found already: name the error by what else went wrong')
   })
+
+  test('run again with another kind, says the error is there with its own', async () => {
+    const backend = await moduleProject()
+    await addError(['sales/order', 'not-paid', '--kind', 'conflict'], backend)
+    expect((await addError(['sales/order', 'not-paid', '--kind', 'validation'], backend)).text).toStartWith('errors/not-paid.ts is there already and extends ConflictError, not ValidationError')
+  })
 })

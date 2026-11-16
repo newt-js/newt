@@ -71,7 +71,7 @@ describe('newt add backend', () => {
     const root = await monorepoProject()
     await addBackend(['apps/orders'], root)
     const report = JSON.parse((await addBackend(['apps/billing', '--port', '3000', '--json'], root)).text) as { warnings: string[] }
-    expect(report.warnings).toEqual(["Port 3000 is also apps/orders's: the two cannot run at once"])
+    expect(report.warnings).toEqual(["Port 3000 is also apps/orders's: give one of them another PORT in its .env, or a request may reach either"])
   })
 
   test('works from any folder inside the monorepo', async () => {

@@ -33,7 +33,7 @@ export const ADD_SUBSCRIPTION = defineCommand({
       throw new CommandError(`${module.type}_Module has no use case ${useCase.camel}: add it with newt add use-case ${given} ${name}`)
     }
     if (!await Bun.file(join(cwd, folder, 'events', `${module.folder}-${event.folder}.ts`)).exists()) {
-      throw new CommandError(`${module.folder} has no event ${event.folder}: add it with newt add event ${given} ${event.folder}`)
+      throw new CommandError(`${module.folder} has no event ${event.folder}: newt add subscription listens to ${module.folder}'s own events; if ${module.folder} emits it, add it with newt add event ${given} ${event.folder}`)
     }
     const changes: FileChange[] = [
       { action: 'create', path: file('.workers.ts'), content: workersTs(module) },

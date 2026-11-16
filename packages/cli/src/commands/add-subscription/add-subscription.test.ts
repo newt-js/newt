@@ -51,6 +51,6 @@ describe('newt add subscription', () => {
     const backend = await moduleProject()
     expect((await run(ADD_SUBSCRIPTION, ['sales/order', 'notify', '--on', 'created'], backend)).text).toBe('Order_Module has no use case notify: add it with newt add use-case sales/order notify')
     await run(ADD_USE_CASE, ['sales/order', 'notify'], backend)
-    expect((await run(ADD_SUBSCRIPTION, ['sales/order', 'notify', '--on', 'paid'], backend)).text).toBe('order has no event paid: add it with newt add event sales/order paid')
+    expect((await run(ADD_SUBSCRIPTION, ['sales/order', 'notify', '--on', 'paid'], backend)).text).toBe("order has no event paid: newt add subscription listens to order's own events; if order emits it, add it with newt add event sales/order paid")
   })
 })

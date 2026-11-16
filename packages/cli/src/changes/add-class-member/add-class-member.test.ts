@@ -52,7 +52,7 @@ describe('addClassMember', () => {
     const cwd = await folderWith('export const x = 1\n')
     const outcome = await addClassMember(CHANGE, diskFiles(cwd))
     expect(outcome.status).toBe('skipped')
-    expect(outcome.warnings).toEqual(['order.module.ts has no class Order_Module, so newt did not change it: add to it\n  rename(): number {\n    return 2\n  }'])
+    expect(outcome.warnings).toEqual(['order.module.ts has no class Order_Module, so newt did not change it: add to it\n  rename(): number {\n    return 2\n  }\nwith\nimport { UseCase } from \'core\''])
   })
 
   test('a dry run writes nothing', async () => {

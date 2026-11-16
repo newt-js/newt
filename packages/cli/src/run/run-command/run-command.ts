@@ -22,6 +22,10 @@ export async function runCommand(command: Command, args: string[], { cwd, ask }:
     return { code: 1, text: `${(error as Error).message}\nRun newt ${command.name} --help.` }
   }
   const { 'help': help, 'json': json, 'dry-run': dryRun, ...options } = parsed.values
+  const twice = Object.keys(parsed.values).find(name => args.filter(arg => arg === `--${name}` || arg.startsWith(`--${name}=`)).length > 1)
+  if (twice) {
+    return { code: 1, text: errorReport(`--${twice} is given twice: give it once`, json === true) }
+  }
   if (help) {
     return { code: 0, text: commandHelp(command) }
   }

@@ -21,7 +21,7 @@ export async function addClassMember(change: AddClassMemberChange, files: Virtua
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)
   const found = source.statements.find((statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement) && statement.name?.text === className)
   if (text === null || !found) {
-    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} has no class ${className}, so newt did not change it: add to it\n${member}`] }
+    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} has no class ${className}, so newt did not change it: add to it\n${member}${imports.length > 0 ? `\nwith\n${imports.join('\n')}` : ''}`] }
   }
   if (found.members.some(each => memberName(each) === name)) {
     return { status: 'skipped', note: 'up to date', warnings: [] }

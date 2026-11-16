@@ -23,6 +23,10 @@ describe('runCommand', () => {
     expect(await Bun.file(join(cwd, 'api/options.json')).json()).toEqual({ db: 'postgres', install: true })
   })
 
+  test('refuses a flag given twice', async () => {
+    expect(await runCommand(ADD_BACKEND, ['api', '--db', 'postgres', '--db=sqlite'], { cwd: emptyFolder(), ask: null })).toEqual({ code: 1, text: '--db is given twice: give it once' })
+  })
+
   test('--json prints the report as JSON', async () => {
     const output = await runCommand(ADD_BACKEND, ['api', '--json'], { cwd: emptyFolder(), ask: null })
     expect(JSON.parse(output.text)).toEqual({ dryRun: false, files: [{ path: 'api/options.json', status: 'created' }], warnings: [], nextSteps: ['cd api'] })

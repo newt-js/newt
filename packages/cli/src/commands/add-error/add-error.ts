@@ -28,6 +28,11 @@ export const ADD_ERROR = defineCommand({
     if (Object.values(ERROR_KINDS).includes(error.type as never) || error.type === 'KnownError') {
       throw new CommandError(`'${name}' cannot name an error: ${error.type} is the class newt's errors extend; name it by what went wrong, as in order-already-paid`)
     }
+    const existing = await Bun.file(join(cwd, folder, 'errors', `${error.folder}.ts`)).text().catch(() => null)
+    const extended = existing === null ? undefined : / extends (\w+)/.exec(existing)?.[1]
+    if (extended && extended !== ERROR_KINDS[kind]) {
+      throw new CommandError(`errors/${error.folder}.ts is there already and extends ${extended}, not ${ERROR_KINDS[kind]}: change it by hand`)
+    }
     const code = errorCode(module, error)
     const errors = join(cwd, folder, 'errors')
     for await (const file of new Bun.Glob('*.ts').scan(errors)) {

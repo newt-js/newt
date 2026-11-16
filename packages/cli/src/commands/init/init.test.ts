@@ -75,7 +75,7 @@ describe('newt init', () => {
     const output = await runCommand(INIT, ['.', '--json'], { cwd: folder, ask: null })
     const report = JSON.parse(output.text) as { files: { path: string, status: string }[], warnings: string[] }
     const statusOf = (path: string) => report.files.filter(file => file.path === path).map(file => file.status)
-    expect(statusOf('package.json')).toEqual(['updated', 'updated'])
+    expect(statusOf('package.json')).toEqual(['updated'])
     expect(statusOf('tsconfig.json')).toEqual(['skipped'])
     expect(statusOf('index.ts')).toEqual(['removed'])
     expect(statusOf('.gitignore')).toEqual(['updated'])

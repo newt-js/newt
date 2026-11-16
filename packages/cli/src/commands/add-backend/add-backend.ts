@@ -45,7 +45,7 @@ export const ADD_BACKEND = defineCommand({
     return {
       changes: workspaces ? [workspaces, ...backend] : backend,
       warnings: [
-        ...sharing === undefined ? [] : [`Port ${port} is also ${sharing}'s: the two cannot run at once`],
+        ...sharing === undefined ? [] : [`Port ${port} is also ${sharing}'s: give one of them another PORT in its .env, or a request may reach either`],
         ...(await otherEslintConfigs(folder)).map(other => eslintWarning(join(relative(cwd, folder), other))),
       ],
       nextSteps: [...root.folder === cwd ? [] : [`cd ${relative(cwd, root.folder)}`], 'bun install', `cd ${relative(root.folder, folder)}`, 'bun run dev'],

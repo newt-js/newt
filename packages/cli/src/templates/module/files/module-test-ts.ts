@@ -1,4 +1,5 @@
 import type { ModuleNames } from '../../../names/module-names/module-names'
+import { withArticle }      from '../../../names/with-article/with-article'
 
 export function moduleTestTs({ folder, type, plural, path, words }: ModuleNames, context: string): string {
   return `import { afterEach, beforeEach, expect, test } from 'bun:test'
@@ -22,7 +23,7 @@ beforeEach(() => {
 
 afterEach(() => context.close())
 
-test('creates a ${words} and reads it back', async () => {
+test('creates ${withArticle(words)} and reads it back', async () => {
   const created = await ${plural}.create({ name: ' First ' })
 
   expect(await ${plural}.get({ id: created.id })).toMatchObject({ id: created.id, name: 'First' })
