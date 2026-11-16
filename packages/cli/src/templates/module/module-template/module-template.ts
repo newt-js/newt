@@ -20,6 +20,13 @@ export type ModuleTemplateOptions = { backend: string, context: ContextNames, na
 
 export const RETURN_MODULES = '  return {'
 
+export const END_OF_MODULES = '  }'
+
+/** The line of <ctx>-modules.ts that initializes a module. */
+export function initializedLine({ module, type }: ModuleNames, deps = ''): string {
+  return `  const ${module} = ${type}_Module.initialize(base, router${deps})`
+}
+
 /** A module of a context: its files, its table's migration, and its place in <ctx>-modules.ts. */
 export function moduleTemplate({ backend, context, names, database, migration }: ModuleTemplateOptions): FileChange[] {
   const contextFolder = join(backend, CONTEXTS_FOLDER, context.folder)
@@ -36,6 +43,7 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     [`${names.folder}.module.test.ts`]: moduleTestTs(names, context.folder),
   }
   const sql = moduleMigration(names, database)
+  const modules = join(contextFolder, `${context.folder}-modules.ts`)
   return [
     ...Object.entries(files).map(([path, content]): FileChange => ({ action: 'create', path: join(folder, path), content })),
     ...sql ? [
@@ -44,11 +52,12 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     ] : [],
     {
       action: 'insert-lines',
-      path: join(contextFolder, `${context.folder}-modules.ts`),
+      path: modules,
       anchor: RETURN_MODULES,
-      position: 'after',
-      lines: [`    ${names.module}: ${names.type}_Module.initialize(base, router),`],
+      position: 'before',
+      lines: [initializedLine(names)],
       imports: [`import { ${names.type}_Module } from './modules/${names.folder}/${names.folder}.module'`],
     },
+    { action: 'insert-lines', path: modules, anchor: END_OF_MODULES, position: 'before', lines: [`    ${names.module},`], imports: [] },
   ]
 }

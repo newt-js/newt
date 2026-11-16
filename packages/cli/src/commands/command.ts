@@ -28,7 +28,30 @@ export type InsertLinesChange = { action: 'insert-lines', path: string, anchor: 
 
 export type ReplaceLineChange = { action: 'replace-line', path: string, line: string, with: string, imports: string[] }
 
-export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange | RemoveUnchangedChange | RemoveJsonKeyChange | CompleteEnvChange | InsertLinesChange | ReplaceLineChange
+export type AddConstructorStatementChange = { action: 'add-constructor-statement', path: string, className: string, statement: string }
+
+export type KeepLineBelowChange = { action: 'keep-line-below', path: string, line: string, below: string }
+
+export type AppendBlockChange = { action: 'append-block', path: string, block: string, imports: string[] }
+
+export type AddClassMemberChange = { action: 'add-class-member', path: string, className: string, name: string, member: string, imports: string[] }
+
+export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[] }
+
+export type FileChange =
+  | CreateChange
+  | CompleteJsonChange
+  | EnsureLinesChange
+  | RemoveUnchangedChange
+  | RemoveJsonKeyChange
+  | CompleteEnvChange
+  | InsertLinesChange
+  | ReplaceLineChange
+  | AddClassMemberChange
+  | AddObjectPropertyChange
+  | AppendBlockChange
+  | KeepLineBelowChange
+  | AddConstructorStatementChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }
 
