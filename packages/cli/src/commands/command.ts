@@ -22,7 +22,11 @@ export type RemoveUnchangedChange = { action: 'remove-unchanged', path: string, 
 
 export type RemoveJsonKeyChange = { action: 'remove-json-key', path: string, key: string, value: unknown, whenMissing: string }
 
-export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange | RemoveUnchangedChange | RemoveJsonKeyChange
+export type CompleteEnvChange = { action: 'complete-env', path: string, variables: Record<string, string> }
+
+export type InsertLinesChange = { action: 'insert-lines', path: string, before: string, lines: string[], imports: string[] }
+
+export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange | RemoveUnchangedChange | RemoveJsonKeyChange | CompleteEnvChange | InsertLinesChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }
 
