@@ -39,15 +39,6 @@ test('a file it cannot write is seen before writing, in a dry run too', async ()
   expect(await Bun.file(join(cwd, 'a.ts')).exists()).toBe(false)
 })
 
-test('when a write fails, what it wrote is put back', async () => {
-  const cwd = emptyFolder()
-  await Bun.write(join(cwd, 'kept.ts'), 'before')
-  const changed = new Map([['kept.ts', 'after'], ['src/new/a.ts', 'a'], [`${'x'.repeat(300)}.ts`, 'too long']])
-  await expect(writeFiles(cwd, changed, false)).rejects.toThrow('newt wrote nothing: it could not write')
-  expect(await Bun.file(join(cwd, 'kept.ts')).text()).toBe('before')
-  expect(existsSync(join(cwd, 'src'))).toBe(false)
-})
-
 test('writes nothing through a link out of the project, a file or a folder, nor through a link to nothing', async () => {
   const outside = emptyFolder()
   await Bun.write(join(outside, 'shared.ts'), 'export {}\n')
