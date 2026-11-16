@@ -12,10 +12,15 @@ tester.run('route-context', asRule(routeContext), {
     { code: 'router.get(`/ws`, handle)', filename: ROUTES },
     { code: 'router.get(path, handle)', filename: ROUTES },
     { code: "router.get('/price-changes', handle)", filename: `${MODULE}/price-change.module.ts` },
+    { code: "router.get('/ws/x', request => request.headers.get('if-none-match'))", filename: ROUTES },
+    { code: "router.group('/ws/mine').get('/price-changes', handle)", filename: ROUTES },
+    { code: "export function register(http: HttpRouter) { http.get('/ws/price-changes', handle) }", filename: ROUTES },
   ],
   invalid: [
     { code: "router.get('/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/price-changes', context: 'ws' } }] },
     { code: "router.delete('/wss/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context' }] },
     { code: 'router.put(`/price-changes/:id`, handle)', filename: ROUTES, errors: [{ messageId: 'context' }] },
+    { code: "router.group('/elsewhere').get('/ws/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/elsewhere', context: 'ws' } }] },
+    { code: "export function register(http: HttpRouter) { http.get('/price-changes', handle) }", filename: ROUTES, errors: [{ messageId: 'context' }] },
   ],
 })
