@@ -6,7 +6,8 @@ A backend built with newt (@newt-js/core), on Bun.
 
 - \`src/index.ts\`: starts the backend on \`PORT\` (from \`.env\`).
 - \`src/backend.ts\`: opens the contexts and serves them, with \`GET /api/health\`.
-- \`src/stores.ts\`: the database and the files each context opens; under \`bun test\`, a Postgres, MySQL or S3 is one in memory.
+- \`src/stores.ts\`: the database and the files each context opens. Tests start the backend with
+  \`startBackend(0, { stores: 'memory' })\`: databases, files and cluster in memory, sqlite with its migrations.
 - \`src/env.ts\`: \`requiredEnv\`, for the variables the backend cannot start without.
 - \`src/contexts.ts\`: the list of contexts the backend opens.
 - \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/api/<context>/\`.

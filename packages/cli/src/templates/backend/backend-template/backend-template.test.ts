@@ -40,7 +40,6 @@ describe('backendTemplate', () => {
       'create apps/shop/src/index.ts',
       'complete-env apps/shop/.env',
       'complete-env apps/shop/.env.example',
-      'complete-env apps/shop/.env.test',
       'ensure-lines apps/shop/.gitignore',
       'ensure-lines apps/shop/CLAUDE.md',
       'remove-unchanged apps/shop/index.ts',

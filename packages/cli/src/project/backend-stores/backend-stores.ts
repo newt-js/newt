@@ -31,7 +31,9 @@ export async function backendStores(backend: string): Promise<BackendStores> {
   const file = Bun.file(join(backend, 'src/stores.ts'))
   const imported = importedNames(await file.exists() ? await file.text() : '')
   const found = <K extends string>(kinds: Kinds<K>, what: string) => {
-    const all = (Object.keys(kinds) as K[]).filter(kind => kinds[kind].imports.some(line => imported.has(`${moduleOf(line)}#${kinds[kind].className}`)))
+    const imports = (Object.keys(kinds) as K[]).filter(kind => kinds[kind].imports.some(line => imported.has(`${moduleOf(line)}#${kinds[kind].className}`)))
+    // The one in memory is there for the tests too.
+    const all = imports.length > 1 ? imports.filter(kind => kind !== 'memory') : imports
     if (all.length > 1) {
       throw new CommandError(`src/stores.ts imports ${all.map(kind => kinds[kind].className).join(' and ')}, and newt cannot tell which ${what} the backend uses: leave it one`)
     }

@@ -45,7 +45,6 @@ export function backendTemplate({ folder, name, port, stores, versions, inMonore
     { action: 'create', path: at('src/index.ts'), content: SRC_INDEX_TS, kept: INDEX_KEPT },
     { action: 'complete-env', path: at('.env'), variables: variables(false) },
     { action: 'complete-env', path: at('.env.example'), variables: variables(true) },
-    { action: 'complete-env', path: at('.env.test'), variables: STORE_FILES[stores.files].testEnv },
     { action: 'ensure-lines', path: at('.gitignore'), lines: GITIGNORE },
     { action: 'ensure-lines', path: at('CLAUDE.md'), lines: CLAUDE_MD },
     { action: 'remove-unchanged', path: at('index.ts'), content: BUN_INIT_INDEX_TS, why: 'the backend starts at src/index.ts' },

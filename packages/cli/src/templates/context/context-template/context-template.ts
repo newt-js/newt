@@ -26,13 +26,12 @@ export function contextTemplate({ backend, packageName, names, stores }: Context
     { action: 'create', path: join(folder, 'migrations/.gitkeep'), content: '' },
     { action: 'complete-env', path: at('.env'), variables },
     { action: 'complete-env', path: at('.env.example'), variables },
-    { action: 'complete-env', path: at('.env.test'), variables: { ...database.contextTestEnv(names.env, names.folder, packageName), ...files.contextTestEnv(names.env, names.folder, packageName) } },
     {
       action: 'insert-lines',
       path: at('src/contexts.ts'),
       anchor: RETURN_CONTEXTS,
       position: 'before',
-      lines: [`  contexts.push(await ${names.type}_Context.open(platform))`],
+      lines: [`  contexts.push(await ${names.type}_Context.open(platform, stores))`],
       imports: [`import { ${names.type}_Context } from './contexts/${names.folder}/${names.folder}.context'`],
     },
   ]

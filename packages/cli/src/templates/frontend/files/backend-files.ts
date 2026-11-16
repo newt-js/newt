@@ -12,7 +12,7 @@ import { startBackend } from './backend'
 import { frontends } from './frontends'
 
 test('the backend serves the page of every frontend, of those built elsewhere the ones built already', async () => {
-  const backend = await startBackend(0)
+  const backend = await startBackend(0, { stores: 'memory' })
   for (const { path, app } of frontends) {
     if (typeof app !== 'string' || await Bun.file(join(app, 'index.html')).exists()) {
       const response = await fetch(new URL(path, backend.server!.url))

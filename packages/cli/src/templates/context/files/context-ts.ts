@@ -4,7 +4,7 @@ export function contextTs({ folder, type, camel }: ContextNames): string {
   return `import { join } from 'node:path'
 import { BoundedContext, ContextBase, type Platform } from '@newt-js/core/application'
 import { HttpRouter, type ContextToRun } from '@newt-js/core/http'
-import { openDatabase, openStorage } from '../../stores'
+import { openDatabase, openStorage, type Stores } from '../../stores'
 import { ${camel}Modules, type ${type}Modules } from './${folder}-modules'
 
 export class ${type}_Context extends BoundedContext {
@@ -12,10 +12,10 @@ export class ${type}_Context extends BoundedContext {
     super('${folder}', base)
   }
 
-  static async open(platform: Platform): Promise<ContextToRun> {
-    const database = await openDatabase('${folder}', join(import.meta.dir, 'migrations'))
+  static async open(platform: Platform, stores: Stores): Promise<ContextToRun> {
+    const database = await openDatabase('${folder}', join(import.meta.dir, 'migrations'), stores)
     const router = new HttpRouter({ database })
-    const base = new ContextBase({ name: '${folder}', platform, database, storage: await openStorage('${folder}', router) })
+    const base = new ContextBase({ name: '${folder}', platform, database, storage: await openStorage('${folder}', router, stores) })
     return { context: new ${type}_Context(base, ${camel}Modules(base, router)), router }
   }
 }

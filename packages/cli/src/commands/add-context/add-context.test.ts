@@ -22,7 +22,7 @@ import { openStorage } from '../../stores'
 
 test('sales keeps a file uploaded to its signed address, and serves it at another', async () => {
   const router = new HttpRouter()
-  const storage = (await openStorage('sales', router)).private!
+  const storage = (await openStorage('sales', router, 'configured')).private!
   const upload = await storage.uploadUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain', size: 5 })
   const put = await router.answer(new Request(upload.url, { method: 'PUT', headers: upload.headers, body: 'hello' }))
   expect(put?.ok).toBe(true)
@@ -36,11 +36,11 @@ describe('newt add context', () => {
     const backend = await backendProject()
     expect((await addContext(['sales'], backend)).code).toBe(0)
     const context = await read(join(backend, 'src/contexts/sales/sales.context.ts'))
-    expect(context).toContain("const database = await openDatabase('sales', join(import.meta.dir, 'migrations'))")
-    expect(context).toContain("storage: await openStorage('sales', router)")
-    expect(await read(join(backend, 'src/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform))\n  return contexts')
+    expect(context).toContain("const database = await openDatabase('sales', join(import.meta.dir, 'migrations'), stores)")
+    expect(context).toContain("storage: await openStorage('sales', router, stores)")
+    expect(await read(join(backend, 'src/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform, stores))\n  return contexts')
     expect(await read(join(backend, '.env'))).toEndWith('\nSALES_DATABASE=data/sales.sqlite\nSALES_FILES=data/files/sales\n')
-    expect(await read(join(backend, '.env.test'))).toEndWith('SALES_DATABASE=:memory:\nSALES_FILES=data/test/files/sales\n')
+    expect(await Bun.file(join(backend, '.env.test')).exists()).toBe(false)
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -57,7 +57,7 @@ describe('newt add context', () => {
     await addContext(['web-session'], backend)
     const contexts = await read(join(backend, 'src/contexts.ts'))
     expect(contexts).toContain("import { WebSession_Context } from './contexts/web-session/web-session.context'")
-    expect(contexts).toContain('  contexts.push(await Sales_Context.open(platform))\n  contexts.push(await WebSession_Context.open(platform))\n  return contexts')
+    expect(contexts).toContain('  contexts.push(await Sales_Context.open(platform, stores))\n  contexts.push(await WebSession_Context.open(platform, stores))\n  return contexts')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -112,7 +112,7 @@ describe('newt add context', () => {
     await Bun.write(join(backend, 'src/contexts.ts'), 'export const openContexts = async () => []\n')
     const output = await addContext(['sales', '--json'], backend)
     expect(output.code).toBe(1)
-    expect((JSON.parse(output.text) as { error: string }).error).toBe("newt wrote nothing, since its changes go together and some cannot be made:\n- src/contexts.ts is not as newt wrote it, so newt did not change it: add import { Sales_Context } from './contexts/sales/sales.context'; contexts.push(await Sales_Context.open(platform))")
+    expect((JSON.parse(output.text) as { error: string }).error).toBe("newt wrote nothing, since its changes go together and some cannot be made:\n- src/contexts.ts is not as newt wrote it, so newt did not change it: add import { Sales_Context } from './contexts/sales/sales.context'; contexts.push(await Sales_Context.open(platform, stores))")
     expect(await Bun.file(join(backend, 'src/contexts/sales/sales.context.ts')).exists()).toBe(false)
   })
 

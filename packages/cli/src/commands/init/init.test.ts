@@ -123,7 +123,7 @@ describe('newt init', () => {
     expect(manifest).not.toHaveProperty('module')
     expect(manifest.scripts.typecheck).toBe("bun run --filter '*' typecheck")
     expect(report.warnings.filter(warning => warning.startsWith('package.json'))).toEqual([])
-    expect(await Bun.file(join(folder, 'AGENTS.md')).text()).toContain('`bun test` here does not read')
+    expect(await Bun.file(join(folder, 'AGENTS.md')).text()).toContain('`bun run test`, `bun run typecheck`, `bun run lint`: each in every workspace')
     expect(await Bun.file(join(folder, 'CLAUDE.md')).text()).toContain('@AGENTS.md')
   })
 
@@ -160,8 +160,8 @@ describe('newt init', () => {
     test(`--db ${db} --files ${files}: with a context and a module, its lint, types and tests pass, in memory where a service is needed`, async () => {
       const folder = join(await generate(INIT, ['shop', '--db', db, '--files', files]), 'shop')
       const stores = await Bun.file(join(folder, 'src/stores.ts')).text()
-      expect(stores).toContain('function openDatabase(context: string, migrations: string): Promise<Database> {')
-      expect(stores).toContain('export async function openStorage(context: string, router: HttpRouter): Promise<StorageOptions> {')
+      expect(stores).toContain('export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {')
+      expect(stores).toContain('export async function openStorage(context: string, router: HttpRouter, stores: Stores): Promise<StorageOptions> {')
       await runCommand(ADD_CONTEXT, ['sales'], { cwd: folder, ask: null })
       await runCommand(ADD_MODULE, ['sales/order'], { cwd: folder, ask: null })
       expect(await checkGenerated(folder)).toEqual([])
