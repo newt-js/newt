@@ -12,8 +12,11 @@ import { workspaceFolders }  from '../workspace-folders/workspace-folders'
 export async function findBackend(cwd: string, given?: string): Promise<string> {
   if (given !== undefined) {
     const folder = resolve(cwd, given)
+    if (!await Bun.file(join(folder, 'package.json')).exists()) {
+      throw new CommandError(`${given} has no package.json: --backend takes the folder of a backend`)
+    }
     if (!await isBackend(folder)) {
-      throw new CommandError(`${given} is not a newt backend: its package.json does not depend on @newt-js/core`)
+      throw new CommandError(`${given} is not a newt backend: a backend's package.json depends on @newt-js/core, and it has src/backend.ts`)
     }
     return folder
   }

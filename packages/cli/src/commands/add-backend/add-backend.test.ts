@@ -128,6 +128,9 @@ describe('newt add backend', () => {
   test("refuses a folder that is another package, and not a backend", async () => {
     const root = await monorepoProject()
     expect((await addBackend(['packages/utils'], root)).text).toBe('packages/utils is a package already, and not a newt backend: put the backend in a folder of its own')
+    await Bun.write(join(root, 'apps/shared/package.json'), JSON.stringify({ name: 'shared', dependencies: { '@newt-js/core': '*' } }))
+    await Bun.write(join(root, 'apps/shared/src/index.ts'), 'export {}\n')
+    expect((await addBackend(['apps/shared', '--dry-run'], root)).text).toBe('apps/shared is a package already, and not a newt backend: put the backend in a folder of its own')
   })
 
   test('refuses a folder in node_modules, or one that holds a workspace', async () => {
