@@ -41,4 +41,21 @@ describe('newt add use-case', () => {
   test('refuses the names of the reads the lint shapes', async () => {
     expect((await addUseCase(['sales/order', 'find'], await moduleProject())).text).toStartWith('find is one of the reads')
   })
+
+  test('refuses, before writing anything, a name the module or its schema has already', async () => {
+    const backend = await moduleProject()
+    const refusals: [string, string][] = [
+      ['create', 'Order_Module has create already'],
+      ['constructor', "'constructor' cannot name a use case"],
+      ['on', "'on' cannot name a use case"],
+      ['use-case-runner', "'use-case-runner' cannot name a use case"],
+      ['filter', "'filter' cannot name a use case: order.schema.ts has OrderFilterDTO already"],
+      ['sort', "'sort' cannot name a use case: order.schema.ts has OrderSortDTO already"],
+    ]
+    for (const [name, why] of refusals) {
+      const before = await Bun.file(join(backend, ORDER_MODULE, 'order.schema.ts')).text()
+      expect((await addUseCase(['sales/order', name], backend)).text).toStartWith(why)
+      expect(await Bun.file(join(backend, ORDER_MODULE, 'order.schema.ts')).text()).toBe(before)
+    }
+  })
 })
