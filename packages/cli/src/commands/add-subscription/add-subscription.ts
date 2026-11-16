@@ -4,6 +4,7 @@ import { codeTokens }       from '../../changes/code-tokens/code-tokens'
 import { indexOfTokens }    from '../../changes/index-of-tokens/index-of-tokens'
 import { pieceNames }       from '../../names/piece-names/piece-names'
 import { findModule }       from '../../project/find-module/find-module'
+import { useCaseOf }        from '../../project/use-case-of/use-case-of'
 import { reactionLine }     from '../../templates/pieces/subscription-ts'
 import { subscriptionTest } from '../../templates/pieces/subscription-ts'
 import { workersHead }      from '../../templates/pieces/subscription-ts'
@@ -30,14 +31,14 @@ export const ADD_SUBSCRIPTION = defineCommand({
     const event = pieceNames(options.on, 'an event')
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
-    const signature = new RegExp(`async ${useCase.camel}\\(([^)]*)\\)`).exec(code)
-    if (!signature) {
+    const found = useCaseOf(code, `${module.type}_Module`, useCase.camel)
+    if (!found) {
       throw new CommandError(`${module.type}_Module has no use case ${useCase.camel}: add it with newt add use-case ${given} ${name}`)
     }
     if (!await Bun.file(join(cwd, folder, 'events', `${module.folder}-${event.folder}.ts`)).exists()) {
       throw new CommandError(`${module.folder} has no event ${event.folder}: newt add subscription listens to ${module.folder}'s own events; if ${module.folder} emits it, add it with newt add event ${given} ${event.folder}`)
     }
-    const reaction = reactionLine(module, useCase, event, signature[1]!.trim() !== '')
+    const reaction = reactionLine(module, useCase, event, found.inputs > 0)
     const changes: FileChange[] = [
       { action: 'create', path: file('.workers.ts'), content: workersTs(module) },
       { action: 'insert-lines', path: file('.workers.ts'), anchor: workersHead(module), position: 'after', lines: [reaction], imports: [] },

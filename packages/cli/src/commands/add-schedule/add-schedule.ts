@@ -3,6 +3,7 @@ import { join }             from 'node:path'
 import { pieceNames }       from '../../names/piece-names/piece-names'
 import { cronOf }           from '../../options/cron-of/cron-of'
 import { findModule }       from '../../project/find-module/find-module'
+import { useCaseOf }        from '../../project/use-case-of/use-case-of'
 import { scheduleTest }     from '../../templates/pieces/schedule-ts'
 import { scheduledUseCase } from '../../templates/pieces/schedule-ts'
 import { workersHead }      from '../../templates/pieces/subscription-ts'
@@ -30,8 +31,7 @@ export const ADD_SCHEDULE = defineCommand({
     const useCase = pieceNames(name, 'a use case')
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
-    const existing = new RegExp(`async ${useCase.camel}\\(([^)]*)\\)`).exec(code)
-    if (existing && existing[1]!.trim() !== '') {
+    if ((useCaseOf(code, `${module.type}_Module`, useCase.camel)?.inputs ?? 0) > 0) {
       throw new CommandError(`${useCase.camel} takes an input, and a schedule gives none: name a use case of its own`)
     }
     const field = `${useCase.camel}Schedule`

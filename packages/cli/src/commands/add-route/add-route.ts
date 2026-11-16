@@ -3,6 +3,7 @@ import { join }            from 'node:path'
 import { pieceNames }      from '../../names/piece-names/piece-names'
 import { findModule }      from '../../project/find-module/find-module'
 import { routeFileWith }   from '../../project/route-file-with/route-file-with'
+import { useCaseOf }       from '../../project/use-case-of/use-case-of'
 import { routesHead }      from '../../templates/module/files/routes-ts'
 import { routeLine }       from '../../templates/pieces/route-ts'
 import { routeTest }       from '../../templates/pieces/route-ts'
@@ -43,16 +44,16 @@ export const ADD_ROUTE = defineCommand({
     if (twice) throw new CommandError(`'${path}' has ${twice} twice: name each param once`)
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
-    const signature = new RegExp(`async ${useCase.camel}\\(([^)]*)\\): Promise<([^>]+)>`).exec(code)
-    if (!signature) {
+    const found = useCaseOf(code, `${module.type}_Module`, useCase.camel)
+    if (!found) {
       throw new CommandError(`${module.type}_Module has no use case ${useCase.camel}: add it with newt add use-case ${given} ${name}`)
     }
-    const parameters = signature[1]!.split(',').filter(each => each.trim() !== '').length
+    const parameters = found.inputs
     if (parameters > 1) {
       throw new CommandError(`${useCase.camel} takes ${parameters} inputs, and a route gives one: write its route by hand in ${module.folder}.routes.ts`)
     }
     const hasId = params.includes(':id')
-    const shape = { method, path, takesInput: parameters === 1, returnsNothing: signature[2] === 'void' }
+    const shape = { method, path, takesInput: parameters === 1, returnsNothing: found.returnsNothing }
     if (shape.takesInput && !hasId && ['get', 'delete'].includes(method)) {
       throw new CommandError(`${useCase.camel} takes an input, and a ${method.toUpperCase()} has no body to give it: put :id in --path, or use post, put or patch`)
     }
