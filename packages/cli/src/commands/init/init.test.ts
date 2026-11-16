@@ -141,7 +141,7 @@ describe('newt init', () => {
         return questions.length === 1 ? 'shop' : 'monorepo'
       },
     })
-    expect(questions).toEqual(['What is your project named?', 'A backend or a monorepo? (backend or monorepo)'])
+    expect(questions).toEqual(['What is your project named?', 'A backend or a monorepo?'])
     expect(output.text).toContain('will create  shop/apps/api/src/backend.ts')
   })
 
