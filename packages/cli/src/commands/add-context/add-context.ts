@@ -22,6 +22,9 @@ export const ADD_CONTEXT = defineCommand({
       throw new CommandError('newt add context takes the name of the context, as in newt add context shop')
     }
     const names = contextNames(name)
+    if (name === 'api') {
+      throw new CommandError("'api' cannot name a context: its frontend would be served at /api, where the backend's routes are")
+    }
     const backend = await findBackend(cwd, options.backend)
     const stores = await backendStores(backend)
     if (!stores) {

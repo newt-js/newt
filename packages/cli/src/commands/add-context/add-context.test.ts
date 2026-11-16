@@ -113,6 +113,7 @@ describe('newt add context', () => {
   test('refuses a name that is not one, and a backend without the stores newt writes', async () => {
     const backend = await backendProject()
     expect((await addContext(['Sales'], backend)).text).toStartWith("'Sales' cannot name a context")
+    expect((await addContext(['api'], backend)).text).toStartWith("'api' cannot name a context")
     expect((await addContext([], backend)).text).toBe('newt add context takes the name of the context, as in newt add context shop')
     await Bun.write(join(backend, 'src/stores.ts'), 'export const mine = 1\n')
     expect((await addContext(['sales'], backend)).text).toStartWith('The backend has no src/stores.ts that newt can read')
