@@ -8,6 +8,10 @@ import { ConcurrencyConflict } from '../../errors/concurrency-conflict/concurren
 import { DuplicateValue }      from '../../errors/duplicate-value/duplicate-value'
 import { StaleVersion }        from '../../errors/stale-version/stale-version'
 import { Observability }       from '../../observability/observability'
+import { AlreadyReceived }     from '../already-received/already-received'
+import { Inbox }               from '../inbox'
+import { ReactionRun }         from '../reaction-run'
+import { reactionScope }       from '../reaction-scope/reaction-scope'
 import { useCaseChainScope }   from '../use-case-chain-scope/use-case-chain-scope'
 import { workerScope }         from '../worker-scope/worker-scope'
 import { UseCaseRunner }       from './use-case-runner'
@@ -280,5 +284,79 @@ describe('checkGuardRule', () => {
     new UseCaseRunner({ guardRule: 'off', observability: recorder }).checkGuardRule(['seats'])
 
     expect(recorder.warnings).toEqual([{ message: expect.stringMatching(/^\[guard rule\] a save outside any use case reads seats/), fields: { useCase: 'a save outside any use case', tables: ['seats'] } }])
+  })
+})
+
+class KeptInbox implements Inbox {
+  readonly kept = new Set<string>()
+  readonly asked: string[] = []
+
+  async has(reaction: ReactionRun): Promise<boolean> {
+    this.asked.push(`${reaction.event} ${reaction.queue}`)
+    return this.kept.has(`${reaction.event} ${reaction.queue}`)
+  }
+
+  async receive(reaction: ReactionRun): Promise<boolean> {
+    reaction.received = true
+    const key = `${reaction.event} ${reaction.queue}`
+    const fresh = !this.kept.has(key)
+    this.kept.add(key)
+    return fresh
+  }
+
+  async purge(): Promise<void> {}
+}
+
+describe('the inbox', () => {
+  const reaction = (): ReactionRun => ({ event: 'e1', queue: 'billing.invoice.on.order.placed', received: false })
+
+  test('a use case run as a reaction already received does not run: it says so', async () => {
+    const inbox = new KeptInbox()
+    inbox.kept.add('e1 billing.invoice.on.order.placed')
+    const runner = new UseCaseRunner({ context: 'billing', inbox })
+    let ran = false
+
+    const running = reactionScope.run(reaction(), () => runner.run('billing.invoice', async () => {
+      ran = true
+    }))
+
+    await expect(running).rejects.toBeInstanceOf(AlreadyReceived)
+    expect(ran).toBe(false)
+  })
+
+  test('one not received yet runs, and the use cases it calls ask no more', async () => {
+    const inbox = new KeptInbox()
+    const runner = new UseCaseRunner({ context: 'billing', inbox })
+
+    const value = await reactionScope.run(reaction(), () => runner.run('billing.invoice', () => runner.run('tax.add', async () => 'done')))
+
+    expect(value).toBe('done')
+    expect(inbox.asked).toEqual(['e1 billing.invoice.on.order.placed'])
+  })
+
+  test('receive puts the reaction in the inbox once a run, and refuses one received by another run', async () => {
+    const inbox = new KeptInbox()
+    const runner = new UseCaseRunner({ inbox })
+    const first = reaction()
+
+    await reactionScope.run(first, async () => {
+      await runner.receive()
+      await runner.receive()
+    })
+
+    expect(first.received).toBe(true)
+    expect(inbox.kept.size).toBe(1)
+    await expect(reactionScope.run(reaction(), () => runner.receive())).rejects.toBeInstanceOf(AlreadyReceived)
+  })
+
+  test('outside a reaction, or with no inbox, there is nothing to receive nor to ask', async () => {
+    const inbox = new KeptInbox()
+
+    await new UseCaseRunner({ inbox }).run('billing.invoice', async () => {})
+    await new UseCaseRunner({ inbox }).receive()
+    await reactionScope.run(reaction(), () => new UseCaseRunner().run('billing.invoice', () => new UseCaseRunner().receive()))
+
+    expect(inbox.asked).toEqual([])
+    expect(inbox.kept.size).toBe(0)
   })
 })

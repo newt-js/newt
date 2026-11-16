@@ -6,9 +6,13 @@ import { noObservability }     from '../../observability/no-observability/no-obs
 import { Observability }       from '../../observability/observability'
 import { UseCaseAttempt }      from '../../observability/use-case-attempt'
 import { ContextRegistry }     from '../../registry/context-registry/context-registry'
+import { AlreadyReceived }     from '../already-received/already-received'
 import { ConflictRetries }     from '../conflict-retries/conflict-retries'
 import { conflictRetries }     from '../conflict-retries/conflict-retries'
 import { GuardRule }           from '../guard-rule'
+import { Inbox }               from '../inbox'
+import { ReactionRun }         from '../reaction-run'
+import { reactionScope }       from '../reaction-scope/reaction-scope'
 import { sleep }               from '../sleep/sleep'
 import { useCaseChainScope }   from '../use-case-chain-scope/use-case-chain-scope'
 import { UseCaseOptions }      from '../use-case-options'
@@ -22,12 +26,14 @@ export type UseCaseRunnerOptions = {
   guardRule?: GuardRule | undefined
   clock?: Clock | undefined
   conflictRetries?: Partial<ConflictRetries> | undefined
+  inbox?: Inbox | undefined
 }
 
 export class UseCaseRunner {
 
   readonly registry: ContextRegistry
   readonly context: string
+  readonly inbox: Inbox | undefined
   private readonly observability: Observability
   private readonly writeRule: WriteRule
   private readonly guardRule: GuardRule
@@ -42,6 +48,7 @@ export class UseCaseRunner {
     this.guardRule = options.guardRule ?? 'error'
     this.clock = options.clock
     this.retries = conflictRetries(options.conflictRetries)
+    this.inbox = options.inbox
     this.registry = new ContextRegistry(this.context)
   }
 
@@ -56,7 +63,19 @@ export class UseCaseRunner {
     }
     const invoke = () => useCaseChainScope.run({ root, current: link, retry }, () =>
       this.observability.useCase({ name, module, context: this.context }, attempt => this.runs(fn, chain ? undefined : retry, attempt)))
-    return this.clock ? clockScope.run(this.clock, invoke) : invoke()
+    const reaction = chain ? undefined : reactionScope.get()
+    const start = reaction && !reaction.received && this.inbox ? () => this.unlessReceived(reaction).then(invoke) : invoke
+    return this.clock ? clockScope.run(this.clock, start) : start()
+  }
+
+  async receive(): Promise<void> {
+    const reaction = reactionScope.get()
+    if (!this.inbox || !reaction || reaction.received) {
+      return
+    }
+    if (!await this.inbox.receive(reaction)) {
+      throw new AlreadyReceived(reaction.event, reaction.queue)
+    }
   }
 
   checkWriteRule(): void {
@@ -106,6 +125,12 @@ export class UseCaseRunner {
     }
     this.warned.add(key)
     this.observability.warn(message, fields)
+  }
+
+  private async unlessReceived(reaction: ReactionRun): Promise<void> {
+    if (await this.inbox?.has(reaction)) {
+      throw new AlreadyReceived(reaction.event, reaction.queue)
+    }
   }
 
   private async runs<T>(fn: () => Promise<T>, retry: { allowed: boolean } | undefined, attempt: UseCaseAttempt): Promise<T> {

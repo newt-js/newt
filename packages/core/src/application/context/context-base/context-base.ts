@@ -5,6 +5,7 @@ import { RepositoryDeps }     from '../../../domain/repository/repository-deps'
 import { Transactions }       from '../../../domain/repository/transactions/transactions'
 import { UseCaseRunner }      from '../../../domain/use-case/use-case-runner/use-case-runner'
 import { Database }           from '../../database/database'
+import { DatabaseInbox }      from '../../database/inbox/database-inbox/database-inbox'
 import { observedBy }         from '../../platform/observed-by/observed-by'
 import { Platform }           from '../../platform/platform/platform'
 import { RateLimits }         from '../../runtime/rate-limits/rate-limits/rate-limits'
@@ -46,6 +47,7 @@ export class ContextBase implements RepositoryDeps {
       guardRule: options.guardRule,
       clock,
       conflictRetries: options.conflictRetries,
+      inbox: new DatabaseInbox(options.database, clock),
     })
     this.worker = new Worker(this.database.outbox, this.useCaseRunner, this.platform, options.worker, clock)
     this.unwatch = this.platform.cluster.subscribe(jobsChannel(this.name), () => this.worker.wake())

@@ -14,6 +14,8 @@ import { DomainEvent }          from '../../../../domain/events/event/domain-eve
 import { PublishedEvent }       from '../../../../domain/events/event/published-event'
 import { Observability }        from '../../../../domain/observability/observability'
 import { defineScope }          from '../../../../domain/scope/define-scope'
+import { AlreadyReceived }      from '../../../../domain/use-case/already-received/already-received'
+import { reactionScope }        from '../../../../domain/use-case/reaction-scope/reaction-scope'
 import { UseCaseRunner }        from '../../../../domain/use-case/use-case-runner/use-case-runner'
 import { workerScope }          from '../../../../domain/use-case/worker-scope/worker-scope'
 import { EventId }              from '../../../../domain/value-objects/event-id/event-id'
@@ -232,6 +234,30 @@ describe('a job', () => {
     await queue.idle()
 
     expect(seen).toEqual([{ id: 'u1' }, true, 'nobody'])
+    expect(await outbox.job(QUEUE)).toMatchObject({ status: 'done', attempts: 1, lastError: null })
+  })
+
+  test('runs its handler as a reaction to its event, in its queue, not received yet', async () => {
+    const { queue } = await setup()
+    const seen: unknown[] = []
+    queue.register(QUEUE, 'user.created', () => void seen.push(reactionScope.get()))
+    const event = created()
+    await queue.enqueue(event)
+
+    await queue.idle()
+
+    expect(seen).toEqual([{ event: event.id, queue: QUEUE, received: false }])
+  })
+
+  test('whose reaction was received already ends done, as one that ran', async () => {
+    const { outbox, queue } = await setup()
+    queue.register(QUEUE, 'user.created', event => {
+      throw new AlreadyReceived(event.id, QUEUE)
+    })
+    await queue.enqueue(created())
+
+    await queue.idle()
+
     expect(await outbox.job(QUEUE)).toMatchObject({ status: 'done', attempts: 1, lastError: null })
   })
 
@@ -889,6 +915,18 @@ describe('the worker', () => {
     expect(outbox.purged).toHaveLength(1)
     expect(msFromNow(outbox.purged[0])).toBeGreaterThan(-61_000)
     expect(msFromNow(outbox.purged[0])).toBeLessThanOrEqual(-60_000)
+  })
+
+  test('purges with them the reactions its inbox received before that keep', async () => {
+    const outbox = await outboxOf()
+    const purged: string[] = []
+    const inbox = { has: async () => false, receive: async () => true, purge: async (before: string) => void purged.push(before) }
+    const queue = new Worker(outbox, new UseCaseRunner({ inbox }), platform, { pollMs: 10, keepDoneMs: 60_000 })
+    queue.start()
+    await until(() => purged.length > 0)
+    await queue.stop()
+
+    expect(purged).toEqual(outbox.purged)
   })
 
   test('warns once about jobs waiting in queues no worker serves', async () => {
