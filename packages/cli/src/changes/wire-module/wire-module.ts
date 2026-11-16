@@ -9,9 +9,9 @@ import { withProperty }          from '../with-property/with-property'
 
 type Modules = { statements: ts.NodeArray<ts.Statement>, returned: ts.ReturnStatement, object: ts.ObjectLiteralExpression }
 
-function modulesIn(source: ts.SourceFile): Modules | undefined {
+function modulesIn(source: ts.SourceFile, functionName: string): Modules | undefined {
   for (const statement of source.statements) {
-    if (!ts.isFunctionDeclaration(statement) || !statement.body) continue
+    if (!ts.isFunctionDeclaration(statement) || !statement.body || statement.name?.text !== functionName) continue
     const returned = statement.body.statements.find(ts.isReturnStatement)
     if (returned?.expression && ts.isObjectLiteralExpression(returned.expression)) {
       return { statements: statement.body.statements, returned, object: returned.expression }
@@ -23,11 +23,11 @@ function modulesIn(source: ts.SourceFile): Modules | undefined {
 const declares = (statement: ts.Statement, name: string) =>
   ts.isVariableStatement(statement) && statement.declarationList.declarations.some(each => ts.isIdentifier(each.name) && each.name.text === name)
 
-/** Declares a module in <ctx>-modules.ts, before what it returns, and adds it to what it returns: both, or nothing. */
-export async function wireModule({ path, module, declaration, imports }: WireModuleChange, files: VirtualFiles): Promise<ChangeOutcome> {
+/** Declares a module in <ctx>-modules.ts, in its function `<ctx>Modules` before what it returns, and adds it to what it returns: both, or nothing. */
+export async function wireModule({ path, functionName, module, declaration, imports }: WireModuleChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)
-  const found = modulesIn(source)
+  const found = modulesIn(source, functionName)
   if (text === null || !found) {
     const what = [...imports, declaration.trim(), `${module} in the object it returns`].join('; ')
     return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} is not as newt wrote it, so newt did not change it: add ${what}`] }

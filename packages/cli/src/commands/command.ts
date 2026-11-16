@@ -31,7 +31,7 @@ export type ReplaceLineChange = { action: 'replace-line', path: string, line: st
 
 export type AddConstructorStatementChange = { action: 'add-constructor-statement', path: string, className: string, statement: string }
 
-export type WireModuleChange = { action: 'wire-module', path: string, module: string, declaration: string, imports: string[] }
+export type WireModuleChange = { action: 'wire-module', path: string, functionName: string, module: string, declaration: string, imports: string[] }
 
 export type OrderModulesChange = { action: 'order-modules', path: string }
 

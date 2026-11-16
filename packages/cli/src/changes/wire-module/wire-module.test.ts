@@ -8,7 +8,7 @@ import { join }        from 'node:path'
 import { diskFiles }   from '../../testing/disk-files/disk-files'
 import { wireModule }  from './wire-module'
 
-const CHANGE = { action: 'wire-module' as const, path: 'm.ts', module: 'box', declaration: '  const box = Box_Module.initialize(base, router)', imports: ["import { Box_Module } from './box'"] }
+const CHANGE = { action: 'wire-module' as const, path: 'm.ts', functionName: 'shopModules', module: 'box', declaration: '  const box = Box_Module.initialize(base, router)', imports: ["import { Box_Module } from './box'"] }
 
 async function edited(content: string): Promise<{ text: string, status: string, warnings: string[] }> {
   const cwd = mkdtempSync(join(tmpdir(), 'newt-cli-wire-'))
@@ -30,6 +30,12 @@ describe('wireModule', () => {
   test('a module declared with its deps is not declared again', async () => {
     const text = "import { Box_Module } from './box'\n\nexport function shopModules(base, router) {\n  const box = Box_Module.initialize(base, router, { order })\n  return {\n    box,\n  }\n}\n"
     expect(await edited(text)).toEqual({ text, status: 'skipped', warnings: [] })
+  })
+
+  test('in the function of the context alone, never in a helper above it', async () => {
+    const { text } = await edited('function helper() {\n  return { x: 1 }\n}\n\nexport function shopModules(base, router) {\n  return {\n  }\n}\n')
+    expect(text).toContain('function helper() {\n  return { x: 1 }\n}')
+    expect(text).toContain('  const box = Box_Module.initialize(base, router)\n  return {\n    box,\n  }')
   })
 
   test('without a function that returns an object, changes nothing and says what to add', async () => {

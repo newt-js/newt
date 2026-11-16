@@ -49,6 +49,7 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     {
       action: 'wire-module',
       path: modules,
+      functionName: `${context.camel}Modules`,
       module: names.module,
       declaration: initializedLine(names),
       imports: [`import { ${names.type}_Module } from './modules/${names.folder}/${names.folder}.module'`],
