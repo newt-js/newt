@@ -9,6 +9,7 @@ import { moduleNames }       from '../../names/module-names/module-names'
 import { CONTEXTS_FOLDER }   from '../backend-contexts/backend-contexts'
 import { backendContexts }   from '../backend-contexts/backend-contexts'
 import { findBackend }       from '../find-backend/find-backend'
+import { writtenPlural }     from '../written-plural/written-plural'
 
 export type FoundModule = { backend: string, folder: string, context: ContextNames, module: ModuleNames }
 
@@ -27,5 +28,7 @@ export async function findModule(given: string | undefined, cwd: string, backend
   if (!found.modules.includes(module)) {
     throw new CommandError(`The context ${context} has no module ${module}: add it with newt add module ${context}/${module}`)
   }
-  return { backend: relative(cwd, backend), folder: relative(cwd, join(backend, CONTEXTS_FOLDER, context, 'modules', module)), ...names }
+  const folder = join(backend, CONTEXTS_FOLDER, context, 'modules', module)
+  const plural = await writtenPlural(folder, names.module)
+  return { backend: relative(cwd, backend), folder: relative(cwd, folder), context: names.context, module: plural === undefined ? names.module : moduleNames(module, plural) }
 }

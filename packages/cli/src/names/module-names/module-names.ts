@@ -13,15 +13,26 @@ const capital = (word: string) => word[0]!.toUpperCase() + word.slice(1)
 
 const camel = (words: string[]) => words.map((word, at) => at === 0 ? word : capital(word)).join('')
 
-const pluralOf = (word: string) => /(s|x|z|ch|sh)$/.test(word) ? `${word}es` : /[^aeiou]y$/.test(word) ? `${word.slice(0, -1)}ies` : `${word}s`
+/** The plurals the rules below get wrong; any other is given with --plural. */
+const IRREGULAR: Record<string, string> = { child: 'children', person: 'people', man: 'men', woman: 'women', mouse: 'mice', goose: 'geese', foot: 'feet', tooth: 'teeth', quiz: 'quizzes', news: 'news', series: 'series', species: 'species' }
 
-/** Every name a module goes by, from its folder's, `price-change`: `priceChange`, `PriceChange`, `price_change`, `priceChanges`, `price-changes`. */
-export function moduleNames(folder: string): ModuleNames {
+const pluralOf = (word: string) => IRREGULAR[word] ?? (/sis$/.test(word) ? `${word.slice(0, -2)}es`
+  : /(s|x|z|ch|sh)$/.test(word) ? `${word}es` : /[^aeiou]y$/.test(word) ? `${word.slice(0, -1)}ies` : `${word}s`)
+
+/**
+ * Every name a module goes by, from its folder's, `price-change`: `priceChange`, `PriceChange`,
+ * `price_change`, `priceChanges`, `price-changes`. `plural`, in the folder's form, is given
+ * when English's rules miss it.
+ */
+export function moduleNames(folder: string, given?: string): ModuleNames {
   if (!KEBAB.test(folder)) {
     throw new CommandError(`'${folder}' cannot name a module: lowercase words joined by -, as in order or price-change`)
   }
+  if (given !== undefined && !KEBAB.test(given)) {
+    throw new CommandError(`'${given}' cannot be the plural of ${folder}: lowercase words joined by -, as in people or sales-people`)
+  }
   const words = folder.split('-')
-  const plural = [...words.slice(0, -1), pluralOf(words.at(-1)!)]
+  const plural = given?.split('-') ?? [...words.slice(0, -1), pluralOf(words.at(-1)!)]
   const refuse = (why: string) => {
     throw new CommandError(`'${folder}' cannot name a module: ${why}`)
   }

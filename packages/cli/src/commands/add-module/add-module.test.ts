@@ -9,6 +9,8 @@ import { generate }         from '../../testing/generate/generate'
 import { linkDependencies } from '../../testing/link-dependencies/link-dependencies'
 import { ADD_CONTEXT }      from '../add-context/add-context'
 import { ADD_DEPS }         from '../add-deps/add-deps'
+import { ADD_ROUTE }        from '../add-route/add-route'
+import { ADD_USE_CASE }     from '../add-use-case/add-use-case'
 import type { Command }     from '../command'
 import { INIT }             from '../init/init'
 import { ADD_MODULE }       from './add-module'
@@ -83,6 +85,18 @@ describe('newt add module', () => {
     expect(await read(join(backend, 'AGENTS.md'))).toContain('Set `TEST_DATABASE_URL`')
     expect(await Bun.file(join(await backendWithContext('sqlite'), 'src/migrations.test.ts')).exists()).toBe(false)
   })
+
+  test('a module of an irregular plural, and one given with --plural, which later commands keep', async () => {
+    const backend = await backendWithContext()
+    await run(ADD_MODULE, ['sales/person'], backend)
+    expect(await read(join(backend, 'src/contexts/sales/modules/person/person.routes.ts'))).toContain("router.get('/sales/people'")
+    expect((await run(ADD_MODULE, ['sales/cactus', '--plural', 'cacti'], backend)).code).toBe(0)
+    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(router: HttpRouter, cacti: Cactus_Module): void {')
+    expect((await run(ADD_USE_CASE, ['sales/cactus', 'water'], backend)).code).toBe(0)
+    expect((await run(ADD_ROUTE, ['sales/cactus', 'water'], backend)).code).toBe(0)
+    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain("router.post('/sales/cacti/:id/water', async request => Response.json(await cacti.water(")
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 60_000)
 
   test('a module named transaction, whose repository field the lint tells from a transaction', async () => {
     const backend = await backendWithContext()

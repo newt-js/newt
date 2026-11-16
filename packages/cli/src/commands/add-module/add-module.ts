@@ -18,6 +18,7 @@ export const ADD_MODULE = defineCommand({
   args: '<context>/<module>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
+    plural: { type: 'string', value: 'name', description: "Its plural, for its routes and its code, when English's rules miss it: --plural people" },
   },
   run: async ({ args, cwd, options }) => {
     const [given, ...rest] = args
@@ -26,7 +27,7 @@ export const ADD_MODULE = defineCommand({
       throw new CommandError('newt add module takes the context and the module, as in newt add module sales/order')
     }
     const contextName = contextNames(context)
-    const names = moduleNames(module)
+    const names = moduleNames(module, options.plural)
     const backend = await findBackend(cwd, options.backend)
     if (!(await backendContexts(backend)).some(each => each.name === context)) {
       throw new CommandError(`The backend has no context ${context}: add it with newt add context ${context}`)
