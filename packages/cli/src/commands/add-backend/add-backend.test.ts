@@ -1,17 +1,27 @@
-import { describe }        from 'bun:test'
-import { expect }          from 'bun:test'
-import { test }            from 'bun:test'
-import { mkdtemp }         from 'node:fs/promises'
-import { tmpdir }          from 'node:os'
-import { join }            from 'node:path'
+import { describe }         from 'bun:test'
+import { expect }           from 'bun:test'
+import { test }             from 'bun:test'
+import { mkdtemp }          from 'node:fs/promises'
+import { tmpdir }           from 'node:os'
+import { join }             from 'node:path'
 // --------------------------------------------------------
-import { runCommand }      from '../../run/run-command/run-command'
-import { checkGenerated }  from '../../testing/check-generated/check-generated'
-import { generate }        from '../../testing/generate/generate'
-import { UTILS_INDEX_TS }  from '../../testing/monorepo-project/monorepo-project'
-import { monorepoProject } from '../../testing/monorepo-project/monorepo-project'
-import { INIT }            from '../init/init'
-import { ADD_BACKEND }     from './add-backend'
+import { runCommand }       from '../../run/run-command/run-command'
+import { checkGenerated }   from '../../testing/check-generated/check-generated'
+import { generate }         from '../../testing/generate/generate'
+import { linkDependencies } from '../../testing/link-dependencies/link-dependencies'
+import { UTILS_INDEX_TS }   from '../../testing/monorepo-project/monorepo-project'
+import { monorepoProject }  from '../../testing/monorepo-project/monorepo-project'
+import { INIT }             from '../init/init'
+import { ADD_BACKEND }      from './add-backend'
+
+async function healthOn(port: number): Promise<number> {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const status = await fetch(`http://localhost:${port}/api/health`).then(response => response.status, () => null)
+    if (status !== null) return status
+    await Bun.sleep(100)
+  }
+  return 0
+}
 
 const addBackend = (args: string[], cwd: string) => runCommand(ADD_BACKEND, args, { cwd, ask: null })
 
@@ -37,6 +47,31 @@ describe('newt add backend', () => {
     const report = JSON.parse((await addBackend(['apps/web', '--port', '3010', '--json'], root)).text) as { files: { path: string }[] }
     expect(report.files.map(file => file.path)).not.toContain('package.json')
     expect(await Bun.file(join(root, 'apps/web/.env')).text()).toBe('PORT=3010\n')
+  })
+
+  test('each backend added takes a port of its own, and they run at once', async () => {
+    const root = await monorepoProject()
+    await addBackend(['apps/orders', '--port', '4310'], root)
+    await addBackend(['apps/billing'], root)
+    expect(await Bun.file(join(root, 'apps/billing/.env')).text()).toBe('PORT=4320\n')
+    const backends = await Promise.all(['apps/orders', 'apps/billing'].map(async folder => {
+      await linkDependencies(join(root, folder))
+      return Bun.spawn([process.execPath, 'src/index.ts'], { cwd: join(root, folder), stdout: 'ignore', stderr: 'ignore' })
+    }))
+    try {
+      for (const port of [4310, 4320]) {
+        expect(await healthOn(port)).toBe(200)
+      }
+    } finally {
+      for (const backend of backends) backend.kill()
+    }
+  }, 30_000)
+
+  test('warns when the port told is another backend\'s', async () => {
+    const root = await monorepoProject()
+    await addBackend(['apps/orders'], root)
+    const report = JSON.parse((await addBackend(['apps/billing', '--port', '3000', '--json'], root)).text) as { warnings: string[] }
+    expect(report.warnings).toEqual(["Port 3000 is also apps/orders's: the two cannot run at once"])
   })
 
   test('works from any folder inside the monorepo', async () => {

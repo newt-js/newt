@@ -11,6 +11,8 @@ import { templateVersions }  from '../../templates/template-versions/template-ve
 import { defineCommand }     from '../command'
 import { CommandError }      from '../command-error/command-error'
 import { findWorkspaceRoot } from './find-workspace-root/find-workspace-root'
+import { nextPort }          from './next-port/next-port'
+import { usedPorts }         from './used-ports/used-ports'
 import { workspacesChange }  from './workspaces-change/workspaces-change'
 
 export const ADD_BACKEND = defineCommand({
@@ -33,9 +35,13 @@ export const ADD_BACKEND = defineCommand({
     }
     const name = checkedName(basename(folder))
     const workspaces = workspacesChange(root, folder, cwd)
-    const backend = backendTemplate({ folder: relative(cwd, folder), name, port: portOf(options.port), cluster: clusterOf(options.cluster), versions: await templateVersions() })
+    const used = await usedPorts(root)
+    const port = options.port === undefined ? nextPort(used.keys()) : portOf(options.port)
+    const sharing = used.get(port)
+    const backend = backendTemplate({ folder: relative(cwd, folder), name, port, cluster: clusterOf(options.cluster), versions: await templateVersions() })
     return {
       changes: workspaces ? [workspaces, ...backend] : backend,
+      warnings: sharing === undefined ? [] : [`Port ${port} is also ${sharing}'s: the two cannot run at once`],
       nextSteps: [...root.folder === cwd ? [] : [`cd ${relative(cwd, root.folder)}`], 'bun install', `cd ${relative(root.folder, folder)}`, 'bun run dev'],
     }
   },
