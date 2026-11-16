@@ -1,7 +1,7 @@
 import { dirname }            from 'node:path'
 import { join }               from 'node:path'
 // --------------------------------------------------------
-import type { WorkspaceRoot } from '../find-workspace-root/find-workspace-root'
+import type { WorkspaceRoot } from '../../../project/find-workspace-root/find-workspace-root'
 
 const ENV_FILES = ['.env', '.env.example']
 

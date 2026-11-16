@@ -6,7 +6,7 @@ import { realpath }          from 'node:fs/promises'
 import { tmpdir }            from 'node:os'
 import { join }              from 'node:path'
 // --------------------------------------------------------
-import { monorepoProject }   from '../../../testing/monorepo-project/monorepo-project'
+import { monorepoProject }   from '../../testing/monorepo-project/monorepo-project'
 import { findWorkspaceRoot } from './find-workspace-root'
 
 describe('findWorkspaceRoot', () => {
