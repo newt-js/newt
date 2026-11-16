@@ -18,6 +18,11 @@ type Unbranded<T> =
 
 type SameInAndOut<Schema extends z.ZodType, In = z.input<Schema>, Out = Unbranded<z.output<Schema>>> = [In, Out] extends [Out, In] ? unknown : never
 
+/**
+ * A class of event, named, whose payload its schema parses. The schema gives back what it
+ * takes, as a stored payload is read again: no transforms or defaults. Brands are taken on
+ * strings and numbers only, which is what value objects brand; any other brand is refused.
+ */
 export function defineEvent<const Name extends string, Schema extends z.ZodType<Json, Json>>(name: Name, schema: Schema & SameInAndOut<Schema>) {
   return class implements DomainEvent<z.output<Schema>> {
     static readonly eventName = name

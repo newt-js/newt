@@ -53,6 +53,12 @@ describe('defineEvent', () => {
     void new OrderCreated({ id: 'o1', lines: [] })
   })
 
+  test('takes brands on strings and numbers alone', () => {
+    defineEvent('order.weighed', z.object({ grams: z.number().brand<'Grams'>() }))
+    // @ts-expect-error a brand on a boolean is not one a value object makes
+    defineEvent('order.flagged', z.object({ urgent: z.boolean().brand<'Urgent'>() }))
+  })
+
   test('only takes a schema that gives back what it takes, as a stored payload is read again', () => {
     // @ts-expect-error a transform takes a string and gives a number
     defineEvent('card.renamed', z.object({ words: z.string().transform(words => words.split(' ').length) }))
