@@ -35,6 +35,14 @@ describe('applyResult', () => {
     expect(await Bun.file(join(cwd, 'a.txt')).text()).toBe('first')
   })
 
+  test('a change that leaves a .ts file with syntax errors writes nothing', async () => {
+    const cwd = emptyFolder()
+    await Bun.write(join(cwd, 'a.ts'), 'f(x)\n')
+    const broken = { action: 'append-block' as const, path: 'a.ts', block: 'f(,)', imports: [] }
+    await expect(applyResult({ changes: [broken] }, cwd, false)).rejects.toThrow('would leave a.ts with syntax errors')
+    expect(await Bun.file(join(cwd, 'a.ts')).text()).toBe('f(x)\n')
+  })
+
   test('a dry run reports the same and writes nothing', async () => {
     const cwd = emptyFolder()
     await Bun.write(join(cwd, 'a.txt'), 'mine')

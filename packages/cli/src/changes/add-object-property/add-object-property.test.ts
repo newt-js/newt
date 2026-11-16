@@ -31,6 +31,12 @@ describe('addObjectProperty', () => {
     expect(await edited('x = eventsOf(bus, {})\n', { ...CHANGE, imports: [] })).toBe('x = eventsOf(bus, { shipped: Order_Shipped })\n')
   })
 
+  test('a new argument goes after the last one, before a last comma', async () => {
+    const change = { ...CHANGE, call: 'M.initialize', argument: 2, key: 'supplier', value: 'supplier', imports: [], createArgument: true }
+    expect(await edited('M.initialize(base, router)\n', change)).toBe('M.initialize(base, router, { supplier })\n')
+    expect(await edited('M.initialize(\n  base,\n  router,\n)\n', change)).toBe('M.initialize(\n  base,\n  router, { supplier },\n)\n')
+  })
+
   test('a key it has already is left alone', async () => {
     const text = 'x = eventsOf(bus, { shipped: Mine })\n'
     expect(await edited(text, { ...CHANGE, imports: [] })).toBe(text)

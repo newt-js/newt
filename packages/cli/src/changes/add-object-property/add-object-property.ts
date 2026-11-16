@@ -38,8 +38,9 @@ export async function addObjectProperty(change: AddObjectPropertyChange, files: 
   if (object?.properties.some(each => propertyKey(each) === key)) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
-  const close = found!.call.getEnd() - 1
-  const edited = object ? withProperty(text, source, object, property) : `${text.slice(0, close)}, { ${property} }${text.slice(close)}`
+  const last = found!.call.arguments.at(-1)
+  const at = last ? last.getEnd() : found!.call.getEnd() - 1
+  const edited = object ? withProperty(text, source, object, property) : `${text.slice(0, at)}${last ? ', ' : ''}{ ${property} }${text.slice(at)}`
   await files.write(path, addedImports(edited, imports))
   return { status: 'updated', warnings: [] }
 }

@@ -1,4 +1,7 @@
+import { join }               from 'node:path'
+// --------------------------------------------------------
 import { applyChange }        from '../../changes/apply-change/apply-change'
+import { syntaxErrors }       from '../../changes/syntax-errors/syntax-errors'
 import { virtualFiles }       from '../../changes/virtual-files/virtual-files'
 import { writeFiles }         from '../../changes/write-files/write-files'
 import type { CommandResult } from '../../commands/command'
@@ -18,6 +21,11 @@ export async function applyResult(result: CommandResult, cwd: string, dryRun: bo
     reports.push({ path: change.path, ...outcome })
     if (failed) failures.push(...changeWarnings)
     else warnings.push(...changeWarnings)
+  }
+  for (const [path, content] of files.changed()) {
+    const file = Bun.file(join(cwd, path))
+    const before = await file.exists() ? await file.text() : null
+    if (syntaxErrors(path, content) > syntaxErrors(path, before)) failures.push(`newt's change would leave ${path} with syntax errors: tell newt's authors, and make it by hand`)
   }
   if (failures.length > 0) {
     throw new CommandError(`newt wrote nothing, since its changes go together and some cannot be made:\n${failures.map(failure => `- ${failure}`).join('\n')}`)
