@@ -1,5 +1,7 @@
 import { expect }      from 'bun:test'
 import { test }        from 'bun:test'
+import { chmodSync }   from 'node:fs'
+import { existsSync }  from 'node:fs'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir }      from 'node:os'
 import { join }        from 'node:path'
@@ -21,7 +23,26 @@ test('writes nothing when a file stands where a folder goes, in a dry run too', 
   await Bun.write(join(cwd, 'src'), 'a file')
   const changed = new Map([['package.json', '{}'], ['src/index.ts', '']])
   for (const dryRun of [true, false]) {
-    expect(writeFiles(cwd, changed, dryRun)).rejects.toThrow('newt wrote nothing: src is a file, so src/index.ts cannot be in it')
+    await expect(writeFiles(cwd, changed, dryRun)).rejects.toThrow('newt wrote nothing: src is a file, so src/index.ts cannot be in it')
   }
   expect(await Bun.file(join(cwd, 'package.json')).exists()).toBe(false)
+})
+
+test('a file it cannot write is seen before writing, in a dry run too', async () => {
+  const cwd = emptyFolder()
+  await Bun.write(join(cwd, 'locked.ts'), 'mine')
+  chmodSync(join(cwd, 'locked.ts'), 0o444)
+  for (const dryRun of [true, false]) {
+    await expect(writeFiles(cwd, new Map([['a.ts', 'a'], ['locked.ts', 'theirs']]), dryRun)).rejects.toThrow('newt wrote nothing: locked.ts cannot be written')
+  }
+  expect(await Bun.file(join(cwd, 'a.ts')).exists()).toBe(false)
+})
+
+test('when a write fails, what it wrote is put back', async () => {
+  const cwd = emptyFolder()
+  await Bun.write(join(cwd, 'kept.ts'), 'before')
+  const changed = new Map([['kept.ts', 'after'], ['src/new/a.ts', 'a'], [`${'x'.repeat(300)}.ts`, 'too long']])
+  await expect(writeFiles(cwd, changed, false)).rejects.toThrow('newt wrote nothing: it could not write')
+  expect(await Bun.file(join(cwd, 'kept.ts')).text()).toBe('before')
+  expect(existsSync(join(cwd, 'src'))).toBe(false)
 })
