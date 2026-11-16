@@ -42,6 +42,22 @@ describe('newt add frontend', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test('--built serves a frontend built elsewhere as it is, its index.html for any page, and its lint, types and tests pass', async () => {
+    const backend = await moduleProject()
+    await Bun.write(join(backend, '../web/dist/index.html'), '<!doctype html><title>Web</title><div id="root"></div>\n')
+    const output = await addFrontend(['sales', '--built', '../web/dist', '--json'], backend)
+    expect(JSON.parse(output.text).warnings).toEqual([])
+    expect(await read(join(backend, 'src/frontends.ts'))).toContain("  { path: '/sales', app: join(import.meta.dir, '../../web/dist') },")
+    expect(await Bun.file(join(backend, 'src/contexts/sales/frontend')).exists()).toBe(false)
+    expect((await Bun.file(join(backend, 'package.json')).json()).dependencies).not.toHaveProperty('react')
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
+  test('--built warns while the folder has no index.html', async () => {
+    const output = await addFrontend(['sales', '--built', '../web/dist', '--dry-run'], await moduleProject())
+    expect(output.text).toContain('Warnings:\n  ../web/dist has no index.html yet: the backend answers 503 at /sales until it is built')
+  })
+
   test('run again, it changes nothing', async () => {
     const backend = await moduleProject()
     await addFrontend(['sales'], backend)

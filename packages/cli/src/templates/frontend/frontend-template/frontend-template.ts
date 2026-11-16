@@ -16,6 +16,24 @@ import { indexHtml }              from '../files/frontend-files'
 
 export type FrontendTemplateOptions = { backend: string, context: ContextNames, versions: TemplateVersions }
 
+export type BuiltFrontendOptions = { backend: string, context: ContextNames, fromSrc: string }
+
+/** What makes the backend serve a frontend at /<context>: its line in src/frontends.ts, and serve() given them. */
+function servedAt(backend: string, context: ContextNames, mount: string, imports: string[]): FileChange[] {
+  const at = (path: string) => join(backend, path)
+  return [
+    { action: 'create', path: at('src/frontends.ts'), content: SRC_FRONTENDS_TS },
+    { action: 'create', path: at('src/frontends.test.ts'), content: SRC_FRONTENDS_TEST_TS },
+    { action: 'insert-lines', path: at('src/frontends.ts'), anchor: FRONTENDS_START, position: 'after', lines: [`  { path: '/${context.folder}', app: ${mount} },`], imports },
+    { action: 'replace-line', path: at('src/backend.ts'), line: SERVED, with: SERVED_WITH_FRONTENDS, imports: ["import { frontends } from './frontends'"] },
+  ]
+}
+
+/** A frontend built elsewhere, its folder `fromSrc` (from the backend's src/), served as it is at /<context>. */
+export function builtFrontendTemplate({ backend, context, fromSrc }: BuiltFrontendOptions): FileChange[] {
+  return servedAt(backend, context, `join(import.meta.dir, '${fromSrc}')`, ["import { join } from 'node:path'"])
+}
+
 /** A React frontend of a context, in its frontend/, with its own tsconfig, served by the backend at /<context>. */
 export function frontendTemplate({ backend, context, versions }: FrontendTemplateOptions): FileChange[] {
   const at = (path: string) => join(backend, path)
@@ -35,16 +53,6 @@ export function frontendTemplate({ backend, context, versions }: FrontendTemplat
       },
     },
     { action: 'complete-json', path: at('tsconfig.json'), values: { exclude: [`${CONTEXTS_FOLDER}/*/frontend`], references: [{ path: `./${inContext}` }] } },
-    { action: 'create', path: at('src/frontends.ts'), content: SRC_FRONTENDS_TS },
-    { action: 'create', path: at('src/frontends.test.ts'), content: SRC_FRONTENDS_TEST_TS },
-    {
-      action: 'insert-lines',
-      path: at('src/frontends.ts'),
-      anchor: FRONTENDS_START,
-      position: 'after',
-      lines: [`  { path: '/${context.folder}', app: ${context.camel}Frontend },`],
-      imports: [`import ${context.camel}Frontend from './contexts/${context.folder}/frontend/index.html'`],
-    },
-    { action: 'replace-line', path: at('src/backend.ts'), line: SERVED, with: SERVED_WITH_FRONTENDS, imports: ["import { frontends } from './frontends'"] },
+    ...servedAt(backend, context, `${context.camel}Frontend`, [`import ${context.camel}Frontend from './contexts/${context.folder}/frontend/index.html'`]),
   ]
 }
