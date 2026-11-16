@@ -11,7 +11,8 @@ export type StoreFiles = {
   contextTestEnv: ContextVariables
 }
 
-type ContextVariables = (env: string, folder: string) => Record<string, string>
+/** A context's variables, from its env prefix, its folder and its backend's package name. */
+type ContextVariables = (env: string, folder: string, backend: string) => Record<string, string>
 
 const none: ContextVariables = () => ({})
 
@@ -55,7 +56,7 @@ export const STORE_FILES = {
     usesEnvOf: true,
     needsEnv: true,
     className: 'S3Storage',
-    contextEnv: (env, folder) => ({ [`${env}_S3_BUCKET`]: folder }),
+    contextEnv: (env, folder, backend) => ({ [`${env}_S3_BUCKET`]: `${backend}-${folder}`.toLowerCase().replace(/[^a-z0-9-]+/g, '-') }),
     contextTestEnv: none,
   },
   memory: {

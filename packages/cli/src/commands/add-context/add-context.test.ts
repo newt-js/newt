@@ -66,7 +66,7 @@ describe('newt add context', () => {
       const backend = await backendProject('--db', db)
       const output = await addContext(['sales'], backend)
       expect(output.text).toContain(`create the database of sales in your ${db} server, as SALES_DATABASE_URL in .env says`)
-      expect(await read(join(backend, '.env.example'))).toContain('SALES_DATABASE_URL=')
+      expect(await read(join(backend, '.env.example'))).toMatch(/SALES_DATABASE_URL=.*\/shop_sales\n/)
       expect(await checkGenerated(backend, { tests: false })).toEqual([])
     }, 30_000)
   }
@@ -74,7 +74,7 @@ describe('newt add context', () => {
   test('on s3, its bucket in .env, whose lint and types pass', async () => {
     const backend = await backendProject('--files', 's3')
     expect((await addContext(['sales'], backend)).text).toContain('set SALES_S3_BUCKET in .env to its bucket')
-    expect(await read(join(backend, '.env.example'))).toContain('SALES_S3_BUCKET=sales\n')
+    expect(await read(join(backend, '.env.example'))).toContain('SALES_S3_BUCKET=shop-sales\n')
     expect(await checkGenerated(backend, { tests: false })).toEqual([])
   }, 30_000)
 

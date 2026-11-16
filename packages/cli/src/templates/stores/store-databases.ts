@@ -1,6 +1,9 @@
-type ContextVariables = (env: string, folder: string) => Record<string, string>
+/** A context's variables, from its env prefix, its folder and its backend's package name. */
+type ContextVariables = (env: string, folder: string, backend: string) => Record<string, string>
 
 const none: ContextVariables = () => ({})
+
+const databaseName = (backend: string, folder: string) => `${backend}_${folder}`.toLowerCase().replace(/[^a-z0-9_]+/g, '_')
 
 export type StoreDatabase = { imports: string[], open: string, usesEnvOf: boolean, needsEnv: boolean, className: string, contextEnv: ContextVariables, contextTestEnv: ContextVariables }
 
@@ -20,7 +23,7 @@ export const STORE_DATABASES = {
     usesEnvOf: true,
     needsEnv: true,
     className: 'PostgresDatabase',
-    contextEnv: (env, folder) => ({ [`${env}_DATABASE_URL`]: `postgres://postgres:postgres@localhost:5432/${folder.replaceAll('-', '_')}` }),
+    contextEnv: (env, folder, backend) => ({ [`${env}_DATABASE_URL`]: `postgres://postgres:postgres@localhost:5432/${databaseName(backend, folder)}` }),
     contextTestEnv: none,
   },
   mysql: {
@@ -29,7 +32,7 @@ export const STORE_DATABASES = {
     usesEnvOf: true,
     needsEnv: true,
     className: 'MysqlDatabase',
-    contextEnv: (env, folder) => ({ [`${env}_DATABASE_URL`]: `mysql://root:root@localhost:3306/${folder.replaceAll('-', '_')}` }),
+    contextEnv: (env, folder, backend) => ({ [`${env}_DATABASE_URL`]: `mysql://root:root@localhost:3306/${databaseName(backend, folder)}` }),
     contextTestEnv: none,
   },
   memory: {

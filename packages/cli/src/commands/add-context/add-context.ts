@@ -1,12 +1,13 @@
-import { relative }        from 'node:path'
+import { relative }           from 'node:path'
 // --------------------------------------------------------
-import { contextNames }    from '../../names/context-names/context-names'
-import { backendStores }   from '../../project/backend-stores/backend-stores'
-import { findBackend }     from '../../project/find-backend/find-backend'
-import { contextTemplate } from '../../templates/context/context-template/context-template'
-import { STORE_DATABASES } from '../../templates/stores/store-databases'
-import { defineCommand }   from '../command'
-import { CommandError }    from '../command-error/command-error'
+import { contextNames }       from '../../names/context-names/context-names'
+import { backendPackageName } from '../../project/backend-package-name/backend-package-name'
+import { backendStores }      from '../../project/backend-stores/backend-stores'
+import { findBackend }        from '../../project/find-backend/find-backend'
+import { contextTemplate }    from '../../templates/context/context-template/context-template'
+import { STORE_DATABASES }    from '../../templates/stores/store-databases'
+import { defineCommand }      from '../command'
+import { CommandError }       from '../command-error/command-error'
 
 export const ADD_CONTEXT = defineCommand({
   name: 'add context',
@@ -27,7 +28,7 @@ export const ADD_CONTEXT = defineCommand({
       throw new CommandError('The backend has no src/stores.ts that newt can read: newt init writes it, with the database and the files every context opens')
     }
     return {
-      changes: contextTemplate({ backend: relative(cwd, backend), names, stores }),
+      changes: contextTemplate({ backend: relative(cwd, backend), packageName: await backendPackageName(backend), names, stores }),
       nextSteps: [
         ...STORE_DATABASES[stores.database].needsEnv ? [`create the database of ${name} in your ${stores.database} server, as ${names.env}_DATABASE_URL in .env says`] : [],
         ...stores.files === 's3' ? [`set ${names.env}_S3_BUCKET in .env to its bucket`] : [],
