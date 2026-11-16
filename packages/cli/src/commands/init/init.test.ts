@@ -60,11 +60,11 @@ describe('newt init', () => {
   })
 
   test('asks for the name in a terminal, and never with --json', async () => {
-    const asked = await runCommand(INIT, ['--dry-run'], { cwd: await emptyFolder(), ask: async () => 'shop' })
+    const asked = await runCommand(INIT, ['--dry-run'], { cwd: await emptyFolder(), ask: async question => question.startsWith('What') ? 'shop' : 'backend' })
     expect(asked.text).toContain('will create  shop/package.json')
     const json = await runCommand(INIT, ['--json'], { cwd: await emptyFolder(), ask: async () => 'shop' })
     expect(json.code).toBe(1)
-    expect(JSON.parse(json.text).error).toStartWith("newt init needs the backend's name")
+    expect(JSON.parse(json.text).error).toStartWith("newt init needs the project's name")
   })
 
   test('over what bun init leaves, makes it a backend whose lint, types and tests pass', async () => {
@@ -90,5 +90,46 @@ describe('newt init', () => {
     const output = await runCommand(INIT, ['.', '--json'], { cwd: folder, ask: null })
     expect(JSON.parse(output.text).warnings).toContain('index.ts was changed, so newt left it, though the backend starts at src/index.ts')
     expect((await Bun.file(join(folder, 'package.json')).json()).module).toBe('index.ts')
+  })
+
+  test('--monorepo makes a root whose workspaces take apps/api, and a backend there whose lint, types and tests pass', async () => {
+    const root = join(await generate(INIT, ['shop', '--monorepo']), 'shop')
+    expect(await Bun.file(join(root, 'package.json')).json()).toMatchObject({ name: 'shop', private: true, workspaces: ['apps/*'], scripts: { test: "bun run --filter '*' test" } })
+    expect(await Bun.file(join(root, '.gitignore')).text()).toBe('node_modules\n')
+    expect((await Bun.file(join(root, 'apps/api/package.json')).json()).name).toBe('api')
+    expect(await checkGenerated(join(root, 'apps/api'))).toEqual([])
+  }, 30_000)
+
+  test('--backend puts the first backend elsewhere', async () => {
+    const root = join(await generate(INIT, ['shop', '--monorepo', '--backend', 'services/core']), 'shop')
+    expect((await Bun.file(join(root, 'package.json')).json()).workspaces).toEqual(['services/*'])
+    expect((await Bun.file(join(root, 'services/core/package.json')).json()).name).toBe('core')
+  })
+
+  test('--backend without --monorepo says to add it', async () => {
+    const output = await runCommand(INIT, ['shop', '--backend', 'apps/api'], { cwd: await emptyFolder(), ask: null })
+    expect(output).toEqual({ code: 1, text: '--backend says where a monorepo has its first backend: add --monorepo' })
+  })
+
+  test('asked from scratch in a terminal, asks the name and then whether a backend or a monorepo', async () => {
+    const questions: string[] = []
+    const output = await runCommand(INIT, ['--dry-run'], {
+      cwd: await emptyFolder(),
+      ask: async question => {
+        questions.push(question)
+        return questions.length === 1 ? 'shop' : 'monorepo'
+      },
+    })
+    expect(questions).toEqual(['What is your project named?', 'A backend or a monorepo? (backend or monorepo)'])
+    expect(output.text).toContain('will create  shop/apps/api/src/backend.ts')
+  })
+
+  test('given a name, it never asks whether a backend or a monorepo', async () => {
+    const questions: string[] = []
+    await runCommand(INIT, ['shop', '--dry-run'], { cwd: await emptyFolder(), ask: async question => {
+      questions.push(question)
+      return 'monorepo'
+    } })
+    expect(questions).toEqual([])
   })
 })

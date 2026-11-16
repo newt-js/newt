@@ -7,8 +7,10 @@ import { join }            from 'node:path'
 // --------------------------------------------------------
 import { runCommand }      from '../../run/run-command/run-command'
 import { checkGenerated }  from '../../testing/check-generated/check-generated'
+import { generate }        from '../../testing/generate/generate'
 import { UTILS_INDEX_TS }  from '../../testing/monorepo-project/monorepo-project'
 import { monorepoProject } from '../../testing/monorepo-project/monorepo-project'
+import { INIT }            from '../init/init'
 import { ADD_BACKEND }     from './add-backend'
 
 const addBackend = (args: string[], cwd: string) => runCommand(ADD_BACKEND, args, { cwd, ask: null })
@@ -28,6 +30,13 @@ describe('newt add backend', () => {
     const root = await monorepoProject(['apps/*'])
     const output = JSON.parse((await addBackend(['apps/api', '--json'], root)).text) as { files: { path: string }[] }
     expect(output.files.map(file => file.path)).not.toContain('package.json')
+  })
+
+  test('in a monorepo made by newt init --monorepo, its workspaces already take apps/', async () => {
+    const root = join(await generate(INIT, ['shop', '--monorepo']), 'shop')
+    const report = JSON.parse((await addBackend(['apps/web', '--port', '3010', '--json'], root)).text) as { files: { path: string }[] }
+    expect(report.files.map(file => file.path)).not.toContain('package.json')
+    expect(await Bun.file(join(root, 'apps/web/.env')).text()).toBe('PORT=3010\n')
   })
 
   test('works from any folder inside the monorepo', async () => {
@@ -63,7 +72,7 @@ describe('newt add backend', () => {
 
   test('refuses a folder whose name cannot name a backend', async () => {
     const root = await monorepoProject()
-    expect((await addBackend(['apps/My Api'], root)).text).toBe("'My Api' cannot name a backend: use lowercase letters, digits and - . _ ~, as in 'my-api'")
+    expect((await addBackend(['apps/My Api'], root)).text).toBe("'My Api' cannot name a folder and a package: use lowercase letters, digits and - . _ ~, as in 'my-api'")
   })
 
   test('takes one folder', async () => {

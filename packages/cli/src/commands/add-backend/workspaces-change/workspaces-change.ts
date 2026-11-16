@@ -2,6 +2,7 @@ import { dirname }                 from 'node:path'
 import { join }                    from 'node:path'
 import { relative }                from 'node:path'
 // --------------------------------------------------------
+import { workspacePattern }        from '../../../templates/monorepo/workspace-pattern/workspace-pattern'
 import type { CompleteJsonChange } from '../../command'
 import type { WorkspaceRoot }      from '../find-workspace-root/find-workspace-root'
 
@@ -11,9 +12,7 @@ export function workspacesChange(root: WorkspaceRoot, folder: string, cwd: strin
   if (root.patterns.some(pattern => new Bun.Glob(pattern.replace(/\/$/, '')).match(inRoot))) {
     return null
   }
-  const parent = dirname(inRoot)
-  const pattern = parent === '.' ? inRoot : `${parent}/*`
-  const patterns = [pattern]
+  const patterns = [workspacePattern(inRoot)]
   return {
     action: 'complete-json',
     path: relative(cwd, join(root.folder, 'package.json')),
