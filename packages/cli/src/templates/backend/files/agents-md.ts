@@ -4,6 +4,17 @@ const MIGRATIONS_TEST = `- \`src/migrations.test.ts\`: every context's migration
   (a server where it may create and drop databases) to run it; without it the test is skipped.
 `
 
+const MIGRATIONS_RULE = `A table changes only through a migration: a change to a module's schema needs the next pair in its context's
+\`migrations/\`, \`<number>_<table>_up.sql\` and \`<number>_<table>_down.sql\`, the number one above the highest there.
+`
+
+/** How a schema change reaches its table, and which tests see it. */
+const migrationsRule = (database: DatabaseKind) => {
+  if (database === 'memory') return ''
+  if (database === 'sqlite') return `${MIGRATIONS_RULE}The tests run them.\n`
+  return `${MIGRATIONS_RULE}The tests run in memory and miss them: only \`src/migrations.test.ts\` tries them.\n`
+}
+
 export const agentsMd = (database: DatabaseKind) => `# Agents
 
 A backend built with newt (@newt-js/core), on Bun.
@@ -29,7 +40,7 @@ Read a session cookie or a bearer token there and return \`{ userId }\`, or \`nu
 ## Rules
 
 newt's lint holds the rules of the code: run it after every change and fix what it says.
-
+${migrationsRule(database)}
 ## Commands
 
 - \`bun run dev\`: the backend, restarted on every change.

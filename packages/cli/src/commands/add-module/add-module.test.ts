@@ -86,6 +86,13 @@ describe('newt add module', () => {
     expect(await Bun.file(join(await backendWithContext('sqlite'), 'src/migrations.test.ts')).exists()).toBe(false)
   })
 
+  test("AGENTS.md says a schema change needs a migration, and which tests run it", async () => {
+    const postgres = await read(join(await backendWithContext('postgres'), 'AGENTS.md'))
+    expect(postgres).toContain('`<number>_<table>_up.sql` and `<number>_<table>_down.sql`')
+    expect(postgres).toContain('The tests run in memory and miss them')
+    expect(await read(join(await backendWithContext('sqlite'), 'AGENTS.md'))).toContain('The tests run them.')
+  })
+
   test('a module of an irregular plural, and one given with --plural, which later commands keep', async () => {
     const backend = await backendWithContext()
     await run(ADD_MODULE, ['sales/person'], backend)
