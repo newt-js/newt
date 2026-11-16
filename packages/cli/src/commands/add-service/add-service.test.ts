@@ -38,4 +38,8 @@ describe('newt add service', () => {
     const output = await addService(['sales/order', 'price-rounding', '--dry-run'], await moduleProject())
     expect(output.text).toEndWith("Next steps:\n  call it from the use cases that share it: import { priceRounding } from './services/price-rounding'")
   })
+
+  test('refuses a name its function cannot take', async () => {
+    expect((await addService(['sales/order', 'delete'], await moduleProject())).text).toStartWith("'delete' cannot name a service")
+  })
 })

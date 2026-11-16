@@ -24,6 +24,9 @@ export const ADD_ERROR = defineCommand({
     const kind = errorKindOf(options.kind)
     const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
     const error = pieceNames(name, 'an error')
+    if (Object.values(ERROR_KINDS).includes(error.type as never) || error.type === 'KnownError') {
+      throw new CommandError(`'${name}' cannot name an error: ${error.type} is the class newt's errors extend; name it by what went wrong, as in order-already-paid`)
+    }
     return {
       changes: [{ action: 'create', path: join(folder, 'errors', `${error.folder}.ts`), content: errorTs(module, error, kind) }],
       nextSteps: [`throw it where it happens: throw new ${error.type}()`],
