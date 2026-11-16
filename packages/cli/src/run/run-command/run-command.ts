@@ -13,7 +13,6 @@ import { applyResult }         from '../../report/apply-result/apply-result'
 import { errorReport }         from '../../report/error-report/error-report'
 import { humanReport }         from '../../report/human-report/human-report'
 import { jsonReport }          from '../../report/json-report/json-report'
-import { commandLock }         from '../command-lock/command-lock'
 
 export async function runCommand(command: Command, args: string[], { cwd, ask }: CommandContext): Promise<Output> {
   const json = args.includes('--json')
@@ -35,16 +34,12 @@ export async function runCommand(command: Command, args: string[], { cwd, ask }:
   if (!command.args && parsed.positionals.length > 0) {
     return failed(`newt ${command.name} takes no arguments, and was given ${parsed.positionals.join(' ')}.\nRun newt ${command.name} --help.`)
   }
-  let release = async () => {}
   try {
-    release = await commandLock(cwd)
     const result = await command.run({ args: parsed.positionals, options: options as OptionValues<Options>, cwd, ask: json ? null : ask })
     const report = await applyResult(result, cwd, dryRun === true)
     return { code: 0, text: json ? jsonReport(report) : humanReport(report), json }
   } catch (error) {
     if (error instanceof CommandError) return failed(error.message)
     return failed(`newt ${command.name} failed: ${(error as Error).message ?? String(error)}`)
-  } finally {
-    await release()
   }
 }
