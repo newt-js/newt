@@ -9,7 +9,10 @@
   "scripts": {
     "typecheck": "bun check",
     "test": "bun test",
-    "lint": "bun --bun eslint"
+    "lint": "bun --bun eslint",
+    "check-packs": "bun tools/release/check-packs.ts",
+    "release:version": "bun tools/release/version.ts",
+    "release:publish": "bun tools/release/publish.ts"
   },
   "devDependencies": {
     "@types/bun": "1.4.4",

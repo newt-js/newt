@@ -1,7 +1,33 @@
 {
   "name": "@newt-js/core",
   "version": "0.0.0",
+  "description": "newt's core: modules, entities, use cases, domain events with a transactional outbox, and the adapters to keep and serve them, on Bun.",
+  "license": "MIT",
+  "author": "Angel Romero",
+  "homepage": "https://newt-js.github.io/newt/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newt-js/newt.git",
+    "directory": "packages/core"
+  },
+  "bugs": "https://github.com/newt-js/newt/issues",
+  "keywords": [
+    "bun",
+    "framework",
+    "backend",
+    "ddd",
+    "bounded-contexts",
+    "use-cases",
+    "domain-events",
+    "outbox"
+  ],
   "type": "module",
+  "files": [
+    "src",
+    "!**/*.test.ts",
+    "LICENSE",
+    "README.md"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./application": "./src/application/index.ts",
