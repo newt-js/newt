@@ -68,10 +68,12 @@ describe('newt add frontend', () => {
     expect((await addFrontend(['sales', '--built', 'other/dist'], backend)).code).toBe(1)
   })
 
-  test('--built warns while the folder has no index.html', async () => {
-    const output = await addFrontend(['sales', '--built', '../web/dist', '--dry-run'], await moduleProject())
-    expect(output.text).toContain('Warnings:\n  ../web/dist has no index.html yet: the backend answers 503 at /sales until it is built')
-  })
+  test('--built warns while the folder has no index.html, and its tests pass until it is built', async () => {
+    const backend = await moduleProject()
+    expect((await addFrontend(['sales', '--built', '../web/dist', '--dry-run'], backend)).text).toContain('Warnings:\n  ../web/dist has no index.html yet: the backend answers 503 at /sales until it is built')
+    await addFrontend(['sales', '--built', '../web/dist'], backend)
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
 
   test('run again, it changes nothing', async () => {
     const backend = await moduleProject()

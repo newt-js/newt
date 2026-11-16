@@ -31,7 +31,8 @@ describe('newt add subscription', () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
     await run(ADD_EVENT, ['sales/order', 'shipped'], backend)
-    await run(ADD_SUBSCRIPTION, ['sales/order', 'mark-paid', '--on', 'shipped'], backend)
+    const output = JSON.parse((await run(ADD_SUBSCRIPTION, ['sales/order', 'mark-paid', '--on', 'shipped', '--json'], backend)).text) as { warnings: string[] }
+    expect(output.warnings).toEqual(['newt cannot tell how to make shipped happen, so it wrote no test of markPaid on it: write one in order.module.test.ts'])
     expect(await read(backend, 'order.module.ts')).toContain('eventsOf(base.bus, { created: Order_Created, shipped: Order_Shipped })')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
