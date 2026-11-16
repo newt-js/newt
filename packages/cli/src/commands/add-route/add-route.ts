@@ -13,6 +13,8 @@ const USAGE = 'newt add route takes the module and the use case it calls, as in 
 
 const METHODS = ['get', 'post', 'put', 'patch', 'delete']
 
+const PATH = /^\/[A-Za-z0-9/:_-]*$/
+
 export const ADD_ROUTE = defineCommand({
   name: 'add route',
   summary: 'Adds a route to a module that calls one of its use cases',
@@ -30,7 +32,7 @@ export const ADD_ROUTE = defineCommand({
     const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
     const useCase = pieceNames(name, 'a use case')
     const path = options.path ?? `/${module.path}/:id/${useCase.folder}`
-    if (!path.startsWith('/')) throw new CommandError(`'${path}' is not a path: it starts with /`)
+    if (!PATH.test(path)) throw new CommandError(`'${path}' is not a path: it starts with / and has letters, digits and / : _ - alone`)
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
     const signature = new RegExp(`async ${useCase.camel}\\(([^)]*)\\): Promise<([^>]+)>`).exec(code)

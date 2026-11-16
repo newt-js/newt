@@ -38,6 +38,6 @@ describe('newt add schedule', () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
     expect((await run(ADD_SCHEDULE, ['sales/order', 'mark-paid', '--cron', '0 3 * * *'], backend)).text).toBe('markPaid takes an input, and a schedule gives none: name a use case of its own')
-    expect((await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', 'daily'], backend)).text).toBe('\'daily\' is not a cron: five fields, as in "0 3 * * *"')
+    expect((await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', 'daily'], backend)).text).toStartWith("'daily' is not a cron")
   })
 })

@@ -1,6 +1,7 @@
 import { join }                  from 'node:path'
 import { relative }              from 'node:path'
 import { resolve }               from 'node:path'
+import { sep }                   from 'node:path'
 // --------------------------------------------------------
 import { contextNames }          from '../../names/context-names/context-names'
 import { backendContexts }       from '../../project/backend-contexts/backend-contexts'
@@ -31,7 +32,7 @@ export const ADD_FRONTEND = defineCommand({
     }
     if (options.built !== undefined) {
       const built = resolve(cwd, options.built)
-      const fromSrc = relative(join(backend, 'src'), built)
+      const fromSrc = relative(join(backend, 'src'), built).split(sep).join('/')
       const unbuilt = await Bun.file(join(built, 'index.html')).exists() ? [] : [`${options.built} has no index.html yet: the backend answers 503 at /${context} until it is built`]
       return {
         changes: builtFrontendTemplate({ backend: relative(cwd, backend), context: names, fromSrc }),

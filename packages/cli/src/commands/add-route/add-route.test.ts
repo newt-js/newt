@@ -56,6 +56,7 @@ describe('newt add route', () => {
     const backend = await moduleProject()
     expect((await run(ADD_ROUTE, ['sales/order', 'mark-paid'], backend)).text).toBe('Order_Module has no use case markPaid: add it with newt add use-case sales/order mark-paid')
     expect((await run(ADD_ROUTE, ['sales/order', 'create', '--method', 'fetch'], backend)).text).toStartWith("'fetch' is not a method")
-    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', 'orders'], backend)).text).toBe("'orders' is not a path: it starts with /")
+    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', 'orders'], backend)).text).toStartWith("'orders' is not a path")
+    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', "/x'+String(1)+'"], backend)).text).toStartWith("'/x'+String(1)+'' is not a path")
   })
 })

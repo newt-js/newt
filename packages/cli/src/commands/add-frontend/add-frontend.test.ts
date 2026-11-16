@@ -53,6 +53,13 @@ describe('newt add frontend', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test("--built writes any folder's name as a literal", async () => {
+    const backend = await moduleProject()
+    await addFrontend(['sales', '--built', "../it's/dist')+String(console.log('PWN'))+('", '--dry-run'], backend)
+    await addFrontend(['sales', '--built', "../it's/dist"], backend)
+    expect(await read(join(backend, 'src/frontends.ts'))).toContain("app: join(import.meta.dir, '../../it\\'s/dist') }")
+  })
+
   test('--built warns while the folder has no index.html', async () => {
     const output = await addFrontend(['sales', '--built', '../web/dist', '--dry-run'], await moduleProject())
     expect(output.text).toContain('Warnings:\n  ../web/dist has no index.html yet: the backend answers 503 at /sales until it is built')

@@ -1,5 +1,6 @@
 import type { ModuleNames } from '../../names/module-names/module-names'
 import type { PieceNames }  from '../../names/piece-names/piece-names'
+import { quoted }           from '../quoted/quoted'
 
 export type RouteShape = { method: string, path: string, takesInput: boolean, returnsNothing: boolean }
 
@@ -9,7 +10,7 @@ export function routeLine({ type, plural }: ModuleNames, useCase: PieceNames, { 
   const call = `await ${plural}.${useCase.camel}(${input})`
   const answer = returnsNothing ? `{\n    ${call}\n    return new Response(null, { status: 204 })\n  }` : `Response.json(${call})`
   const uses = input === '' ? '()' : 'request'
-  return `  router.${method}('${path}', async ${uses} => ${answer})`
+  return `  router.${method}(${quoted(path)}, async ${uses} => ${answer})`
 }
 
 /** A test that calls the route, on a new entity when its path takes an id. */
