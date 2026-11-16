@@ -31,7 +31,7 @@ test('passes on what it is given: a monorepo', async () => {
 test('without a name nor a terminal, says how to give it', async () => {
   const { code, stderr } = await create([])
   expect(code).toBe(1)
-  expect(stderr).toContain("newt init needs the project's name")
+  expect(stderr).toContain("bun create newt needs the project's name: bun create newt <name>, or bun create newt . for this folder")
 })
 
 test('its bin runs it with Bun from Node, and without Bun says how to install it', async () => {
