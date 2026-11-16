@@ -39,5 +39,10 @@ export async function run(args: string[], { commands, ...context }: RunContext):
   if (values.help || command === undefined) {
     return json ? { code: 0, text: JSON.stringify({ help: await newtHelp(commands) }, null, 2), json } : { code: 0, text: await newtHelp(commands) }
   }
+  const family = commands.filter(each => each.name.startsWith(`${command} `)).map(each => `newt ${each.name}`)
+  if (family.length > 0) {
+    const [, what] = positionals
+    return failed(`${what === undefined ? `newt ${command} takes what to ${command}` : `Unknown command '${command} ${what}'`}: ${family.join(', ')}. Run newt --help.`)
+  }
   return failed(`Unknown command '${command}'. Run newt --help.`)
 }

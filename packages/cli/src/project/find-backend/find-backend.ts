@@ -22,7 +22,11 @@ export async function findBackend(cwd: string, given?: string): Promise<string> 
   }
   for (let folder = cwd; ; folder = dirname(folder)) {
     if (await isBackend(folder)) return folder
-    if (await Bun.file(join(folder, 'package.json')).exists() || dirname(folder) === folder) break
+    const manifest = Bun.file(join(folder, 'package.json'))
+    if (await manifest.exists() && !await manifest.json().then(() => true, () => false)) {
+      throw new CommandError(`${relative(cwd, join(folder, 'package.json')) || 'package.json'} is not JSON: fix it, and run the command again`)
+    }
+    if (await manifest.exists() || dirname(folder) === folder) break
   }
   const root = await findWorkspaceRoot(cwd)
   if (!root) {
