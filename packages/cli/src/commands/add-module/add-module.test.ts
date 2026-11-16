@@ -84,6 +84,12 @@ describe('newt add module', () => {
     expect(await Bun.file(join(await backendWithContext('sqlite'), 'src/migrations.test.ts')).exists()).toBe(false)
   })
 
+  test('a module named transaction, whose repository field the lint tells from a transaction', async () => {
+    const backend = await backendWithContext()
+    await run(ADD_MODULE, ['sales/transaction'], backend)
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
   test('run again, it changes nothing and makes no second migration', async () => {
     const backend = await backendWithContext()
     await run(ADD_MODULE, ['sales/order'], backend)

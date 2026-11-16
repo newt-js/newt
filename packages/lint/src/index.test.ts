@@ -53,10 +53,16 @@ describe('the preset of newt', () => {
 
   test('keeps a module writing through persist, never in a transaction of its own', async () => {
     const file = 'src/contexts/ws/modules/brand/brand.repository.ts'
-    const base = 'type Base = { transactions: { run(fn: () => void): Promise<void> } }\n'
-    expect(await complaints(file, `${base}export const go = (base: Base) => base.transactions.run(() => {})\n`)).toEqual(['no-restricted-syntax'])
-    expect(await complaints(file, `${base}export const go = (base: Base) => base['transactions'].run(() => {})\n`)).toEqual(['no-restricted-syntax'])
-    expect(await complaints(file, `${base}export const go = (base: Base) => {\n  const { transactions } = base\n  return transactions.run(() => {})\n}\n`)).toEqual(['no-restricted-syntax'])
+    const base = 'interface Transactions { run(fn: () => void): Promise<void> }\ntype Base = { transactions: Transactions }\n'
+    expect(await complaints(file, `${base}export const go = (base: Base) => base.transactions.run(() => {})\n`)).toEqual(['newt/module-transactions'])
+    expect(await complaints(file, `${base}export const go = (base: Base) => base['transactions'].run(() => {})\n`)).toEqual(['newt/module-transactions'])
+    expect(await complaints(file, `${base}export const go = (base: Base) => {\n  const { transactions } = base\n  return transactions.run(() => {})\n}\n`)).toEqual(['newt/module-transactions'])
+  })
+
+  test("a module's own field named transactions, as the repository of a module transaction, is no transaction", async () => {
+    const file = 'src/contexts/ws/modules/transaction/transaction.module.ts'
+    const code = 'class Transaction_Repository {\n  persist() {\n    return 1\n  }\n}\nexport class Transaction_Module {\n  private readonly transactions = new Transaction_Repository()\n  save() {\n    this.transactions.persist()\n  }\n}\n'
+    expect(await complaints(file, code)).toEqual([])
   })
 
   test("judges a handler's callback by the types TypeScript gives, not by names", async () => {

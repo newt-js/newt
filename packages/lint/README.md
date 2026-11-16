@@ -64,6 +64,7 @@ Every rule is an `error`: a warning does not stop an agent.
 | `newt/route-context` | A module's routes start with its context (`/shop/orders`), so two contexts never take the same path. |
 | `newt/route-body-unchecked` | A route passes the body to a use case as it came, never asserting its type. |
 | `newt/reaction-queue` | A reaction's queue names the module that reacts, the use case it calls and the event. |
+| `newt/module-transactions` | A module never runs a transaction of its own from its base's `transactions`: it writes through its repository's `persist`. A field of its own named `transactions` is no transaction. |
 | `newt/framework-tables` | An application never names a table `newt_…`, to `records('…')` or in SQL. |
 
 ### The lint's own discipline
@@ -76,5 +77,4 @@ Every rule is an `error`: a warning does not stop an agent.
 
 - `@typescript-eslint/no-floating-promises` and `@typescript-eslint/no-misused-promises`.
 - `curly` and `brace-style`: braces always, and every body on lines of its own.
-- `no-restricted-syntax` in modules: no `transactions`; a module writes through its repository's `persist`.
 - `reportUnusedDisableDirectives: 'error'`.

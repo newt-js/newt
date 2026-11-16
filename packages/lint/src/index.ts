@@ -16,6 +16,7 @@ import { frontendImports }         from './rules/frontend-imports/frontend-impor
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
+import { moduleTransactions }      from './rules/module-transactions/module-transactions'
 import { keepNoDisable }           from './rules/no-disable/keep-no-disable'
 import { noDisable }               from './rules/no-disable/no-disable'
 import { reactionQueue }           from './rules/reaction-queue/reaction-queue'
@@ -39,6 +40,7 @@ export const plugin = {
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
+    'module-transactions': moduleTransactions,
     'no-disable': noDisable,
     'reaction-queue': reactionQueue,
     'repository-public-methods': repositoryPublicMethods,
@@ -74,17 +76,6 @@ const OTHERS: Linter.RulesRecord = {
   // Nor one handed where nobody awaits it: an async callback to setInterval, an event or a forEach.
   '@typescript-eslint/no-misused-promises': 'error',
   ...STYLE,
-}
-
-/** A module writes through its repository's `persist`, never in a transaction of its own. */
-const TRANSACTIONS = {
-  selector: [
-    "MemberExpression[property.name='transactions']",
-    "MemberExpression[property.value='transactions']",
-    "ObjectPattern > Property[key.name='transactions']",
-    "ObjectPattern > Property[key.value='transactions']",
-  ].join(', '),
-  message: "A module writes through its repository's persist, which runs the transaction, checks the write rule and publishes the events: never in a transaction of its own.",
 }
 
 export type NewtLintOptions = {
@@ -134,7 +125,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     ...root === undefined ? {} : { settings: { newt: { root: base } } },
     rules: {
       'newt/frontend-imports': ['error', { folder: given }],
-      'newt/no-disable': ['error', { rules: [...Object.keys(OTHERS), 'no-restricted-syntax'] }],
+      'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
     },
   }] : []
   return defineConfig(
@@ -149,7 +140,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       ...root === undefined ? {} : { settings: { newt: { root: base } } },
       rules: {
         ...OTHERS,
-        'newt/no-disable': ['error', { rules: [...Object.keys(OTHERS), 'no-restricted-syntax'] }],
+        'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
         // By the file's name, wherever it is: a module outside modules/, one every context shares, too.
         'newt/use-case-public-methods': 'error',
         'newt/use-case-params': 'error',
@@ -173,7 +164,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/reaction-queue': 'error',
         'newt/schema-imports': 'error',
         'newt/use-case-files': 'error',
-        'no-restricted-syntax': ['error', TRANSACTIONS],
+        'newt/module-transactions': 'error',
       },
     },
   )
