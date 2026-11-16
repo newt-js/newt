@@ -6,6 +6,7 @@ import { ADD_EVENT }        from './add-event/add-event'
 import { ADD_FILES }        from './add-files/add-files'
 import { ADD_FRONTEND }     from './add-frontend/add-frontend'
 import { ADD_MODULE }       from './add-module/add-module'
+import { ADD_SCHEDULE }     from './add-schedule/add-schedule'
 import { ADD_SERVICE }      from './add-service/add-service'
 import { ADD_SUBSCRIPTION } from './add-subscription/add-subscription'
 import { ADD_USE_CASE }     from './add-use-case/add-use-case'
@@ -13,4 +14,4 @@ import { ADD_VALUE_OBJECT } from './add-value-object/add-value-object'
 import type { Command }     from './command'
 import { INIT }             from './init/init'
 
-export const COMMANDS: Command[] = [INIT, ADD_BACKEND, ADD_CONTEXT, ADD_FILES, ADD_MODULE, ADD_EVENT, ADD_ERROR, ADD_VALUE_OBJECT, ADD_SERVICE, ADD_FRONTEND, ADD_USE_CASE, ADD_SUBSCRIPTION, ADD_DEPS]
+export const COMMANDS: Command[] = [INIT, ADD_BACKEND, ADD_CONTEXT, ADD_FILES, ADD_MODULE, ADD_EVENT, ADD_ERROR, ADD_VALUE_OBJECT, ADD_SERVICE, ADD_FRONTEND, ADD_USE_CASE, ADD_SUBSCRIPTION, ADD_DEPS, ADD_SCHEDULE]

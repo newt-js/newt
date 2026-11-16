@@ -48,7 +48,7 @@ export const ADD_SUBSCRIPTION = defineCommand({
         imports: [`import { ${module.type}_${event.type} } from './events/${module.folder}-${event.folder}'`],
       },
       { action: 'insert-lines', path: file('.module.ts'), anchor: '    return module', position: 'before', lines: [`    register${module.type}Workers(module)`], imports: [`import { register${module.type}Workers } from './${module.folder}.workers'`] },
-      ...event.folder === 'created' ? [{ action: 'append-block', path: file('.module.test.ts'), block: subscriptionTest(module, useCase, event) } as const] : [],
+      ...event.folder === 'created' ? [{ action: 'append-block' as const, path: file('.module.test.ts'), block: subscriptionTest(module, useCase, event), imports: [] }] : [],
     ]
     return { changes, nextSteps: [`bun test ${folder}`] }
   },

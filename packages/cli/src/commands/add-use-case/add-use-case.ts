@@ -30,7 +30,7 @@ export const ADD_USE_CASE = defineCommand({
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     return {
       changes: [
-        { action: 'append-block', path: file('.schema.ts'), block: useCaseSchema(module, useCase) },
+        { action: 'append-block', path: file('.schema.ts'), block: useCaseSchema(module, useCase), imports: [] },
         {
           action: 'add-class-member',
           path: file('.module.ts'),
@@ -39,7 +39,7 @@ export const ADD_USE_CASE = defineCommand({
           member: useCaseMember(module, useCase),
           imports: [`import { ${module.type}${useCase.type}Schema, type ${module.type}${useCase.type}DTO } from './${module.folder}.schema'`],
         },
-        { action: 'append-block', path: file('.module.test.ts'), block: useCaseTest(module, useCase) },
+        { action: 'append-block', path: file('.module.test.ts'), block: useCaseTest(module, useCase), imports: [] },
       ],
       nextSteps: [
         `change the ${module.words} by a method of its entity, in ${module.folder}.ts, and call it before persist in ${useCase.camel}`,
