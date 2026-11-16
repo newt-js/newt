@@ -3,12 +3,13 @@ import { test }        from 'bun:test'
 // --------------------------------------------------------
 import { humanReport } from './human-report'
 
-const FILES = [{ path: 'src/index.ts', status: 'created' as const }, { path: 'package.json', status: 'skipped' as const }]
+const FILES = [{ path: 'src/index.ts', status: 'created' as const }, { path: 'package.json', status: 'skipped' as const, note: 'already exists' }, { path: '.gitignore', status: 'updated' as const }]
 
-test('lists what was created and skipped, then the warnings and the next steps', () => {
+test('lists what was created, skipped and updated, then the warnings and the next steps', () => {
   expect(humanReport({ dryRun: false, files: FILES, warnings: ['Port 3000 is taken'], nextSteps: ['bun run dev'] })).toBe([
     '  created  src/index.ts',
     '  skipped  package.json (already exists)',
+    '  updated  .gitignore',
     '',
     'Warnings:',
     '  Port 3000 is taken',
@@ -24,6 +25,7 @@ test('a dry run says nothing was written and what it would do', () => {
     '',
     '  will create  src/index.ts',
     '  will skip    package.json (already exists)',
+    '  will update  .gitignore',
   ].join('\n'))
 })
 

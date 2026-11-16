@@ -1,6 +1,6 @@
 import { join }                  from 'node:path'
 // --------------------------------------------------------
-import type { FileChange }       from '../../../commands/command'
+import type { CreateChange }     from '../../../commands/command'
 import type { TemplateVersions } from '../../template-versions/template-versions'
 import { AGENTS_MD }             from '../files/agents-md'
 import { CLAUDE_MD }             from '../files/claude-md'
@@ -16,7 +16,7 @@ import { TSCONFIG_JSON }         from '../files/tsconfig-json'
 
 export type BackendTemplateOptions = { folder: string, name: string, port: number, versions: TemplateVersions }
 
-export function backendTemplate({ folder, name, port, versions }: BackendTemplateOptions): FileChange[] {
+export function backendTemplate({ folder, name, port, versions }: BackendTemplateOptions): CreateChange[] {
   const files: Record<string, string> = {
     'package.json': packageJson(name, versions),
     'tsconfig.json': TSCONFIG_JSON,

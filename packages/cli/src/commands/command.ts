@@ -12,7 +12,13 @@ export type CommandContext = { cwd: string, ask: Ask | null }
 
 export type CommandInput<O extends Options> = CommandContext & { args: string[], options: OptionValues<O> }
 
-export type FileChange = { action: 'create', path: string, content: string }
+export type CreateChange = { action: 'create', path: string, content: string }
+
+export type CompleteJsonChange = { action: 'complete-json', path: string, values: Record<string, unknown> }
+
+export type EnsureLinesChange = { action: 'ensure-lines', path: string, lines: string[] }
+
+export type FileChange = CreateChange | CompleteJsonChange | EnsureLinesChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }
 
