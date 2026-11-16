@@ -11,7 +11,7 @@ import { backendTemplate }  from './backend-template'
 
 const STORES = { cluster: 'memory' as const, database: 'sqlite' as const, files: 'local' as const }
 
-const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0', react: '19.0.0', reactDom: '19.0.0', reactTypes: '19.0.0', reactDomTypes: '19.0.0' }
+const VERSIONS = { newt: '1.2.3', zod: '4.0.0', eslint: '10.0.0', bunTypes: '1.4.0', react: '19.0.0', reactDom: '19.0.0', reactTypes: '19.0.0', reactDomTypes: '19.0.0', lintTypescript: 'npm:@typescript/typescript6@6.0.2', typescript: '7.0.2' }
 
 const BACKEND_COMMAND = defineCommand({
   name: 'backend',
@@ -31,21 +31,28 @@ describe('backendTemplate', () => {
       'complete-json apps/shop/package.json',
       'create apps/shop/tsconfig.json',
       'create apps/shop/eslint.config.ts',
-      'create apps/shop/.env',
-      'create apps/shop/.env.example',
       'create apps/shop/AGENTS.md',
-      'create apps/shop/src/index.ts',
       'create apps/shop/src/backend.ts',
       'create apps/shop/src/stores.ts',
       'create apps/shop/src/env.ts',
       'create apps/shop/src/backend.test.ts',
       'create apps/shop/src/contexts.ts',
-      'complete-env apps/shop/.env.test',
+      'create apps/shop/src/index.ts',
+      'create apps/shop/src/auth.ts',
+      'complete-env apps/shop/.env',
+      'complete-env apps/shop/.env.example',
       'ensure-lines apps/shop/.gitignore',
       'ensure-lines apps/shop/CLAUDE.md',
       'remove-unchanged apps/shop/index.ts',
       'remove-json-key apps/shop/package.json',
     ])
+  })
+
+  test("the lint's parser stack gets TypeScript 6, whatever TypeScript the project has", () => {
+    const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, stores: STORES, versions: VERSIONS }), 'package.json')
+    const overrides = (change?.action === 'complete-json' ? change.values.overrides : {}) as Record<string, unknown>
+    expect(overrides['@typescript-eslint/typescript-estree']).toEqual({ typescript: 'npm:@typescript/typescript6@6.0.2' })
+    expect(overrides).not.toHaveProperty('typescript')
   })
 
   test('its package is named as told, with newt at its version and the rest at theirs', () => {
@@ -59,11 +66,11 @@ describe('backendTemplate', () => {
 
   test('its port and the files\' variables in .env, and in .env.example without the secret', () => {
     const changes = backendTemplate({ folder: '.', name: 'shop', port: 3010, stores: STORES, versions: VERSIONS })
-    const contentOf = (path: string) => {
+    const variablesOf = (path: string) => {
       const change = changeTo(changes, path)
-      return change?.action === 'create' ? change.content : ''
+      return change?.action === 'complete-env' ? change.variables : {}
     }
-    expect(contentOf('.env')).toMatch(/^PORT=3010\nPUBLIC_URL=http:\/\/localhost:3010\nFILES_SECRET=[0-9a-f]{64}\n$/)
-    expect(contentOf('.env.example')).toBe('PORT=3010\nPUBLIC_URL=http://localhost:3010\nFILES_SECRET=\n')
+    expect(variablesOf('.env')).toEqual({ PORT: '3010', PUBLIC_URL: 'http://localhost:3010', FILES_SECRET: expect.stringMatching(/^[0-9a-f]{64}$/) })
+    expect(variablesOf('.env.example')).toEqual({ PORT: '3010', PUBLIC_URL: 'http://localhost:3010', FILES_SECRET: '' })
   })
 })

@@ -24,7 +24,7 @@
     "README.md"
   ],
   "bin": {
-    "create-newt": "./src/create.ts"
+    "create-newt": "./src/create-newt.js"
   },
   "engines": {
     "bun": ">=1.4.0"

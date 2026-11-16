@@ -17,3 +17,8 @@ test('any text becomes a valid name', () => {
 test('text with nothing to keep is backend', () => {
   expect(packageNameOf('ñ!')).toBe('backend')
 })
+
+test('always one a backend takes', () => {
+  expect(packageNameOf('node_modules')).toBe('node-modules')
+  expect(packageNameOf('x_')).toBe('x')
+})

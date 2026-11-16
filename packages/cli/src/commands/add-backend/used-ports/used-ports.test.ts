@@ -8,9 +8,10 @@ import { usedPorts }       from './used-ports'
 test("the ports in the workspaces' .env and .env.example, with the workspace of each", async () => {
   const root = await monorepoProject(['apps/*', 'packages/*'])
   await Bun.write(join(root, 'apps/api/.env'), 'PORT=3000\nVALKEY_URL=redis://localhost:6379\n')
-  await Bun.write(join(root, 'apps/web/.env.example'), 'PORT=3010\n')
+  await Bun.write(join(root, 'apps/web/.env.example'), 'PORT=3010 # web\n')
+  await Bun.write(join(root, 'apps/admin/.env'), 'export PORT="3020"\n')
   await Bun.write(join(root, 'apps/docs/.env'), 'TITLE=docs\n')
-  expect(await usedPorts({ folder: root, patterns: ['apps/*', 'packages/*'], shape: 'list' })).toEqual(new Map([[3000, 'apps/api'], [3010, 'apps/web']]))
+  expect(await usedPorts({ folder: root, patterns: ['apps/*', 'packages/*'], shape: 'list' })).toEqual(new Map([[3000, 'apps/api'], [3010, 'apps/web'], [3020, 'apps/admin']]))
 })
 
 test('none in a monorepo without .env files', async () => {

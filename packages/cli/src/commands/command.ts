@@ -1,4 +1,5 @@
-export type Output = { code: number, text: string }
+/** What a command answers; `json` when its text is JSON, which goes to stdout even when it fails. */
+export type Output = { code: number, text: string, json?: boolean }
 
 export type Option = { type: 'boolean' | 'string', description: string, short?: string, value?: string }
 
@@ -12,7 +13,7 @@ export type CommandContext = { cwd: string, ask: Ask | null }
 
 export type CommandInput<O extends Options> = CommandContext & { args: string[], options: OptionValues<O> }
 
-export type CreateChange = { action: 'create', path: string, content: string }
+export type CreateChange = { action: 'create', path: string, content: string, kept?: { needs: string[], warning: string } }
 
 export type CompleteJsonChange = { action: 'complete-json', path: string, values: Record<string, unknown> }
 
@@ -20,7 +21,7 @@ export type EnsureLinesChange = { action: 'ensure-lines', path: string, lines: s
 
 export type RemoveUnchangedChange = { action: 'remove-unchanged', path: string, content: string, why: string }
 
-export type RemoveJsonKeyChange = { action: 'remove-json-key', path: string, key: string, value: unknown, whenMissing: string }
+export type RemoveJsonKeyChange = { action: 'remove-json-key', path: string, in?: string, key: string, value: unknown, whenMissing: string }
 
 export type CompleteEnvChange = { action: 'complete-env', path: string, variables: Record<string, string> }
 
@@ -30,13 +31,15 @@ export type ReplaceLineChange = { action: 'replace-line', path: string, line: st
 
 export type AddConstructorStatementChange = { action: 'add-constructor-statement', path: string, className: string, statement: string }
 
-export type KeepLineBelowChange = { action: 'keep-line-below', path: string, line: string, below: string }
+export type WireModuleChange = { action: 'wire-module', path: string, functionName: string, module: string, declaration: string, imports: string[] }
+
+export type OrderModulesChange = { action: 'order-modules', path: string }
 
 export type AppendBlockChange = { action: 'append-block', path: string, block: string, imports: string[] }
 
 export type AddClassMemberChange = { action: 'add-class-member', path: string, className: string, name: string, member: string, imports: string[] }
 
-export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[] }
+export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[], createArgument?: boolean }
 
 export type FileChange =
   | CreateChange
@@ -50,7 +53,8 @@ export type FileChange =
   | AddClassMemberChange
   | AddObjectPropertyChange
   | AppendBlockChange
-  | KeepLineBelowChange
+  | OrderModulesChange
+  | WireModuleChange
   | AddConstructorStatementChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }

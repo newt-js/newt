@@ -10,6 +10,7 @@ const PROJECT = {
   'package.json': JSON.stringify({
     name: 'generated',
     type: 'module',
+    scripts: { typecheck: 'bun check -b', lint: 'bun --bun eslint' },
     dependencies: { '@newt-js/core': '0.0.0', 'zod': '4.3.6' },
     devDependencies: { '@newt-js/lint': '0.0.0', '@types/bun': '1.4.4', 'eslint': '10.12.0' },
   }),

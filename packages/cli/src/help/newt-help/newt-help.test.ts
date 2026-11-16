@@ -24,5 +24,5 @@ test('newtHelp lists the commands sorted by name, with their arguments and summa
     '  add backend <folder>  Adds a backend',
     '  init                  Sets up a project',
   ].join('\n'))
-  expect(text).toEndWith("Run newt <command> --help to see a command's options.")
+  expect(text).toContain("Run newt <command> --help to see a command's options.\n\nWith --json, a command prints { dryRun")
 })

@@ -22,12 +22,21 @@ export const ADD_VALUE_OBJECT = defineCommand({
     if (name === undefined || rest.length > 0) throw new CommandError(USAGE)
     const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
     const value = pieceNames(name, 'a value object')
+    if (value.folder === `${module.folder}-id`) {
+      throw new CommandError(`${module.type}Id is there already: every module has its id`)
+    }
+    const changes = [
+      { action: 'create' as const, path: join(folder, 'value-objects', `${value.folder}.ts`), content: valueObjectTs(value) },
+      { action: 'create' as const, path: join(folder, 'value-objects', `${value.folder}.test.ts`), content: valueObjectTestTs(value) },
+      { action: 'create' as const, path: join(folder, 'errors', `invalid-${value.folder}.ts`), content: invalidValueTs(module, value) },
+    ]
+    const there = await Promise.all(changes.map(change => Bun.file(join(cwd, change.path)).exists()))
+    if (there.some(Boolean) && !there.every(Boolean)) {
+      const found = changes.filter((_, at) => there[at]).map(change => change.path)
+      throw new CommandError(`${found.join(' and ')} ${found.length === 1 ? 'is' : 'are'} there already, and a value object is its files together: name it otherwise, or take ${found.length === 1 ? 'it' : 'them'} out`)
+    }
     return {
-      changes: [
-        { action: 'create', path: join(folder, 'value-objects', `${value.folder}.ts`), content: valueObjectTs(value) },
-        { action: 'create', path: join(folder, 'value-objects', `${value.folder}.test.ts`), content: valueObjectTestTs(value) },
-        { action: 'create', path: join(folder, 'errors', `invalid-${value.folder}.ts`), content: invalidValueTs(module, value) },
-      ],
+      changes,
       nextSteps: [
         `give its rules to the schema it has: z.string().trim().min(1).max(100) in ${value.folder}.ts`,
         `use it in the module's schema, ${value.type}.schema, and where a value comes in, ${value.type}.from(text)`,

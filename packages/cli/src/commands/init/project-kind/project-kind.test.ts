@@ -9,9 +9,14 @@ test('asks, offering a backend', async () => {
     questions.push(`${question} [${suggested}]`)
     return 'Monorepo'
   })).toBe('monorepo')
-  expect(questions).toEqual(['A backend or a monorepo? (backend or monorepo) [backend]'])
+  expect(questions).toEqual(['A backend or a monorepo? [backend]'])
 })
 
 test('refuses another answer', async () => {
   await expect(askProjectKind(async () => 'both')).rejects.toThrow("'both' is neither: answer backend or monorepo")
+})
+
+test('asks again on an answer that is neither', async () => {
+  const answers = ['both', 'monorepo']
+  expect(await askProjectKind(async () => answers.shift()!)).toBe('monorepo')
 })

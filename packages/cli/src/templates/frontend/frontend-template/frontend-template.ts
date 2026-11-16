@@ -3,6 +3,7 @@ import { join }                   from 'node:path'
 import type { FileChange }        from '../../../commands/command'
 import type { ContextNames }      from '../../../names/context-names/context-names'
 import { CONTEXTS_FOLDER }        from '../../../project/backend-contexts/backend-contexts'
+import { quoted }                 from '../../quoted/quoted'
 import type { TemplateVersions }  from '../../template-versions/template-versions'
 import { FRONTENDS_START }        from '../files/backend-files'
 import { SERVED }                 from '../files/backend-files'
@@ -31,7 +32,7 @@ function servedAt(backend: string, context: ContextNames, mount: string, imports
 
 /** A frontend built elsewhere, its folder `fromSrc` (from the backend's src/), served as it is at /<context>. */
 export function builtFrontendTemplate({ backend, context, fromSrc }: BuiltFrontendOptions): FileChange[] {
-  return servedAt(backend, context, `join(import.meta.dir, '${fromSrc}')`, ["import { join } from 'node:path'"])
+  return servedAt(backend, context, `join(import.meta.dir, ${quoted(fromSrc)})`, ["import { join } from 'node:path'"])
 }
 
 /** A React frontend of a context, in its frontend/, with its own tsconfig, served by the backend at /<context>. */

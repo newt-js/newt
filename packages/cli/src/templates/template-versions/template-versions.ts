@@ -1,14 +1,17 @@
 import { join } from 'node:path'
 
-export type TemplateVersions = { newt: string, zod: string, eslint: string, bunTypes: string, react: string, reactDom: string, reactTypes: string, reactDomTypes: string }
+export type TemplateVersions = { newt: string, zod: string, eslint: string, bunTypes: string, react: string, reactDom: string, reactTypes: string, reactDomTypes: string, lintTypescript: string, typescript: string }
 
 const MANIFEST = join(import.meta.dir, '../../../package.json')
 
-/** newt's packages go at this cli's version; the others at the ones it is tested with. */
+/** The TypeScript a project uses, its editor and \`bunx tsc\` too: newt's repo is on it. Its lint takes its own 6. */
+export const PROJECT_TYPESCRIPT = '7.0.2'
+
+/** newt's packages with `^` on this cli's version: while newt is 0.x, the patches of its minor. The others at the ones it is tested with. */
 export async function templateVersions(): Promise<TemplateVersions> {
-  const { version, devDependencies } = await Bun.file(MANIFEST).json() as { version: string, devDependencies: Record<string, string> }
+  const { version, dependencies, devDependencies } = await Bun.file(MANIFEST).json() as { version: string, dependencies: Record<string, string>, devDependencies: Record<string, string> }
   return {
-    newt: version,
+    newt: `^${version}`,
     zod: devDependencies.zod!,
     eslint: devDependencies.eslint!,
     bunTypes: devDependencies['@types/bun']!,
@@ -16,5 +19,7 @@ export async function templateVersions(): Promise<TemplateVersions> {
     reactDom: devDependencies['react-dom']!,
     reactTypes: devDependencies['@types/react']!,
     reactDomTypes: devDependencies['@types/react-dom']!,
+    lintTypescript: dependencies.typescript!,
+    typescript: PROJECT_TYPESCRIPT,
   }
 }

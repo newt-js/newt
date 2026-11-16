@@ -9,15 +9,16 @@ import { completeJson }            from '../complete-json/complete-json'
 import { createFile }              from '../create-file/create-file'
 import { ensureLines }             from '../ensure-lines/ensure-lines'
 import { insertLines }             from '../insert-lines/insert-lines'
-import { keepLineBelow }           from '../keep-line-below/keep-line-below'
+import { orderModules }            from '../order-modules/order-modules'
 import { removeJsonKey }           from '../remove-json-key/remove-json-key'
 import { removeUnchanged }         from '../remove-unchanged/remove-unchanged'
 import { replaceLine }             from '../replace-line/replace-line'
 import type { VirtualFiles }       from '../virtual-files/virtual-files'
+import { wireModule }              from '../wire-module/wire-module'
 
 export function applyChange(change: FileChange, files: VirtualFiles): Promise<ChangeOutcome> {
   switch (change.action) {
-    case 'create': return createFile(change.path, change.content, files)
+    case 'create': return createFile(change, files)
     case 'complete-json': return completeJson(change.path, change.values, files)
     case 'ensure-lines': return ensureLines(change.path, change.lines, files)
     case 'remove-unchanged': return removeUnchanged(change, files)
@@ -28,7 +29,8 @@ export function applyChange(change: FileChange, files: VirtualFiles): Promise<Ch
     case 'add-class-member': return addClassMember(change, files)
     case 'add-object-property': return addObjectProperty(change, files)
     case 'append-block': return appendBlock(change, files)
-    case 'keep-line-below': return keepLineBelow(change, files)
+    case 'order-modules': return orderModules(change.path, files)
+    case 'wire-module': return wireModule(change, files)
     case 'add-constructor-statement': return addConstructorStatement(change, files)
   }
 }

@@ -25,6 +25,9 @@
   "files": [
     "src",
     "!**/*.test.ts",
+    "!**/contract",
+    "!**/fixtures*",
+    "!src/adapters/database/*/testing",
     "LICENSE",
     "README.md"
   ],

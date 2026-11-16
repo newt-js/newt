@@ -7,6 +7,7 @@ import { join }             from 'node:path'
 // --------------------------------------------------------
 import { runCommand }       from '../../run/run-command/run-command'
 import { checkGenerated }   from '../../testing/check-generated/check-generated'
+import { freePorts }        from '../../testing/free-ports/free-ports'
 import { generate }         from '../../testing/generate/generate'
 import { linkDependencies } from '../../testing/link-dependencies/link-dependencies'
 import { UTILS_INDEX_TS }   from '../../testing/monorepo-project/monorepo-project'
@@ -38,29 +39,37 @@ describe('newt add backend', () => {
 
   test('leaves the workspaces alone when they already take the folder', async () => {
     const root = await monorepoProject(['apps/*'])
-    const output = JSON.parse((await addBackend(['apps/api', '--json'], root)).text) as { files: { path: string }[] }
-    expect(output.files.map(file => file.path)).not.toContain('package.json')
+    const before = await Bun.file(join(root, 'package.json')).json() as { workspaces: string[] }
+    await addBackend(['apps/api'], root)
+    expect((await Bun.file(join(root, 'package.json')).json() as { workspaces: string[] }).workspaces).toEqual(before.workspaces)
+  })
+
+  test("the root depends on newt's cli, so bunx newt runs it there", async () => {
+    const root = await monorepoProject(['apps/*'])
+    await addBackend(['apps/api'], root)
+    expect((await Bun.file(join(root, 'package.json')).json() as { devDependencies: Record<string, string> }).devDependencies).toHaveProperty('@newt-js/cli')
   })
 
   test('in a monorepo made by newt init --monorepo, its workspaces already take apps/', async () => {
     const root = join(await generate(INIT, ['shop', '--monorepo']), 'shop')
-    const report = JSON.parse((await addBackend(['apps/web', '--port', '3010', '--json'], root)).text) as { files: { path: string }[] }
-    expect(report.files.map(file => file.path)).not.toContain('package.json')
+    const report = JSON.parse((await addBackend(['apps/web', '--port', '3010', '--json'], root)).text) as { files: { path: string, status: string }[] }
+    expect(report.files.find(file => file.path === 'package.json')?.status).toBe('skipped')
     expect(await Bun.file(join(root, 'apps/web/.env')).text()).toStartWith('PORT=3010\n')
   })
 
   test('each backend added takes a port of its own, and they run at once', async () => {
     const root = await monorepoProject()
-    await addBackend(['apps/orders', '--port', '4310'], root)
+    const port = freePorts([10])
+    await addBackend(['apps/orders', '--port', String(port)], root)
     await addBackend(['apps/billing'], root)
-    expect(await Bun.file(join(root, 'apps/billing/.env')).text()).toStartWith('PORT=4320\n')
+    expect(await Bun.file(join(root, 'apps/billing/.env')).text()).toStartWith(`PORT=${port + 10}\n`)
     const backends = await Promise.all(['apps/orders', 'apps/billing'].map(async folder => {
       await linkDependencies(join(root, folder))
       return Bun.spawn([process.execPath, 'src/index.ts'], { cwd: join(root, folder), stdout: 'ignore', stderr: 'ignore' })
     }))
     try {
-      for (const port of [4310, 4320]) {
-        expect(await healthOn(port)).toBe(200)
+      for (const each of [port, port + 10]) {
+        expect(await healthOn(each)).toBe(200)
       }
     } finally {
       for (const backend of backends) backend.kill()
@@ -71,7 +80,7 @@ describe('newt add backend', () => {
     const root = await monorepoProject()
     await addBackend(['apps/orders'], root)
     const report = JSON.parse((await addBackend(['apps/billing', '--port', '3000', '--json'], root)).text) as { warnings: string[] }
-    expect(report.warnings).toEqual(["Port 3000 is also apps/orders's: the two cannot run at once"])
+    expect(report.warnings).toEqual(["Port 3000 is also apps/orders's: give one of them another PORT in its .env, or a request may reach either"])
   })
 
   test('works from any folder inside the monorepo', async () => {
@@ -96,7 +105,7 @@ describe('newt add backend', () => {
 
   test('outside a monorepo, says to use newt init', async () => {
     const output = await addBackend(['api'], await mkdtemp(join(tmpdir(), 'newt-cli-alone-')))
-    expect(output).toEqual({ code: 1, text: 'This is not a monorepo: no package.json with workspaces here or above. For a backend alone, newt init <name>' })
+    expect(output).toEqual({ code: 1, text: 'This is not a monorepo: no package.json with workspaces here or above. For a backend alone, newt init <name>', json: false })
   })
 
   test('refuses a folder outside the monorepo, or its root', async () => {
@@ -108,6 +117,36 @@ describe('newt add backend', () => {
   test('refuses a folder whose name cannot name a backend', async () => {
     const root = await monorepoProject()
     expect((await addBackend(['apps/My Api'], root)).text).toBe("'My Api' cannot name a folder and a package: use lowercase letters, digits and - . _ ~, as in 'my-api'")
+  })
+
+  test('refuses a folder named as another package of the monorepo', async () => {
+    const root = await monorepoProject(['apps/*', 'services/*'])
+    await addBackend(['apps/api'], root)
+    expect((await addBackend(['services/api'], root)).text).toBe('apps/api is named api already, and two packages of a monorepo never share a name: put the backend in a folder of another name')
+  })
+
+  test("refuses a folder that is another package, and not a backend", async () => {
+    const root = await monorepoProject()
+    expect((await addBackend(['packages/utils'], root)).text).toBe('packages/utils is a package already, and not a newt backend: put the backend in a folder of its own')
+    await Bun.write(join(root, 'apps/shared/package.json'), JSON.stringify({ name: 'shared', dependencies: { '@newt-js/core': '*' } }))
+    await Bun.write(join(root, 'apps/shared/src/index.ts'), 'export {}\n')
+    expect((await addBackend(['apps/shared', '--dry-run'], root)).text).toBe('apps/shared is a package already, and not a newt backend: put the backend in a folder of its own')
+  })
+
+  test('refuses a folder in node_modules, or one that holds a workspace', async () => {
+    const root = await monorepoProject(['apps/**', '!apps/legacy'])
+    await addBackend(['apps/one'], root)
+    expect((await addBackend(['node_modules/x'], root)).text).toBe('node_modules/x is in node_modules, where bun install puts packages: put the backend in a folder of its own, as apps/api')
+    expect((await addBackend(['apps'], root)).text).toBe('apps holds the workspace apps/one: put the backend in a folder of its own beside it')
+  })
+
+  test('a dependency in a workspace, or a folder a ! pattern leaves out, is no workspace', async () => {
+    const root = await monorepoProject(['apps/**', '!apps/legacy'])
+    await addBackend(['apps/one'], root)
+    await Bun.write(join(root, 'apps/one/node_modules/zod/package.json'), JSON.stringify({ name: 'zod' }))
+    await Bun.write(join(root, 'apps/legacy/package.json'), JSON.stringify({ name: 'two' }))
+    expect((await addBackend(['apps/zod'], root)).code).toBe(0)
+    expect((await addBackend(['apps/two'], root)).code).toBe(0)
   })
 
   test('takes one folder', async () => {

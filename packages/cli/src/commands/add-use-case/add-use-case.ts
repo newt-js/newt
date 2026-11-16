@@ -1,6 +1,7 @@
 import { join }          from 'node:path'
 // --------------------------------------------------------
-import { pieceNames }    from '../../names/piece-names/piece-names'
+import { useCaseNames }  from '../../names/use-case-names/use-case-names'
+import { classMembers }  from '../../project/class-members/class-members'
 import { findModule }    from '../../project/find-module/find-module'
 import { useCaseMember } from '../../templates/pieces/use-case-ts'
 import { useCaseSchema } from '../../templates/pieces/use-case-ts'
@@ -23,11 +24,23 @@ export const ADD_USE_CASE = defineCommand({
     const [given, name, ...rest] = args
     if (name === undefined || rest.length > 0) throw new CommandError(USAGE)
     const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
-    const useCase = pieceNames(name, 'a use case')
+    const useCase = useCaseNames(name)
     if (READS.includes(useCase.camel)) {
       throw new CommandError(`${useCase.camel} is one of the reads newt's lint shapes (${READS.join(', ')}): name a use case by what it does`)
     }
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
+    const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
+    const schema = (await Bun.file(join(cwd, file('.schema.ts'))).text().catch(() => '')).replaceAll('\r\n', '\n')
+    const again = schema.includes(useCaseSchema(module, useCase))
+    if (!again) {
+      if (classMembers(code, `${module.type}_Module`).includes(useCase.camel)) {
+        throw new CommandError(`${module.type}_Module has ${useCase.camel} already: name the use case by what else it does`)
+      }
+      const taken = [`${module.type}${useCase.type}Schema`, `${module.type}${useCase.type}DTO`].find(each => new RegExp(`\\b${each}\\b`).test(schema))
+      if (taken) {
+        throw new CommandError(`'${name}' cannot name a use case: ${module.folder}.schema.ts has ${taken} already; name it by what it does`)
+      }
+    }
     return {
       changes: [
         { action: 'append-block', path: file('.schema.ts'), block: useCaseSchema(module, useCase), imports: [] },

@@ -25,7 +25,7 @@ export function subscriptionTest({ module, plural }: ModuleNames, useCase: Piece
   await ${plural}.create({ name: 'First' })
   await context.settle()
 
-  const jobs = await context.base.database.outbox.list()
-  expect(jobs.find(job => job.queue === '${queue}')?.status).toBe('done')
+  const queued = await context.base.database.outbox.list()
+  expect(queued.find(each => each.queue === '${queue}')?.status).toBe('done')
 })`
 }

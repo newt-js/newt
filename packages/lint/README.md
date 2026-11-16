@@ -40,8 +40,8 @@ Every rule is an `error`: a warning does not stop an agent.
 | Rule | Checks |
 |---|---|
 | `newt/module-files` | A module has only its own files, named after it: `.module`, `.ts` (the entity), `.schema`, `.repository`, `.routes`, `.workers`, `.deps`, `-options`, its tests, and the folders `events/`, `errors/`, `value-objects/` and `services/`. |
-| `newt/module-entity` | A module keeps one entity, the root of its aggregate: only its `<m>.ts` declares a class that extends `Entity`, and only one. Another entity is a module of its own, referenced by its id. |
-| `newt/frontend-imports` | A context's frontend (`<context>/frontend/`, `.ts` and `.tsx`) imports its own files and, as types alone (`import type`), its context's schemas; never the server's code: no module, repository or other context, and newt only as types. |
+| `newt/module-entity` | A module keeps one entity, the root of its aggregate: only its `<m>.ts` declares a class that extends `Entity`, and only one, however many base classes of its own it goes through. Another entity is a module of its own, referenced by its id. |
+| `newt/frontend-imports` | A context's frontend (`<context>/frontend/`, `.ts` and `.tsx`) imports its own files and, as types alone (`import type`), its context's schemas; never the server's code: no module, repository or other context, and newt, Bun and Node (`bun`, `bun:*`, `node:*`) only as types. |
 | `newt/module-imports` | A module imports from another only its module, its schema, its events and its errors. |
 | `newt/context-imports` | A context imports only the contexts it says it uses, never in a cycle. |
 | `newt/schema-imports` | A module's schema imports only zod, `@newt-js/core` (its root), the module's value objects and other modules' schemas. |
@@ -61,8 +61,10 @@ Every rule is an `error`: a warning does not stop an agent.
 |---|---|
 | `newt/entity-method-params` | An entity takes its own `Props`, never a DTO nor an object written in place. |
 | `newt/repository-public-methods` | A repository declares no public method of its own: `persist`, `find`, `count`, `paginate` and `purge` are all it has. |
+| `newt/route-context` | Every route a context's files register, on its router or a group of it, starts with the context (`/shop/orders`), so two contexts never take the same path. Paths are read through consts, templates and a group's prefix; one it cannot read is reported. |
 | `newt/route-body-unchecked` | A route passes the body to a use case as it came, never asserting its type. |
 | `newt/reaction-queue` | A reaction's queue names the module that reacts, the use case it calls and the event. |
+| `newt/module-transactions` | A module never runs a transaction of its own from its base's `transactions`: it writes through its repository's `persist`. A field of its own named `transactions` is no transaction. |
 | `newt/framework-tables` | An application never names a table `newt_…`, to `records('…')` or in SQL. |
 
 ### The lint's own discipline
@@ -75,5 +77,4 @@ Every rule is an `error`: a warning does not stop an agent.
 
 - `@typescript-eslint/no-floating-promises` and `@typescript-eslint/no-misused-promises`.
 - `curly` and `brace-style`: braces always, and every body on lines of its own.
-- `no-restricted-syntax` in modules: no `transactions`; a module writes through its repository's `persist`.
 - `reportUnusedDisableDirectives: 'error'`.

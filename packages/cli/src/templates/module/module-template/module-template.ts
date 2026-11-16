@@ -18,12 +18,8 @@ import { moduleMigration }   from '../migrations'
 
 export type ModuleTemplateOptions = { backend: string, context: ContextNames, names: ModuleNames, database: DatabaseKind, migration: string }
 
-export const RETURN_MODULES = '  return {'
-
-export const END_OF_MODULES = '  }'
-
 /** The line of <ctx>-modules.ts that initializes a module. */
-export function initializedLine({ module, type }: ModuleNames, deps = ''): string {
+function initializedLine({ module, type }: ModuleNames, deps = ''): string {
   return `  const ${module} = ${type}_Module.initialize(base, router${deps})`
 }
 
@@ -39,8 +35,8 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     [`${names.folder}.ts`]: entityTs(names),
     [`${names.folder}.repository.ts`]: repositoryTs(names),
     [`${names.folder}.module.ts`]: moduleTs(names),
-    [`${names.folder}.routes.ts`]: routesTs(names),
-    [`${names.folder}.module.test.ts`]: moduleTestTs(names, context.folder),
+    [`${names.folder}.routes.ts`]: routesTs(names, context.folder),
+    [`${names.folder}.module.test.ts`]: moduleTestTs(names, context, database),
   }
   const sql = moduleMigration(names, database)
   const modules = join(contextFolder, `${context.folder}-modules.ts`)
@@ -51,13 +47,12 @@ export function moduleTemplate({ backend, context, names, database, migration }:
       { action: 'create', path: join(contextFolder, 'migrations', `${migration}_${names.table}_down.sql`), content: sql.down } as const,
     ] : [],
     {
-      action: 'insert-lines',
+      action: 'wire-module',
       path: modules,
-      anchor: RETURN_MODULES,
-      position: 'before',
-      lines: [initializedLine(names)],
+      functionName: `${context.camel}Modules`,
+      module: names.module,
+      declaration: initializedLine(names),
       imports: [`import { ${names.type}_Module } from './modules/${names.folder}/${names.folder}.module'`],
     },
-    { action: 'insert-lines', path: modules, anchor: END_OF_MODULES, position: 'before', lines: [`    ${names.module},`], imports: [] },
   ]
 }

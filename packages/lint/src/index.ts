@@ -16,11 +16,13 @@ import { frontendImports }         from './rules/frontend-imports/frontend-impor
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
+import { moduleTransactions }      from './rules/module-transactions/module-transactions'
 import { keepNoDisable }           from './rules/no-disable/keep-no-disable'
 import { noDisable }               from './rules/no-disable/no-disable'
 import { reactionQueue }           from './rules/reaction-queue/reaction-queue'
 import { repositoryPublicMethods } from './rules/repository-public-methods/repository-public-methods'
 import { routeBodyUnchecked }      from './rules/route-body-unchecked/route-body-unchecked'
+import { routeContext }            from './rules/route-context/route-context'
 import { schemaImports }           from './rules/schema-imports/schema-imports'
 import { useCaseFiles }            from './rules/use-case-files/use-case-files'
 import { useCaseParams }           from './rules/use-case-params/use-case-params'
@@ -38,10 +40,12 @@ export const plugin = {
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
+    'module-transactions': moduleTransactions,
     'no-disable': noDisable,
     'reaction-queue': reactionQueue,
     'repository-public-methods': repositoryPublicMethods,
     'route-body-unchecked': routeBodyUnchecked,
+    'route-context': routeContext,
     'schema-imports': schemaImports,
     'use-case-files': useCaseFiles,
     'use-case-params': useCaseParams,
@@ -74,17 +78,6 @@ const OTHERS: Linter.RulesRecord = {
   ...STYLE,
 }
 
-/** A module writes through its repository's `persist`, never in a transaction of its own. */
-const TRANSACTIONS = {
-  selector: [
-    "MemberExpression[property.name='transactions']",
-    "MemberExpression[property.value='transactions']",
-    "ObjectPattern > Property[key.name='transactions']",
-    "ObjectPattern > Property[key.value='transactions']",
-  ].join(', '),
-  message: "A module writes through its repository's persist, which runs the transaction, checks the write rule and publishes the events: never in a transaction of its own.",
-}
-
 export type NewtLintOptions = {
   /** The globs of the files it lints: every `.ts` file by default. */
   files?: string[]
@@ -115,7 +108,10 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
   const inContexts = contexts && files.map(pattern => [pattern, `${inside ? `${inside}/` : ''}**/*.ts`])
   const contextRules: Linter.Config[] = contexts && inContexts ? [{
     files: inContexts,
-    rules: { 'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }] },
+    rules: {
+      'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }],
+      'newt/route-context': ['error', { folder: given }],
+    },
   }, {
     // A context's file outside its modules imports what it composes, but its barrels re-export only what a module offers.
     files: inContexts,
@@ -123,11 +119,17 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     rules: { 'newt/module-imports': 'error' },
   }] : []
   const frontendRules: Linter.Config[] = contexts ? [{
-    // Frontends are .ts and .tsx.
+    // Frontends are .ts and .tsx, each its own project, whose aliases resolve as in the rest.
     files: [`${inside ? `${inside}/` : ''}*/frontend/**/*.{ts,tsx}`],
-    languageOptions: { parser: tseslint.parser },
+    languageOptions: { parser: tseslint.parser, parserOptions: { projectService: true } },
+    processor: keepNoDisable,
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
     plugins: { newt: plugin },
-    rules: { 'newt/frontend-imports': ['error', { folder: given }] },
+    ...root === undefined ? {} : { settings: { newt: { root: base } } },
+    rules: {
+      'newt/frontend-imports': ['error', { folder: given }],
+      'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
+    },
   }] : []
   return defineConfig(
     { ignores: ['**/dist/**', '**/node_modules/**'] },
@@ -141,7 +143,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       ...root === undefined ? {} : { settings: { newt: { root: base } } },
       rules: {
         ...OTHERS,
-        'newt/no-disable': ['error', { rules: [...Object.keys(OTHERS), 'no-restricted-syntax'] }],
+        'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
         // By the file's name, wherever it is: a module outside modules/, one every context shares, too.
         'newt/use-case-public-methods': 'error',
         'newt/use-case-params': 'error',
@@ -164,7 +166,9 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/reaction-queue': 'error',
         'newt/schema-imports': 'error',
         'newt/use-case-files': 'error',
-        'no-restricted-syntax': ['error', TRANSACTIONS],
+        'newt/module-transactions': 'error',
+        // With the folder of the contexts, every file of a context's is checked above.
+        ...contexts ? {} : { 'newt/route-context': 'error' },
       },
     },
   )

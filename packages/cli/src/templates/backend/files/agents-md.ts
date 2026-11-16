@@ -1,4 +1,21 @@
-export const AGENTS_MD = `# Agents
+import type { DatabaseKind } from '../../stores/store-databases'
+
+const MIGRATIONS_TEST = `- \`src/migrations.test.ts\`: every context's migrations on a real server. Set \`TEST_DATABASE_URL\`
+  (a server where it may create and drop databases) to run it; without it the test is skipped.
+`
+
+const MIGRATIONS_RULE = `A table changes only through a migration: a change to a module's schema needs the next pair in its context's
+\`migrations/\`, \`<number>_<table>_up.sql\` and \`<number>_<table>_down.sql\`, the number one above the highest there.
+`
+
+/** How a schema change reaches its table, and which tests see it. */
+const migrationsRule = (database: DatabaseKind) => {
+  if (database === 'memory') return ''
+  if (database === 'sqlite') return `${MIGRATIONS_RULE}The tests run them.\n`
+  return `${MIGRATIONS_RULE}The tests run in memory and miss them: only \`src/migrations.test.ts\` tries them.\n`
+}
+
+export const agentsMd = (database: DatabaseKind) => `# Agents
 
 A backend built with newt (@newt-js/core), on Bun.
 
@@ -6,16 +23,30 @@ A backend built with newt (@newt-js/core), on Bun.
 
 - \`src/index.ts\`: starts the backend on \`PORT\` (from \`.env\`).
 - \`src/backend.ts\`: opens the contexts and serves them, with \`GET /api/health\`.
+- \`src/stores.ts\`: the database and the files each context opens. Tests start the backend with
+  \`startBackend(0, { stores: 'memory' })\`: databases, files and cluster in memory, sqlite with its migrations.
+- \`src/auth.ts\`: \`authenticate\`, who calls the backend, for every context's router.
+- \`src/env.ts\`: \`requiredEnv\`, for the variables the backend cannot start without.
 - \`src/contexts.ts\`: the list of contexts the backend opens.
-- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`.
+${database === 'postgres' || database === 'mysql' ? MIGRATIONS_TEST : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/api/<context>/\`.
+
+## Sign-in
+
+Every route is private: without a session it answers 401, and a route takes \`{ public: true }\` to need none.
+\`src/auth.ts\` says who is calling, for every context; it signs no one in until it is written.
+Read a session cookie or a bearer token there and return \`{ userId }\`, or \`null\`:
+\`@newt-js/core/http\` has \`bearerAuthenticator\`, \`setSessionCookie\` and \`clearSessionCookie\`.
 
 ## Rules
 
 newt's lint holds the rules of the code: run it after every change and fix what it says.
-
+${migrationsRule(database)}
 ## Commands
 
 - \`bun run dev\`: the backend, restarted on every change.
-- \`bun run test\`, \`bun run check\`, \`bun run lint\`: tests, types and newt's lint. All three must pass.
-- \`bunx newt --help\`: what newt's command line can add to this backend.
+- \`bun run test\`, \`bun run typecheck\`, \`bun run lint\`: tests, types and newt's lint. All three must pass.
+- \`bunx newt --help\`: what newt's command line can add to this backend. Before \`bun install\`, \`bunx @newt-js/cli --help\`: npm's \`newt\` is another package.
+- \`--dry-run\` says what a command would change, writing nothing. \`--json\` prints
+  \`{ dryRun, files: [{ path, status, note? }], warnings, nextSteps }\`, or \`{ error }\` with exit code 1;
+  paths are from where it runs.
 `

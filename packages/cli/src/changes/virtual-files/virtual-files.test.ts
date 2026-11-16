@@ -13,33 +13,37 @@ describe('virtualFiles', () => {
   test('reads what is on disk, and null for what is not', async () => {
     const cwd = emptyFolder()
     await Bun.write(join(cwd, 'a.txt'), 'a')
-    const files = virtualFiles(cwd, false)
+    const files = virtualFiles(cwd)
     expect(await files.read('a.txt')).toBe('a')
     expect(await files.read('b.txt')).toBeNull()
   })
 
-  test('writes to disk', async () => {
-    const cwd = emptyFolder()
-    await virtualFiles(cwd, false).write('src/a.txt', 'a')
-    expect(await Bun.file(join(cwd, 'src/a.txt')).text()).toBe('a')
-  })
-
-  test('in a dry run, reads back what it wrote without writing it', async () => {
-    const cwd = emptyFolder()
-    const files = virtualFiles(cwd, true)
-    await files.write('a.txt', 'a')
-    expect(await files.read('a.txt')).toBe('a')
-    expect(await Bun.file(join(cwd, 'a.txt')).exists()).toBe(false)
-  })
-
-  test('removes from disk, and in a dry run only remembers it', async () => {
+  test('reads back what it wrote and removed, without touching the disk', async () => {
     const cwd = emptyFolder()
     await Bun.write(join(cwd, 'a.txt'), 'a')
-    const dry = virtualFiles(cwd, true)
-    await dry.remove('a.txt')
-    expect(await dry.read('a.txt')).toBeNull()
+    const files = virtualFiles(cwd)
+    await files.write('b.txt', 'b')
+    await files.remove('a.txt')
+    expect(await files.read('b.txt')).toBe('b')
+    expect(await files.read('a.txt')).toBeNull()
+    expect(await Bun.file(join(cwd, 'b.txt')).exists()).toBe(false)
     expect(await Bun.file(join(cwd, 'a.txt')).exists()).toBe(true)
-    await virtualFiles(cwd, false).remove('a.txt')
-    expect(await Bun.file(join(cwd, 'a.txt')).exists()).toBe(false)
+  })
+
+  test('remembers what changed, in the order it last changed', async () => {
+    const files = virtualFiles(emptyFolder())
+    await files.write('a.txt', 'a')
+    await files.write('b.txt', 'b')
+    await files.write('a.txt', 'a2')
+    expect([...files.changed()]).toEqual([['b.txt', 'b'], ['a.txt', 'a2']])
+  })
+
+  test('gives a file with \\r\\n as \\n, and keeps its \\r\\n when it changes', async () => {
+    const cwd = emptyFolder()
+    await Bun.write(join(cwd, 'a.ts'), 'a\r\nb\r\n')
+    const files = virtualFiles(cwd)
+    expect(await files.read('a.ts')).toBe('a\nb\n')
+    await files.write('a.ts', 'a\nb\nc\n')
+    expect(files.changed().get('a.ts')).toBe('a\r\nb\r\nc\r\n')
   })
 })

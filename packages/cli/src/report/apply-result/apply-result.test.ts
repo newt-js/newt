@@ -28,11 +28,19 @@ describe('applyResult', () => {
     expect(await Bun.file(join(cwd, 'a.txt')).text()).toBe('mine')
   })
 
-  test('a file created twice is skipped the second time', async () => {
+  test('a file created twice is created once, and reported once', async () => {
     const cwd = emptyFolder()
     const report = await applyResult({ changes: [create('a.txt', 'first'), create('a.txt', 'second')] }, cwd, false)
-    expect(report.files.map(file => file.status)).toEqual(['created', 'skipped'])
+    expect(report.files).toEqual([{ path: 'a.txt', status: 'created' }])
     expect(await Bun.file(join(cwd, 'a.txt')).text()).toBe('first')
+  })
+
+  test('a change that leaves a .ts file with syntax errors writes nothing', async () => {
+    const cwd = emptyFolder()
+    await Bun.write(join(cwd, 'a.ts'), 'f(x)\n')
+    const broken = { action: 'append-block' as const, path: 'a.ts', block: 'f(,)', imports: [] }
+    await expect(applyResult({ changes: [broken] }, cwd, false)).rejects.toThrow('would leave a.ts with syntax errors')
+    expect(await Bun.file(join(cwd, 'a.ts')).text()).toBe('f(x)\n')
   })
 
   test('a dry run reports the same and writes nothing', async () => {
@@ -42,7 +50,7 @@ describe('applyResult', () => {
     const report = await applyResult({ changes }, cwd, true)
     expect(report).toEqual({
       dryRun: true,
-      files: [{ path: 'a.txt', status: 'skipped', note: 'already exists' }, { path: 'src/b.txt', status: 'created' }, { path: 'src/b.txt', status: 'skipped', note: 'already exists' }],
+      files: [{ path: 'a.txt', status: 'skipped', note: 'already exists' }, { path: 'src/b.txt', status: 'created' }],
       warnings: [],
       nextSteps: [],
     })
@@ -67,7 +75,7 @@ describe('applyResult', () => {
       { action: 'ensure-lines', path: '.gitignore', lines: ['node_modules', 'data'] },
       { action: 'ensure-lines', path: '.gitignore', lines: ['data'] },
     ] }, cwd, true)
-    expect(report.files.map(file => file.status)).toEqual(['created', 'updated', 'skipped'])
+    expect(report.files).toEqual([{ path: '.gitignore', status: 'created' }])
     expect(readdirSync(cwd)).toEqual([])
   })
 

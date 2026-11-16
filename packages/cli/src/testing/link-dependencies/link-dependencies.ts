@@ -20,4 +20,10 @@ export async function linkDependencies(folder: string): Promise<void> {
     await mkdir(dirname(target), { recursive: true })
     await symlink(source, target)
   }
+  // The bins its scripts run, as bun install links them.
+  const eslint = join(folder, 'node_modules/.bin/eslint')
+  if (names.includes('eslint') && !await Bun.file(eslint).exists()) {
+    await mkdir(dirname(eslint), { recursive: true })
+    await symlink(join(CLI_MODULES, 'eslint/bin/eslint.js'), eslint)
+  }
 }

@@ -15,6 +15,8 @@ let folder: string
 beforeAll(async () => {
   folder = await mkdtemp(join(tmpdir(), 'newt-file-at-'))
   await Bun.write(join(folder, 'assets/a b.js'), 'spaced')
+  await Bun.write(join(folder, '.env'), 'SECRET=1')
+  await Bun.write(join(folder, '.git/config'), 'x')
 })
 
 afterAll(() => rm(folder, { recursive: true }))
@@ -24,8 +26,8 @@ describe('fileAt', () => {
     expect(await (await fileAt(folder, '/assets/a%20b.js'))!.text()).toBe('spaced')
   })
 
-  test('none for the folder itself, a file it does not have, or a path that leaves it, has a NUL or does not decode', async () => {
-    for (const path of ['/', '/missing.js', '/../x', '/..%2fx', '/a%00b', '/%E0%A4%A']) {
+  test('none for the folder itself, a file it does not have, a dotfile or dot-folder, or a path that leaves it, has a NUL or does not decode', async () => {
+    for (const path of ['/', '/missing.js', '/../x', '/..%2fx', '/a%00b', '/%E0%A4%A', '/.env', '/%2eenv', '/.git/config', '/assets/../.env']) {
       expect(await fileAt(folder, path)).toBeNull()
     }
   })

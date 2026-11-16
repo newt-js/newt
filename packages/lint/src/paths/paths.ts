@@ -121,7 +121,7 @@ export function target(file: string, specifier: string): string {
  * when typescript-eslint builds a program: the preset does). `null` for a package.
  */
 export function resolved(context: Context, specifier: string): string | null {
-  const path = specifier.startsWith('.') ? target(context.filename, specifier) : aliased(context, specifier)
+  const path = specifier.startsWith('.') ? target(context.filename, specifier) : specifier.startsWith('/') ? slashed(specifier) : aliased(context, specifier)
   return path?.replace(/\.[cm]?[jt]sx?$/, '') ?? null
 }
 

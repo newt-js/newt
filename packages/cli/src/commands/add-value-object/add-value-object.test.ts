@@ -28,4 +28,12 @@ describe('newt add value-object', () => {
       "  use it in the module's schema, Sku.schema, and where a value comes in, Sku.from(text)",
     ].join('\n'))
   })
+
+  test('refuses the id of its module, and a name one of its files has already', async () => {
+    const backend = await moduleProject()
+    expect((await addValueObject(['sales/order', 'order-id'], backend)).text).toBe('OrderId is there already: every module has its id')
+    await Bun.write(join(backend, ORDER_MODULE, 'errors/invalid-email.ts'), 'export class Mine {}\n')
+    expect((await addValueObject(['sales/order', 'email'], backend)).text).toStartWith(`${ORDER_MODULE}/errors/invalid-email.ts is there already`)
+    expect(await Bun.file(join(backend, ORDER_MODULE, 'value-objects/email.ts')).exists()).toBe(false)
+  })
 })

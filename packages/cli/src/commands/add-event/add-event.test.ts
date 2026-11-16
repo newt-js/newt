@@ -53,4 +53,18 @@ describe('newt add event', () => {
     expect((await addEvent(['sales/order'], backend)).text).toBe('newt add event takes the module and the event, as in newt add event sales/order shipped')
     expect((await addEvent(['sales/order', 'Shipped'], backend)).text).toStartWith("'Shipped' cannot name an event")
   })
+
+  test("refuses a name that gives one of the module's own types", async () => {
+    const backend = await moduleProject()
+    for (const name of ['module', 'repository', 'deps']) {
+      expect((await addEvent(['sales/order', name], backend)).text).toStartWith(`'${name}' cannot name an event: Order_`)
+    }
+  })
+
+  test('refuses a name that repeats the module, and says the one to give', async () => {
+    const backend = await moduleProject()
+    const output = await addEvent(['sales/order', 'order-cancelled'], backend)
+    expect(output.code).toBe(1)
+    expect(output.text).toStartWith("'order-cancelled' repeats the module: name it cancelled, and it becomes Order_Cancelled in events/order-cancelled.ts")
+  })
 })
