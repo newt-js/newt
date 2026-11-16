@@ -28,6 +28,8 @@ export type InsertLinesChange = { action: 'insert-lines', path: string, anchor: 
 
 export type ReplaceLineChange = { action: 'replace-line', path: string, line: string, with: string, imports: string[] }
 
+export type KeepLineBelowChange = { action: 'keep-line-below', path: string, line: string, below: string }
+
 export type AppendBlockChange = { action: 'append-block', path: string, block: string }
 
 export type AddClassMemberChange = { action: 'add-class-member', path: string, className: string, name: string, member: string, imports: string[] }
@@ -46,6 +48,7 @@ export type FileChange =
   | AddClassMemberChange
   | AddObjectPropertyChange
   | AppendBlockChange
+  | KeepLineBelowChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }
 

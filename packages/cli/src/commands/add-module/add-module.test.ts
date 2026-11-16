@@ -27,7 +27,7 @@ describe('newt add module', () => {
     const output = await run(ADD_MODULE, ['sales/order'], backend)
     expect(output.code).toBe(0)
     expect(await read(join(backend, 'src/contexts/sales/migrations/00001_order_up.sql'))).toStartWith('CREATE TABLE "order" (')
-    expect(await read(join(backend, 'src/contexts/sales/sales-modules.ts'))).toContain('  return {\n    order: Order_Module.initialize(base, router),\n  }')
+    expect(await read(join(backend, 'src/contexts/sales/sales-modules.ts'))).toContain('  const order = Order_Module.initialize(base, router)\n  return {\n    order,\n  }')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -37,7 +37,7 @@ describe('newt add module', () => {
     await run(ADD_MODULE, ['sales/price-change'], backend)
     expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_price_change_up.sql')).exists()).toBe(true)
     const modules = await read(join(backend, 'src/contexts/sales/sales-modules.ts'))
-    expect(modules).toContain('    priceChange: PriceChange_Module.initialize(base, router),')
+    expect(modules).toContain('  const order = Order_Module.initialize(base, router)\n  const priceChange = PriceChange_Module.initialize(base, router)\n  return {\n    order,\n    priceChange,\n  }')
     expect(modules).toContain("import { PriceChange_Module } from './modules/price-change/price-change.module'")
     expect(await read(join(backend, 'src/contexts/sales/modules/price-change/price-change.routes.ts'))).toContain("router.post('/price-changes'")
     expect(await checkGenerated(backend)).toEqual([])

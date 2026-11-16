@@ -46,6 +46,6 @@ export async function addObjectProperty(change: AddObjectPropertyChange, files: 
   if (object.properties.some(property => keyOf(property) === key)) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
-  await files.write(path, addedImports(withProperty(text, source, object, `${key}: ${value}`), imports))
+  await files.write(path, addedImports(withProperty(text, source, object, key === value ? key : `${key}: ${value}`), imports))
   return { status: 'updated', warnings: [] }
 }

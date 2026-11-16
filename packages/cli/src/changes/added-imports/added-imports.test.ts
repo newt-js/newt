@@ -13,5 +13,5 @@ test('leaves out what the file imports already, from any line of that module', (
 })
 
 test('at the top of a file without imports', () => {
-  expect(addedImports('const x = 1\n', ["import { b } from 'b'"])).toBe("import { b } from 'b'\nconst x = 1\n")
+  expect(addedImports('const x = 1\n', ["import { b } from 'b'"])).toBe("import { b } from 'b'\n\nconst x = 1\n")
 })

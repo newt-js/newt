@@ -19,7 +19,7 @@ async function edited(content: string, change = CHANGE): Promise<string> {
 
 describe('addObjectProperty', () => {
   test('on one line', async () => {
-    expect(await edited('this.events = eventsOf(base.bus, { created: Order_Created })\n')).toBe("import { Order_Shipped } from './events/order-shipped'\nthis.events = eventsOf(base.bus, { created: Order_Created, shipped: Order_Shipped })\n")
+    expect(await edited('this.events = eventsOf(base.bus, { created: Order_Created })\n')).toBe("import { Order_Shipped } from './events/order-shipped'\n\nthis.events = eventsOf(base.bus, { created: Order_Created, shipped: Order_Shipped })\n")
   })
 
   test('on lines of their own, with or without a last comma', async () => {

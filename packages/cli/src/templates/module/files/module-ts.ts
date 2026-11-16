@@ -1,6 +1,9 @@
 import type { ModuleNames } from '../../../names/module-names/module-names'
+import { moduleLines }      from '../module-lines/module-lines'
 
-export function moduleTs({ folder, module, type, plural }: ModuleNames): string {
+export function moduleTs(names: ModuleNames): string {
+  const { folder, module, type, plural } = names
+  const lines = moduleLines(names, false)
   return `import { eventsOf, mapPage, Module, UseCase, type Page, type PageRequest } from '@newt-js/core'
 import type { ContextBase } from '@newt-js/core/application'
 import type { HttpRouter } from '@newt-js/core/http'
@@ -12,16 +15,16 @@ import { register${type}Routes } from './${folder}.routes'
 import { ${type}CreateSchema, ${type}Filter, type ${type}CreateDTO, type ${type}DTO, type ${type}FilterDTO, type ${type}SortDTO } from './${folder}.schema'
 
 export class ${type}_Module extends Module {
-  static initialize(base: ContextBase, router: HttpRouter): ${type}_Module {
-    const module = new ${type}_Module(base, new ${type}_Repository(base))
+${lines.initialize}
+${lines.created}
     register${type}Routes(router, module)
     return module
   }
 
   readonly events
 
-  private constructor(base: ContextBase, private readonly ${plural}: ${type}_Repository) {
-    super('${module}', base.useCaseRunner)
+${lines.constructor}
+${lines.super}
     this.events = eventsOf(base.bus, { created: ${type}_Created })
   }
 

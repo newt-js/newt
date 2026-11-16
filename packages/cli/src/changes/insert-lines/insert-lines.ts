@@ -8,6 +8,7 @@ export function withImports(lines: string[], imports: string[]): string[] {
   const missing = imports.filter(line => !lines.includes(line))
   if (missing.length === 0) return lines
   const last = lines.findLastIndex(isImport)
+  if (last === -1) return [...missing, '', ...lines]
   return [...lines.slice(0, last + 1), ...missing, ...lines.slice(last + 1)]
 }
 

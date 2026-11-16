@@ -29,5 +29,5 @@ export function addedImports(text: string, imports: string[]): string {
   const last = source.statements.filter(ts.isImportDeclaration).at(-1)
   const at = last ? last.getEnd() : 0
   const block = missing.join('\n')
-  return last ? `${text.slice(0, at)}\n${block}${text.slice(at)}` : `${block}\n${text}`
+  return last ? `${text.slice(0, at)}\n${block}${text.slice(at)}` : `${block}\n\n${text}`
 }
