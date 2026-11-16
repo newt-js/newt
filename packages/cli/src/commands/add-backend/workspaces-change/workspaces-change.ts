@@ -2,9 +2,9 @@ import { dirname }                 from 'node:path'
 import { join }                    from 'node:path'
 import { relative }                from 'node:path'
 // --------------------------------------------------------
+import type { WorkspaceRoot }      from '../../../project/find-workspace-root/find-workspace-root'
 import { workspacePattern }        from '../../../templates/monorepo/workspace-pattern/workspace-pattern'
 import type { CompleteJsonChange } from '../../command'
-import type { WorkspaceRoot }      from '../find-workspace-root/find-workspace-root'
 
 /** What the root's package.json needs so its workspaces take `folder`: a pattern for its parent, or nothing if one takes it. */
 export function workspacesChange(root: WorkspaceRoot, folder: string, cwd: string): CompleteJsonChange | null {

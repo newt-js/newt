@@ -42,6 +42,17 @@ describe('defineEvent', () => {
     defineEvent('invoice.due', z.object({ dueAt: z.date() }))
   })
 
+  test('takes a branded value, a value object, whose JSON is the same: its payload keeps the brand', () => {
+    const OrderId = z.string().brand<'OrderId'>()
+    const OrderCreated = defineEvent('order.created', z.object({ id: OrderId, lines: z.array(z.object({ sku: z.string().brand<'Sku'>() })), note: z.string().brand<'Note'>().optional() }))
+    const created = new OrderCreated({ id: OrderId.parse('o1'), lines: [] })
+    const id: z.output<typeof OrderId> = created.payload.id
+
+    expect(id).toBe(OrderId.parse('o1'))
+    // @ts-expect-error a bare string is not an OrderId
+    void new OrderCreated({ id: 'o1', lines: [] })
+  })
+
   test('only takes a schema that gives back what it takes, as a stored payload is read again', () => {
     // @ts-expect-error a transform takes a string and gives a number
     defineEvent('card.renamed', z.object({ words: z.string().transform(words => words.split(' ').length) }))

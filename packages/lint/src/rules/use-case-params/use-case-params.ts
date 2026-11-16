@@ -69,7 +69,7 @@ export const useCaseParams: TSESLint.RuleModule<'nothing' | 'inline' | 'bare' | 
     type: 'problem',
     docs: { description: "A use case's parameters are value objects or DTOs of its schema, and its input DTOs are parsed with that schema." },
     messages: {
-      bare: "'{{name}}' of the use case '{{useCase}}' is a bare {{type}}: take a value object (an id is `XId.from(...)` where it is called, `UuidValueObject.brand('XId')`), or a DTO of the module's schema.",
+      bare: "'{{name}}' of the use case '{{useCase}}' is a bare {{type}}: take a value object (an id is `XId.from(...)` where it is called, `export const XId = uuidFactory('XId')`), or a DTO of the module's schema.",
       nothing: "'{{name}}' of the use case '{{useCase}}' is typed as nothing: type it with a DTO of the module's schema (`z.input<typeof …Schema>`), and parse it with that schema.",
       inline: "'{{name}}' of the use case '{{useCase}}' is an object written in place: name it in the module's schema as a DTO (`z.input<typeof …Schema>`), and parse it with that schema.",
       unparsed: "'{{name}}' of the use case '{{useCase}}' is a {{type}}, the input of {{schema}}, but nothing parses it: its type checks nothing at run time. Call `{{schema}}.parse({{name}})` first.",
