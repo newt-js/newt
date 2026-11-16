@@ -1,14 +1,27 @@
 import type { ContextNames } from '../../../names/context-names/context-names'
 import type { ModuleNames }  from '../../../names/module-names/module-names'
 import { withArticle }       from '../../../names/with-article/with-article'
+import type { DatabaseKind } from '../../stores/store-databases'
 
-export function moduleTestTs(names: ModuleNames, context: ContextNames): string {
+/** On sqlite, the module's test runs the context's own migrations on a database in memory. */
+function databaseOf(database: DatabaseKind): { imports: string, open: string } {
+  if (database === 'sqlite') {
+    return {
+      imports: "import { join } from 'node:path'\nimport { SqliteDatabase } from '@newt-js/core/database/sqlite'",
+      open: "await SqliteDatabase.open({ path: ':memory:', migrations: join(import.meta.dir, '../../migrations') })",
+    }
+  }
+  return { imports: "import { MemoryDatabase } from '@newt-js/core/database/memory'", open: 'new MemoryDatabase()' }
+}
+
+export function moduleTestTs(names: ModuleNames, context: ContextNames, database: DatabaseKind): string {
   const { folder, type, plural, words } = names
   const path = `${context.folder}/${names.path}`
+  const opened = databaseOf(database)
   return `import { afterEach, beforeEach, expect, test } from 'bun:test'
+${opened.imports}
 import { testContext, type TestContext } from '@newt-js/core/application/testing'
 import { MemoryCluster } from '@newt-js/core/cluster/memory'
-import { MemoryDatabase } from '@newt-js/core/database/memory'
 import { HttpRouter } from '@newt-js/core/http'
 import { ${context.camel}Modules } from '../../${context.folder}-modules'
 import type { ${type}_Module } from './${folder}.module'
@@ -16,12 +29,14 @@ import type { ${type}_Module } from './${folder}.module'
 let context: TestContext
 let router: HttpRouter
 let ${plural}: ${type}_Module
+let signedIn: boolean
 
-beforeEach(() => {
-  const database = new MemoryDatabase()
+beforeEach(async () => {
+  const database = ${opened.open}
   context = testContext({ name: '${context.folder}', cluster: new MemoryCluster(), database })
   router = new HttpRouter({ database })
-  router.authenticateWith(async () => ({ userId: 'tester' }))
+  signedIn = true
+  router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
   ${plural} = ${context.camel}Modules(context.base, router).${names.module}
 })
 
@@ -35,6 +50,15 @@ test('creates ${withArticle(words)} and reads it back', async () => {
   expect(await ${plural}.paginate({}, { size: 10 })).toMatchObject({ items: [{ id: created.id }], total: 1 })
 })
 
+test('keeps each one apart', async () => {
+  const first = await ${plural}.create({ name: 'First' })
+  const second = await ${plural}.create({ name: 'Second' })
+
+  expect(await ${plural}.get({ id: second.id })).toMatchObject({ id: second.id, name: 'Second' })
+  expect(await ${plural}.find({ name: 'First' })).toMatchObject([{ id: first.id }])
+  expect((await ${plural}.paginate({}, { size: 10 })).total).toBe(2)
+})
+
 test('refuses a name it cannot keep', async () => {
   await expect(${plural}.create({ name: '  ' })).rejects.toThrow()
 })
@@ -42,6 +66,12 @@ test('refuses a name it cannot keep', async () => {
 test('says there is no ${words} with an id it does not have', async () => {
   const response = await router.answer(new Request(\`http://backend.test/api/${path}/\${Bun.randomUUIDv7()}\`))
   expect(response?.status).toBe(404)
+})
+
+test('answers 401 to who has not signed in', async () => {
+  signedIn = false
+  const response = await router.answer(new Request('http://backend.test/api/${path}'))
+  expect(response?.status).toBe(401)
 })
 
 test('creates one by its route and reads it by another', async () => {

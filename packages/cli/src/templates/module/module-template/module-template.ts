@@ -36,7 +36,7 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     [`${names.folder}.repository.ts`]: repositoryTs(names),
     [`${names.folder}.module.ts`]: moduleTs(names),
     [`${names.folder}.routes.ts`]: routesTs(names, context.folder),
-    [`${names.folder}.module.test.ts`]: moduleTestTs(names, context),
+    [`${names.folder}.module.test.ts`]: moduleTestTs(names, context, database),
   }
   const sql = moduleMigration(names, database)
   const modules = join(contextFolder, `${context.folder}-modules.ts`)
