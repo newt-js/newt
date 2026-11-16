@@ -15,7 +15,10 @@ import { slashed }       from '../../paths/paths'
 function isTypeOnly(source: TSESTree.Node): boolean {
   const parent = source.parent
   if (parent?.type === 'TSImportType') return true
-  if (parent?.type === 'ExportNamedDeclaration') return parent.exportKind === 'type'
+  if (parent?.type === 'ExportAllDeclaration') return parent.exportKind === 'type'
+  if (parent?.type === 'ExportNamedDeclaration') {
+    return parent.exportKind === 'type' || (parent.specifiers.length > 0 && parent.specifiers.every(each => each.exportKind === 'type'))
+  }
   if (parent?.type !== 'ImportDeclaration') return false
   if (parent.importKind === 'type') return true
   return parent.specifiers.length > 0 && parent.specifiers.every(each => each.type === 'ImportSpecifier' && each.importKind === 'type')

@@ -18,6 +18,8 @@ tester.run('frontend-imports', asRule(frontendImports), {
     at("import type { OrderDTO } from '../modules/order/order.schema'"),
     at("import { type OrderDTO, type OrderSortDTO } from '../modules/order/order.schema'"),
     at("export type { OrderDTO } from '../modules/order/order.schema'"),
+    at("export type * from '../modules/order/order.schema'"),
+    at("export { type OrderDTO } from '../modules/order/order.schema'"),
     at("type Order = import('../modules/order/order.schema').OrderDTO"),
     at("import type { Page } from '@newt-js/core'"),
     at("import { Order_Module } from './modules/order/order.module'", `${FOLDER}/sales/sales-modules.ts`),
@@ -30,5 +32,7 @@ tester.run('frontend-imports', asRule(frontendImports), {
     { ...at("import { requiredEnv } from '../../../env'"), errors: [{ messageId: 'outside' }] },
     { ...at("import { Email } from '@newt-js/core'"), errors: [{ messageId: 'server', data: { path: '@newt-js/core', context: 'sales' } }] },
     { ...at("const lazy = import('@newt-js/core/http')"), errors: [{ messageId: 'server' }] },
+    { ...at("export * from '../modules/order/order.schema'"), errors: [{ messageId: 'schema' }] },
+    { ...at("import { requiredEnv } from '/repo/src/env'"), errors: [{ messageId: 'outside' }] },
   ],
 })

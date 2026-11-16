@@ -123,11 +123,17 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     rules: { 'newt/module-imports': 'error' },
   }] : []
   const frontendRules: Linter.Config[] = contexts ? [{
-    // Frontends are .ts and .tsx.
+    // Frontends are .ts and .tsx, each its own project, whose aliases resolve as in the rest.
     files: [`${inside ? `${inside}/` : ''}*/frontend/**/*.{ts,tsx}`],
-    languageOptions: { parser: tseslint.parser },
+    languageOptions: { parser: tseslint.parser, parserOptions: { projectService: true } },
+    processor: keepNoDisable,
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
     plugins: { newt: plugin },
-    rules: { 'newt/frontend-imports': ['error', { folder: given }] },
+    ...root === undefined ? {} : { settings: { newt: { root: base } } },
+    rules: {
+      'newt/frontend-imports': ['error', { folder: given }],
+      'newt/no-disable': ['error', { rules: [...Object.keys(OTHERS), 'no-restricted-syntax'] }],
+    },
   }] : []
   return defineConfig(
     { ignores: ['**/dist/**', '**/node_modules/**'] },
