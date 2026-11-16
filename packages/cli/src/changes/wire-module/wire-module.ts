@@ -30,7 +30,7 @@ export async function wireModule({ path, module, declaration, imports }: WireMod
   const found = modulesIn(source)
   if (text === null || !found) {
     const what = [...imports, declaration.trim(), `${module} in the object it returns`].join('; ')
-    return { status: 'skipped', note: 'not as newt wrote it', warnings: [`${path} is not as newt wrote it, so newt did not change it: add ${what}`] }
+    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} is not as newt wrote it, so newt did not change it: add ${what}`] }
   }
   const declared = found.statements.some(each => declares(each, module))
   const listed = found.object.properties.some(each => propertyKey(each) === module)

@@ -5,6 +5,7 @@ import { mkdtempSync }     from 'node:fs'
 import { tmpdir }          from 'node:os'
 import { join }            from 'node:path'
 // --------------------------------------------------------
+import { diskFiles }       from '../../testing/disk-files/disk-files'
 import { virtualFiles }    from '../virtual-files/virtual-files'
 import { removeUnchanged } from './remove-unchanged'
 
@@ -19,13 +20,13 @@ async function folderWith(content: string): Promise<string> {
 describe('removeUnchanged', () => {
   test('removes the file while it is as it was made', async () => {
     const cwd = await folderWith('hello\n')
-    expect(await removeUnchanged(CHANGE, virtualFiles(cwd, false))).toEqual({ status: 'removed', note: 'the backend starts at src/index.ts', warnings: [] })
+    expect(await removeUnchanged(CHANGE, diskFiles(cwd))).toEqual({ status: 'removed', note: 'the backend starts at src/index.ts', warnings: [] })
     expect(await Bun.file(join(cwd, 'index.ts')).exists()).toBe(false)
   })
 
   test('leaves a file someone changed, and warns', async () => {
     const cwd = await folderWith('mine\n')
-    expect(await removeUnchanged(CHANGE, virtualFiles(cwd, false))).toEqual({
+    expect(await removeUnchanged(CHANGE, diskFiles(cwd))).toEqual({
       status: 'skipped',
       note: 'changed',
       warnings: ['index.ts was changed, so newt left it, though the backend starts at src/index.ts'],
@@ -34,12 +35,12 @@ describe('removeUnchanged', () => {
   })
 
   test('skips a file that is not there', async () => {
-    expect((await removeUnchanged(CHANGE, virtualFiles(mkdtempSync(join(tmpdir(), 'newt-cli-remove-')), false))).status).toBe('skipped')
+    expect((await removeUnchanged(CHANGE, virtualFiles(mkdtempSync(join(tmpdir(), 'newt-cli-remove-'))))).status).toBe('skipped')
   })
 
   test('a dry run removes nothing', async () => {
     const cwd = await folderWith('hello\n')
-    expect((await removeUnchanged(CHANGE, virtualFiles(cwd, true))).status).toBe('removed')
+    expect((await removeUnchanged(CHANGE, virtualFiles(cwd))).status).toBe('removed')
     expect(await Bun.file(join(cwd, 'index.ts')).exists()).toBe(true)
   })
 })

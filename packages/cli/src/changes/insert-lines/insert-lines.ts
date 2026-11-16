@@ -16,7 +16,7 @@ export async function insertLines({ path, anchor, position, lines, imports }: In
   const at = position === 'before' ? found : found + 1
   if (found === -1) {
     const what = [...imports, ...lines.map(line => line.trim())].join('; ')
-    return { status: 'skipped', note: 'not as newt wrote it', warnings: [`${path} is not as newt wrote it, so newt did not change it: add ${what}`] }
+    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} is not as newt wrote it, so newt did not change it: add ${what}`] }
   }
   const inserted = holdsBlock(current, lines) ? current : [...current.slice(0, at), ...lines, ...current.slice(at)]
   await files.write(path, addedImports(inserted.join('\n'), imports))

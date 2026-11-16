@@ -101,11 +101,13 @@ describe('newt add context', () => {
     expect((await addContext(['billing', '--backend', 'apps/web'], root)).code).toBe(0)
   })
 
-  test('when src/contexts.ts is not as newt wrote it, leaves it and says what to add', async () => {
+  test('when src/contexts.ts is not as newt wrote it, writes nothing and says what it would add', async () => {
     const backend = await backendProject()
     await Bun.write(join(backend, 'src/contexts.ts'), 'export const openContexts = async () => []\n')
-    const report = JSON.parse((await addContext(['sales', '--json'], backend)).text) as { warnings: string[] }
-    expect(report.warnings).toEqual(["src/contexts.ts is not as newt wrote it, so newt did not change it: add import { Sales_Context } from './contexts/sales/sales.context'; contexts.push(await Sales_Context.open(platform))"])
+    const output = await addContext(['sales', '--json'], backend)
+    expect(output.code).toBe(1)
+    expect((JSON.parse(output.text) as { error: string }).error).toBe("newt wrote nothing, since its changes go together and some cannot be made:\n- src/contexts.ts is not as newt wrote it, so newt did not change it: add import { Sales_Context } from './contexts/sales/sales.context'; contexts.push(await Sales_Context.open(platform))")
+    expect(await Bun.file(join(backend, 'src/contexts/sales/sales.context.ts')).exists()).toBe(false)
   })
 
   test('refuses a name that is not one, and a backend without the stores newt writes', async () => {

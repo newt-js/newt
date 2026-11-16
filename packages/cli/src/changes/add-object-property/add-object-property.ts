@@ -32,7 +32,7 @@ export async function addObjectProperty(change: AddObjectPropertyChange, files: 
   const object = found?.object
   const creatable = found && !object && createArgument && found.call.arguments.length === argument
   if (text === null || (!object && !creatable)) {
-    return { status: 'skipped', note: 'not as newt wrote it', warnings: [`${path} calls no ${call} with an object, so newt did not change it: add ${key}: ${value} to it`] }
+    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} calls no ${call} with an object, so newt did not change it: add ${key}: ${value} to it`] }
   }
   const property = key === value ? key : `${key}: ${value}`
   if (object?.properties.some(each => propertyKey(each) === key)) {

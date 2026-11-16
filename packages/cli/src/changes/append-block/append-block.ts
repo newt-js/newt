@@ -7,7 +7,7 @@ import type { VirtualFiles }      from '../virtual-files/virtual-files'
 export async function appendBlock({ path, block, imports }: AppendBlockChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   if (text === null) {
-    return { status: 'skipped', note: 'not there', warnings: [`${path} is not there, so newt did not add to it:\n${block}`] }
+    return { status: 'skipped', note: 'not there', failed: true, warnings: [`${path} is not there, so newt did not add to it:\n${block}`] }
   }
   const [first = ''] = block.split('\n')
   if (text.split('\n').includes(first)) {

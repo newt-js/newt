@@ -34,6 +34,14 @@ describe('newt add route', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test('when its routes file is not as newt wrote it, writes no test for the route either', async () => {
+    const backend = await moduleProject()
+    await Bun.write(join(backend, ORDER_MODULE, 'order.routes.ts'), 'export const routes = 1\n')
+    const before = await read(backend, 'order.module.test.ts')
+    expect((await run(ADD_ROUTE, ['sales/order', 'create'], backend)).code).toBe(1)
+    expect(await read(backend, 'order.module.test.ts')).toBe(before)
+  })
+
   test('a second route that answers 204 is written whole', async () => {
     const backend = await moduleProject()
     await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', '0 3 * * *'], backend)

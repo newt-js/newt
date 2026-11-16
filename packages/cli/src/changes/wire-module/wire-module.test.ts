@@ -1,19 +1,19 @@
-import { describe }     from 'bun:test'
-import { expect }       from 'bun:test'
-import { test }         from 'bun:test'
-import { mkdtempSync }  from 'node:fs'
-import { tmpdir }       from 'node:os'
-import { join }         from 'node:path'
+import { describe }    from 'bun:test'
+import { expect }      from 'bun:test'
+import { test }        from 'bun:test'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir }      from 'node:os'
+import { join }        from 'node:path'
 // --------------------------------------------------------
-import { virtualFiles } from '../virtual-files/virtual-files'
-import { wireModule }   from './wire-module'
+import { diskFiles }   from '../../testing/disk-files/disk-files'
+import { wireModule }  from './wire-module'
 
 const CHANGE = { action: 'wire-module' as const, path: 'm.ts', module: 'box', declaration: '  const box = Box_Module.initialize(base, router)', imports: ["import { Box_Module } from './box'"] }
 
 async function edited(content: string): Promise<{ text: string, status: string, warnings: string[] }> {
   const cwd = mkdtempSync(join(tmpdir(), 'newt-cli-wire-'))
   await Bun.write(join(cwd, 'm.ts'), content)
-  const { status, warnings } = await wireModule(CHANGE, virtualFiles(cwd, false))
+  const { status, warnings } = await wireModule(CHANGE, diskFiles(cwd))
   return { text: await Bun.file(join(cwd, 'm.ts')).text(), status, warnings }
 }
 

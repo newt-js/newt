@@ -11,7 +11,7 @@ export async function addConstructorStatement({ path, className, statement }: Ad
   const found = source.statements.find((each): each is ts.ClassDeclaration => ts.isClassDeclaration(each) && each.name?.text === className)
   const body = found?.members.find(ts.isConstructorDeclaration)?.body
   if (text === null || !body) {
-    return { status: 'skipped', note: 'not as newt wrote it', warnings: [`${path} has no constructor of ${className}, so newt did not change it: add to it ${statement}`] }
+    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} has no constructor of ${className}, so newt did not change it: add to it ${statement}`] }
   }
   if (body.statements.some(each => each.getText(source) === statement)) {
     return { status: 'skipped', note: 'up to date', warnings: [] }

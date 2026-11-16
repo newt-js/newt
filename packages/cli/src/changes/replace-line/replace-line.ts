@@ -14,7 +14,7 @@ export async function replaceLine(change: ReplaceLineChange, files: VirtualFiles
   const at = current.indexOf(line)
   if (at === -1) {
     const what = [...imports, change.with.trim()].join('; ')
-    return { status: 'skipped', note: 'not as newt wrote it', warnings: [`${path} is not as newt wrote it, so newt did not change it: write ${what}`] }
+    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} is not as newt wrote it, so newt did not change it: write ${what}`] }
   }
   const replaced = [...current.slice(0, at), change.with, ...current.slice(at + 1)]
   await files.write(path, addedImports(replaced.join('\n'), imports))

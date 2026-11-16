@@ -184,4 +184,14 @@ describe('newt init', () => {
     expect(await Bun.file(join(folder, 'tsconfig.json')).text()).toContain('    // Bundler mode\n')
     expect(await checkGenerated(folder)).toEqual([])
   }, 30_000)
+
+  test('where a file stands for a folder it needs, writes nothing, and a dry run says so too', async () => {
+    const folder = await emptyFolder()
+    await Bun.write(join(folder, 'shop/src'), 'a file')
+    for (const args of [['shop', '--dry-run'], ['shop']]) {
+      const output = await runCommand(INIT, args, { cwd: folder, ask: null })
+      expect(output).toEqual({ code: 1, text: expect.stringContaining('newt wrote nothing: shop/src is a file, so shop/src/') })
+    }
+    expect(await Bun.file(join(folder, 'shop/package.json')).exists()).toBe(false)
+  })
 })

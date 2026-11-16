@@ -17,7 +17,7 @@ export async function completeJson(path: string, values: Record<string, unknown>
   const source = ts.parseJsonText(path, text)
   const root = source.statements[0]?.expression
   if (ts.parseConfigFileTextToJson(path, text).error || !root || !ts.isObjectLiteralExpression(root)) {
-    return { status: 'skipped', note: 'not valid JSON', warnings: [`${path} is not valid JSON, so newt left it as it is: add to it ${JSON.stringify(values)}`] }
+    return { status: 'skipped', note: 'not valid JSON', failed: true, warnings: [`${path} is not valid JSON, so newt left it as it is: add to it ${JSON.stringify(values)}`] }
   }
   const unit = /^([ \t]+)\S/m.exec(text)?.[1] ?? DEFAULT_INDENT
   const { edits, conflicts } = jsonEdits(text, source, root, values, unit)
