@@ -158,6 +158,13 @@ describe('runContexts, one server for every context', () => {
     expect(log.slice(3)).toEqual(['auth worker stopped', 'boards worker stopped', 'quiet worker stopped', 'quiet closed', 'boards closed', 'auth closed'])
   })
 
+  test('with no context yet, it serves the health on platformWithoutContexts', async () => {
+    const app = runContexts([], { signals: false, platformWithoutContexts: platform, serve: { port: 0, health: true } })
+
+    expect((await fetch(new URL('/api/health', app.server!.url))).status).toBe(200)
+    await app.stop()
+  })
+
   test('two contexts that take one path stop it before anything starts', () => {
     const log: string[] = []
 
