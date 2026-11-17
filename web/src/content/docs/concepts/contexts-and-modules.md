@@ -55,7 +55,7 @@ Inside a context, a module reaches another in two ways:
 - It calls the other's use cases, which it gets as a dependency. See [Services and dependencies](/concepts/services-and-deps/).
 - It reacts to the other's events. See [Events and subscriptions](/concepts/events/).
 
-A module imports from another only its `*.module.ts`, its `*.schema.ts`, its `events/` and its `errors/`. The lint rule `module-imports` refuses the rest.
+That is a module's API, and all another module reaches of it. From another module it imports only types (`import type`) of its `*.module.ts`, its `*.schema.ts` (the DTOs) and its `events/`, and its `errors/` (to tell a known error apart). The lint rule `module-imports` refuses the rest: its schemas as values, its entity, value objects, repository, routes, workers and services.
 
 ## How contexts talk to each other
 

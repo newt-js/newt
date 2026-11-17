@@ -33,7 +33,7 @@ Escribe un servicio cuando dos casos de uso repiten los mismos pasos, como un c�
 Un servicio es una función normal. No necesita clase, ni decorador, ni registro, y lo pruebas llamándolo.
 :::
 
-Un servicio pertenece a su módulo. La regla del lint `module-imports` deja que otros módulos importen solo el `*.module.ts`, el `*.schema.ts`, los `events/` y los `errors/` de un módulo, así que ningún otro puede importar sus servicios.
+Un servicio pertenece a su módulo. La regla del lint `module-imports` deja que otros módulos importen solo los tipos del `*.module.ts`, el `*.schema.ts` y los `events/` de un módulo, y sus `errors/`, así que ningún otro puede importar sus servicios.
 
 ## Dependencias
 
@@ -99,10 +99,10 @@ Esto es lo que `task` puede alcanzar de `project`, y lo que rechaza el lint:
 
 ```mermaid
 flowchart TD
-  T["módulo task"] -->|"this.deps.project"| P["project.module.ts"]
-  T -->|"importa"| S["project.schema.ts"]
-  T -->|"importa"| E["events/ y errors/ de project"]
-  T -.->|"lo rechaza el lint"| X["entidad, repositorio, value objects, rutas, workers y servicios de project"]
+  T["módulo task"] -->|"this.deps.project: casos de uso, eventos"| P["project.module.ts"]
+  T -->|"import type"| S["project.module.ts, project.schema.ts, events/"]
+  T -->|"importa"| E["errors/ de project"]
+  T -.->|"lo rechaza el lint"| X["schemas como valores, entidad, repositorio, value objects, rutas, workers y servicios de project"]
   P -.->|"rechazado: un ciclo"| T
 ```
 
@@ -110,7 +110,7 @@ Lo que comprueba el lint:
 
 | Regla | Qué rechaza |
 |---|---|
-| `module-imports` | Importar la entidad, el repositorio, los value objects, las rutas, los workers o los servicios de otro módulo. |
+| `module-imports` | Importar la entidad, el repositorio, los value objects, las rutas, los workers o los servicios de otro módulo, o su módulo, su schema o sus eventos como valores (llegan con `import type`). |
 | `module-files` | Un fichero o carpeta que un módulo no tiene. `services/` y `<módulo>.deps.ts` están permitidos. |
 | `module-transactions` | Que un módulo abra una transacción propia. |
 

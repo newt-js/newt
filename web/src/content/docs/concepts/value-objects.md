@@ -104,7 +104,7 @@ router.get('/tasks/tasks/:id', async request =>
 `Uuid` itself is a ready-made `uuidFactory('Uuid')` for an id of no particular kind.
 
 :::note
-A module that keeps another module's id, such as a task's `projectId`, declares a value object of its own for it. The lint rule `module-imports` does not let it import the other module's `value-objects/`.
+A module that keeps another module's id, such as a task's `projectId`, declares a value object of its own for it, `value-objects/project-id.ts` with `uuidFactory('ProjectId')`. The lint rule `module-imports` does not let it import the other module's `value-objects/`, nor its schema as a value. Its type is the same as the other module's id all the same, since `uuidFactory` brands it with its name: a `ProjectDTO['id']` fits it.
 :::
 
 ## Built-in value objects
