@@ -13,6 +13,7 @@ import { ${type} } from './${folder}'
 import { ${type}_Repository, type ${type}Row } from './${folder}.repository'
 import { register${type}Routes } from './${folder}.routes'
 import { ${type}CreateSchema, ${type}Filter, type ${type}CreateDTO, type ${type}DTO, type ${type}FilterDTO, type ${type}SortDTO } from './${folder}.schema'
+import { ${type}Id } from './value-objects/${folder}-id'
 
 export class ${type}_Module extends Module {
 ${lines.initialize}
@@ -37,8 +38,8 @@ ${lines.routes}
   }
 
   @UseCase()
-  async get(criteria: ${type}FilterDTO): Promise<${type}DTO> {
-    const [${module}] = await this.${plural}.find(${type}Filter.toCriteria<${type}Row>(${type}Filter.schema.parse(criteria)), { limit: 1 })
+  async get(id: ${type}Id): Promise<${type}DTO> {
+    const [${module}] = await this.${plural}.find({ id: ${type}Id.from(id) }, { limit: 1 })
     if (!${module}) {
       throw new ${type}NotFound()
     }

@@ -3,7 +3,7 @@ import { TSESTree }    from '@typescript-eslint/utils'
 // --------------------------------------------------------
 import { parameterOf } from '../../ast/ast'
 
-/** The reads by criteria: never by text. */
+/** The reads by criteria, and `get` by id: never by text. */
 const BY_CRITERIA = new Set(['find', 'get', 'paginate'])
 
 /** The name of the type a parameter is written with, when it is a plain reference (`SearchText`). */
@@ -13,7 +13,7 @@ function typeName(type: TSESTree.TypeNode | undefined): string | undefined {
 
 /**
  * A module reads in four ways, the same in every module: `find(criteria, sort?)`, the
- * list; `get(criteria)`, one or a `NotFound`; `paginate(criteria, page, sort?)`, by pages;
+ * list; `get(id)`, one by its id or a `NotFound`; `paginate(criteria, page, sort?)`, by pages;
  * and `search(text, page)`, by text, always by pages. In a `*.module.ts`, `find`, `get`
  * and `paginate` take no text (a parameter named `text`, or a `SearchText`), and `search`
  * takes exactly `(text, page)`.
@@ -22,9 +22,9 @@ export const useCaseReads: TSESLint.RuleModule<'text' | 'search'> = {
   defaultOptions: [],
   meta: {
     type: 'problem',
-    docs: { description: 'find, get and paginate read by criteria; search reads by text, (text, page).' },
+    docs: { description: 'find and paginate read by criteria, get by id; search reads by text, (text, page).' },
     messages: {
-      text: "'{{method}}' reads by criteria, never by text: a search by text is `search(text, page)`.",
+      text: "'{{method}}' never reads by text: a search by text is `search(text, page)`.",
       search: "'search' takes exactly `(text, page)`: the text, a `SearchText`, and a `PageRequest`. Criteria and an order are `find`'s and `paginate`'s.",
     },
     schema: [],

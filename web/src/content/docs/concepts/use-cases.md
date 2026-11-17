@@ -147,7 +147,7 @@ When the retries run out, the conflict reaches the caller: HTTP answers it with 
 | Use case | Takes | Returns | When nothing matches |
 |---|---|---|---|
 | `create(input)` | a `TaskCreateDTO` | the new `TaskDTO` | |
-| `get(criteria)` | a `TaskFilterDTO` | one `TaskDTO` | throws `TaskNotFound` |
+| `get(id)` | a `TaskId` | one `TaskDTO` | throws `TaskNotFound` |
 | `find(criteria, sort?)` | a `TaskFilterDTO`, a `TaskSortDTO` | `TaskDTO[]` | `[]` |
 | `paginate(criteria, page)` | a `TaskFilterDTO`, a `PageRequest` | `Page<TaskDTO>`, newest first | a page with no items |
 
@@ -160,11 +160,8 @@ async create(input: TaskCreateDTO): Promise<TaskDTO> {
 }
 
 @UseCase()
-async get(criteria: TaskFilterDTO): Promise<TaskDTO> {
-  const [task] = await this.tasks.find(
-    TaskFilter.toCriteria<TaskRow>(TaskFilter.schema.parse(criteria)),
-    { limit: 1 },
-  )
+async get(id: TaskId): Promise<TaskDTO> {
+  const [task] = await this.tasks.find({ id: TaskId.from(id) }, { limit: 1 })
   if (!task) {
     throw new TaskNotFound()
   }
@@ -200,7 +197,7 @@ async paginate(
 }
 ```
 
-A search by text has its own shape: `search(text, page)`, where `text` is a `SearchText` and `page` a `PageRequest`. The lint rule `use-case-reads` keeps `find`, `get` and `paginate` free of text, and `search` to exactly those two parameters.
+A search by text has its own shape: `search(text, page)`, where `text` is a `SearchText` and `page` a `PageRequest`. `get` reads one by its id; to read one by any other field, use `find`. The lint rule `use-case-reads` keeps `find`, `get` and `paginate` free of text, and `search` to exactly those two parameters.
 
 ## Rules the lint holds
 
@@ -212,13 +209,13 @@ A search by text has its own shape: `search(text, page)`, where `text` is a `Sea
 From the same module, call it on `this`:
 
 ```ts
-const task = await this.get({ id })
+const task = await this.get(id)
 ```
 
 From another module of the context, call it on the module you got as a dependency (see [Services and dependencies](/concepts/services-and-deps/)):
 
 ```ts
-const project = await this.deps.project.get({ id: projectId })
+const project = await this.deps.project.get(projectId)
 ```
 
 The inner call runs as part of the outer one: one trace, one retry loop.

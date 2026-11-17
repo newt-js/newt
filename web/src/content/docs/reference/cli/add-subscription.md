@@ -58,7 +58,7 @@ export function registerTaskWorkers(tasks: Task_Module): void {
 
 - `<module>.workers.ts` is created if missing, and gets the line that subscribes the use case.
 - `<module>.module.ts` gets the event in `eventsOf`, and a call to `register<Module>Workers(module)`.
-- When the use case takes an input, it receives `{ id }` from the event. When it takes none, it is called with nothing.
+- When the use case takes an input, it receives `{ id }` from the event, or the id itself when its input is the entity's id (`TaskId`). When it takes none, it is called with nothing.
 - On the `created` event, newt also writes a test that creates an entity and checks the job ran. For other events it warns instead.
 
 ## Next steps

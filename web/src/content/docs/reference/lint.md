@@ -219,14 +219,14 @@ Why: a type checks nothing at run time; the schema does.
 
 ### newt/use-case-reads
 
-In a `*.module.ts`, `find`, `get` and `paginate` read by criteria, never by text; `search` takes exactly `(text, page)`.
+In a `*.module.ts`, `find` and `paginate` read by criteria and `get` by id, never by text; `search` takes exactly `(text, page)`.
 
 ```ts
 async find(text: SearchText) { /* ... */ }                      // wrong
 async search(text: SearchText, page: PageRequest) { /* ... */ } // right
 ```
 
-Why: every module reads the same four ways: `find(criteria, sort?)`, `get(criteria)`, `paginate(criteria, page, sort?)`, `search(text, page)`.
+Why: every module reads the same four ways: `find(criteria, sort?)`, `get(id)`, `paginate(criteria, page, sort?)`, `search(text, page)`.
 
 ### newt/use-case-files
 

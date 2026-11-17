@@ -18,9 +18,9 @@ ${workersHead(module, withDeps)}
 `
 }
 
-/** The use case runs on the event, its module's own or one it is given (`deps.customers.customer`), given the id of the entity the event carries when it takes an input. */
-export function reactionLine({ plural }: ModuleNames, useCase: PieceNames, event: PieceNames, takesInput: boolean, from = plural): string {
-  const args = takesInput ? `, ${event.camel} => [{ id: ${event.camel}.id }]` : ''
+/** The use case runs on the event, its module's own or one it is given (`deps.customers.customer`), given the id of the entity the event carries when it takes an input: the id itself when that is its input. */
+export function reactionLine({ plural }: ModuleNames, useCase: PieceNames, event: PieceNames, takesInput: boolean, from = plural, takesId = false): string {
+  const args = !takesInput ? '' : takesId ? `, ${event.camel} => [${event.camel}.id]` : `, ${event.camel} => [{ id: ${event.camel}.id }]`
   return `  ${plural}.on(${from}.events.${event.camel}, '${useCase.camel}'${args})`
 }
 

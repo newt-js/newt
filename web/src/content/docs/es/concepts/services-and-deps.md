@@ -81,7 +81,7 @@ Un caso de uso llama entonces a los casos de uso del otro módulo:
 @UseCase()
 async moveToProject(input: TaskMoveToProjectDTO): Promise<TaskDTO> {
   const { id, projectId } = TaskMoveToProjectSchema.parse(input)
-  const project = await this.deps.project.get({ id: projectId })
+  const project = await this.deps.project.get(projectId)
   // ...
 }
 ```

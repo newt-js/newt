@@ -54,7 +54,7 @@ export const ADD_ROUTE = defineCommand({
       throw new CommandError(`${useCase.camel} takes ${parameters} inputs, and a route gives one: write its route by hand in ${module.folder}.routes.ts`)
     }
     const hasId = params.includes(':id')
-    const shape = { method, path, takesInput: parameters === 1, returnsNothing: found.returnsNothing }
+    const shape = { method, path, takesInput: parameters === 1, takesId: found.input === `${module.type}IdInput`, returnsNothing: found.returnsNothing }
     if (shape.takesInput && !hasId && ['get', 'delete'].includes(method)) {
       throw new CommandError(`${useCase.camel} takes an input, and a ${method.toUpperCase()} has no body to give it: put :id in --path, or use post, put or patch`)
     }

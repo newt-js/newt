@@ -147,7 +147,7 @@ Cuando se acaban los reintentos, el conflicto llega a quien llamó: HTTP respond
 | Caso de uso | Recibe | Devuelve | Si nada coincide |
 |---|---|---|---|
 | `create(input)` | un `TaskCreateDTO` | el nuevo `TaskDTO` | |
-| `get(criteria)` | un `TaskFilterDTO` | un `TaskDTO` | lanza `TaskNotFound` |
+| `get(id)` | un `TaskId` | un `TaskDTO` | lanza `TaskNotFound` |
 | `find(criteria, sort?)` | un `TaskFilterDTO`, un `TaskSortDTO` | `TaskDTO[]` | `[]` |
 | `paginate(criteria, page)` | un `TaskFilterDTO`, un `PageRequest` | `Page<TaskDTO>`, los más nuevos primero | una página sin elementos |
 
@@ -160,11 +160,8 @@ async create(input: TaskCreateDTO): Promise<TaskDTO> {
 }
 
 @UseCase()
-async get(criteria: TaskFilterDTO): Promise<TaskDTO> {
-  const [task] = await this.tasks.find(
-    TaskFilter.toCriteria<TaskRow>(TaskFilter.schema.parse(criteria)),
-    { limit: 1 },
-  )
+async get(id: TaskId): Promise<TaskDTO> {
+  const [task] = await this.tasks.find({ id: TaskId.from(id) }, { limit: 1 })
   if (!task) {
     throw new TaskNotFound()
   }
@@ -200,7 +197,7 @@ async paginate(
 }
 ```
 
-Una búsqueda por texto tiene su propia forma: `search(text, page)`, donde `text` es un `SearchText` y `page` un `PageRequest`. La regla del lint `use-case-reads` mantiene `find`, `get` y `paginate` libres de texto, y `search` con exactamente esos dos parámetros.
+Una búsqueda por texto tiene su propia forma: `search(text, page)`, donde `text` es un `SearchText` y `page` un `PageRequest`. `get` lee uno por su id; para leer uno por cualquier otro campo, usa `find`. La regla del lint `use-case-reads` mantiene `find`, `get` y `paginate` libres de texto, y `search` con exactamente esos dos parámetros.
 
 ## Reglas que mantiene el lint
 
@@ -212,13 +209,13 @@ Una búsqueda por texto tiene su propia forma: `search(text, page)`, donde `text
 Desde el mismo módulo, llámalo sobre `this`:
 
 ```ts
-const task = await this.get({ id })
+const task = await this.get(id)
 ```
 
 Desde otro módulo del contexto, llámalo sobre el módulo que recibiste como dependencia (ver [Servicios y dependencias](/es/concepts/services-and-deps/)):
 
 ```ts
-const project = await this.deps.project.get({ id: projectId })
+const project = await this.deps.project.get(projectId)
 ```
 
 La llamada interna forma parte de la externa: una traza, un bucle de reintentos.

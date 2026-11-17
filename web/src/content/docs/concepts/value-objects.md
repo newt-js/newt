@@ -96,7 +96,7 @@ Routes turn the path's text into an id before calling a use case:
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
 router.get('/tasks/:id', async request =>
   Response.json(
-    await tasks.get({ id: TaskId.from(request.params.id) }),
+    await tasks.get(TaskId.from(request.params.id)),
   ),
 )
 ```

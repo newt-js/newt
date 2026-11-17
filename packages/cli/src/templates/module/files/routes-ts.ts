@@ -16,7 +16,7 @@ import { ${type}Id } from './value-objects/${folder}-id'
 ${routesHead(names, false)}
   router.post('/${path}', async request => Response.json(await ${plural}.create(await bodyOf(request)), { status: 201 }))
   router.get('/${path}', async request => Response.json(await ${plural}.paginate({}, pageRequestFrom(request))))
-  router.get('/${path}/:id', async request => Response.json(await ${plural}.get({ id: ${type}Id.from(request.params.id) })))
+  router.get('/${path}/:id', async request => Response.json(await ${plural}.get(${type}Id.from(request.params.id))))
   return { one: router.group('/${path}/:${module}Id') }
 }
 `
