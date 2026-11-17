@@ -129,7 +129,7 @@ When you run several instances, each one looks at the clock. Only one wins: the 
 - If the app was down when runs were due, it runs **once** when it comes back, for the latest of them, not once per missed run.
 
 :::note
-Since a run goes through a job, it follows job rules: it can be retried, and it is delivered at least once. Write the use case so that running it twice does no harm.
+Since a run goes through a job, it follows job rules: it can be retried, and it is delivered at least once. What the use case saves is written once, as for any [event](/concepts/events/#what-happens-when-an-event-is-emitted); what it does outside the database, such as sending an email, can happen twice.
 :::
 
 ## In tests

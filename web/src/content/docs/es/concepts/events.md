@@ -209,8 +209,10 @@ Los jobs se escriben en la misma transacción que el cambio, en la base de datos
 
 Así, una suscripción nunca se pierde aunque el proceso se caiga: el job está en la base de datos.
 
-:::caution[Puede ejecutarse dos veces]
-La entrega es *al menos una vez*. Si un worker muere a mitad de un job, otro lo vuelve a coger. Escribe los casos de uso suscritos de forma que ejecutarlos dos veces no haga daño: comprueba el estado antes, como hace `complete()` con `AlreadyDone`.
+La entrega es *al menos una vez*: si un worker muere a mitad de un job, otro lo vuelve a coger. Aun así, lo que guarda el caso de uso se escribe una sola vez. Su primer guardado apunta el evento en la tabla `newt_inbox` de su propio contexto, en la misma transacción que sus escrituras. Cuando el job vuelve a ejecutarse, newt encuentra ahí el evento, no ejecuta el caso de uso y da el job por terminado.
+
+:::caution[Lo que puede ejecutarse dos veces]
+El inbox cubre lo que el caso de uso guarda con sus repositorios. Lo que haga fuera de la base de datos, como mandar un correo o llamar a una API, puede ejecutarse dos veces. También un segundo guardado, si el caso de uso guarda en dos transacciones: el inbox va con la primera. Haz que esos pasos se puedan repetir sin daño.
 :::
 
 No hay orden entre jobs: dos eventos pueden procesarse en otro orden distinto al que ocurrieron.

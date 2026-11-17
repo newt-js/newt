@@ -58,7 +58,7 @@ Busca jobs cada `pollMs`, y también justo después de que se confirme una trans
 Mientras un job se ejecuta, el worker renueva su bloqueo cada tercio de `leaseMs`. Si el proceso muere, el bloqueo caduca y otro worker vuelve a coger el job. Por eso un job se ejecuta *al menos una vez*, y puede ejecutarse dos.
 
 :::caution
-Escribe los casos de uso suscritos para que ejecutarlos dos veces no haga daño. Comprueba el estado actual antes de actuar, como hace un método de entidad que lanza `AlreadyDone`.
+Lo que guarda un caso de uso suscrito se escribe una sola vez, aunque su job se ejecute dos: newt apunta los eventos que ya ha procesado en la tabla `newt_inbox` del contexto (ver [Eventos](/es/concepts/events/#qué-pasa-al-emitir-un-evento)). Lo que haga fuera de la base de datos, como mandar un correo, puede pasar dos veces: haz que se pueda repetir sin daño.
 :::
 
 ### Parada

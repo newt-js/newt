@@ -129,7 +129,7 @@ Si ejecutas varias instancias, todas miran el reloj. Solo gana una: la fila de `
 - Si la aplicación estaba parada cuando tocaban ejecuciones, al volver se ejecuta **una vez**, por la última de ellas, no una por cada ejecución perdida.
 
 :::note
-Como una ejecución pasa por un job, sigue sus reglas: puede reintentarse y se entrega al menos una vez. Escribe el caso de uso para que ejecutarlo dos veces no haga daño.
+Como una ejecución pasa por un job, sigue sus reglas: puede reintentarse y se entrega al menos una vez. Lo que guarda el caso de uso se escribe una sola vez, como con cualquier [evento](/es/concepts/events/#qué-pasa-al-emitir-un-evento); lo que haga fuera de la base de datos, como mandar un correo, puede pasar dos veces.
 :::
 
 ## En los tests

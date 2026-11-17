@@ -202,6 +202,7 @@ newt keeps its own tables in each context's database, all prefixed `newt_`. Do n
 | `newt_job_queue` | the queues workers have registered |
 | `newt_schedule_tick` | the last run of each [scheduled task](/concepts/schedules/) |
 | `newt_idempotency_key` | answers kept for [idempotent requests](/concepts/http/) |
+| `newt_inbox` | the events this context's use cases have handled, so a job that runs again does not [write twice](/concepts/events/#what-happens-when-an-event-is-emitted) |
 
 ## The Database contract
 

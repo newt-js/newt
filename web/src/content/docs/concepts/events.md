@@ -209,8 +209,10 @@ The jobs are written in the same transaction as the change, in the context's dat
 
 So a subscription is never lost when the process crashes: the job is in the database.
 
-:::caution[It can run twice]
-Delivery is *at least once*. If a worker dies in the middle of a job, another one takes it again. Write subscribed use cases so that running them twice does no harm: check the state first, as `complete()` does with `AlreadyDone`.
+Delivery is *at least once*: if a worker dies in the middle of a job, another one takes it again. What the use case saves is still written once. Its first save records the event in the `newt_inbox` table of its own context, in the same transaction as its writes. When the job runs again, newt finds the event there, skips the use case and marks the job done.
+
+:::caution[What can run twice]
+The inbox covers what the use case saves through its repositories. Anything it does outside the database, such as sending an email or calling an API, can run twice. So can a second save, if the use case saves in two transactions: the inbox goes with the first one. Make those steps safe to repeat.
 :::
 
 There is no order between jobs: two events can be handled in a different order than they happened.
