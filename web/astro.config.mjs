@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config'
 import starlight from '@astrojs/starlight'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
+import starlightVersions from 'starlight-versions'
 import { remarkPackageName } from './src/plugins/remark-package-name.mjs'
 // The one place the package name lives; the docs write %PKG% for it.
 import { PACKAGE } from './src/config/site.ts'
@@ -18,6 +19,11 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'newt',
+      plugins: [
+        starlightVersions({
+          versions: [{ slug: '0.5' }],
+        }),
+      ],
       favicon: '/favicon.svg',
       defaultLocale: 'root',
       locales: {
@@ -26,8 +32,10 @@ export default defineConfig({
       },
       customCss: ['./src/styles/docs.css'],
       components: {
-        SiteTitle: './src/components/docs/SiteTitle.astro',
-        SocialIcons: './src/components/docs/HeaderLinks.astro',
+        Header: './src/components/docs/Header.astro',
+        Sidebar: './src/components/docs/Sidebar.astro',
+        PageTitle: './src/components/docs/PageTitle.astro',
+        MobileMenuFooter: './src/components/docs/MobileMenuFooter.astro',
       },
       editLink: undefined,
       lastUpdated: false,

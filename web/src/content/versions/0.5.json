@@ -1,0 +1,11 @@
+{
+  "sidebar": [
+    {
+      "slug": "guide/getting-started"
+    },
+    {
+      "slug": "tutorial"
+    }
+  ],
+  "excluded": []
+}

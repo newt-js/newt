@@ -7,8 +7,13 @@ import Logo from './Logo.astro'
 import ThemeToggle from './ThemeToggle.astro'
 import GithubIcon from './GithubIcon.astro'
 
-interface Props { lang: Lang; alternate: string }
-const { lang, alternate } = Astro.props
+interface Props {
+  lang: Lang
+  alternate: string
+  /** In the docs: no second row of links on phones, Starlight's menu takes their place. */
+  docs?: boolean
+}
+const { lang, alternate, docs = false } = Astro.props
 const t = landing[lang].nav
 const path = Astro.url.pathname
 const links = [
@@ -31,6 +36,7 @@ const links = [
       ))}
     </nav>
     <div class="ml-auto flex items-center gap-1">
+      <slot />
       <a href={alternate} hreflang={lang === 'en' ? 'es' : 'en'} class={buttonVariants({ variant: 'ghost', size: 'sm' })} title={t.language}>
         <Languages />
         <span>{t.languageShort}</span>
@@ -39,7 +45,7 @@ const links = [
       <a href={GITHUB} class={buttonVariants({ variant: 'ghost', size: 'icon' })} aria-label="GitHub"><GithubIcon /></a>
     </div>
   </div>
-  <nav class="flex gap-1 border-t px-2 py-1 sm:hidden">
+  <nav class:list={['flex gap-1 border-t px-2 py-1 sm:hidden', docs && 'hidden']}>
     {links.map((link) => (
       <a href={link.href} class={buttonVariants({ variant: 'ghost', size: 'sm' })}>{link.label}</a>
     ))}

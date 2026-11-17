@@ -1,0 +1,16 @@
+---
+/** The title, with the section above it and the page's description below. */
+import Default from '@astrojs/starlight/components/PageTitle.astro'
+import VersionNotice from 'starlight-versions/components/VersionNotice.astro'
+
+const { sidebar, entry } = Astro.locals.starlightRoute
+type Entry = (typeof sidebar)[number]
+const hasCurrent = (e: Entry): boolean =>
+  e.type === 'link' ? e.isCurrent : e.entries.some(hasCurrent)
+const section = sidebar.find((e) => e.type === 'group' && hasCurrent(e))?.label
+const { description } = entry.data
+---
+{section && <p class="page-section">{section}</p>}
+<Default />
+{description && <p class="page-lead">{description}</p>}
+<div class="version-notice"><VersionNotice /></div>
