@@ -1,5 +1,5 @@
-import { SqlToken }  from '../sql-tokens/sql-tokens'
-import { sqlTokens } from '../sql-tokens/sql-tokens'
+import type { SqlToken } from '../sql-tokens/sql-tokens'
+import { sqlTokens }     from '../sql-tokens/sql-tokens'
 
 const TABLE_CONSTRAINTS = new Set(['CONSTRAINT', 'PRIMARY', 'UNIQUE', 'CHECK', 'FOREIGN'])
 

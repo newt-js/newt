@@ -1,4 +1,4 @@
-import { ReactionRun } from './reaction-run'
+import type { ReactionRun } from './reaction-run'
 
 export interface Inbox {
   /** Whether the reaction's event is in the inbox already: read outside any transaction, before its use case runs. */

@@ -1,13 +1,13 @@
-import { describe }      from 'bun:test'
-import { expect }        from 'bun:test'
-import { test }          from 'bun:test'
+import { describe }           from 'bun:test'
+import { expect }             from 'bun:test'
+import { test }               from 'bun:test'
 // --------------------------------------------------------
-import { MemoryCluster } from '../../../adapters/cluster/memory/memory-cluster/memory-cluster'
-import { Observability } from '../../../domain/observability/observability'
-import { LogLine }       from '../../logs/log-line'
-import { platformScope } from '../platform-scope/platform-scope'
-import { Platform }      from '../platform/platform'
-import { observedBy }    from './observed-by'
+import { MemoryCluster }      from '../../../adapters/cluster/memory/memory-cluster/memory-cluster'
+import type { Observability } from '../../../domain/observability/observability'
+import type { LogLine }       from '../../logs/log-line'
+import { platformScope }      from '../platform-scope/platform-scope'
+import { Platform }           from '../platform/platform'
+import { observedBy }         from './observed-by'
 
 describe('observedBy', () => {
   test('runs each use case in its platform, observed by its observability', async () => {

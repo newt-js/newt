@@ -1,4 +1,4 @@
-import { Cluster } from '../../../../../application/cluster/cluster'
+import type { Cluster } from '../../../../../application/cluster/cluster'
 
 export function quietCluster(): Cluster {
   const listeners = new Map<string, Set<() => void>>()

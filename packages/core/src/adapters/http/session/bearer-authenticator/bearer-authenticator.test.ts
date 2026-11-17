@@ -2,7 +2,7 @@ import { describe }            from 'bun:test'
 import { expect }              from 'bun:test'
 import { test }                from 'bun:test'
 // --------------------------------------------------------
-import { Actor }               from '../../../../domain/actor/actor'
+import type { Actor }          from '../../../../domain/actor/actor'
 import { withParams }          from '../../request/with-params/with-params'
 import { bearerAuthenticator } from './bearer-authenticator'
 

@@ -1,4 +1,4 @@
-import { Cluster } from '../cluster'
+import type { Cluster } from '../cluster'
 
 export type ClusterFixture = {
   open(): Promise<Cluster>

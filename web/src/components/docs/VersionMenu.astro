@@ -1,0 +1,153 @@
+---
+/**
+ * The version selector as a shadcn dropdown. The plugin's own select is rendered only to read its
+ * options: it knows each version's URL for this page.
+ */
+import { Check, ChevronsUpDown, History } from 'lucide-react'
+
+const html = await Astro.slots.render('default')
+const versions = [...html.matchAll(/<option([^>]*)>([^<]*)<\/option>/g)].map(([, attrs, label]) => ({
+  href: attrs.match(/value="([^"]*)"/)?.[1] ?? '#',
+  label: label.trim(),
+  current: /\sselected[\s>=]|\sselected$/.test(attrs),
+}))
+const selected = versions.find((v) => v.current) ?? versions[0]
+---
+{versions.length > 0 && (
+  <div class="version-menu" data-version-menu>
+    <button type="button" class="trigger" aria-haspopup="menu" aria-expanded="false">
+      <History className="icon muted" />
+      <span class="label">{selected?.label}</span>
+      <ChevronsUpDown className="icon muted" />
+    </button>
+    <div class="menu" role="menu" hidden>
+      {versions.map((v, i) => (
+        <a role="menuitem" href={v.href} aria-current={v.current ? 'true' : undefined}>
+          <span>{v.label}</span>
+          {i === 0 && v.label.toLowerCase() !== 'latest' && <span class="badge">latest</span>}
+          {v.current && <Check className="icon check" />}
+        </a>
+      ))}
+    </div>
+  </div>
+)}
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-version-menu]')) {
+    const trigger = root.querySelector<HTMLButtonElement>('.trigger')!
+    const menu = root.querySelector<HTMLElement>('.menu')!
+    const setOpen = (open: boolean) => {
+      menu.hidden = !open
+      trigger.setAttribute('aria-expanded', String(open))
+      if (open) menu.querySelector<HTMLElement>('[aria-current]')?.focus()
+    }
+    trigger.addEventListener('click', () => setOpen(menu.hidden))
+    document.addEventListener('click', (e) => {
+      if (!root.contains(e.target as Node)) setOpen(false)
+    })
+    root.addEventListener('keydown', (e) => {
+      const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+      const at = items.indexOf(document.activeElement as HTMLElement)
+      if (e.key === 'Escape') {
+        setOpen(false)
+        trigger.focus()
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        if (menu.hidden) return setOpen(true)
+        const step = e.key === 'ArrowDown' ? 1 : -1
+        items[(at + step + items.length) % items.length]?.focus()
+      }
+    })
+  }
+</script>
+
+<style>
+  .version-menu {
+    position: relative;
+  }
+  .trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 2.25rem;
+    padding: 0 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 2px);
+    background: color-mix(in srgb, var(--foreground) 3%, transparent);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+    color: var(--foreground);
+    font: inherit;
+    font-size: var(--sl-text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  .trigger:hover,
+  .trigger[aria-expanded='true'] {
+    background: var(--accent);
+  }
+  .trigger:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--ring) 50%, transparent);
+  }
+  .label {
+    flex: 1;
+    text-align: start;
+  }
+  .icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+  .muted {
+    color: var(--muted-foreground);
+  }
+  .menu {
+    position: absolute;
+    z-index: 10;
+    inset-inline: 0;
+    top: calc(100% + 0.25rem);
+    padding: 0.25rem;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 2px);
+    background: var(--popover, var(--background));
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    animation: menu-in 0.12s ease-out;
+  }
+  .menu[hidden] {
+    display: none;
+  }
+  .menu a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: calc(var(--radius) - 4px);
+    color: var(--foreground);
+    font-size: var(--sl-text-sm);
+    text-decoration: none;
+    outline: none;
+  }
+  .menu a:hover,
+  .menu a:focus-visible {
+    background: var(--accent);
+  }
+  .badge {
+    padding: 0 0.375rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--sl-color-text-accent) 15%, transparent);
+    color: var(--sl-color-text-accent);
+    font-size: var(--sl-text-2xs);
+    font-weight: 500;
+  }
+  .check {
+    margin-inline-start: auto;
+    color: var(--sl-color-text-accent);
+  }
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+</style>

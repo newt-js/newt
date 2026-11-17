@@ -1,10 +1,10 @@
-import { BrandedEventEmitter }  from '../../../domain/events/is-event-emitter/is-event-emitter'
-import { isEventEmitter }       from '../../../domain/events/is-event-emitter/is-event-emitter'
-import { isModule }             from '../../../domain/module/is-module/is-module'
-import { ModuleDependency }     from '../application-description'
-import { holdsModulesOrEvents } from '../holds-modules-or-events/holds-modules-or-events'
-import { isPlain }              from '../is-plain/is-plain'
-import { moduleId }             from '../module-id/module-id'
+import type { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
+import { isEventEmitter }           from '../../../domain/events/is-event-emitter/is-event-emitter'
+import { isModule }                 from '../../../domain/module/is-module/is-module'
+import type { ModuleDependency }    from '../application-description'
+import { holdsModulesOrEvents }     from '../holds-modules-or-events/holds-modules-or-events'
+import { isPlain }                  from '../is-plain/is-plain'
+import { moduleId }                 from '../module-id/module-id'
 
 export function dependenciesOf(deps: object, owners: Map<BrandedEventEmitter, string>): ModuleDependency[] {
   const found: ModuleDependency[] = []

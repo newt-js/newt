@@ -4,7 +4,7 @@ import { expect }        from 'bun:test'
 import { spyOn }         from 'bun:test'
 import { test }          from 'bun:test'
 // --------------------------------------------------------
-import { LogLine }       from '../log-line'
+import type { LogLine }  from '../log-line'
 import { ConsoleLogger } from './console-logger'
 
 const line = (fields: Partial<LogLine>): LogLine => ({ at: '2026-01-01T00:00:00.000Z', level: 'info', message: 'placed', fields: {}, context: null, ...fields })

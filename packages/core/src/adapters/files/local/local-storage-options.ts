@@ -1,4 +1,4 @@
-import { Clock } from '../../../domain/clock/clock'
+import type { Clock } from '../../../domain/clock/clock'
 
 export type LocalStorageOptions = {
   folder: string

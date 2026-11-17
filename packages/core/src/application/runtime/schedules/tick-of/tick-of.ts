@@ -1,7 +1,7 @@
-import { Clock }            from '../../../../domain/clock/clock'
-import { DomainEvent }      from '../../../../domain/events/event/domain-event'
-import { DomainEventClass } from '../../../../domain/events/event/domain-event-class'
-import { ScheduleTick }     from '../schedule-tick'
+import type { Clock }            from '../../../../domain/clock/clock'
+import type { DomainEvent }      from '../../../../domain/events/event/domain-event'
+import type { DomainEventClass } from '../../../../domain/events/event/domain-event-class'
+import type { ScheduleTick }     from '../schedule-tick'
 
 export function tickOf(name: string, clock: Clock): DomainEventClass<ScheduleTick> {
   return class implements DomainEvent<ScheduleTick> {

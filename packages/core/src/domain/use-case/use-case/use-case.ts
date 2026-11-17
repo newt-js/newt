@@ -1,5 +1,5 @@
-import { UseCaseOptions } from '../use-case-options'
-import { UseCaseRunner }  from '../use-case-runner/use-case-runner'
+import type { UseCaseOptions } from '../use-case-options'
+import { UseCaseRunner }       from '../use-case-runner/use-case-runner'
 
 export function UseCase(options?: UseCaseOptions) {
   return function <This extends { readonly name: string, readonly useCaseRunner: UseCaseRunner }, Args extends unknown[], Return>(

@@ -1,8 +1,8 @@
-import { EntitySchema }   from '../../entity/entity-schema'
-import { Entity }         from '../../entity/entity/entity'
-import { forRepository }  from '../../entity/for-repository/for-repository'
-import { RepositoryDeps } from '../repository-deps'
-import { SaveHooks }      from '../save-hooks'
+import type { EntitySchema }   from '../../entity/entity-schema'
+import { Entity }              from '../../entity/entity/entity'
+import { forRepository }       from '../../entity/for-repository/for-repository'
+import type { RepositoryDeps } from '../repository-deps'
+import type { SaveHooks }      from '../save-hooks'
 
 export abstract class BaseRepository<E extends Entity<EntitySchema>, D extends RepositoryDeps = RepositoryDeps> {
 

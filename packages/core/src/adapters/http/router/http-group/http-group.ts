@@ -1,10 +1,10 @@
-import { LayeredOptions } from '../../layers/layering'
-import { addLimits }      from '../../rate-limits/add-limits/add-limits'
-import { HttpRequest }    from '../../request/http-request'
-import { HttpMethod }     from '../http-route'
-import { HttpRoute }      from '../http-route'
-import { Middleware }     from '../middleware'
-import { RouteOptions }   from '../route-options'
+import type { LayeredOptions } from '../../layers/layering'
+import { addLimits }           from '../../rate-limits/add-limits/add-limits'
+import type { HttpRequest }    from '../../request/http-request'
+import type { HttpMethod }     from '../http-route'
+import type { HttpRoute }      from '../http-route'
+import type { Middleware }     from '../middleware'
+import type { RouteOptions }   from '../route-options'
 
 type Register = (method: HttpMethod, path: string, route: HttpRoute<any>, options: LayeredOptions) => void
 

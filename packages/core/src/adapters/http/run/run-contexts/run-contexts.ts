@@ -1,20 +1,20 @@
-import { platformOf }         from '../../../../application/context/platform-of/platform-of'
-import { log }                from '../../../../application/platform/log/log'
-import { platformScope }      from '../../../../application/platform/platform-scope/platform-scope'
-import { ABORTED_GRACE_MS }   from '../../../../application/runtime/worker/worker/worker'
-import { serve }              from '../../serve/serve/serve'
-import { ContextToRun }       from '../run-contexts-options'
-import { RunContextsOptions } from '../run-contexts-options'
-import { RunningContexts }    from '../run-contexts-options'
-import { sharedRouters }      from '../shared-routers/shared-routers'
-import { stopServer }         from '../stop-server/stop-server'
+import { log }                     from '../../../../application/platform/log/log'
+import { platformScope }           from '../../../../application/platform/platform-scope/platform-scope'
+import { ABORTED_GRACE_MS }        from '../../../../application/runtime/worker/worker/worker'
+import { serve }                   from '../../serve/serve/serve'
+import { platformToRun }           from '../platform-to-run/platform-to-run'
+import type { ContextToRun }       from '../run-contexts-options'
+import type { RunContextsOptions } from '../run-contexts-options'
+import type { RunningContexts }    from '../run-contexts-options'
+import { sharedRouters }           from '../shared-routers/shared-routers'
+import { stopServer }              from '../stop-server/stop-server'
 
 const SIGNALS = ['SIGINT', 'SIGTERM'] as const
 const STOP_TIMEOUT_MS = 8_000
 const CLOSE_TIMEOUT_MS = 10_000
 
 export function runContexts(contexts: ContextToRun[], options: RunContextsOptions = {}): RunningContexts {
-  const platform = platformOf(contexts.map(({ context }) => context))
+  const platform = platformToRun(contexts, options.platformWithoutContexts)
   const shared = options.serve ? sharedRouters(contexts) : []
   const servers: Record<string, Bun.Server<undefined>> = {}
   let server: Bun.Server<undefined> | undefined

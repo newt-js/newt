@@ -1,5 +1,5 @@
-import { CriteriaNode } from '../criteria/criteria-node'
-import { passes }       from '../passes/passes'
+import type { CriteriaNode } from '../criteria/criteria-node'
+import { passes }            from '../passes/passes'
 
 export function holds(row: Record<string, unknown>, node: CriteriaNode): boolean {
   switch (node.kind) {

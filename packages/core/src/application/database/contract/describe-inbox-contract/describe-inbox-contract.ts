@@ -1,16 +1,16 @@
-import { afterEach }       from 'bun:test'
-import { beforeEach }      from 'bun:test'
-import { describe }        from 'bun:test'
-import { expect }          from 'bun:test'
-import { test }            from 'bun:test'
+import { afterEach }            from 'bun:test'
+import { beforeEach }           from 'bun:test'
+import { describe }             from 'bun:test'
+import { expect }               from 'bun:test'
+import { test }                 from 'bun:test'
 // --------------------------------------------------------
-import { ReactionRun }     from '../../../../domain/use-case/reaction-run'
-import { uuidV7 }          from '../../../../domain/value-objects/uuid/uuid-v7/uuid-v7'
-import { pause }           from '../../../testing/pause/pause'
-import { TestClock }       from '../../../testing/test-clock/test-clock'
-import { Database }        from '../../database'
-import { DatabaseInbox }   from '../../inbox/database-inbox/database-inbox'
-import { DatabaseFixture } from '../database-fixture'
+import type { ReactionRun }     from '../../../../domain/use-case/reaction-run'
+import { uuidV7 }               from '../../../../domain/value-objects/uuid/uuid-v7/uuid-v7'
+import { pause }                from '../../../testing/pause/pause'
+import { TestClock }            from '../../../testing/test-clock/test-clock'
+import type { Database }        from '../../database'
+import { DatabaseInbox }        from '../../inbox/database-inbox/database-inbox'
+import type { DatabaseFixture } from '../database-fixture'
 
 export function describeInboxContract(name: string, fixture: DatabaseFixture): void {
   describe(`${name} keeps the Inbox contract`, () => {

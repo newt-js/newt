@@ -1,10 +1,10 @@
-import { describe }     from 'bun:test'
-import { expect }       from 'bun:test'
-import { test }         from 'bun:test'
+import { describe }         from 'bun:test'
+import { expect }           from 'bun:test'
+import { test }             from 'bun:test'
 // --------------------------------------------------------
-import { captureLines } from '../../../../application/platform/capture-lines/capture-lines'
-import { HttpRequest }  from '../../request/http-request'
-import { handle }       from './handle'
+import { captureLines }     from '../../../../application/platform/capture-lines/capture-lines'
+import type { HttpRequest } from '../../request/http-request'
+import { handle }           from './handle'
 
 const post = (body: RequestInit['body'], headers: Record<string, string> = { 'content-type': 'application/json' }) =>
   new Request('http://app.test/api/things', { method: 'POST', headers, body }) as HttpRequest

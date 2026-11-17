@@ -4,7 +4,7 @@ import { test }           from 'bun:test'
 // --------------------------------------------------------
 import { MemoryDatabase } from '../../../../adapters/database/memory/memory-database/memory-database'
 import { TestClock }      from '../../../testing/test-clock/test-clock'
-import { InboxRow }       from '../inbox-row'
+import type { InboxRow }  from '../inbox-row'
 import { DatabaseInbox }  from './database-inbox'
 
 describe('DatabaseInbox', () => {

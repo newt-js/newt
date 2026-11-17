@@ -1,8 +1,8 @@
-import { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
-import { isEventEmitter }      from '../../../domain/events/is-event-emitter/is-event-emitter'
-import { RegisteredModule }    from '../../../domain/registry/registered-module'
-import { collectValues }       from '../collect-values/collect-values'
-import { isPlain }             from '../is-plain/is-plain'
+import type { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
+import { isEventEmitter }           from '../../../domain/events/is-event-emitter/is-event-emitter'
+import type { RegisteredModule }    from '../../../domain/registry/registered-module'
+import { collectValues }            from '../collect-values/collect-values'
+import { isPlain }                  from '../is-plain/is-plain'
 
 export function emittersOf(module: RegisteredModule): BrandedEventEmitter[] {
   const given = new Set<unknown>()

@@ -4,9 +4,9 @@ import { describe }         from 'bun:test'
 import { expect }           from 'bun:test'
 import { test }             from 'bun:test'
 // --------------------------------------------------------
-import { Database }         from '../../../../application/database/database'
+import type { Database }    from '../../../../application/database/database'
 import { captureLines }     from '../../../../application/platform/capture-lines/capture-lines'
-import { Clock }            from '../../../../domain/clock/clock'
+import type { Clock }       from '../../../../domain/clock/clock'
 import { NotFoundError }    from '../../../../domain/errors/not-found-error/not-found-error'
 import { MemoryDatabase }   from '../../../database/memory/memory-database/memory-database'
 import { MysqlDatabase }    from '../../../database/mysql/mysql-database/mysql-database'
@@ -15,7 +15,7 @@ import { PostgresDatabase } from '../../../database/postgres/postgres-database/p
 import { freshPostgres }    from '../../../database/postgres/testing/fresh-postgres/fresh-postgres'
 import { SqliteDatabase }   from '../../../database/sqlite/sqlite-database/sqlite-database'
 import { HttpRouter }       from '../../router/http-router/http-router'
-import { KeptAnswer }       from '../kept-answer'
+import type { KeptAnswer }  from '../kept-answer'
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE

@@ -1,6 +1,6 @@
-import { Subscription }   from '../subscription/subscription'
-import { EventHandler }   from './event-handler'
-import { EventPublisher } from './event-publisher'
+import type { Subscription }   from '../subscription/subscription'
+import type { EventHandler }   from './event-handler'
+import type { EventPublisher } from './event-publisher'
 
 export interface EventBus extends EventPublisher {
   subscribe(pattern: string, handler: EventHandler, subscription?: Subscription): () => void

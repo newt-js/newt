@@ -8,7 +8,7 @@ const at = (path: string) => `${base}${path}`
 export const routes = {
   home: { en: at('/'), es: at('/es/') },
   principles: { en: at('/principles/'), es: at('/es/principios/') },
-  guide: { en: at('/guide/getting-started/'), es: at('/es/guide/getting-started/') },
+  guide: { en: at('/start/what-is-newt/'), es: at('/es/start/what-is-newt/') },
 } as const
 
 const en = {
@@ -16,7 +16,7 @@ const en = {
     title: 'newt: let AI do the work, you stay in control',
     description: 'A backend framework for Bun with a shape agents cannot skip: plan, framework, review and monitor.',
   },
-  nav: { guide: 'Guide', manifesto: 'Principles', theme: 'Toggle theme', language: 'Español', languageShort: 'ES' },
+  nav: { guide: 'Docs', manifesto: 'Principles', theme: 'Toggle theme', language: 'Español', languageShort: 'ES' },
   hero: {
     badge: 'A backend framework for Bun',
     soon: 'Coming soon · still cooking',
@@ -164,7 +164,7 @@ const es: LandingCopy = {
     title: 'newt: deja que la IA haga el trabajo, tú mantienes el control',
     description: 'Un framework de backend para Bun con una forma que los agentes no se saltan: plan, framework, review y monitor.',
   },
-  nav: { guide: 'Guía', manifesto: 'Principios', theme: 'Cambiar tema', language: 'English', languageShort: 'EN' },
+  nav: { guide: 'Documentación', manifesto: 'Principios', theme: 'Cambiar tema', language: 'English', languageShort: 'EN' },
   hero: {
     badge: 'Framework de backend para Bun',
     soon: 'Próximamente · aún cocinándose',

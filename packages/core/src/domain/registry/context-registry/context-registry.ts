@@ -1,5 +1,5 @@
-import { RegisteredModule }       from '../registered-module'
-import { RegisteredSubscription } from '../registered-subscription'
+import type { RegisteredModule }       from '../registered-module'
+import type { RegisteredSubscription } from '../registered-subscription'
 
 export class ContextRegistry {
 

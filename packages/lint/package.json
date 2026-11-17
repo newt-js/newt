@@ -1,7 +1,31 @@
 {
   "name": "@newt-js/lint",
   "version": "0.0.0",
+  "description": "The lint of an application built with newt: every module made of the same files, reaching others only through what they offer.",
+  "license": "MIT",
+  "author": "Angel Romero",
+  "homepage": "https://newt-js.github.io/newt/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newt-js/newt.git",
+    "directory": "packages/lint"
+  },
+  "bugs": "https://github.com/newt-js/newt/issues",
+  "keywords": [
+    "bun",
+    "newt",
+    "eslint",
+    "eslint-plugin",
+    "ddd"
+  ],
   "type": "module",
+  "files": [
+    "src",
+    "!**/*.test.ts",
+    "!src/testing",
+    "LICENSE",
+    "README.md"
+  ],
   "exports": {
     ".": "./src/index.ts"
   },

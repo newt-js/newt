@@ -1,9 +1,9 @@
-import { Rule }    from 'eslint'
-import { dirname } from 'node:path'
-import { resolve } from 'node:path'
-import { sep }     from 'node:path'
+import type { Rule } from 'eslint'
+import { dirname }   from 'node:path'
+import { resolve }   from 'node:path'
+import { sep }       from 'node:path'
 // --------------------------------------------------------
-import { allowed } from './allowed/allowed'
+import { allowed }   from './allowed/allowed'
 
 const ROOT = `${sep}packages${sep}core${sep}src${sep}`
 

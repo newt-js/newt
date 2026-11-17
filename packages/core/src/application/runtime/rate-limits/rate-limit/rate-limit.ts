@@ -1,8 +1,8 @@
-import { Clock }            from '../../../../domain/clock/clock'
-import { TooManyRequests }  from '../../../../domain/errors/too-many-requests/too-many-requests'
-import { RateLimitCounter } from '../rate-limit-counter/rate-limit-counter'
-import { RateLimitRule }    from '../rate-limit-rule'
-import { RateLimitTake }    from '../rate-limit-take'
+import type { Clock }         from '../../../../domain/clock/clock'
+import { TooManyRequests }    from '../../../../domain/errors/too-many-requests/too-many-requests'
+import { RateLimitCounter }   from '../rate-limit-counter/rate-limit-counter'
+import type { RateLimitRule } from '../rate-limit-rule'
+import type { RateLimitTake } from '../rate-limit-take'
 
 export class RateLimit {
 

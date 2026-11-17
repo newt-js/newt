@@ -1,10 +1,10 @@
-import { Clock }          from '../../../../domain/clock/clock'
-import { DuplicateValue } from '../../../../domain/errors/duplicate-value/duplicate-value'
-import { Records }        from '../../../../domain/repository/records/records'
-import { Inbox }          from '../../../../domain/use-case/inbox'
-import { ReactionRun }    from '../../../../domain/use-case/reaction-run'
-import { Database }       from '../../database'
-import { InboxRow }       from '../inbox-row'
+import type { Clock }       from '../../../../domain/clock/clock'
+import { DuplicateValue }   from '../../../../domain/errors/duplicate-value/duplicate-value'
+import type { Records }     from '../../../../domain/repository/records/records'
+import type { Inbox }       from '../../../../domain/use-case/inbox'
+import type { ReactionRun } from '../../../../domain/use-case/reaction-run'
+import type { Database }    from '../../database'
+import type { InboxRow }    from '../inbox-row'
 
 export class DatabaseInbox implements Inbox {
 

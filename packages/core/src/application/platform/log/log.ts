@@ -1,5 +1,5 @@
-import { LogFields }    from '../../logs/log-line'
-import { writeLogLine } from '../write-log-line/write-log-line'
+import type { LogFields } from '../../logs/log-line'
+import { writeLogLine }   from '../write-log-line/write-log-line'
 
 export const log = {
   debug: (message: string, fields?: LogFields) => writeLogLine('debug', message, fields),

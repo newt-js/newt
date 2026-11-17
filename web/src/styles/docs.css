@@ -80,11 +80,289 @@
   border-radius: calc(var(--radius) - 2px);
 }
 
-.site-title {
-  color: var(--sl-color-white);
-  gap: 0.5rem;
-}
-
 .sl-markdown-content :is(h1, h2, h3) {
   letter-spacing: -0.02em;
+}
+
+/* ── GitBook-like layout: the landing's width (max-w-7xl, px-6) and header, light chrome. ── */
+
+:root {
+  --sl-nav-height: 3.5rem;
+  --sl-sidebar-width: 16rem;
+  --sl-content-width: 47rem;
+  --sl-text-h1: 2.25rem;
+  --sl-color-bg-sidebar: var(--background);
+  --docs-max: 80rem;
+  --docs-toc: 14rem;
+  --docs-gutter: max(0rem, (100vw - var(--docs-max)) / 2);
+}
+
+/* Starlight's fixed bar only holds the landing's header. */
+header.header {
+  padding: 0;
+  border-bottom: none;
+  background: transparent;
+}
+/* The landing's header without Tailwind's preflight: its reset, in the lowest layer. */
+@layer base {
+  header.header :is(*, ::before, ::after) {
+    box-sizing: border-box;
+    border: 0 solid var(--border);
+  }
+  header.header a {
+    color: inherit;
+    text-decoration: none;
+  }
+  header.header button {
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+}
+.docs-search {
+  margin-inline-end: 0.5rem;
+}
+@media (min-width: 50rem) {
+  .docs-search {
+    width: 14rem;
+  }
+}
+@media (max-width: 49.99rem) {
+  header.header > header > div {
+    padding-inline-end: calc(var(--sl-menu-button-size) + 1.5rem);
+  }
+}
+
+@media (min-width: 50rem) {
+  .sidebar-pane {
+    inset-inline-start: var(--docs-gutter);
+    border-inline-end: none;
+  }
+  .sidebar-content {
+    padding-inline: 1.5rem 0.5rem;
+  }
+  [data-has-sidebar] {
+    --sl-content-margin-inline: 0;
+  }
+  .main-frame {
+    padding-inline-start: calc(var(--docs-gutter) + var(--sl-content-inline-start, 0rem));
+    padding-inline-end: var(--docs-gutter);
+  }
+}
+
+@media (min-width: 72rem) {
+  .right-sidebar-container {
+    width: var(--docs-toc);
+  }
+  .right-sidebar {
+    width: var(--docs-toc);
+    border-inline-start: none;
+  }
+  [data-has-sidebar][data-has-toc] .main-pane {
+    width: calc(100% - var(--docs-toc));
+  }
+}
+
+/* Sidebar: quiet links, the current one tinted, not filled. */
+.sidebar-version {
+  position: relative;
+  z-index: 2;
+  padding-bottom: 0.25rem;
+}
+.sidebar-content a {
+  font-size: var(--sl-text-xs);
+  line-height: 1.25;
+  padding-block: 0.3rem;
+  border-radius: calc(var(--radius) - 2px);
+}
+.sidebar-content a.large:not([aria-current="page"]) {
+  font-weight: 400;
+  color: var(--sl-color-gray-2);
+}
+.sidebar-content a:hover {
+  background-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+  font-weight: 500;
+  color: var(--sl-color-text-accent);
+  background-color: color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
+}
+.sidebar-content summary {
+  padding-block: 0.3rem;
+}
+.sidebar-content .group-label .large {
+  display: inline-block;
+  font-size: var(--sl-text-2xs);
+  line-height: 1.6;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+}
+
+/* Title block: no rule across the page, a section above, a lead below. */
+.content-panel + .content-panel {
+  border-top: none;
+}
+.content-panel:first-of-type {
+  padding-bottom: 0;
+}
+.page-section {
+  margin: 1rem 0 -0.75rem;
+  font-size: var(--sl-text-sm);
+  font-weight: 500;
+  color: var(--sl-color-text-accent);
+}
+.page-lead {
+  font-size: var(--sl-text-base);
+  color: var(--sl-color-gray-3);
+}
+.sl-markdown-content {
+  line-height: 1.75;
+}
+
+/* Callouts: a thin rounded border and a faint tint, not a thick bar. */
+.starlight-aside {
+  border: 1px solid color-mix(in srgb, var(--sl-color-asides-border) 35%, transparent);
+  border-radius: var(--radius);
+  background-color: color-mix(in srgb, var(--sl-color-asides-border) 7%, transparent);
+}
+
+/* The notice on an old version's pages: a callout like the others, in orange. */
+.version-notice > p {
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--sl-color-orange) 35%, transparent);
+  border-radius: var(--radius);
+  background-color: color-mix(in srgb, var(--sl-color-orange) 7%, transparent);
+  color: var(--sl-color-gray-2);
+}
+.version-notice > p svg {
+  color: var(--sl-color-orange);
+}
+.version-notice > p a {
+  color: var(--sl-color-orange-high);
+  font-weight: 500;
+  text-underline-offset: 0.2em;
+}
+
+/* Previous / next: small cards. */
+.pagination-links a {
+  box-shadow: none;
+  border-color: var(--sl-color-hairline);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+.pagination-links a:hover {
+  border-color: var(--sl-color-text-accent);
+}
+.pagination-links .link-title {
+  font-size: var(--sl-text-base);
+  font-weight: 500;
+}
+
+/* Headings in steps, not jumps. */
+:root {
+  --sl-text-h2: 1.5rem;
+  --sl-text-h3: 1.2rem;
+  --sl-text-h4: 1.05rem;
+}
+.sl-markdown-content :is(h2, h3) {
+  font-weight: 600;
+}
+
+/* "On this page": a quiet label. */
+.right-sidebar h2 {
+  font-size: var(--sl-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+}
+
+/* Scrollbars: thin, in the theme's colours; the sidebar's shows only while you are over it. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar-pane {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: auto;
+}
+.sidebar-pane:hover {
+  scrollbar-color: var(--border) transparent;
+}
+
+/* Code blocks: the same thin scrollbar as the page. */
+.expressive-code .frame pre {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.expressive-code .frame pre::-webkit-scrollbar {
+  height: 6px;
+}
+.expressive-code .frame pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+.expressive-code .frame pre::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: 9999px;
+  background-color: var(--border);
+}
+
+/* A code block's file name: small mono text in the bar, as on the landing. */
+.expressive-code .frame.has-title:not(.is-terminal) .header .title {
+  padding-inline: 1rem;
+  font-family: var(--font-mono, var(--__ec-codeFontFamily));
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+/* Diagrams: SVG drawn at build time (remark-diagrams), centred, never wider than the column. */
+.sl-markdown-content .diagram {
+  display: flex;
+  justify-content: center;
+  margin-block: 1.75rem;
+}
+.diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+.diagram svg text {
+  font-family: var(--font-sans);
+}
+.diagram svg .node :is(rect, polygon) {
+  rx: 6px;
+}
+
+/* Reading column: one step smaller, with room around callouts and code. */
+:root {
+  --sl-text-body: 0.9375rem;
+  --sl-text-h1: 2rem;
+  --sl-text-h2: 1.375rem;
+  --sl-text-h3: 1.125rem;
+}
+.sl-markdown-content {
+  font-size: var(--sl-text-body);
+  line-height: 1.7;
+}
+.sl-markdown-content .starlight-aside {
+  margin-block: 1.75rem;
+  padding: 0.75rem 1rem;
+  font-size: var(--sl-text-sm);
+}
+.sl-markdown-content .starlight-aside__title {
+  font-size: var(--sl-text-sm);
+  margin-bottom: 0.25rem;
+}
+.sl-markdown-content .expressive-code {
+  margin-block: 1.5rem;
+}
+.page-lead {
+  font-size: var(--sl-text-body);
 }

@@ -1,4 +1,4 @@
-import { Cors } from '../../cors/cors'
+import type { Cors } from '../../cors/cors'
 
 export function allowedBy(cors: Cors | undefined, request: Request): boolean {
   const origin = request.headers.get('origin')

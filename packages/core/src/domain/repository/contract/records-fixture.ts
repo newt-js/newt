@@ -1,5 +1,5 @@
-import { Records }      from '../records/records'
-import { Transactions } from '../transactions/transactions'
+import type { Records }      from '../records/records'
+import type { Transactions } from '../transactions/transactions'
 
 export type ContractRow = { id: string, version: number, name: string, size: number, tag: string | null }
 

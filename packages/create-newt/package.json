@@ -1,0 +1,35 @@
+{
+  "name": "create-newt",
+  "version": "0.0.0",
+  "description": "bun create newt my-app: a newt backend, made by newt's command line of the same version.",
+  "license": "MIT",
+  "author": "Angel Romero",
+  "homepage": "https://newt-js.github.io/newt/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newt-js/newt.git",
+    "directory": "packages/create-newt"
+  },
+  "bugs": "https://github.com/newt-js/newt/issues",
+  "keywords": [
+    "bun",
+    "newt",
+    "create"
+  ],
+  "type": "module",
+  "files": [
+    "src",
+    "!**/*.test.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "bin": {
+    "create-newt": "./src/create-newt.js"
+  },
+  "engines": {
+    "bun": ">=1.4.0"
+  },
+  "dependencies": {
+    "@newt-js/cli": "workspace:*"
+  }
+}

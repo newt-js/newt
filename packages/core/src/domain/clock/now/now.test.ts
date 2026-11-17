@@ -2,7 +2,7 @@ import { describe }   from 'bun:test'
 import { expect }     from 'bun:test'
 import { test }       from 'bun:test'
 // --------------------------------------------------------
-import { Clock }      from '../clock'
+import type { Clock } from '../clock'
 import { clockScope } from '../clock-scope/clock-scope'
 import { now }        from './now'
 

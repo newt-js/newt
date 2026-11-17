@@ -1,8 +1,8 @@
-import { join }                     from 'node:path'
+import { join }                          from 'node:path'
 // --------------------------------------------------------
-import { SqlServerDatabaseOptions } from '../../sql/server/sql-server-database-options'
-import { SqlServerDatabase }        from '../../sql/server/sql-server-database/sql-server-database'
-import { mysqlDialect }             from '../mysql-dialect/mysql-dialect'
+import type { SqlServerDatabaseOptions } from '../../sql/server/sql-server-database-options'
+import { SqlServerDatabase }             from '../../sql/server/sql-server-database/sql-server-database'
+import { mysqlDialect }                  from '../mysql-dialect/mysql-dialect'
 
 const FRAMEWORK = join(import.meta.dir, '..', 'migrations')
 

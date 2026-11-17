@@ -1,7 +1,7 @@
-import { PublicStorageAdapter } from '../../../../domain/file-storage/adapter/public-storage-adapter'
-import { contentDisposition }   from '../../../../domain/file-storage/content-disposition/content-disposition'
-import { LocalStorageOptions }  from '../local-storage-options'
-import { LocalStorage }         from '../local-storage/local-storage'
+import type { PublicStorageAdapter } from '../../../../domain/file-storage/adapter/public-storage-adapter'
+import { contentDisposition }        from '../../../../domain/file-storage/content-disposition/content-disposition'
+import type { LocalStorageOptions }  from '../local-storage-options'
+import { LocalStorage }              from '../local-storage/local-storage'
 
 export class LocalPublicStorage extends LocalStorage implements PublicStorageAdapter {
 

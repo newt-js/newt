@@ -1,6 +1,6 @@
 import { withHeadersSet }  from '../../responses/with-headers-set/with-headers-set'
-import { HttpRoute }       from '../../router/http-route'
-import { Cors }            from '../cors'
+import type { HttpRoute }  from '../../router/http-route'
+import type { Cors }       from '../cors'
 import { corsHeadersOver } from '../cors-headers-over/cors-headers-over'
 import { corsHeaders }     from '../cors-headers/cors-headers'
 

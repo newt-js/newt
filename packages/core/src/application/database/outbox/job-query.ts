@@ -1,4 +1,4 @@
-import { Job } from './job'
+import type { Job } from './job'
 
 export type JobQuery = {
   status?: Job['status'] | undefined

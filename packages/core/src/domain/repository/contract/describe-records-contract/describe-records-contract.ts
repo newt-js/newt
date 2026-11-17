@@ -10,8 +10,8 @@ import { TextWithNul }         from '../../text-with-nul/text-with-nul'
 import { GuardTimeout }        from '../../transactions/guard-timeout/guard-timeout'
 import { TransactionSpoiled }  from '../../transactions/transaction-spoiled/transaction-spoiled'
 import { pause }               from '../pause/pause'
-import { RecordsFixture }      from '../records-fixture'
-import { RecordsWorld }        from '../records-fixture'
+import type { RecordsFixture } from '../records-fixture'
+import type { RecordsWorld }   from '../records-fixture'
 import { row }                 from '../row/row'
 
 export function describeRecordsContract(name: string, fixture: RecordsFixture): void {
