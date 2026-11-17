@@ -7,7 +7,8 @@ import { optionsHelp }  from '../options-help/options-help'
 /** What --json prints, for agents. */
 export const JSON_SHAPE = 'With --json, a command prints { dryRun, files: [{ path, status, note? }], warnings, nextSteps },\nor { error } with exit code 1; paths are from where it runs.'
 
-export async function newtHelp(commands: Command[]): Promise<string> {
+/** With a family, such as add, the help of the commands that start with it. */
+export async function newtHelp(commands: Command[], family?: string): Promise<string> {
   const sorted = commands.toSorted((a, b) => a.name.localeCompare(b.name))
   const commandsHelp = sorted.length === 0
     ? []
@@ -16,7 +17,7 @@ export async function newtHelp(commands: Command[]): Promise<string> {
   return [
     `newt ${await version()}`,
     '',
-    'Usage: newt <command> [options]',
+    `Usage: newt ${family ? `${family} <command>` : '<command>'} [options]`,
     ...commandsHelp,
     '',
     'Options:',

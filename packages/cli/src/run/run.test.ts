@@ -63,6 +63,11 @@ describe('run', () => {
     expect(JSON.parse((await run(['--help', '--json'], CONTEXT)).text)).toEqual({ help: await newtHelp(CONTEXT.commands) })
   })
 
+  test('--help after the first word of commands shows the help of those commands', async () => {
+    expect(await run(['add', '--help'], CONTEXT)).toEqual({ code: 0, text: await newtHelp([ADD_BACKEND], 'add') })
+    expect(JSON.parse((await run(['add', '-h', '--json'], CONTEXT)).text)).toEqual({ help: await newtHelp([ADD_BACKEND], 'add') })
+  })
+
   test('the first word of commands alone, or with one that is not, says which there are', async () => {
     expect((await run(['add'], CONTEXT)).text).toBe('newt add takes what to add: newt add backend. Run newt --help.')
     expect((await run(['add', 'modul', 'x/y'], CONTEXT)).text).toBe("Unknown command 'add modul': newt add backend. Run newt --help.")

@@ -26,3 +26,9 @@ test('newtHelp lists the commands sorted by name, with their arguments and summa
   ].join('\n'))
   expect(text).toContain("Run newt <command> --help to see a command's options.\n\nWith --json, a command prints { dryRun")
 })
+
+test('newtHelp of a family says so in its usage', async () => {
+  const text = await newtHelp([ADD_BACKEND], 'add')
+  expect(text).toContain('Usage: newt add <command> [options]')
+  expect(text).not.toContain('init')
+})
