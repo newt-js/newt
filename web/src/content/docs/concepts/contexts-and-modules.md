@@ -99,6 +99,9 @@ export async function openContexts(
 Each context opens its database, makes its router and its `ContextBase`, and hands them to its modules:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
+/** Where the tasks context keeps its migrations: next to this file. */
+const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
+
 export class Tasks_Context extends BoundedContext {
   private constructor(
     base: ContextBase,
@@ -113,7 +116,7 @@ export class Tasks_Context extends BoundedContext {
   ): Promise<ContextToRun> {
     const database = await openDatabase(
       'tasks',
-      join(import.meta.dir, 'migrations'),
+      MIGRATIONS_FOLDER,
       stores,
     )
     const router = new HttpRouter({ database })
