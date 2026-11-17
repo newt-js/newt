@@ -12,7 +12,8 @@ export type KeptChoices = { stores: Stores, warnings: string[] }
 
 async function clusterOf(backend: string): Promise<ClusterName | undefined> {
   const code = await Bun.file(join(backend, 'src/backend.ts')).text().catch(() => '')
-  return (Object.keys(CLUSTERS) as ClusterName[]).find(name => code.includes(CLUSTERS[name].expression.split('(')[0]!))
+  // the last first: a Valkey backend has a MemoryCluster too, for its tests
+  return (Object.keys(CLUSTERS) as ClusterName[]).toReversed().find(name => CLUSTERS[name].marks.some(mark => code.includes(mark)))
 }
 
 /** The stores of a backend that is there already, which newt keeps over the ones asked, with a warning for each asked otherwise. */

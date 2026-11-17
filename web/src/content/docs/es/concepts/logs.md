@@ -115,10 +115,7 @@ export async function startBackend(
 ): Promise<RunningContexts> {
   const logger = new JsonLogger()
   setLogger(logger)
-  const platform = new Platform({
-    cluster: new MemoryCluster(),
-    logger,
-  })
+  const platform = new Platform({ logger })
   // ...
 }
 ```
@@ -199,7 +196,6 @@ export const timing: Observability = {
 
 ```ts
 const platform = new Platform({
-  cluster: new MemoryCluster(),
   logger,
   observability: timing,
 })

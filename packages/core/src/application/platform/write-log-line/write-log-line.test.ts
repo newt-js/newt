@@ -5,7 +5,7 @@ import { expect }        from 'bun:test'
 import { spyOn }         from 'bun:test'
 import { test }          from 'bun:test'
 // --------------------------------------------------------
-import { MemoryCluster } from '../../../adapters/cluster/memory/memory-cluster/memory-cluster'
+import { MemoryCluster } from '../../cluster/memory-cluster/memory-cluster'
 import type { LogLine }  from '../../logs/log-line'
 import { platformScope } from '../platform-scope/platform-scope'
 import { Platform }      from '../platform/platform'

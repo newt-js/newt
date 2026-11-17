@@ -239,6 +239,13 @@ describe('newt init', () => {
     expect(await Bun.file(join(folder, 'shop/.env')).text()).toBe(env)
   })
 
+  test('again on a Valkey backend, keeps its Valkey cluster', async () => {
+    const folder = await emptyFolder()
+    await runCommand(INIT, ['shop', '--cluster', 'valkey'], { cwd: folder, ask: null })
+    const report = JSON.parse((await runCommand(INIT, ['shop', '--cluster', 'memory', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
+    expect(report.warnings).toEqual(['shop/src/backend.ts runs on the valkey cluster, and newt kept it: change it by hand to run on memory'])
+  })
+
   test('inside a backend is refused', async () => {
     const folder = await emptyFolder()
     await runCommand(INIT, ['shop'], { cwd: folder, ask: null })

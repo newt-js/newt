@@ -4,11 +4,11 @@ import { expect }             from 'bun:test'
 import { test }               from 'bun:test'
 import { join }               from 'node:path'
 // --------------------------------------------------------
+import { MemoryCluster }      from '../../../../application/cluster/memory-cluster/memory-cluster'
 import { ContextBase }        from '../../../../application/context/context-base/context-base'
 import type { CapturedLines } from '../../../../application/platform/capture-lines/capture-lines'
 import { captureLines }       from '../../../../application/platform/capture-lines/capture-lines'
 import { Platform }           from '../../../../application/platform/platform/platform'
-import { MemoryCluster }      from '../../../cluster/memory/memory-cluster/memory-cluster'
 import { MemoryDatabase }     from '../../../database/memory/memory-database/memory-database'
 import { HttpRouter }         from '../../router/http-router/http-router'
 import type { ContextToRun }  from '../run-contexts-options'
@@ -103,7 +103,7 @@ describe('runContexts', () => {
     const script = `
       import { runContexts } from '${join(import.meta.dir, 'run-contexts')}'
       import { Platform } from '${join(import.meta.dir, '../../../../application/platform/platform/platform')}'
-      import { MemoryCluster } from '${join(import.meta.dir, '../../../cluster/memory/memory-cluster/memory-cluster')}'
+      import { MemoryCluster } from '${join(import.meta.dir, '../../../../application/cluster/memory-cluster/memory-cluster')}'
       const base = { platform: new Platform({ cluster: new MemoryCluster() }) }
       const context = name => ({ name, base, start: () => console.log(name, 'started'), stopWorker: async () => {}, close: async () => console.log(name, 'stopped') })
       runContexts([{ context: context('auth') }, { context: context('shop') }])
@@ -120,7 +120,7 @@ describe('runContexts', () => {
     const script = `
       import { runContexts } from '${join(import.meta.dir, 'run-contexts')}'
       import { Platform } from '${join(import.meta.dir, '../../../../application/platform/platform/platform')}'
-      import { MemoryCluster } from '${join(import.meta.dir, '../../../cluster/memory/memory-cluster/memory-cluster')}'
+      import { MemoryCluster } from '${join(import.meta.dir, '../../../../application/cluster/memory-cluster/memory-cluster')}'
       const base = { platform: new Platform({ cluster: new MemoryCluster() }) }
       const context = name => ({ name, base, start: () => {}, stopWorker: async () => {}, close: async () => {
         console.log(name, 'closing')

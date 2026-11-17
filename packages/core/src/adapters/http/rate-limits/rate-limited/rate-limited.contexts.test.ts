@@ -3,9 +3,9 @@ import { expect }        from 'bun:test'
 import { test }          from 'bun:test'
 // --------------------------------------------------------
 import type { Cluster }  from '../../../../application/cluster/cluster'
+import { MemoryCluster } from '../../../../application/cluster/memory-cluster/memory-cluster'
 import { RateLimits }    from '../../../../application/runtime/rate-limits/rate-limits/rate-limits'
 import { systemClock }   from '../../../../domain/clock/system-clock/system-clock'
-import { MemoryCluster } from '../../../cluster/memory/memory-cluster/memory-cluster'
 import { HttpRouter }    from '../../router/http-router/http-router'
 
 function context(name: string, cluster: Cluster) {

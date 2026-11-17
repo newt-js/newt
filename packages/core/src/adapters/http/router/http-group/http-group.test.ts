@@ -2,10 +2,10 @@ import { describe }      from 'bun:test'
 import { expect }        from 'bun:test'
 import { test }          from 'bun:test'
 // --------------------------------------------------------
+import { MemoryCluster } from '../../../../application/cluster/memory-cluster/memory-cluster'
 import { RateLimits }    from '../../../../application/runtime/rate-limits/rate-limits/rate-limits'
 import { currentActor }  from '../../../../domain/actor/current-actor/current-actor'
 import { systemClock }   from '../../../../domain/clock/system-clock/system-clock'
-import { MemoryCluster } from '../../../cluster/memory/memory-cluster/memory-cluster'
 import { HttpRouter }    from '../http-router/http-router'
 
 const call = (router: HttpRouter, path: string, init: RequestInit = {}) => router.answer(new Request(`http://shop.test${path}`, init))!

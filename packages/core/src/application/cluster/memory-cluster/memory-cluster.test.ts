@@ -4,7 +4,7 @@ import { expect }                  from 'bun:test'
 import { setSystemTime }           from 'bun:test'
 import { test }                    from 'bun:test'
 // --------------------------------------------------------
-import { describeClusterContract } from '../../../../application/cluster/contract/describe-cluster-contract/describe-cluster-contract'
+import { describeClusterContract } from '../contract/describe-cluster-contract/describe-cluster-contract'
 import { MemoryCluster }           from './memory-cluster'
 
 describeClusterContract('MemoryCluster', { open: async () => new MemoryCluster() })
