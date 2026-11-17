@@ -47,6 +47,7 @@ export abstract class BaseRepository<E extends Entity<EntitySchema>, D extends R
   private async saving(guard: string[] = [], fn: () => void | Promise<void>): Promise<void> {
     await this.deps.transactions.save(async save => {
       this.deps.useCaseRunner?.checkOneModulePerTransaction(save.modules)
+      await this.deps.useCaseRunner?.receive()
       if (guard.length) {
         await this.deps.transactions.guard(guard)
       }

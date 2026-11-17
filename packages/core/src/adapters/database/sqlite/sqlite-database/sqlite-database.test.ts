@@ -7,6 +7,7 @@ import { rmSync }                      from 'node:fs'
 import { tmpdir }                      from 'node:os'
 import { join }                        from 'node:path'
 // --------------------------------------------------------
+import { describeInboxContract }       from '../../../../application/database/contract/describe-inbox-contract/describe-inbox-contract'
 import { describeOutboxContract }      from '../../../../application/database/contract/describe-outbox-contract/describe-outbox-contract'
 import { describeRecordsContract }     from '../../../../domain/repository/contract/describe-records-contract/describe-records-contract'
 import type { ContractRow }            from '../../../../domain/repository/contract/records-fixture'
@@ -32,6 +33,11 @@ describeRecordsContract('SqliteDatabase', {
 })
 
 describeOutboxContract('SqliteDatabase', {
+  open: () => SqliteDatabase.open({ path: ':memory:', migrations }),
+  close: database => (database as SqliteDatabase).close(),
+})
+
+describeInboxContract('SqliteDatabase', {
   open: () => SqliteDatabase.open({ path: ':memory:', migrations }),
   close: database => (database as SqliteDatabase).close(),
 })

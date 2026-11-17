@@ -1,6 +1,7 @@
 import { test }                        from 'bun:test'
 import { join }                        from 'node:path'
 // --------------------------------------------------------
+import { describeInboxContract }       from '../../../../application/database/contract/describe-inbox-contract/describe-inbox-contract'
 import { describeOutboxContract }      from '../../../../application/database/contract/describe-outbox-contract/describe-outbox-contract'
 import { describeRecordsContract }     from '../../../../domain/repository/contract/describe-records-contract/describe-records-contract'
 import type { ContractRow }            from '../../../../domain/repository/contract/records-fixture'
@@ -39,6 +40,8 @@ if (!server) {
   })
 
   describeOutboxContract('MysqlDatabase', { open: () => open(), close: database => close(database as MysqlDatabase) })
+
+  describeInboxContract('MysqlDatabase', { open: () => open(), close: database => close(database as MysqlDatabase) })
 
   describeSqlDatabaseContract('MysqlDatabase', {
     concurrent: true,

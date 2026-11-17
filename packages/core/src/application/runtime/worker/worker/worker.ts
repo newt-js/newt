@@ -7,6 +7,8 @@ import type { Json }               from '../../../../domain/events/event/json'
 import type { PublishedEvent }     from '../../../../domain/events/event/published-event'
 import type { Page }               from '../../../../domain/pagination/page'
 import { toPage }                  from '../../../../domain/pagination/to-page/to-page'
+import { AlreadyReceived }         from '../../../../domain/use-case/already-received/already-received'
+import { reactionScope }           from '../../../../domain/use-case/reaction-scope/reaction-scope'
 import { UseCaseRunner }           from '../../../../domain/use-case/use-case-runner/use-case-runner'
 import { workerScope }             from '../../../../domain/use-case/worker-scope/worker-scope'
 import { uuidV7 }                  from '../../../../domain/value-objects/uuid/uuid-v7/uuid-v7'
@@ -263,7 +265,7 @@ export class Worker {
     this.running.set(controller, epoch)
     try {
       const event = JSON.parse(claimed.event) as PublishedEvent
-      await detached(() => platformScope.run(this.platform, () => clockScope.run(this.clock, () => workerScope.run(true, () => registration.handler(event, controller.signal)))))
+      await this.react(registration.handler, event, claimed.queue, controller.signal)
       lease.end()
       if (await this.close(claimed, { status: 'done', lastError: null })) {
         told('delivered')
@@ -292,6 +294,17 @@ export class Worker {
     } finally {
       lease.end()
       this.running.delete(controller)
+    }
+  }
+
+  private async react(handler: EventHandler, event: PublishedEvent, queue: string, signal: AbortSignal): Promise<void> {
+    const reaction = { event: event.id, queue, received: false }
+    try {
+      await detached(() => platformScope.run(this.platform, () => clockScope.run(this.clock, () => workerScope.run(true, () => reactionScope.run(reaction, () => handler(event, signal))))))
+    } catch (error) {
+      if (!(error instanceof AlreadyReceived)) {
+        throw error
+      }
     }
   }
 
@@ -403,7 +416,12 @@ export class Worker {
       return
     }
     this.purgedAt = this.time()
-    await this.useCaseRunner.run('job.purge', () => this.outbox.purge(this.later(-this.options.keepDoneMs)))
+    const before = this.later(-this.options.keepDoneMs)
+    await this.useCaseRunner.run('job.purge', () => this.outbox.purge(before))
+    const { inbox } = this.useCaseRunner
+    if (inbox) {
+      await this.useCaseRunner.run('inbox.purge', () => inbox.purge(before))
+    }
   }
 
   private backoff(attempts: number): number {

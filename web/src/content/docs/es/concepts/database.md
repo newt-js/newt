@@ -202,6 +202,7 @@ newt guarda sus propias tablas en la base de datos de cada contexto, todas con e
 | `newt_job_queue` | las colas que han registrado los workers |
 | `newt_schedule_tick` | la última ejecución de cada [tarea programada](/es/concepts/schedules/) |
 | `newt_idempotency_key` | las respuestas guardadas de las [peticiones idempotentes](/es/concepts/http/) |
+| `newt_inbox` | los eventos que ya han procesado los casos de uso del contexto, para que un job que se repite no [escriba dos veces](/es/concepts/events/#qué-pasa-al-emitir-un-evento) |
 
 ## El contrato Database
 

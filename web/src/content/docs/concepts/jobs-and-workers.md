@@ -58,7 +58,7 @@ It looks for jobs every `pollMs`, and also right after a transaction that queued
 While a job runs, the worker renews its lock every third of `leaseMs`. If the process dies, the lock runs out and another worker takes the job again. This is why a job runs *at least once*, and may run twice.
 
 :::caution
-Write subscribed use cases so that running them twice does no harm. Check the current state before acting, as an entity method that throws `AlreadyDone` does.
+What a subscribed use case saves is written once, even if its job runs twice: newt keeps the events it has handled in the context's `newt_inbox` (see [Events](/concepts/events/#what-happens-when-an-event-is-emitted)). What it does outside the database, such as sending an email, can happen twice: make that safe to repeat.
 :::
 
 ### Stopping

@@ -122,6 +122,7 @@ async function world(options: RepositoryOptions<ThingRow> = { scope: 'none' }, r
       },
       checkOneModulePerTransaction: () => {},
       checkGuardRule: () => {},
+      receive: async () => {},
     } as unknown as UseCaseRunner,
   }
 
