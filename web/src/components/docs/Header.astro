@@ -1,0 +1,13 @@
+---
+/** The landing's header, with Starlight's search in it: the same width, type and buttons on every page. */
+import Search from 'virtual:starlight/components/Search'
+import LandingHeader from '../landing/Header.astro'
+
+const lang = Astro.locals.starlightRoute.locale === 'es' ? 'es' : 'en'
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const rest = Astro.url.pathname.slice(base.length)
+const alternate = lang === 'es' ? base + rest.replace(/^\/es(\/|$)/, '/') : `${base}/es${rest}`
+---
+<LandingHeader lang={lang} alternate={alternate} docs>
+  <div class="docs-search"><Search /></div>
+</LandingHeader>

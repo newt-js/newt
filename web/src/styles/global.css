@@ -103,3 +103,9 @@ body {
   .screen.stack { justify-content: flex-start; }
   .screen.stack > :last-child { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 }
+
+/* Scrollbars: thin, in the theme's colours, as in the docs. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
