@@ -1,6 +1,6 @@
-import { Hsts }             from '../security-headers'
-import { SECURITY_HEADERS } from '../security-headers'
-import { SecurityHeaders }  from '../security-headers'
+import type { Hsts }            from '../security-headers'
+import { SECURITY_HEADERS }     from '../security-headers'
+import type { SecurityHeaders } from '../security-headers'
 
 const YEAR_SECONDS = 365 * 24 * 60 * 60
 

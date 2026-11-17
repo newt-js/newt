@@ -2,14 +2,15 @@ import { TSESLint }            from '@typescript-eslint/utils'
 import { afterAll }            from 'bun:test'
 import { describe }            from 'bun:test'
 import { it }                  from 'bun:test'
-import { Rule }                from 'eslint'
+import type { Rule }           from 'eslint'
 import { RuleTester }          from 'eslint'
 import { default as ts }       from 'typescript'
 import { default as tseslint } from 'typescript-eslint'
 
 RuleTester.describe = describe
 RuleTester.it = it
-RuleTester.itOnly = it.only
+// Bun refuses it.only under CI as soon as it is read: read only when a case asks for it.
+RuleTester.itOnly = (text: string, method: () => void) => it.only(text, method)
 // ESLint's RuleTester takes the runner's afterAll too, though its types list only describe and it.
 ;(RuleTester as unknown as { afterAll: typeof afterAll }).afterAll = afterAll
 

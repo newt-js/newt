@@ -1,4 +1,4 @@
-import { HttpRequest } from '../http-request'
+import type { HttpRequest } from '../http-request'
 
 export function withParams<Path extends string = string>(request: Request, params: Record<string, string>): HttpRequest<Path> {
   Object.defineProperty(request, 'params', { value: params, configurable: true })

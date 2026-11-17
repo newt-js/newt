@@ -1,5 +1,5 @@
-import { Condition } from '../criteria/condition'
-import { Operator }  from '../criteria/operator'
+import type { Condition } from '../criteria/condition'
+import type { Operator }  from '../criteria/operator'
 
 const OPERATORS = new Set<string>(['eq', 'ne', 'in', 'gt', 'gte', 'lt', 'lte', 'ieq'] satisfies Operator[])
 

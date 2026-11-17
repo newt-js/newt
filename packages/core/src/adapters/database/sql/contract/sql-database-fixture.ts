@@ -1,6 +1,6 @@
-import { Database }   from '../../../../application/database/database'
-import { SqlRow }     from '../dialect/sql-run'
-import { Migrations } from '../migrations/migrations'
+import type { Database }   from '../../../../application/database/database'
+import type { SqlRow }     from '../dialect/sql-run'
+import type { Migrations } from '../migrations/migrations'
 
 export type SqlTestDatabase = Database & {
   readonly migrations: Migrations

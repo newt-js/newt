@@ -1,13 +1,13 @@
-import { afterEach }        from 'bun:test'
-import { describe }         from 'bun:test'
-import { expect }           from 'bun:test'
-import { mock }             from 'bun:test'
-import { spyOn }            from 'bun:test'
-import { test }             from 'bun:test'
+import { afterEach }             from 'bun:test'
+import { describe }              from 'bun:test'
+import { expect }                from 'bun:test'
+import { mock }                  from 'bun:test'
+import { spyOn }                 from 'bun:test'
+import { test }                  from 'bun:test'
 // --------------------------------------------------------
-import { log }              from '../../../../../application/platform/log/log'
-import { TransactionSteps } from '../transaction-scope/transaction-scope'
-import { endSteps }         from './end-steps'
+import { log }                   from '../../../../../application/platform/log/log'
+import type { TransactionSteps } from '../transaction-scope/transaction-scope'
+import { endSteps }              from './end-steps'
 
 afterEach(() => {
   mock.restore()

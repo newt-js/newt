@@ -1,11 +1,11 @@
-import { GuardTimeout }     from '../../../../domain/repository/transactions/guard-timeout/guard-timeout'
-import { errorCode }        from '../../sql/dialect/error-code/error-code'
-import { MIGRATION_TABLES } from '../../sql/dialect/odd-text/odd-text'
-import { splitStatements }  from '../../sql/migrations/split-statements/split-statements'
-import { JOB_COLUMNS }      from '../../sql/outbox/sql-outbox/sql-outbox'
-import { SqlServerDialect } from '../../sql/server/sql-server-dialect'
-import { foldingAToZ }      from '../folding-a-to-z/folding-a-to-z'
-import { pause }            from '../pause/pause'
+import { GuardTimeout }          from '../../../../domain/repository/transactions/guard-timeout/guard-timeout'
+import { errorCode }             from '../../sql/dialect/error-code/error-code'
+import { MIGRATION_TABLES }      from '../../sql/dialect/odd-text/odd-text'
+import { splitStatements }       from '../../sql/migrations/split-statements/split-statements'
+import { JOB_COLUMNS }           from '../../sql/outbox/sql-outbox/sql-outbox'
+import type { SqlServerDialect } from '../../sql/server/sql-server-dialect'
+import { foldingAToZ }           from '../folding-a-to-z/folding-a-to-z'
+import { pause }                 from '../pause/pause'
 
 const COLUMNS = `
   SELECT COLUMN_NAME AS name, IS_NULLABLE = 'YES' AS nullable, DATA_TYPE AS type, COLUMN_TYPE AS columnType

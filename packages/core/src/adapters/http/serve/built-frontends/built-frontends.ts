@@ -1,7 +1,7 @@
-import { serveFrontend } from '../../frontend/serve-frontend/serve-frontend'
-import { Handler }       from '../handler'
-import { Mount }         from '../mount'
-import { ServeOptions }  from '../serve-options'
+import { serveFrontend }     from '../../frontend/serve-frontend/serve-frontend'
+import type { Handler }      from '../handler'
+import type { Mount }        from '../mount'
+import type { ServeOptions } from '../serve-options'
 
 export function builtFrontends(mounts: Mount[], csp: ServeOptions['csp']): Handler {
   const built = mounts

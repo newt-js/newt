@@ -3,7 +3,7 @@ import { expect }            from 'bun:test'
 import { test }              from 'bun:test'
 import { z }                 from 'zod'
 // --------------------------------------------------------
-import { EntitySchema }      from '../../entity-schema'
+import type { EntitySchema } from '../../entity-schema'
 import { checkEntitySchema } from './check-entity-schema'
 
 const shape = { id: z.string(), createdAt: z.string(), updatedAt: z.string() }

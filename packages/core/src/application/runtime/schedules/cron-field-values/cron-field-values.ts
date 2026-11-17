@@ -1,4 +1,4 @@
-import { CronField } from '../cron-field'
+import type { CronField } from '../cron-field'
 
 export function cronFieldValues(part: string, field: CronField, expression: string): Set<number> {
   const taken = new Set<number>()

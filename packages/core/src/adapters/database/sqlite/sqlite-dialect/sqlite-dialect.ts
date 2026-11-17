@@ -1,5 +1,5 @@
 import { MIGRATION_TABLES }   from '../../sql/dialect/odd-text/odd-text'
-import { SqlDialect }         from '../../sql/dialect/sql-dialect'
+import type { SqlDialect }    from '../../sql/dialect/sql-dialect'
 import { splitStatements }    from '../../sql/migrations/split-statements/split-statements'
 import { JOB_COLUMNS }        from '../../sql/outbox/sql-outbox/sql-outbox'
 import { declaredCollations } from '../declared-collations/declared-collations'

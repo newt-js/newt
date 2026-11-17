@@ -2,8 +2,9 @@ import { describe }                from 'bun:test'
 import { expect }                  from 'bun:test'
 import { test }                    from 'bun:test'
 // --------------------------------------------------------
+import { describeInboxContract }   from '../../../../application/database/contract/describe-inbox-contract/describe-inbox-contract'
 import { describeRecordsContract } from '../../../../domain/repository/contract/describe-records-contract/describe-records-contract'
-import { ContractRow }             from '../../../../domain/repository/contract/records-fixture'
+import type { ContractRow }        from '../../../../domain/repository/contract/records-fixture'
 import { MemoryDatabase }          from './memory-database'
 
 describeRecordsContract('MemoryDatabase', {
@@ -13,6 +14,8 @@ describeRecordsContract('MemoryDatabase', {
     return { transactions: database, records: database.records<ContractRow>('things') }
   },
 })
+
+describeInboxContract('MemoryDatabase', { open: async () => new MemoryDatabase() })
 
 describe('MemoryDatabase', () => {
   test('gives the same records each time for one name, and others for another', async () => {

@@ -1,5 +1,5 @@
-import { log }              from '../../../../../application/platform/log/log'
-import { TransactionSteps } from '../transaction-scope/transaction-scope'
+import { log }                   from '../../../../../application/platform/log/log'
+import type { TransactionSteps } from '../transaction-scope/transaction-scope'
 
 export async function endSteps(steps: TransactionSteps): Promise<void> {
   try {

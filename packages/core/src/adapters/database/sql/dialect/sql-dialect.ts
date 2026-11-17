@@ -1,6 +1,6 @@
-import { SqlRow }       from './sql-run'
-import { SqlRun }       from './sql-run'
-import { TableColumns } from './table-columns'
+import type { SqlRow }       from './sql-run'
+import type { SqlRun }       from './sql-run'
+import type { TableColumns } from './table-columns'
 
 export type SqlDialect = {
   name: 'postgres' | 'mysql' | 'sqlite'

@@ -1,30 +1,30 @@
-import { describe }            from 'bun:test'
-import { expect }              from 'bun:test'
-import { test }                from 'bun:test'
-import { z }                   from 'zod'
+import { describe }               from 'bun:test'
+import { expect }                 from 'bun:test'
+import { test }                   from 'bun:test'
+import { z }                      from 'zod'
 // --------------------------------------------------------
-import { MemoryTransactions }  from '../../../adapters/database/memory/memory-transactions/memory-transactions'
-import { clockScope }          from '../../clock/clock-scope/clock-scope'
-import { Criteria }            from '../../criteria/criteria/criteria'
-import { matches }             from '../../criteria/matches/matches'
-import { EntityInput }         from '../../entity/entity-input'
-import { Entity }              from '../../entity/entity/entity'
-import { SaveRolledBack }      from '../../entity/errors/save-rolled-back/save-rolled-back'
-import { forRepository }       from '../../entity/for-repository/for-repository'
-import { ConcurrencyConflict } from '../../errors/concurrency-conflict/concurrency-conflict'
-import { StaleVersion }        from '../../errors/stale-version/stale-version'
-import { DomainEvent }         from '../../events/event/domain-event'
-import { UseCaseRunner }       from '../../use-case/use-case-runner/use-case-runner'
-import { FindOptions }         from '../records/find-options'
-import { NewRow }              from '../records/new-row'
-import { Records }             from '../records/records'
-import { RepositoryDeps }      from '../repository-deps'
-import { RepositoryOptions }   from '../repository-options'
-import { SaveHooks }           from '../save-hooks'
-import { SaveInProgress }      from '../transactions/save-in-progress'
-import { TransactionSpoiled }  from '../transactions/transaction-spoiled/transaction-spoiled'
-import { Transactions }        from '../transactions/transactions'
-import { Repository }          from './repository'
+import { MemoryTransactions }     from '../../../adapters/database/memory/memory-transactions/memory-transactions'
+import { clockScope }             from '../../clock/clock-scope/clock-scope'
+import type { Criteria }          from '../../criteria/criteria/criteria'
+import { matches }                from '../../criteria/matches/matches'
+import type { EntityInput }       from '../../entity/entity-input'
+import { Entity }                 from '../../entity/entity/entity'
+import { SaveRolledBack }         from '../../entity/errors/save-rolled-back/save-rolled-back'
+import { forRepository }          from '../../entity/for-repository/for-repository'
+import { ConcurrencyConflict }    from '../../errors/concurrency-conflict/concurrency-conflict'
+import { StaleVersion }           from '../../errors/stale-version/stale-version'
+import type { DomainEvent }       from '../../events/event/domain-event'
+import { UseCaseRunner }          from '../../use-case/use-case-runner/use-case-runner'
+import type { FindOptions }       from '../records/find-options'
+import type { NewRow }            from '../records/new-row'
+import type { Records }           from '../records/records'
+import type { RepositoryDeps }    from '../repository-deps'
+import type { RepositoryOptions } from '../repository-options'
+import type { SaveHooks }         from '../save-hooks'
+import type { SaveInProgress }    from '../transactions/save-in-progress'
+import { TransactionSpoiled }     from '../transactions/transaction-spoiled/transaction-spoiled'
+import type { Transactions }      from '../transactions/transactions'
+import { Repository }             from './repository'
 
 const ThingSchema = z.object({ id: z.string(), name: z.string(), createdAt: z.string().default(''), updatedAt: z.string().default('') })
 type ThingDTO = z.infer<typeof ThingSchema>
@@ -122,6 +122,7 @@ async function world(options: RepositoryOptions<ThingRow> = { scope: 'none' }, r
       },
       checkOneModulePerTransaction: () => {},
       checkGuardRule: () => {},
+      receive: async () => {},
     } as unknown as UseCaseRunner,
   }
 

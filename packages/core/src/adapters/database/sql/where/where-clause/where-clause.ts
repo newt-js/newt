@@ -1,6 +1,6 @@
-import { CriteriaNode }    from '../../../../../domain/criteria/criteria/criteria-node'
-import { SqlDialect }      from '../../dialect/sql-dialect'
-import { fieldConditions } from '../field-conditions/field-conditions'
+import type { CriteriaNode } from '../../../../../domain/criteria/criteria/criteria-node'
+import type { SqlDialect }   from '../../dialect/sql-dialect'
+import { fieldConditions }   from '../field-conditions/field-conditions'
 
 export type WhereContext = {
   column(field: string): string

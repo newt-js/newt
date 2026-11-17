@@ -1,6 +1,6 @@
-import { z }           from 'zod'
+import { z }                from 'zod'
 // --------------------------------------------------------
-import { FilterField } from './filter-field'
+import type { FilterField } from './filter-field'
 
 type Leaf<Fields extends Record<string, FilterField>> = {
   [K in keyof Fields & string]:

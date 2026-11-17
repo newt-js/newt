@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs'
 import { join }        from 'node:path'
 import { relative }    from 'node:path'
 // --------------------------------------------------------
-import { Mount }       from '../mount'
+import type { Mount }  from '../mount'
 
 export function sourceFrontends(mounts: Mount[]): Record<string, Bun.HTMLBundle | Bun.BunFile> {
   const routes: Record<string, Bun.HTMLBundle | Bun.BunFile> = {}

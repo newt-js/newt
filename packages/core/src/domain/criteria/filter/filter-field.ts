@@ -1,6 +1,6 @@
-import { z }        from 'zod'
+import { z }             from 'zod'
 // --------------------------------------------------------
-import { Operator } from '../criteria/operator'
+import type { Operator } from '../criteria/operator'
 
 export type FilterField = {
   field: string

@@ -1,13 +1,13 @@
-import { DownloadUrlOptions }   from '../../../../domain/file-storage/adapter/download-url-options'
-import { OpenFile }             from '../../../../domain/file-storage/adapter/open-file'
-import { PutOptions }           from '../../../../domain/file-storage/adapter/put-options'
-import { StorageAdapter }       from '../../../../domain/file-storage/adapter/storage-adapter'
-import { StoredFile }           from '../../../../domain/file-storage/adapter/stored-file'
-import { UploadAddress }        from '../../../../domain/file-storage/adapter/upload-address'
-import { UploadAddressOptions } from '../../../../domain/file-storage/adapter/upload-address-options'
-import { contentDisposition }   from '../../../../domain/file-storage/content-disposition/content-disposition'
-import { mediaType }            from '../../../../domain/file-storage/media-type/media-type'
-import { toBytes }              from '../to-bytes/to-bytes'
+import type { DownloadUrlOptions }   from '../../../../domain/file-storage/adapter/download-url-options'
+import type { OpenFile }             from '../../../../domain/file-storage/adapter/open-file'
+import type { PutOptions }           from '../../../../domain/file-storage/adapter/put-options'
+import type { StorageAdapter }       from '../../../../domain/file-storage/adapter/storage-adapter'
+import type { StoredFile }           from '../../../../domain/file-storage/adapter/stored-file'
+import type { UploadAddress }        from '../../../../domain/file-storage/adapter/upload-address'
+import type { UploadAddressOptions } from '../../../../domain/file-storage/adapter/upload-address-options'
+import { contentDisposition }        from '../../../../domain/file-storage/content-disposition/content-disposition'
+import { mediaType }                 from '../../../../domain/file-storage/media-type/media-type'
+import { toBytes }                   from '../to-bytes/to-bytes'
 
 type Kept = { bytes: Uint8Array<ArrayBuffer>, contentType: string | null }
 

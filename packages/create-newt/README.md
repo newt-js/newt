@@ -1,0 +1,10 @@
+# create-newt
+
+```sh
+bun create newt my-app                # a backend in my-app/
+bun create newt my-app --monorepo     # a monorepo, its first backend in apps/api
+```
+
+It runs `newt init` of [@newt-js/cli](https://www.npmjs.com/package/@newt-js/cli), of its own version, with whatever it is given.
+
+newt runs on [Bun](https://bun.sh). `npm create newt` works too, with Bun installed; without it, create-newt says how to install it.

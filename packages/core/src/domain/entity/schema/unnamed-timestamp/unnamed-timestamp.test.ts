@@ -1,10 +1,10 @@
-import { describe }         from 'bun:test'
-import { expect }           from 'bun:test'
-import { test }             from 'bun:test'
-import { z }                from 'zod'
+import { describe }          from 'bun:test'
+import { expect }            from 'bun:test'
+import { test }              from 'bun:test'
+import { z }                 from 'zod'
 // --------------------------------------------------------
-import { EntitySchema }     from '../../entity-schema'
-import { unnamedTimestamp } from './unnamed-timestamp'
+import type { EntitySchema } from '../../entity-schema'
+import { unnamedTimestamp }  from './unnamed-timestamp'
 
 describe('unnamedTimestamp', () => {
   test('is the first timestamp the schema does not name', () => {

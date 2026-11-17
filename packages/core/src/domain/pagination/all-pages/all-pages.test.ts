@@ -1,10 +1,10 @@
-import { describe }    from 'bun:test'
-import { expect }      from 'bun:test'
-import { test }        from 'bun:test'
+import { describe }         from 'bun:test'
+import { expect }           from 'bun:test'
+import { test }             from 'bun:test'
 // --------------------------------------------------------
-import { PageRequest } from '../page-request'
-import { toPage }      from '../to-page/to-page'
-import { allPages }    from './all-pages'
+import type { PageRequest } from '../page-request'
+import { toPage }           from '../to-page/to-page'
+import { allPages }         from './all-pages'
 
 const ids = Array.from({ length: 250 }, (_, i) => ({ id: String(i).padStart(3, '0') }))
 

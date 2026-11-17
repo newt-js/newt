@@ -1,4 +1,4 @@
-import { SqlRow } from '../dialect/sql-run'
+import type { SqlRow } from '../dialect/sql-run'
 
 export type SqlExecutor = {
   all(sql: string, params: unknown[]): Promise<SqlRow[]>

@@ -2,7 +2,7 @@ import { describe }   from 'bun:test'
 import { expect }     from 'bun:test'
 import { test }       from 'bun:test'
 // --------------------------------------------------------
-import { Cors }       from '../../cors/cors'
+import type { Cors }  from '../../cors/cors'
 import { HttpRouter } from './http-router'
 
 const ANY: Cors = { origin: '*', headers: ['authorization', 'content-type'], expose: ['mcp-session-id'] }

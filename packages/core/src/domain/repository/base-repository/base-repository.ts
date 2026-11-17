@@ -1,8 +1,8 @@
-import { EntitySchema }   from '../../entity/entity-schema'
-import { Entity }         from '../../entity/entity/entity'
-import { forRepository }  from '../../entity/for-repository/for-repository'
-import { RepositoryDeps } from '../repository-deps'
-import { SaveHooks }      from '../save-hooks'
+import type { EntitySchema }   from '../../entity/entity-schema'
+import { Entity }              from '../../entity/entity/entity'
+import { forRepository }       from '../../entity/for-repository/for-repository'
+import type { RepositoryDeps } from '../repository-deps'
+import type { SaveHooks }      from '../save-hooks'
 
 export abstract class BaseRepository<E extends Entity<EntitySchema>, D extends RepositoryDeps = RepositoryDeps> {
 
@@ -47,6 +47,7 @@ export abstract class BaseRepository<E extends Entity<EntitySchema>, D extends R
   private async saving(guard: string[] = [], fn: () => void | Promise<void>): Promise<void> {
     await this.deps.transactions.save(async save => {
       this.deps.useCaseRunner?.checkOneModulePerTransaction(save.modules)
+      await this.deps.useCaseRunner?.receive()
       if (guard.length) {
         await this.deps.transactions.guard(guard)
       }

@@ -1,11 +1,12 @@
 import { test }                        from 'bun:test'
 import { join }                        from 'node:path'
 // --------------------------------------------------------
+import { describeInboxContract }       from '../../../../application/database/contract/describe-inbox-contract/describe-inbox-contract'
 import { describeOutboxContract }      from '../../../../application/database/contract/describe-outbox-contract/describe-outbox-contract'
 import { describeRecordsContract }     from '../../../../domain/repository/contract/describe-records-contract/describe-records-contract'
-import { ContractRow }                 from '../../../../domain/repository/contract/records-fixture'
+import type { ContractRow }            from '../../../../domain/repository/contract/records-fixture'
 import { describeSqlDatabaseContract } from '../../sql/contract/describe-sql-database-contract/describe-sql-database-contract'
-import { FreshDatabase }               from '../testing/fresh-mysql/fresh-mysql'
+import type { FreshDatabase }          from '../testing/fresh-mysql/fresh-mysql'
 import { freshMysql }                  from '../testing/fresh-mysql/fresh-mysql'
 import { MysqlDatabase }               from './mysql-database'
 
@@ -39,6 +40,8 @@ if (!server) {
   })
 
   describeOutboxContract('MysqlDatabase', { open: () => open(), close: database => close(database as MysqlDatabase) })
+
+  describeInboxContract('MysqlDatabase', { open: () => open(), close: database => close(database as MysqlDatabase) })
 
   describeSqlDatabaseContract('MysqlDatabase', {
     concurrent: true,

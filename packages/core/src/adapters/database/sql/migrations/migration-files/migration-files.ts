@@ -19,6 +19,7 @@ export async function migrationFiles(folder: string | undefined): Promise<Migrat
   for (const fileName of names.sort()) {
     const match = /^(\d{5})_(.+)_(up|down)\.sql$/.exec(fileName)
     if (!match) {
+      if (/_(up|down)\.sql$/.test(fileName)) throw new Error(`Migration ${fileName} is not named as one, 00001_name_up.sql: it would never run`)
       continue
     }
     const [, versionText, name, direction] = match as unknown as [string, string, string, 'up' | 'down']

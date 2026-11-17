@@ -1,5 +1,5 @@
-import { Page }        from '../page'
-import { PageRequest } from '../page-request'
+import type { Page }        from '../page'
+import type { PageRequest } from '../page-request'
 
 export async function allPages<T>(read: (page: PageRequest) => Promise<Page<T>>, size = 100): Promise<T[]> {
   const items: T[] = []

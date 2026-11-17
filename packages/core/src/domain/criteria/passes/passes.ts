@@ -1,7 +1,7 @@
-import { compare }    from '../compare/compare'
-import { Condition }  from '../criteria/condition'
-import { Operator }   from '../criteria/operator'
-import { lowerAscii } from '../lower-ascii/lower-ascii'
+import { compare }        from '../compare/compare'
+import type { Condition } from '../criteria/condition'
+import type { Operator }  from '../criteria/operator'
+import { lowerAscii }     from '../lower-ascii/lower-ascii'
 
 export function passes(value: unknown, condition: Condition<unknown>): boolean {
   return Object.entries(condition).every(([operator, operand]) => {

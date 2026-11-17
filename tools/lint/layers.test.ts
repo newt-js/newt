@@ -9,7 +9,8 @@ import { layers }            from './layers'
 
 RuleTester.describe = describe
 RuleTester.it = it
-RuleTester.itOnly = it.only
+// Bun refuses it.only under CI as soon as it is read: read only when a case asks for it.
+RuleTester.itOnly = (text: string, method: () => void) => it.only(text, method)
 
 const tester = new RuleTester({ languageOptions: { parser } })
 const core = '/repo/packages/core/src'

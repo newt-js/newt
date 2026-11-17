@@ -1,4 +1,4 @@
-import { EntitySchema } from '../../entity-schema'
+import type { EntitySchema } from '../../entity-schema'
 
 export function keepsUnnamed(schema: EntitySchema): boolean {
   const catchall = schema.def.catchall

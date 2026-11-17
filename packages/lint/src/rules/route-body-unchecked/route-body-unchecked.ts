@@ -1,9 +1,9 @@
-import { TSESLint } from '@typescript-eslint/utils'
-import { TSESTree } from '@typescript-eslint/utils'
-import { posix }    from 'node:path'
+import { TSESLint }     from '@typescript-eslint/utils'
+import { TSESTree }     from '@typescript-eslint/utils'
+import { posix }        from 'node:path'
 // --------------------------------------------------------
-import { Context }  from '../../paths/paths'
-import { slashed }  from '../../paths/paths'
+import type { Context } from '../../paths/paths'
+import { slashed }      from '../../paths/paths'
 
 const FUNCTIONS = new Set(['ArrowFunctionExpression', 'FunctionExpression', 'FunctionDeclaration'])
 

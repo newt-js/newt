@@ -1,15 +1,15 @@
-import { afterEach }      from 'bun:test'
-import { describe }       from 'bun:test'
-import { expect }         from 'bun:test'
-import { test }           from 'bun:test'
+import { afterEach }        from 'bun:test'
+import { describe }         from 'bun:test'
+import { expect }           from 'bun:test'
+import { test }             from 'bun:test'
 // --------------------------------------------------------
-import { MemoryCluster }  from '../../../adapters/cluster/memory/memory-cluster/memory-cluster'
-import { MemoryDatabase } from '../../../adapters/database/memory/memory-database/memory-database'
-import { DomainEvent }    from '../../../domain/events/event/domain-event'
-import { log }            from '../../platform/log/log'
-import { unscopedLogs }   from '../../platform/unscoped-logs/unscoped-logs'
-import { TestContext }    from './test-context'
-import { testContext }    from './test-context'
+import { MemoryCluster }    from '../../../adapters/cluster/memory/memory-cluster/memory-cluster'
+import { MemoryDatabase }   from '../../../adapters/database/memory/memory-database/memory-database'
+import type { DomainEvent } from '../../../domain/events/event/domain-event'
+import { log }              from '../../platform/log/log'
+import { unscopedLogs }     from '../../platform/unscoped-logs/unscoped-logs'
+import type { TestContext } from './test-context'
+import { testContext }      from './test-context'
 
 const created: DomainEvent = { name: 'user.created', payload: { id: 'u1' }, occurredAt: '' }
 

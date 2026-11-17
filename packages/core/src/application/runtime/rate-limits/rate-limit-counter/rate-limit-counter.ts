@@ -1,9 +1,9 @@
-import { Cluster }       from '../../../cluster/cluster'
-import { checkRule }     from '../check-rule/check-rule'
-import { hashedKey }     from '../hashed-key/hashed-key'
-import { RateLimitRule } from '../rate-limit-rule'
-import { RateLimitTake } from '../rate-limit-take'
-import { slide }         from '../slide/slide'
+import type { Cluster }       from '../../../cluster/cluster'
+import { checkRule }          from '../check-rule/check-rule'
+import { hashedKey }          from '../hashed-key/hashed-key'
+import type { RateLimitRule } from '../rate-limit-rule'
+import type { RateLimitTake } from '../rate-limit-take'
+import { slide }              from '../slide/slide'
 
 export class RateLimitCounter {
 

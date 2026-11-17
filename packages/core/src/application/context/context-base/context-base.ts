@@ -1,19 +1,20 @@
-import { Clock }              from '../../../domain/clock/clock'
-import { systemClock }        from '../../../domain/clock/system-clock/system-clock'
-import { ContextStorage }     from '../../../domain/file-storage/files/context-storage'
-import { RepositoryDeps }     from '../../../domain/repository/repository-deps'
-import { Transactions }       from '../../../domain/repository/transactions/transactions'
-import { UseCaseRunner }      from '../../../domain/use-case/use-case-runner/use-case-runner'
-import { Database }           from '../../database/database'
-import { observedBy }         from '../../platform/observed-by/observed-by'
-import { Platform }           from '../../platform/platform/platform'
-import { RateLimits }         from '../../runtime/rate-limits/rate-limits/rate-limits'
-import { Schedules }          from '../../runtime/schedules/schedules/schedules'
-import { Worker }             from '../../runtime/worker/worker/worker'
-import { ContextBus }         from '../context-bus/context-bus'
-import { contextStorage }     from '../context-storage/context-storage'
-import { jobsChannel }        from '../jobs-channel/jobs-channel'
-import { ContextBaseOptions } from './context-base-options'
+import type { Clock }              from '../../../domain/clock/clock'
+import { systemClock }             from '../../../domain/clock/system-clock/system-clock'
+import type { ContextStorage }     from '../../../domain/file-storage/files/context-storage'
+import type { RepositoryDeps }     from '../../../domain/repository/repository-deps'
+import type { Transactions }       from '../../../domain/repository/transactions/transactions'
+import { UseCaseRunner }           from '../../../domain/use-case/use-case-runner/use-case-runner'
+import type { Database }           from '../../database/database'
+import { DatabaseInbox }           from '../../database/inbox/database-inbox/database-inbox'
+import { observedBy }              from '../../platform/observed-by/observed-by'
+import { Platform }                from '../../platform/platform/platform'
+import { RateLimits }              from '../../runtime/rate-limits/rate-limits/rate-limits'
+import { Schedules }               from '../../runtime/schedules/schedules/schedules'
+import { Worker }                  from '../../runtime/worker/worker/worker'
+import { ContextBus }              from '../context-bus/context-bus'
+import { contextStorage }          from '../context-storage/context-storage'
+import { jobsChannel }             from '../jobs-channel/jobs-channel'
+import type { ContextBaseOptions } from './context-base-options'
 
 export class ContextBase implements RepositoryDeps {
 
@@ -46,6 +47,7 @@ export class ContextBase implements RepositoryDeps {
       guardRule: options.guardRule,
       clock,
       conflictRetries: options.conflictRetries,
+      inbox: new DatabaseInbox(options.database, clock),
     })
     this.worker = new Worker(this.database.outbox, this.useCaseRunner, this.platform, options.worker, clock)
     this.unwatch = this.platform.cluster.subscribe(jobsChannel(this.name), () => this.worker.wake())

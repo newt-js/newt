@@ -1,30 +1,32 @@
-import { afterEach }            from 'bun:test'
-import { describe }             from 'bun:test'
-import { expect }               from 'bun:test'
-import { test }                 from 'bun:test'
+import { afterEach }                 from 'bun:test'
+import { describe }                  from 'bun:test'
+import { expect }                    from 'bun:test'
+import { test }                      from 'bun:test'
 // --------------------------------------------------------
-import { MemoryCluster }        from '../../../../adapters/cluster/memory/memory-cluster/memory-cluster'
-import { MemoryDatabase }       from '../../../../adapters/database/memory/memory-database/memory-database'
-import { MemoryOutbox }         from '../../../../adapters/database/memory/memory-outbox/memory-outbox'
-import { currentActor }         from '../../../../domain/actor/current-actor/current-actor'
-import { runAsActor }           from '../../../../domain/actor/run-as-actor/run-as-actor'
-import { Clock }                from '../../../../domain/clock/clock'
-import { now }                  from '../../../../domain/clock/now/now'
-import { DomainEvent }          from '../../../../domain/events/event/domain-event'
-import { PublishedEvent }       from '../../../../domain/events/event/published-event'
-import { Observability }        from '../../../../domain/observability/observability'
-import { defineScope }          from '../../../../domain/scope/define-scope'
-import { UseCaseRunner }        from '../../../../domain/use-case/use-case-runner/use-case-runner'
-import { workerScope }          from '../../../../domain/use-case/worker-scope/worker-scope'
-import { EventId }              from '../../../../domain/value-objects/event-id/event-id'
-import { uuidV7 }               from '../../../../domain/value-objects/uuid/uuid-v7/uuid-v7'
-import { Job }                  from '../../../database/outbox/job'
-import { JobQueueRegistration } from '../../../database/outbox/job-queue-registration'
-import { CapturedLines }        from '../../../platform/capture-lines/capture-lines'
-import { captureLines }         from '../../../platform/capture-lines/capture-lines'
-import { Platform }             from '../../../platform/platform/platform'
-import { WorkerOptions }        from '../worker-options'
-import { Worker }               from './worker'
+import { MemoryCluster }             from '../../../../adapters/cluster/memory/memory-cluster/memory-cluster'
+import { MemoryDatabase }            from '../../../../adapters/database/memory/memory-database/memory-database'
+import { MemoryOutbox }              from '../../../../adapters/database/memory/memory-outbox/memory-outbox'
+import { currentActor }              from '../../../../domain/actor/current-actor/current-actor'
+import { runAsActor }                from '../../../../domain/actor/run-as-actor/run-as-actor'
+import type { Clock }                from '../../../../domain/clock/clock'
+import { now }                       from '../../../../domain/clock/now/now'
+import type { DomainEvent }          from '../../../../domain/events/event/domain-event'
+import type { PublishedEvent }       from '../../../../domain/events/event/published-event'
+import type { Observability }        from '../../../../domain/observability/observability'
+import { defineScope }               from '../../../../domain/scope/define-scope'
+import { AlreadyReceived }           from '../../../../domain/use-case/already-received/already-received'
+import { reactionScope }             from '../../../../domain/use-case/reaction-scope/reaction-scope'
+import { UseCaseRunner }             from '../../../../domain/use-case/use-case-runner/use-case-runner'
+import { workerScope }               from '../../../../domain/use-case/worker-scope/worker-scope'
+import { EventId }                   from '../../../../domain/value-objects/event-id/event-id'
+import { uuidV7 }                    from '../../../../domain/value-objects/uuid/uuid-v7/uuid-v7'
+import type { Job }                  from '../../../database/outbox/job'
+import type { JobQueueRegistration } from '../../../database/outbox/job-queue-registration'
+import type { CapturedLines }        from '../../../platform/capture-lines/capture-lines'
+import { captureLines }              from '../../../platform/capture-lines/capture-lines'
+import { Platform }                  from '../../../platform/platform/platform'
+import type { WorkerOptions }        from '../worker-options'
+import { Worker }                    from './worker'
 
 const platform = new Platform({ cluster: new MemoryCluster() })
 
@@ -232,6 +234,30 @@ describe('a job', () => {
     await queue.idle()
 
     expect(seen).toEqual([{ id: 'u1' }, true, 'nobody'])
+    expect(await outbox.job(QUEUE)).toMatchObject({ status: 'done', attempts: 1, lastError: null })
+  })
+
+  test('runs its handler as a reaction to its event, in its queue, not received yet', async () => {
+    const { queue } = await setup()
+    const seen: unknown[] = []
+    queue.register(QUEUE, 'user.created', () => void seen.push(reactionScope.get()))
+    const event = created()
+    await queue.enqueue(event)
+
+    await queue.idle()
+
+    expect(seen).toEqual([{ event: event.id, queue: QUEUE, received: false }])
+  })
+
+  test('whose reaction was received already ends done, as one that ran', async () => {
+    const { outbox, queue } = await setup()
+    queue.register(QUEUE, 'user.created', event => {
+      throw new AlreadyReceived(event.id, QUEUE)
+    })
+    await queue.enqueue(created())
+
+    await queue.idle()
+
     expect(await outbox.job(QUEUE)).toMatchObject({ status: 'done', attempts: 1, lastError: null })
   })
 
@@ -889,6 +915,18 @@ describe('the worker', () => {
     expect(outbox.purged).toHaveLength(1)
     expect(msFromNow(outbox.purged[0])).toBeGreaterThan(-61_000)
     expect(msFromNow(outbox.purged[0])).toBeLessThanOrEqual(-60_000)
+  })
+
+  test('purges with them the reactions its inbox received before that keep', async () => {
+    const outbox = await outboxOf()
+    const purged: string[] = []
+    const inbox = { has: async () => false, receive: async () => true, purge: async (before: string) => void purged.push(before) }
+    const queue = new Worker(outbox, new UseCaseRunner({ inbox }), platform, { pollMs: 10, keepDoneMs: 60_000 })
+    queue.start()
+    await until(() => purged.length > 0)
+    await queue.stop()
+
+    expect(purged).toEqual(outbox.purged)
   })
 
   test('warns once about jobs waiting in queues no worker serves', async () => {

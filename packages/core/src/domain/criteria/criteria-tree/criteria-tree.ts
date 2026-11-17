@@ -1,7 +1,7 @@
-import { Condition }    from '../criteria/condition'
-import { Criteria }     from '../criteria/criteria'
-import { CriteriaNode } from '../criteria/criteria-node'
-import { isCondition }  from '../is-condition/is-condition'
+import type { Condition }    from '../criteria/condition'
+import type { Criteria }     from '../criteria/criteria'
+import type { CriteriaNode } from '../criteria/criteria-node'
+import { isCondition }       from '../is-condition/is-condition'
 
 export function criteriaTree<Row>(criteria: Criteria<Row> = {}): CriteriaNode {
   const of: CriteriaNode[] = []

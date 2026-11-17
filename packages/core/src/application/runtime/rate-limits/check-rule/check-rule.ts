@@ -1,4 +1,4 @@
-import { RateLimitRule } from '../rate-limit-rule'
+import type { RateLimitRule } from '../rate-limit-rule'
 
 export function checkRule({ limit, windowMs }: RateLimitRule): void {
   if (!Number.isInteger(limit) || limit < 1) {
