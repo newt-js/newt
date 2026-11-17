@@ -1,6 +1,6 @@
-import { EventMeta }       from '../../events/event/event-meta'
-import { Json }            from '../../events/event/json'
-import { ReactionOptions } from './reaction-options'
+import type { EventMeta }       from '../../events/event/event-meta'
+import type { Json }            from '../../events/event/json'
+import type { ReactionOptions } from './reaction-options'
 
 export type Reaction<UseCase, TPayload extends Json, TSeen extends TPayload> =
   UseCase extends (...values: infer Args) => unknown

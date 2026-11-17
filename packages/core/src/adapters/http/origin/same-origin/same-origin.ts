@@ -1,6 +1,6 @@
-import { Cors }               from '../../cors/cors'
+import type { Cors }          from '../../cors/cors'
 import { CrossOriginRefused } from '../../errors/cross-origin-refused/cross-origin-refused'
-import { HttpRoute }          from '../../router/http-route'
+import type { HttpRoute }     from '../../router/http-route'
 import { allowedBy }          from '../allowed-by/allowed-by'
 import { fromOwnOrigin }      from '../from-own-origin/from-own-origin'
 

@@ -1,12 +1,12 @@
-import { Job }                  from '../../../../../application/database/outbox/job'
-import { JobClosing }           from '../../../../../application/database/outbox/job-closing'
-import { JobQuery }             from '../../../../../application/database/outbox/job-query'
-import { JobQueueRegistration } from '../../../../../application/database/outbox/job-queue-registration'
-import { Outbox }               from '../../../../../application/database/outbox/outbox'
-import { QueueDepth }           from '../../../../../application/database/outbox/queue-depth'
-import { SqlDialect }           from '../../dialect/sql-dialect'
-import { SqlRun }               from '../../dialect/sql-run'
-import { toJob }                from '../to-job/to-job'
+import type { Job }                  from '../../../../../application/database/outbox/job'
+import type { JobClosing }           from '../../../../../application/database/outbox/job-closing'
+import type { JobQuery }             from '../../../../../application/database/outbox/job-query'
+import type { JobQueueRegistration } from '../../../../../application/database/outbox/job-queue-registration'
+import type { Outbox }               from '../../../../../application/database/outbox/outbox'
+import type { QueueDepth }           from '../../../../../application/database/outbox/queue-depth'
+import type { SqlDialect }           from '../../dialect/sql-dialect'
+import type { SqlRun }               from '../../dialect/sql-run'
+import { toJob }                     from '../to-job/to-job'
 
 export const JOB_COLUMNS = ['id', 'queue', 'event', 'status', 'attempts', 'run_after', 'locked_by', 'locked_until', 'last_error', 'created_at', 'updated_at']
 

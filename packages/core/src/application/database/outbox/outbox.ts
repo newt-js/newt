@@ -1,8 +1,8 @@
-import { Job }                  from './job'
-import { JobClosing }           from './job-closing'
-import { JobQuery }             from './job-query'
-import { JobQueueRegistration } from './job-queue-registration'
-import { QueueDepth }           from './queue-depth'
+import type { Job }                  from './job'
+import type { JobClosing }           from './job-closing'
+import type { JobQuery }             from './job-query'
+import type { JobQueueRegistration } from './job-queue-registration'
+import type { QueueDepth }           from './queue-depth'
 
 export interface Outbox {
   add(jobs: Job[]): Promise<void>

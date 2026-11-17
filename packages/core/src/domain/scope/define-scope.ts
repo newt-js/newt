@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 // --------------------------------------------------------
-import { Scope }             from './scope'
+import type { Scope }        from './scope'
 
 export function defineScope<T>(_name: string): Scope<T> {
   const storage = new AsyncLocalStorage<T>()

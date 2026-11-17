@@ -1,9 +1,9 @@
-import { z }           from 'zod'
+import { z }                from 'zod'
 // --------------------------------------------------------
-import { Criteria }    from '../criteria/criteria'
-import { FilterField } from './filter-field'
-import { FilterInput } from './filter-input'
-import { Sort }        from './sort'
+import type { Criteria }    from '../criteria/criteria'
+import type { FilterField } from './filter-field'
+import type { FilterInput } from './filter-input'
+import type { Sort }        from './sort'
 
 export type Filter<Fields extends Record<string, FilterField>, Sortable extends string = never> = {
   readonly schema: z.ZodType<FilterInput<Fields>, FilterInput<Fields>>

@@ -1,7 +1,7 @@
-import { RateLimitRule } from '../rate-limit-rule'
-import { RateLimitTake } from '../rate-limit-take'
-import { waitFor }       from '../wait-for/wait-for'
-import { WindowCount }   from '../window-count'
+import type { RateLimitRule } from '../rate-limit-rule'
+import type { RateLimitTake } from '../rate-limit-take'
+import { waitFor }            from '../wait-for/wait-for'
+import type { WindowCount }   from '../window-count'
 
 export function slide(count: WindowCount | null, { limit, windowMs }: RateLimitRule, at: Date): { count: WindowCount, take: RateLimitTake } {
   const now = at.getTime()

@@ -1,3 +1,3 @@
-import { Condition } from './condition'
+import type { Condition } from './condition'
 
 export type Operator = keyof Condition<unknown>

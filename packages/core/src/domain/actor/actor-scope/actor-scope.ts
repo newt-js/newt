@@ -1,4 +1,4 @@
 import { defineScope } from '../../scope/define-scope'
-import { Actor }       from '../actor'
+import type { Actor }  from '../actor'
 
 export const actorScope = defineScope<Actor>('actor')

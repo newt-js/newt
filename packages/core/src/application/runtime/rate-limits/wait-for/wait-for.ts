@@ -1,4 +1,4 @@
-import { WindowCount } from '../window-count'
+import type { WindowCount } from '../window-count'
 
 export function waitFor({ count, previous }: WindowCount, limit: number, windowMs: number, elapsed: number): number {
   if (count >= limit) {

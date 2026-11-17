@@ -1,5 +1,5 @@
-import { PublicStorageAdapter } from '../../adapter/public-storage-adapter'
-import { Files }                from '../files/files'
+import type { PublicStorageAdapter } from '../../adapter/public-storage-adapter'
+import { Files }                     from '../files/files'
 
 export class PublicFiles extends Files<PublicStorageAdapter> {
   in(prefix: string): PublicFiles {

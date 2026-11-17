@@ -1,5 +1,5 @@
-import { Actor }         from '../../../../domain/actor/actor'
-import { Authenticator } from '../authenticator'
+import type { Actor }         from '../../../../domain/actor/actor'
+import type { Authenticator } from '../authenticator'
 
 export function bearerAuthenticator(verify: (token: string) => Promise<Actor | null>): Authenticator {
   return async request => {

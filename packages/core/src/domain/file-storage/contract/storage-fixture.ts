@@ -1,4 +1,4 @@
-import { StorageAdapter } from '../adapter/storage-adapter'
+import type { StorageAdapter } from '../adapter/storage-adapter'
 
 export type StorageFixture<S extends StorageAdapter = StorageAdapter> = {
   open(): Promise<S>

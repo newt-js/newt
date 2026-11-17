@@ -1,5 +1,5 @@
 import { withHeadersSet } from '../../responses/with-headers-set/with-headers-set'
-import { HttpRoute }      from '../../router/http-route'
+import type { HttpRoute } from '../../router/http-route'
 
 export function noStore(route: HttpRoute): HttpRoute {
   return async request => {

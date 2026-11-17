@@ -1,16 +1,16 @@
-import { ParserServicesWithTypeInformation } from '@typescript-eslint/utils'
-import { TSESLint }                          from '@typescript-eslint/utils'
-import { TSESTree }                          from '@typescript-eslint/utils'
-import { posix }                             from 'node:path'
-import { default as ts }                     from 'typescript'
+import type { ParserServicesWithTypeInformation } from '@typescript-eslint/utils'
+import { TSESLint }                               from '@typescript-eslint/utils'
+import { TSESTree }                               from '@typescript-eslint/utils'
+import { posix }                                  from 'node:path'
+import { default as ts }                          from 'typescript'
 // --------------------------------------------------------
-import { nodes }                             from '../../ast/ast'
-import { textOf }                            from '../../ast/ast'
-import { unwrap }                            from '../../ast/ast'
-import { camelCase }                         from '../../paths/paths'
-import { modulePlace }                       from '../../paths/paths'
-import { pascalCase }                        from '../../paths/paths'
-import { rootOf }                            from '../../paths/paths'
+import { nodes }                                  from '../../ast/ast'
+import { textOf }                                 from '../../ast/ast'
+import { unwrap }                                 from '../../ast/ast'
+import { camelCase }                              from '../../paths/paths'
+import { modulePlace }                            from '../../paths/paths'
+import { pascalCase }                             from '../../paths/paths'
+import { rootOf }                                 from '../../paths/paths'
 
 /**
  * `<module>.<use case>.on.<module>.<event>`: newt refuses at startup a handler's queue

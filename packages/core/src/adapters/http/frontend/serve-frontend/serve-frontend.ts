@@ -1,10 +1,10 @@
-import { stat }                  from 'node:fs/promises'
-import { join }                  from 'node:path'
+import { stat }                       from 'node:fs/promises'
+import { join }                       from 'node:path'
 // --------------------------------------------------------
-import { ContentSecurityPolicy } from '../content-security-policy'
-import { fileAt }                from '../file-at/file-at'
-import { inlineScriptHashes }    from '../inline-script-hashes/inline-script-hashes'
-import { policyOf }              from '../policy-of/policy-of'
+import type { ContentSecurityPolicy } from '../content-security-policy'
+import { fileAt }                     from '../file-at/file-at'
+import { inlineScriptHashes }         from '../inline-script-hashes/inline-script-hashes'
+import { policyOf }                   from '../policy-of/policy-of'
 
 export function serveFrontend(folder: string, csp?: ContentSecurityPolicy | false, base = '') {
   const index = Bun.file(join(folder, 'index.html'))

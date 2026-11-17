@@ -1,11 +1,11 @@
-import { AsyncLocalStorage }  from 'node:async_hooks'
+import { AsyncLocalStorage }   from 'node:async_hooks'
 // --------------------------------------------------------
-import { SaveInProgress }     from '../../../../../domain/repository/transactions/save-in-progress'
-import { TransactionSpoiled } from '../../../../../domain/repository/transactions/transaction-spoiled/transaction-spoiled'
-import { endSteps }           from '../end-steps/end-steps'
-import { Lane }               from '../lane/lane'
-import { rollbackSteps }      from '../rollback-steps/rollback-steps'
-import { runEach }            from '../run-each/run-each'
+import type { SaveInProgress } from '../../../../../domain/repository/transactions/save-in-progress'
+import { TransactionSpoiled }  from '../../../../../domain/repository/transactions/transaction-spoiled/transaction-spoiled'
+import { endSteps }            from '../end-steps/end-steps'
+import { Lane }                from '../lane/lane'
+import { rollbackSteps }       from '../rollback-steps/rollback-steps'
+import { runEach }             from '../run-each/run-each'
 
 export type TransactionSteps = {
   begin(): void | Promise<void>

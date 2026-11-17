@@ -1,8 +1,8 @@
-import { noObservability } from '../../../domain/observability/no-observability/no-observability'
-import { Observability }   from '../../../domain/observability/observability'
-import { Cluster }         from '../../cluster/cluster'
-import { ConsoleLogger }   from '../../logs/console-logger/console-logger'
-import { Logger }          from '../../logs/log-line'
+import { noObservability }    from '../../../domain/observability/no-observability/no-observability'
+import type { Observability } from '../../../domain/observability/observability'
+import type { Cluster }       from '../../cluster/cluster'
+import { ConsoleLogger }      from '../../logs/console-logger/console-logger'
+import type { Logger }        from '../../logs/log-line'
 
 export type PlatformOptions = {
   logger?: Logger | undefined

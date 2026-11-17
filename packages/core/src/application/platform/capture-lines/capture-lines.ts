@@ -1,7 +1,7 @@
-import { LogLevel }     from '../../logs/log-line'
-import { LogLine }      from '../../logs/log-line'
-import { LogTarget }    from '../log-target'
-import { unscopedLogs } from '../unscoped-logs/unscoped-logs'
+import type { LogLevel }  from '../../logs/log-line'
+import type { LogLine }   from '../../logs/log-line'
+import type { LogTarget } from '../log-target'
+import { unscopedLogs }   from '../unscoped-logs/unscoped-logs'
 
 export type CapturedLines = {
   lines: LogLine[]

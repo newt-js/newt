@@ -2,7 +2,7 @@ import { describe }        from 'bun:test'
 import { expect }          from 'bun:test'
 import { test }            from 'bun:test'
 // --------------------------------------------------------
-import { SqlDialect }      from '../../dialect/sql-dialect'
+import type { SqlDialect } from '../../dialect/sql-dialect'
 import { fieldConditions } from './field-conditions'
 
 const dialect = {

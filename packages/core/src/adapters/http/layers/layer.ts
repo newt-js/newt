@@ -1,4 +1,4 @@
-import { HttpRoute } from '../router/http-route'
-import { Layering }  from './layering'
+import type { HttpRoute } from '../router/http-route'
+import type { Layering }  from './layering'
 
 export type Layer = { name: string, around: (route: HttpRoute, layering: Layering) => HttpRoute }

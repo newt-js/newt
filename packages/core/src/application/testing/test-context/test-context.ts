@@ -1,9 +1,9 @@
-import { ContextBase }        from '../../context/context-base/context-base'
-import { CapturedLines }      from '../../platform/capture-lines/capture-lines'
-import { captureLines }       from '../../platform/capture-lines/capture-lines'
-import { Platform }           from '../../platform/platform/platform'
-import { TestClock }          from '../test-clock/test-clock'
-import { TestContextOptions } from './test-context-options'
+import { ContextBase }             from '../../context/context-base/context-base'
+import type { CapturedLines }      from '../../platform/capture-lines/capture-lines'
+import { captureLines }            from '../../platform/capture-lines/capture-lines'
+import { Platform }                from '../../platform/platform/platform'
+import { TestClock }               from '../test-clock/test-clock'
+import type { TestContextOptions } from './test-context-options'
 
 export type TestContext = {
   base: ContextBase

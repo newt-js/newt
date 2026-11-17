@@ -1,14 +1,14 @@
-import { describe }     from 'bun:test'
-import { expect }       from 'bun:test'
-import { test }         from 'bun:test'
-import { z }            from 'zod'
+import { describe }      from 'bun:test'
+import { expect }        from 'bun:test'
+import { test }          from 'bun:test'
+import { z }             from 'zod'
 // --------------------------------------------------------
-import { Clock }        from '../../clock/clock'
-import { clockScope }   from '../../clock/clock-scope/clock-scope'
-import { EventBus }     from '../bus/event-bus'
-import { eventsOf }     from '../events-of/events-of'
-import { InvalidEvent } from '../invalid-event/invalid-event'
-import { defineEvent }  from './define-event'
+import type { Clock }    from '../../clock/clock'
+import { clockScope }    from '../../clock/clock-scope/clock-scope'
+import type { EventBus } from '../bus/event-bus'
+import { eventsOf }      from '../events-of/events-of'
+import { InvalidEvent }  from '../invalid-event/invalid-event'
+import { defineEvent }   from './define-event'
 
 const OrderPlaced = defineEvent('order.placed', z.object({ id: z.string(), total: z.number() }))
 
@@ -40,6 +40,24 @@ describe('defineEvent', () => {
   test('only takes a payload that is JSON', () => {
     // @ts-expect-error a Date would reach a handler as a string
     defineEvent('invoice.due', z.object({ dueAt: z.date() }))
+  })
+
+  test('takes a branded value, a value object, whose JSON is the same: its payload keeps the brand', () => {
+    const OrderId = z.string().brand<'OrderId'>()
+    const OrderCreated = defineEvent('order.created', z.object({ id: OrderId, lines: z.array(z.object({ sku: z.string().brand<'Sku'>() })), note: z.string().brand<'Note'>().optional() }))
+    const created = new OrderCreated({ id: OrderId.parse('o1'), lines: [] })
+    const id: z.output<typeof OrderId> = created.payload.id
+
+    expect(id).toBe(OrderId.parse('o1'))
+    // @ts-expect-error a bare string is not an OrderId
+    void new OrderCreated({ id: 'o1', lines: [] })
+  })
+
+  test('takes brands on strings and numbers alone', () => {
+    defineEvent('order.weighed', z.object({ grams: z.number().brand<'Grams'>() }))
+    defineEvent('order.moved', z.object({ to: z.enum(['shop', 'store']).brand<'Place'>(), by: z.literal('van').brand<'Vehicle'>() }))
+    // @ts-expect-error a brand on a boolean is not one a value object makes
+    defineEvent('order.flagged', z.object({ urgent: z.boolean().brand<'Urgent'>() }))
   })
 
   test('only takes a schema that gives back what it takes, as a stored payload is read again', () => {

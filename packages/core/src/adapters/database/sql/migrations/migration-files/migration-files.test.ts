@@ -40,4 +40,8 @@ describe('migrationFiles', () => {
     await expect(migrationFiles(folderWith('00001_a_up.sql', '00001_a_down.sql', '00001_b_up.sql', '00001_b_down.sql'))).rejects.toThrow('have the same number')
     await expect(migrationFiles(folderWith('00001_a_up.sql'))).rejects.toThrow('missing its down file')
   })
+
+  test('refuses a migration not named as one, which would never run', async () => {
+    await expect(migrationFiles(folderWith('0020_x_up.sql', '0020_x_down.sql'))).rejects.toThrow('Migration 0020_x_down.sql is not named as one, 00001_name_up.sql: it would never run')
+  })
 })

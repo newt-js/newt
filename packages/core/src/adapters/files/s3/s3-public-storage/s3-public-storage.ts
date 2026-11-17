@@ -1,6 +1,6 @@
-import { PublicStorageAdapter }   from '../../../../domain/file-storage/adapter/public-storage-adapter'
-import { S3PublicStorageOptions } from '../s3-storage-options'
-import { S3Storage }              from '../s3-storage/s3-storage'
+import type { PublicStorageAdapter }   from '../../../../domain/file-storage/adapter/public-storage-adapter'
+import type { S3PublicStorageOptions } from '../s3-storage-options'
+import { S3Storage }                   from '../s3-storage/s3-storage'
 
 export class S3PublicStorage extends S3Storage implements PublicStorageAdapter {
 

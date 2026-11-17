@@ -1,4 +1,4 @@
-import { Logger } from '../logs/log-line'
+import type { Logger } from '../logs/log-line'
 
 export type LogTarget = {
   readonly logger: Logger

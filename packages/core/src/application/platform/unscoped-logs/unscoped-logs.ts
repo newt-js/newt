@@ -1,6 +1,6 @@
-import { ConsoleLogger } from '../../logs/console-logger/console-logger'
-import { Logger }        from '../../logs/log-line'
-import { LogTarget }     from '../log-target'
+import { ConsoleLogger }  from '../../logs/console-logger/console-logger'
+import type { Logger }    from '../../logs/log-line'
+import type { LogTarget } from '../log-target'
 
 let inUse: Logger = new ConsoleLogger()
 

@@ -1,4 +1,4 @@
-import { Actor }      from '../actor'
+import type { Actor } from '../actor'
 import { actorScope } from '../actor-scope/actor-scope'
 import { NoActor }    from '../no-actor/no-actor'
 

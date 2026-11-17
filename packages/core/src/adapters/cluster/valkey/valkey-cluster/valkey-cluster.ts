@@ -1,9 +1,9 @@
-import { RedisClient }  from 'bun'
-import { RedisOptions } from 'bun'
+import { RedisClient }       from 'bun'
+import type { RedisOptions } from 'bun'
 // --------------------------------------------------------
-import { Cluster }      from '../../../../application/cluster/cluster'
-import { log }          from '../../../../application/platform/log/log'
-import { pause }        from '../pause/pause'
+import type { Cluster }      from '../../../../application/cluster/cluster'
+import { log }               from '../../../../application/platform/log/log'
+import { pause }             from '../pause/pause'
 
 const INCREMENT = `local value = redis.call('INCRBY', KEYS[1], ARGV[1])
 redis.call('PEXPIRE', KEYS[1], ARGV[2])

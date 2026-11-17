@@ -1,5 +1,5 @@
-import { Job }    from '../../../../../application/database/outbox/job'
-import { SqlRow } from '../../dialect/sql-run'
+import type { Job }    from '../../../../../application/database/outbox/job'
+import type { SqlRow } from '../../dialect/sql-run'
 
 export function toJob(row: SqlRow): Job {
   return {

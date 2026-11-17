@@ -3,7 +3,7 @@ import { expect }            from 'bun:test'
 import { test }              from 'bun:test'
 // --------------------------------------------------------
 import { ReferenceNotFound } from '../../../errors/reference-not-found/reference-not-found'
-import { RefFinder }         from '../ref-finder'
+import type { RefFinder }    from '../ref-finder'
 import { resolveRefs }       from './resolve-refs'
 
 const catalogue = (...names: string[]): RefFinder => ({

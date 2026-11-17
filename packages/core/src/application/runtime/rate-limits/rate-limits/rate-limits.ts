@@ -1,9 +1,9 @@
-import { Clock }            from '../../../../domain/clock/clock'
-import { Cluster }          from '../../../cluster/cluster'
-import { checkRule }        from '../check-rule/check-rule'
-import { RateLimitCounter } from '../rate-limit-counter/rate-limit-counter'
-import { RateLimitRule }    from '../rate-limit-rule'
-import { RateLimit }        from '../rate-limit/rate-limit'
+import type { Clock }         from '../../../../domain/clock/clock'
+import type { Cluster }       from '../../../cluster/cluster'
+import { checkRule }          from '../check-rule/check-rule'
+import { RateLimitCounter }   from '../rate-limit-counter/rate-limit-counter'
+import type { RateLimitRule } from '../rate-limit-rule'
+import { RateLimit }          from '../rate-limit/rate-limit'
 
 const NAME = /^[a-z][A-Za-z0-9]*\.[a-z][A-Za-z0-9]*$/
 

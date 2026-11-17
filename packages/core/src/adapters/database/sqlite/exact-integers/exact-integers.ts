@@ -1,4 +1,4 @@
-import { SqlRow } from '../../sql/dialect/sql-run'
+import type { SqlRow } from '../../sql/dialect/sql-run'
 
 export function exactIntegers(rows: SqlRow[]): SqlRow[] {
   return rows.map(row => Object.fromEntries(Object.entries(row).map(([name, value]) => {

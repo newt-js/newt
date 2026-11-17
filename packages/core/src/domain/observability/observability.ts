@@ -1,5 +1,5 @@
-import { ObservedUseCase } from './observed-use-case'
-import { UseCaseAttempt }  from './use-case-attempt'
+import type { ObservedUseCase } from './observed-use-case'
+import type { UseCaseAttempt }  from './use-case-attempt'
 
 export interface Observability {
   useCase<T>(call: ObservedUseCase, run: (attempt: UseCaseAttempt) => Promise<T>): Promise<T>

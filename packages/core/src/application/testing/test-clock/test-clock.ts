@@ -1,4 +1,4 @@
-import { Clock } from '../../../domain/clock/clock'
+import type { Clock } from '../../../domain/clock/clock'
 
 const START = '2026-01-01T00:00:00.000Z'
 

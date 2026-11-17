@@ -1,10 +1,10 @@
-import { describe }      from 'bun:test'
-import { expect }        from 'bun:test'
-import { test }          from 'bun:test'
+import { describe }          from 'bun:test'
+import { expect }            from 'bun:test'
+import { test }              from 'bun:test'
 // --------------------------------------------------------
-import { HttpRouter }    from '../../router/http-router/http-router'
-import { ContextToRun }  from '../run-contexts-options'
-import { sharedRouters } from './shared-routers'
+import { HttpRouter }        from '../../router/http-router/http-router'
+import type { ContextToRun } from '../run-contexts-options'
+import { sharedRouters }     from './shared-routers'
 
 function routerOf(path: string, prefix?: string): HttpRouter {
   const router = new HttpRouter(prefix === undefined ? {} : { prefix })

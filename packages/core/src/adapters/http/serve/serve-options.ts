@@ -1,7 +1,7 @@
-import { ContentSecurityPolicy } from '../frontend/content-security-policy'
-import { HttpRouter }            from '../router/http-router/http-router'
-import { Hsts }                  from './security-headers'
-import { SecurityHeaders }       from './security-headers'
+import type { ContentSecurityPolicy } from '../frontend/content-security-policy'
+import { HttpRouter }                 from '../router/http-router/http-router'
+import type { Hsts }                  from './security-headers'
+import type { SecurityHeaders }       from './security-headers'
 
 export type FrontendMount = {
   path: string

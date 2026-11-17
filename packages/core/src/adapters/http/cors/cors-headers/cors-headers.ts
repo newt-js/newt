@@ -1,4 +1,4 @@
-import { Cors } from '../cors'
+import type { Cors } from '../cors'
 
 const MAX_AGE = 86400
 

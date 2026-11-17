@@ -1,11 +1,11 @@
-import { SqlRun }            from '../../dialect/sql-run'
-import { migrationChecksum } from '../migration-checksum/migration-checksum'
-import { MigrationPair }     from '../migration-files/migration-files'
-import { migrationFiles }    from '../migration-files/migration-files'
-import { migrationName }     from '../migration-name/migration-name'
-import { MigrationTarget }   from '../migration-target'
-import { MigrationStatus }   from '../migrations'
-import { Migrations }        from '../migrations'
+import type { SqlRun }          from '../../dialect/sql-run'
+import { migrationChecksum }    from '../migration-checksum/migration-checksum'
+import type { MigrationPair }   from '../migration-files/migration-files'
+import { migrationFiles }       from '../migration-files/migration-files'
+import { migrationName }        from '../migration-name/migration-name'
+import type { MigrationTarget } from '../migration-target'
+import type { MigrationStatus } from '../migrations'
+import type { Migrations }      from '../migrations'
 
 type Applied = { version: number, name: string, checksum: string }
 

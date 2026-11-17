@@ -1,14 +1,14 @@
 import { KnownError }         from '../../errors/known-error/known-error'
 import { ReferenceNotFound }  from '../../errors/reference-not-found/reference-not-found'
 import { DomainEventEmitter } from '../../events/domain-event-emitter/domain-event-emitter'
-import { EventMeta }          from '../../events/event/event-meta'
-import { Json }               from '../../events/event/json'
-import { Subscription }       from '../../events/subscription/subscription'
+import type { EventMeta }     from '../../events/event/event-meta'
+import type { Json }          from '../../events/event/json'
+import type { Subscription }  from '../../events/subscription/subscription'
 import { UseCaseRunner }      from '../../use-case/use-case-runner/use-case-runner'
 import { MODULE_BRAND }       from '../is-module/is-module'
-import { Reaction }           from '../reaction/reaction'
-import { Ref }                from '../ref/ref'
-import { RefFinder }          from '../ref/ref-finder'
+import type { Reaction }      from '../reaction/reaction'
+import type { Ref }           from '../ref/ref'
+import type { RefFinder }     from '../ref/ref-finder'
 
 export abstract class Module {
 

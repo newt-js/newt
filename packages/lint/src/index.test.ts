@@ -53,10 +53,16 @@ describe('the preset of newt', () => {
 
   test('keeps a module writing through persist, never in a transaction of its own', async () => {
     const file = 'src/contexts/ws/modules/brand/brand.repository.ts'
-    const base = 'type Base = { transactions: { run(fn: () => void): Promise<void> } }\n'
-    expect(await complaints(file, `${base}export const go = (base: Base) => base.transactions.run(() => {})\n`)).toEqual(['no-restricted-syntax'])
-    expect(await complaints(file, `${base}export const go = (base: Base) => base['transactions'].run(() => {})\n`)).toEqual(['no-restricted-syntax'])
-    expect(await complaints(file, `${base}export const go = (base: Base) => {\n  const { transactions } = base\n  return transactions.run(() => {})\n}\n`)).toEqual(['no-restricted-syntax'])
+    const base = 'interface Transactions { run(fn: () => void): Promise<void> }\ntype Base = { transactions: Transactions }\n'
+    expect(await complaints(file, `${base}export const go = (base: Base) => base.transactions.run(() => {})\n`)).toEqual(['newt/module-transactions'])
+    expect(await complaints(file, `${base}export const go = (base: Base) => base['transactions'].run(() => {})\n`)).toEqual(['newt/module-transactions'])
+    expect(await complaints(file, `${base}export const go = (base: Base) => {\n  const { transactions } = base\n  return transactions.run(() => {})\n}\n`)).toEqual(['newt/module-transactions'])
+  })
+
+  test("a module's own field named transactions, as the repository of a module transaction, is no transaction", async () => {
+    const file = 'src/contexts/ws/modules/transaction/transaction.module.ts'
+    const code = 'class Transaction_Repository {\n  persist() {\n    return 1\n  }\n}\nexport class Transaction_Module {\n  private readonly transactions = new Transaction_Repository()\n  save() {\n    this.transactions.persist()\n  }\n}\n'
+    expect(await complaints(file, code)).toEqual([])
   })
 
   test("judges a handler's callback by the types TypeScript gives, not by names", async () => {
@@ -132,6 +138,14 @@ describe('the preset of newt', () => {
     expect(await complaints(file, module('async place() {} // eslint-disable-line'))).toEqual(['newt/no-disable'])
     // A rule of the app's own is the app's.
     expect(await complaints(file, '// eslint-disable-next-line no-console\nconsole.log(1)\n')).toEqual([expect.stringContaining('Unused eslint-disable directive')])
+  })
+
+  test("keeps a frontend's imports, whatever a comment says or an alias hides", async () => {
+    const frontend = 'src/contexts/ws/frontend'
+    await mkdir(join(root, frontend), { recursive: true })
+    await writeFile(join(root, frontend, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'Preserve', moduleResolution: 'bundler', jsx: 'react-jsx', paths: { '@/*': ['../../../*'] } }, include: ['**/*.ts', '**/*.tsx'] }))
+    expect(await complaints(`${frontend}/a.tsx`, "// eslint-disable-next-line newt/frontend-imports\nimport { requiredEnv } from '../../../env'\nexport const a = requiredEnv\n")).toEqual(['newt/no-disable'])
+    expect(await complaints(`${frontend}/b.tsx`, "import { requiredEnv } from '@/env'\nexport const b = requiredEnv\n")).toEqual(['newt/frontend-imports'])
   })
 
   test('says what a rule of newt found in a message an agent can follow', async () => {
