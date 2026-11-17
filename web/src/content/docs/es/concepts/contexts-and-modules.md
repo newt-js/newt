@@ -57,6 +57,8 @@ Dentro de un contexto, un módulo llega a otro de dos formas:
 
 Un módulo importa de otro solo su `*.module.ts`, su `*.schema.ts`, sus `events/` y sus `errors/`. La regla de lint `module-imports` rechaza el resto.
 
+Las dependencias van en un solo sentido, así que un padre nunca usa a sus hijos: una ruta como `/notes/folders/:folderId/notes` vive en `note`, y `folder` se entera de sus notas por eventos. Ver [Recursos anidados](/es/concepts/services-and-deps/#recursos-anidados).
+
 ## Cómo hablan los contextos entre sí
 
 Un contexto usa otro cuando su `<nombre>.context.ts` lo importa, para abrirlo con ese contexto. La regla de lint `context-imports` deja que un contexto importe solo los contextos que importa su `.context.ts`, y nunca en ciclo: si `chat` usa `tasks`, `tasks` no puede usar `chat`.

@@ -57,6 +57,8 @@ Inside a context, a module reaches another in two ways:
 
 A module imports from another only its `*.module.ts`, its `*.schema.ts`, its `events/` and its `errors/`. The lint rule `module-imports` refuses the rest.
 
+Dependencies go one way only, so a parent never uses its children: a route such as `/notes/folders/:folderId/notes` lives in `note`, and `folder` hears about its notes through events. See [Nested resources](/concepts/services-and-deps/#nested-resources).
+
 ## How contexts talk to each other
 
 A context uses another when its `<name>.context.ts` imports it, to open it with that context. The lint rule `context-imports` lets a context import only the contexts its `.context.ts` imports, and never in a cycle: if `chat` uses `tasks`, `tasks` cannot use `chat`.

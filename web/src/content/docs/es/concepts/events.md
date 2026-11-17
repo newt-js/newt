@@ -229,6 +229,8 @@ tasks.on(project.events.created, 'addFirstTask', created => [
 
 Su cola es `task.addFirstTask.on.project.created`.
 
+Aquí `project` es el módulo que `task` recibe como dependencia: su `initialize` puede pasarle sus deps a `registerTaskWorkers`. Un módulo también puede reaccionar a un módulo que no usa, haciéndose su propio emisor para la clase del evento del otro con `eventsOf`. Ver [Recursos anidados](/es/concepts/services-and-deps/#recursos-anidados) para los dos casos.
+
 Así es como un módulo cambia los datos de otro. Un caso de uso solo puede escribir en su propio módulo; para cambiar otro, emite un evento y deja que ese módulo reaccione. Consulta [la regla de escritura](/es/concepts/use-cases/#la-regla-de-escritura).
 
 :::note

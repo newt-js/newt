@@ -122,6 +122,155 @@ Do not import another module's repository to read its table "just this once". Th
 An id a module keeps of another module's entity, such as `projectId` on a task, is a value object of its own module. See [Value objects](/concepts/value-objects/).
 :::
 
+## Nested resources
+
+Some URLs put one resource inside another. Say a `notes` context has two modules, `folder` and `note`, and `note` uses `folder` to check that a folder exists before it puts a note in it:
+
+```ts title="src/contexts/notes/notes-modules.ts"
+export function notesModules(base: ContextBase, router: HttpRouter) {
+  const folder = Folder_Module.initialize(base, router)
+  const note = Note_Module.initialize(base, router, { folder })
+  return {
+    folder,
+    note,
+  }
+}
+```
+
+The notes of a folder answer at `GET /api/notes/folders/:folderId/notes`. The URL starts with the folder, but `folder` cannot serve it: it would need `note`, and `note` already uses `folder`. That is a cycle, and `notesModules` could not even build them, since each one would have to be built first.
+
+So newt follows two rules:
+
+- **A nested route belongs to the module it reads or changes.** The notes of a folder are notes, so their routes live in `note`, the module that uses `folder`.
+- **A parent learns about its children through events, never through dependencies.** When `folder` must react to its notes, or its notes to it, an event goes between them.
+
+| Route | Module | Why |
+|---|---|---|
+| `GET /notes/folders/:id` | `folder` | It reads a folder. |
+| `DELETE /notes/folders/:id` | `folder` | It deletes a folder. |
+| `GET /notes/folders/:folderId/notes` | `note` | It reads notes. |
+| `POST /notes/folders/:folderId/notes` | `note` | It creates a note. |
+
+### The child owns the nested routes
+
+`note` keeps the folder's id as a value object of its own, `value-objects/folder-id.ts` (see [Value objects](/concepts/value-objects/)), and registers the route in `note.routes.ts`:
+
+```ts title="src/contexts/notes/modules/note/note.routes.ts"
+router.get('/notes/folders/:folderId/notes', async request =>
+  Response.json(
+    await notes.paginateInFolder(
+      FolderId.from(request.params.folderId),
+      pageRequestFrom(request),
+    ),
+  ),
+)
+```
+
+Its use case reads the folder through `folder`, so a folder that does not exist answers `404` instead of an empty list:
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+@UseCase()
+async paginateInFolder(
+  folderId: FolderId,
+  page: PageRequest,
+): Promise<Page<NoteDTO>> {
+  await this.deps.folder.get({ id: folderId })
+  return this.paginate({ folderId }, page)
+}
+```
+
+The path still starts with the context's name, whichever module registers it, as the lint rule `route-context` asks. Write this route by hand: `newt add route` passes only `:id` to a use case.
+
+### The parent changes, the children follow
+
+Deleting a folder should delete its notes. A use case of `folder` cannot do it: it would need `note`, and it may save only folders (see [the write rule](/concepts/use-cases/#the-write-rule)). So `folder` deletes the folder and emits `folder.deleted`:
+
+```ts title="src/contexts/notes/modules/folder/folder.ts"
+delete(): void {
+  this.markAsDeleted()
+  this.trackEvent(new Folder_Deleted({ id: this.id }))
+}
+```
+
+`note` already has `folder` as a dependency, so it subscribes to its event. Its `initialize` hands its deps to its workers:
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+static initialize(
+  base: ContextBase,
+  router: HttpRouter,
+  deps: Note_Deps,
+): Note_Module {
+  const module = new Note_Module(base, new Note_Repository(base), deps)
+  registerNoteRoutes(router, module)
+  registerNoteWorkers(module, deps)
+  return module
+}
+```
+
+```ts title="src/contexts/notes/modules/note/note.workers.ts"
+import type { Note_Deps } from './note.deps'
+import type { Note_Module } from './note.module'
+
+export function registerNoteWorkers(
+  notes: Note_Module,
+  { folder }: Note_Deps,
+): void {
+  notes.on(folder.events.deleted, 'deleteInFolder', deleted => [
+    deleted.id,
+  ])
+}
+```
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+@UseCase()
+async deleteInFolder(folderId: FolderId): Promise<void> {
+  const notes = await this.notes.find(
+    NoteFilter.toCriteria<NoteRow>(
+      NoteFilter.schema.parse({ folderId }),
+    ),
+  )
+  for (const note of notes) {
+    note.delete()
+  }
+  await this.notes.persist(notes)
+}
+```
+
+`DELETE /notes/folders/:id` stays in `folder`, and the notes go a moment later, in a job. In tests, `context.settle()` waits for it (see [Events and subscriptions](/concepts/events/#in-tests)).
+
+### The children change, the parent keeps track
+
+Say a folder shows how many notes it has. `folder` keeps a `notesCount` and adds one on every `note.created`, without using `note`: it imports only the event's class from note's `events/`, which [`module-imports`](/concepts/contexts-and-modules/#how-modules-talk-to-each-other) allows, and makes its own emitter for it with `eventsOf`:
+
+```ts title="src/contexts/notes/modules/folder/folder.module.ts"
+import { Note_Created } from '../note/events/note-created'
+
+// in the constructor
+this.events = eventsOf(base.bus, {
+  created: Folder_Created,
+  deleted: Folder_Deleted,
+})
+this.noteEvents = eventsOf(base.bus, { created: Note_Created })
+```
+
+```ts title="src/contexts/notes/modules/folder/folder.workers.ts"
+import type { Folder_Module } from './folder.module'
+
+export function registerFolderWorkers(folders: Folder_Module): void {
+  folders.on(folders.noteEvents.created, 'countNote', created => [
+    created.folderId,
+  ])
+}
+```
+
+For this, `note.created` carries the note's `folderId` in its payload. `countNote` is a use case of `folder` that reads the folder, adds one and saves it.
+
+An event is matched by its name, so `folder` gets every `note.created` that `note` emits, and `notesModules` builds the two modules in the same order as before.
+
+:::tip
+Both directions are subscriptions, so `newt add subscription` cannot write them: it subscribes a module to its own events. Write the line in `<module>.workers.ts` by hand.
+:::
+
 ## With the CLI
 
 ```sh

@@ -77,6 +77,8 @@ Métodos: `get`, `post`, `put`, `patch`, `delete`. Registrar dos veces el mismo 
 
 Si encajan varias rutas, gana la más concreta: el texto gana a `:param`, y `:param` gana a `*`.
 
+Una ruta anidada, como `/notes/folders/:folderId/notes`, pertenece al módulo de lo que devuelve: aquí `note`, no `folder`. Ver [Recursos anidados](/es/concepts/services-and-deps/#recursos-anidados).
+
 newt responde también esto por ti:
 
 - `HEAD` en una ruta con `GET` ejecuta el `GET` y quita el cuerpo.

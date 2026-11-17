@@ -77,6 +77,8 @@ Methods: `get`, `post`, `put`, `patch`, `delete`. Registering the same method an
 
 When several paths match, the more specific one wins: text beats `:param`, and `:param` beats `*`.
 
+A nested path, such as `/notes/folders/:folderId/notes`, belongs to the module of what it returns: here `note`, not `folder`. See [Nested resources](/concepts/services-and-deps/#nested-resources).
+
 newt also answers these for you:
 
 - `HEAD` on a path with a `GET` runs the `GET` and drops the body.

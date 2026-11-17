@@ -229,6 +229,8 @@ tasks.on(project.events.created, 'addFirstTask', created => [
 
 Its queue is `task.addFirstTask.on.project.created`.
 
+`project` here is the module `task` gets as a dependency: its `initialize` can hand its deps to `registerTaskWorkers`. A module can also react to a module it does not use, by making its own emitter for the other's event class with `eventsOf`. See [Nested resources](/concepts/services-and-deps/#nested-resources) for both.
+
 This is how one module changes another's data. A use case may write only to its own module; to change another module, emit an event and let that module react. See [the write rule](/concepts/use-cases/#the-write-rule).
 
 :::note

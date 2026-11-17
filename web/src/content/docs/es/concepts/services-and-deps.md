@@ -122,6 +122,155 @@ No importes el repositorio de otro módulo para leer su tabla "solo esta vez". E
 El id que un módulo guarda de la entidad de otro, como el `projectId` de una tarea, es un value object de su propio módulo. Ver [Value objects](/es/concepts/value-objects/).
 :::
 
+## Recursos anidados
+
+Algunas URLs meten un recurso dentro de otro. Imagina un contexto `notes` con dos módulos, `folder` y `note`, en el que `note` usa `folder` para comprobar que una carpeta existe antes de meter una nota en ella:
+
+```ts title="src/contexts/notes/notes-modules.ts"
+export function notesModules(base: ContextBase, router: HttpRouter) {
+  const folder = Folder_Module.initialize(base, router)
+  const note = Note_Module.initialize(base, router, { folder })
+  return {
+    folder,
+    note,
+  }
+}
+```
+
+Las notas de una carpeta responden en `GET /api/notes/folders/:folderId/notes`. La URL empieza por la carpeta, pero `folder` no puede servirla: necesitaría `note`, y `note` ya usa `folder`. Eso es un ciclo, y `notesModules` ni siquiera podría construirlos, porque cada uno tendría que construirse primero.
+
+Por eso newt sigue dos reglas:
+
+- **Una ruta anidada pertenece al módulo que lee o cambia.** Las notas de una carpeta son notas, así que sus rutas viven en `note`, el módulo que usa `folder`.
+- **Un padre se entera de sus hijos por eventos, nunca por dependencias.** Cuando `folder` tiene que reaccionar a sus notas, o sus notas a ella, entre ellos va un evento.
+
+| Ruta | Módulo | Por qué |
+|---|---|---|
+| `GET /notes/folders/:id` | `folder` | Lee una carpeta. |
+| `DELETE /notes/folders/:id` | `folder` | Borra una carpeta. |
+| `GET /notes/folders/:folderId/notes` | `note` | Lee notas. |
+| `POST /notes/folders/:folderId/notes` | `note` | Crea una nota. |
+
+### El hijo tiene las rutas anidadas
+
+`note` guarda el id de la carpeta como un value object propio, `value-objects/folder-id.ts` (ver [Value objects](/es/concepts/value-objects/)), y registra la ruta en `note.routes.ts`:
+
+```ts title="src/contexts/notes/modules/note/note.routes.ts"
+router.get('/notes/folders/:folderId/notes', async request =>
+  Response.json(
+    await notes.paginateInFolder(
+      FolderId.from(request.params.folderId),
+      pageRequestFrom(request),
+    ),
+  ),
+)
+```
+
+Su caso de uso lee la carpeta a través de `folder`, así una carpeta que no existe responde `404` en vez de una lista vacía:
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+@UseCase()
+async paginateInFolder(
+  folderId: FolderId,
+  page: PageRequest,
+): Promise<Page<NoteDTO>> {
+  await this.deps.folder.get({ id: folderId })
+  return this.paginate({ folderId }, page)
+}
+```
+
+La ruta sigue empezando por el nombre del contexto, sea cual sea el módulo que la registra, como pide la regla del lint `route-context`. Escribe esta ruta a mano: `newt add route` solo le pasa `:id` a un caso de uso.
+
+### El padre cambia, los hijos le siguen
+
+Borrar una carpeta debería borrar sus notas. Un caso de uso de `folder` no puede hacerlo: necesitaría `note`, y solo puede guardar carpetas (ver [la regla de escritura](/es/concepts/use-cases/#la-regla-de-escritura)). Así que `folder` borra la carpeta y emite `folder.deleted`:
+
+```ts title="src/contexts/notes/modules/folder/folder.ts"
+delete(): void {
+  this.markAsDeleted()
+  this.trackEvent(new Folder_Deleted({ id: this.id }))
+}
+```
+
+`note` ya tiene `folder` como dependencia, así que se suscribe a su evento. Su `initialize` le pasa sus deps a sus workers:
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+static initialize(
+  base: ContextBase,
+  router: HttpRouter,
+  deps: Note_Deps,
+): Note_Module {
+  const module = new Note_Module(base, new Note_Repository(base), deps)
+  registerNoteRoutes(router, module)
+  registerNoteWorkers(module, deps)
+  return module
+}
+```
+
+```ts title="src/contexts/notes/modules/note/note.workers.ts"
+import type { Note_Deps } from './note.deps'
+import type { Note_Module } from './note.module'
+
+export function registerNoteWorkers(
+  notes: Note_Module,
+  { folder }: Note_Deps,
+): void {
+  notes.on(folder.events.deleted, 'deleteInFolder', deleted => [
+    deleted.id,
+  ])
+}
+```
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+@UseCase()
+async deleteInFolder(folderId: FolderId): Promise<void> {
+  const notes = await this.notes.find(
+    NoteFilter.toCriteria<NoteRow>(
+      NoteFilter.schema.parse({ folderId }),
+    ),
+  )
+  for (const note of notes) {
+    note.delete()
+  }
+  await this.notes.persist(notes)
+}
+```
+
+`DELETE /notes/folders/:id` se queda en `folder`, y las notas se van un momento después, en un job. En los tests, `context.settle()` lo espera (ver [Eventos y suscripciones](/es/concepts/events/#en-los-tests)).
+
+### Los hijos cambian, el padre lleva la cuenta
+
+Imagina que una carpeta muestra cuántas notas tiene. `folder` guarda un `notesCount` y le suma uno con cada `note.created`, sin usar `note`: importa solo la clase del evento de la carpeta `events/` de note, que [`module-imports`](/es/concepts/contexts-and-modules/#cómo-hablan-los-módulos-entre-sí) permite, y se hace su propio emisor con `eventsOf`:
+
+```ts title="src/contexts/notes/modules/folder/folder.module.ts"
+import { Note_Created } from '../note/events/note-created'
+
+// en el constructor
+this.events = eventsOf(base.bus, {
+  created: Folder_Created,
+  deleted: Folder_Deleted,
+})
+this.noteEvents = eventsOf(base.bus, { created: Note_Created })
+```
+
+```ts title="src/contexts/notes/modules/folder/folder.workers.ts"
+import type { Folder_Module } from './folder.module'
+
+export function registerFolderWorkers(folders: Folder_Module): void {
+  folders.on(folders.noteEvents.created, 'countNote', created => [
+    created.folderId,
+  ])
+}
+```
+
+Para esto, `note.created` lleva el `folderId` de la nota en su payload. `countNote` es un caso de uso de `folder` que lee la carpeta, le suma uno y la guarda.
+
+Un evento se reconoce por su nombre, así que `folder` recibe cada `note.created` que emite `note`, y `notesModules` construye los dos módulos en el mismo orden que antes.
+
+:::tip
+Las dos direcciones son suscripciones, así que `newt add subscription` no puede escribirlas: suscribe un módulo a sus propios eventos. Escribe la línea en `<módulo>.workers.ts` a mano.
+:::
+
 ## Con el CLI
 
 ```sh
