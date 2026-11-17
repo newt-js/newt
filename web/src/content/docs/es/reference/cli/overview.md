@@ -65,7 +65,7 @@ flowchart TD
 
 | Flag | Dónde | Qué hace |
 |---|---|---|
-| `-h`, `--help` | en cualquier sitio | Imprime la ayuda: la general, o la del comando si va tras él |
+| `-h`, `--help` | en cualquier sitio | Imprime la ayuda: la general, la del comando si va tras él, o la de un grupo tras su primera palabra (`newt add --help`) |
 | `-v`, `--version` | sin comando | Imprime la versión |
 | `--json` | cualquier comando | Imprime el resultado en JSON y nunca pregunta |
 | `--dry-run` | cualquier comando | Dice qué cambiaría, sin escribir nada |
