@@ -20,7 +20,8 @@ Postgres es un servidor de base de datos: tu backend se conecta a él por la red
 2. Arranca un servidor Postgres para desarrollo, si no tienes uno. Con Docker:
 
    ```sh
-   docker run -d --name newthub-postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres
+   docker run -d --name newthub-postgres -e POSTGRES_PASSWORD=postgres \
+     -p 5432:5432 postgres
    ```
 
 3. Crea una base de datos por contexto (consulta [Crear las bases de datos](#crear-las-bases-de-datos)):
@@ -52,11 +53,18 @@ TASKS_DATABASE_URL=postgres://postgres:postgres@localhost:5432/newthub__tasks
 `src/stores.ts` abre cada una:
 
 ```ts title="src/stores.ts"
-export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {
+export async function openDatabase(
+  context: string,
+  migrations: string,
+  stores: Stores,
+): Promise<Database> {
   if (stores === 'memory') {
     return new MemoryDatabase()
   }
-  return PostgresDatabase.open({ url: requiredEnv(`${envOf(context)}_DATABASE_URL`), migrations })
+  return PostgresDatabase.open({
+    url: requiredEnv(`${envOf(context)}_DATABASE_URL`),
+    migrations,
+  })
 }
 ```
 
@@ -126,7 +134,11 @@ TASKS_DATABASE_URL=postgres://app:secret@db.example.com:5432/newthub__tasks?sslm
 Para cambiar el tamaño del pool, edita `src/stores.ts`:
 
 ```ts title="src/stores.ts"
-return PostgresDatabase.open({ url: requiredEnv(`${envOf(context)}_DATABASE_URL`), migrations, connections: 20 })
+return PostgresDatabase.open({
+  url: requiredEnv(`${envOf(context)}_DATABASE_URL`),
+  migrations,
+  connections: 20,
+})
 ```
 
 :::note
@@ -138,5 +150,6 @@ Cada contexto tiene su propio pool. Tres contextos con el valor por defecto abre
 Los tests de un backend con Postgres se ejecutan en memoria salvo que definas `TEST_DATABASE_URL`. Con ella, cada test crea su propia base de datos en ese servidor, ejecuta tus migraciones y la borra. Consulta [Testing](/es/guides/testing/#tests-de-módulo-en-postgres-o-mysql).
 
 ```sh
-TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun test
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres \
+  bun test
 ```

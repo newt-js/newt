@@ -23,24 +23,39 @@ Most files are private: task attachments, documents. Public storage fits files m
 The context opens its storage in `src/stores.ts` and passes it to `ContextBase` as `storage`. This is what `newt init` generates for local files:
 
 ```ts title="src/stores.ts"
-export async function openStorage(context: string, router: HttpRouter, stores: Stores): Promise<StorageOptions> {
+export async function openStorage(
+  context: string,
+  router: HttpRouter,
+  stores: Stores,
+): Promise<StorageOptions> {
   if (stores === 'memory') {
     return { private: new MemoryStorage() }
   }
   const path = `/${context}/files`
   const storage = await LocalStorage.open({
-    folder: Bun.env[`${envOf(context)}_FILES`] ?? `data/files/${context}`,
+    folder:
+      Bun.env[`${envOf(context)}_FILES`] ?? `data/files/${context}`,
     baseUrl: `${requiredEnv('PUBLIC_URL')}${router.prefix}${path}`,
     secret: requiredEnv('FILES_SECRET'),
   })
-  router.get(`${path}/*`, request => storage.handler(request), { public: true })
-  router.put(`${path}/*`, request => storage.handler(request), { public: true, maxBodyBytes: MAX_UPLOAD_BYTES })
+  router.get(`${path}/*`, request => storage.handler(request), {
+    public: true,
+  })
+  router.put(`${path}/*`, request => storage.handler(request), {
+    public: true,
+    maxBodyBytes: MAX_UPLOAD_BYTES,
+  })
   return { private: storage }
 }
 ```
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const base = new ContextBase({ name: 'tasks', platform, database, storage: await openStorage('tasks', router, stores) })
+const base = new ContextBase({
+  name: 'tasks',
+  platform,
+  database,
+  storage: await openStorage('tasks', router, stores),
+})
 ```
 
 `StorageOptions` has two optional fields:
@@ -62,7 +77,11 @@ import type { PrivateFiles } from '@newt-js/core'
 export class Task_Module extends Module {
   private readonly attachments: PrivateFiles
 
-  private constructor(base: ContextBase, private readonly tasks: Task_Repository, private readonly deps: Task_Deps) {
+  private constructor(
+    base: ContextBase,
+    private readonly tasks: Task_Repository,
+    private readonly deps: Task_Deps,
+  ) {
     super('task', base.useCaseRunner, deps)
     this.attachments = base.storage.private.in('task')
     // ...
@@ -112,9 +131,31 @@ Files go straight from the browser to the storage, not through your use case. It
 2. The browser sends the file there with `PUT`, with the headers it was given.
 3. Another use case checks the upload with `verifyUpload` and only then records it.
 
+This is who talks to whom; the file's bytes never pass through your use cases:
+
+```mermaid
+sequenceDiagram
+  participant Br as Browser
+  participant UC as Your use cases
+  participant St as Storage
+  Br->>UC: ask for an upload address
+  UC->>St: uploadUrl(key, options)
+  St-->>UC: url and headers
+  UC-->>Br: url and headers
+  Br->>St: PUT the file
+  St-->>Br: 200
+  Br->>UC: the upload is done
+  UC->>St: verifyUpload(key, rule)
+  St-->>UC: null or a refusal
+  Note over UC: record the file only on null
+```
+
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 @UseCase()
-async attachmentUploadUrl(input: { id: string, size: number }): Promise<UploadAddress> {
+async attachmentUploadUrl(input: {
+  id: string
+  size: number
+}): Promise<UploadAddress> {
   return this.attachments.uploadUrl(`${input.id}/report.pdf`, {
     expiresIn: 600,
     contentType: 'application/pdf',
@@ -125,7 +166,10 @@ async attachmentUploadUrl(input: { id: string, size: number }): Promise<UploadAd
 ```
 
 ```ts
-const { url, headers } = await api.attachmentUploadUrl({ id, size: file.size })
+const { url, headers } = await api.attachmentUploadUrl({
+  id,
+  size: file.size,
+})
 await fetch(url, { method: 'PUT', headers, body: file })
 ```
 
@@ -147,7 +191,10 @@ The address only takes the type and the length it was signed for. A browser that
 The browser may lie, or never upload at all. Check before you trust the file:
 
 ```ts
-const refusal = await this.attachments.verifyUpload(`${id}/report.pdf`, { contentType: 'application/pdf', maxBytes: 10 * 1024 * 1024 })
+const refusal = await this.attachments.verifyUpload(
+  `${id}/report.pdf`,
+  { contentType: 'application/pdf', maxBytes: 10 * 1024 * 1024 },
+)
 if (refusal) {
   throw new AttachmentRefused(refusal)
 }
@@ -289,7 +336,10 @@ const storage = await S3Storage.open({
 Keeps files in memory and forgets them when the process ends. For tests and trying things out.
 
 ```ts
-import { MemoryStorage, MemoryPublicStorage } from '@newt-js/core/files/memory'
+import {
+  MemoryStorage,
+  MemoryPublicStorage,
+} from '@newt-js/core/files/memory'
 
 const storage = new MemoryStorage()
 ```
@@ -297,9 +347,21 @@ const storage = new MemoryStorage()
 It takes no options. Its addresses start with `memory://`, and `storage.send(url, init)` plays the browser in a test:
 
 ```ts
-const address = await files.uploadUrl('t1/report.pdf', { expiresIn: 600, contentType: 'application/pdf', size: 8 })
-await storage.send(address.url, { method: 'PUT', headers: address.headers, body: '%PDF-1.7' })
-expect(await files.verifyUpload('t1/report.pdf', { contentType: 'application/pdf' })).toBeNull()
+const address = await files.uploadUrl('t1/report.pdf', {
+  expiresIn: 600,
+  contentType: 'application/pdf',
+  size: 8,
+})
+await storage.send(address.url, {
+  method: 'PUT',
+  headers: address.headers,
+  body: '%PDF-1.7',
+})
+expect(
+  await files.verifyUpload('t1/report.pdf', {
+    contentType: 'application/pdf',
+  }),
+).toBeNull()
 ```
 
 ## In tests
@@ -307,7 +369,12 @@ expect(await files.verifyUpload('t1/report.pdf', { contentType: 'application/pdf
 The generated tests open the backend with `stores: 'memory'`, so each context gets a fresh `MemoryStorage`. When you use `testContext`, pass the storage yourself:
 
 ```ts
-context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database, storage: { private: new MemoryStorage() } })
+context = testContext({
+  name: 'tasks',
+  cluster: new MemoryCluster(),
+  database,
+  storage: { private: new MemoryStorage() },
+})
 ```
 
 See [Testing](/guides/testing/).

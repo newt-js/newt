@@ -46,6 +46,19 @@ Todos los contextos importan el mismo `authenticate`, así que una función cubr
 
 ## Rutas privadas y públicas
 
+Esto es lo que hace el router con cada petición antes de ejecutar tu ruta:
+
+```mermaid
+flowchart TD
+  req[Petición] --> origin{¿Escritura desde otro origen?}
+  origin -->|sí| r403[403 cross_origin_refused]
+  origin -->|no| pub{¿Ruta pública?}
+  pub -->|sí| open[La ruta se ejecuta, sin actor]
+  pub -->|no| auth[authenticate]
+  auth -->|null| r401[401 not_signed_in]
+  auth -->|userId| actor[La ruta se ejecuta como ese actor]
+```
+
 Todas las rutas son privadas por defecto. Antes de ejecutar una ruta privada, el router llama al autenticador:
 
 - Devuelve `{ userId }`: la ruta se ejecuta, con ese usuario como [actor](/es/concepts/actor-and-scope/).
@@ -131,17 +144,24 @@ export const authenticate: Authenticator = async request => {
 ```ts
 import { bodyOf, setSessionCookie } from '@newt-js/core/http'
 
-router.post('/tasks/sign-in', async request => {
-  const session = await signIn(await bodyOf(request))
-  setSessionCookie(request, SESSION_COOKIE, session, { secure: Bun.env.NODE_ENV === 'production', maxAgeSeconds: 60 * 60 * 24 * 30 })
-  return new Response(null, { status: 204 })
-}, { public: true })
+router.post(
+  '/tasks/sign-in',
+  async request => {
+    const session = await signIn(await bodyOf(request))
+    setSessionCookie(request, SESSION_COOKIE, session, {
+      secure: Bun.env.NODE_ENV === 'production',
+      maxAgeSeconds: 60 * 60 * 24 * 30,
+    })
+    return new Response(null, { status: 204 })
+  },
+  { public: true },
+)
 ```
 
 `userOfSession` y `signIn` representan tu propio código: cómo compruebas una contraseña o una sesión lo decides tú.
 
 :::caution
-Una petición que no sea `GET` desde una página de otro origen se rechaza con un 403 (`cross_origin_refused`), salvo que el `cors` de la ruta permita ese origen y la petición no lleve cookies. Las páginas servidas por el mismo backend no se ven afectadas.
+Una petición que no sea `GET` desde una página de otro origen se rechaza con un 403 (`cross_origin_refused`), salvo que el `cors` de la ruta permita ese origen y la petición no lleve cookies. Las páginas servidas por el mismo backend no se ven afectadas. Una ruta con `crossOrigin: true` se salta esta comprobación.
 :::
 
 ## El actor en tu código

@@ -11,7 +11,7 @@ newt funciona sobre Bun. Instalas Bun una vez, y el comando `newt` viene con cad
 
 | Herramienta | Versión | Para qué |
 |---|---|---|
-| Bun | 1.4.0 o posterior | ejecuta el backend, los tests y la CLI |
+| Bun | 1.4.0 o posterior | ejecuta el backend, los tests y el CLI |
 | Git | cualquiera | opcional, para guardar tu proyecto |
 
 Instala Bun como indica https://bun.sh y compruébalo:
@@ -69,14 +69,16 @@ Un comando nunca sobrescribe un fichero que ya existe. Si lo ejecutas dos veces,
 ## Opciones de `newt init`
 
 ```sh
-newt init [name] [--port <port>] [--db <database>] [--files <storage>] [--cluster <cluster>] [--monorepo] [--backend <folder>]
+newt init [name] [--port <port>] [--db <database>] \
+  [--files <storage>] [--cluster <cluster>] [--monorepo] \
+  [--backend <folder>]
 ```
 
 | Opción | Valores | Por defecto |
 |---|---|---|
 | `--port` | de 1 a 65535 | `3000` |
 | `--db` | `sqlite`, `postgres`, `mysql`, `memory` | `sqlite` |
-| `--files` | `local`, `s3` | `local` |
+| `--files` | `local`, `s3`, `memory` | `local` |
 | `--cluster` | `memory`, `valkey` | `memory` |
 | `--monorepo` | | desactivada |
 | `--backend` | una carpeta | `apps/api` |
@@ -85,6 +87,7 @@ newt init [name] [--port <port>] [--db <database>] [--files <storage>] [--cluste
 - Sin nombre, en un terminal, newt te pregunta el nombre y si quieres un backend o un monorepo.
 - `--db` elige la base de datos que abre cada contexto. Consulta [SQLite](/es/guides/databases/sqlite/), [Postgres](/es/guides/databases/postgres/) y [MySQL](/es/guides/databases/mysql/).
 - `--files` elige dónde guardan los contextos los ficheros subidos: una carpeta local o S3. Consulta [ficheros](/es/concepts/files/).
+- `memory`, en `--db` o `--files`, lo guarda todo en memoria y lo pierde cuando el backend se para. Sirve para una prueba rápida, no para una aplicación.
 - `--cluster` elige qué comparten varias instancias en marcha. Consulta [varias instancias](/es/guides/scaling/).
 - `--monorepo` y `--backend` se explican en [monorepos](/es/guides/monorepo/).
 

@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-A repository is the class that reads a module's entities from its table and saves them back. Use cases never write SQL: they ask the repository with criteria and hand it entities to save.
+A repository is the class that reads a module's entities from its table and saves them back. It exists so your use cases never write SQL: they ask it for entities with criteria, change them, and hand them back to save.
 
 newt's `Repository` already knows how to read, save, check versions and publish events. Your repository only says which table it uses and how a row becomes an entity.
 
@@ -67,7 +67,8 @@ Criteria say which rows to read. They are a plain object, keyed by the row's fie
 ```ts
 { name: 'Write the docs' }                       // equal to
 { name: { ieq: 'write the docs' } }              // with an operator
-{ createdAt: { gte: '2026-01-01', lt: '2026-02-01' } }  // several, all must hold
+// several, all must hold
+{ createdAt: { gte: '2026-01-01', lt: '2026-02-01' } }
 { doneAt: null }                                 // the field is empty
 { or: [{ name: 'A' }, { name: 'B' }] }           // any of
 { and: [{ projectId }, { doneAt: null }] }       // all of
@@ -120,7 +121,9 @@ Helpers for pages:
 | `allPages(read, size?)` | Calls `read` page after page, 100 at a time by default, and returns every item. |
 
 ```ts
-const found = await this.tasks.paginate(criteria, page, { newestFirst: true })
+const found = await this.tasks.paginate(criteria, page, {
+  newestFirst: true,
+})
 return mapPage(found, each => each.toDTO())
 ```
 
@@ -178,11 +181,36 @@ A save whose hooks read without a guard throws `[guard rule] … reads task in a
 
 Each `persist` is one transaction. A module never opens one itself: the lint rule `module-transactions` refuses any use of the base's `transactions` in a module. To save several entities together, pass them to one `persist`.
 
-`TransactionSpoiled` is thrown when a save that joined a transaction failed, even if its error was caught: the whole transaction rolls back.
+If a save fails inside a transaction that another save opened, the whole transaction rolls back, even if your code caught the error. newt then throws `TransactionSpoiled`, so a half-done save is never committed.
 
 ## Versions and conflicts
 
-Every row has a `version`. A save updates or deletes a row only if its version is still the one the entity read, and adds one to it.
+Two people can change the same task at the same time. Without a check, the second save would silently overwrite the first. newt stops that with a number on every row, its `version`:
+
+- An insert writes `version` 1.
+- An update or a delete runs only if the row's version is still the one the entity read, and adds one to it.
+- If the row changed in between, nothing is written and the save throws `StaleVersion`.
+
+This is what happens when two use cases complete the same task at once:
+
+```mermaid
+sequenceDiagram
+  participant A as Use case A
+  participant B as Use case B
+  participant DB as Database
+  A->>DB: read task (version 3)
+  B->>DB: read task (version 3)
+  A->>DB: update where version is 3
+  DB-->>A: saved, now version 4
+  B->>DB: update where version is 3
+  DB-->>B: no row changed
+  Note over B: StaleVersion, run again
+  B->>DB: read task (version 4)
+  B->>DB: update where version is 4
+  DB-->>B: saved, now version 5
+```
+
+The errors a save can throw when it collides with another:
 
 | Error | When | HTTP |
 |---|---|---|
@@ -190,7 +218,7 @@ Every row has a `version`. A save updates or deletes a row only if its version i
 | `DuplicateValue` | A unique index refused a value. | `409` |
 | `TransactionConflict` | Postgres or MySQL refused the transaction (a deadlock, a serialization failure). | `409` |
 
-All three are `ConcurrencyConflict`s, so the [use case runs again](/concepts/use-cases/#retries-on-a-conflict) before the error reaches the client. `DuplicateValue` lists the fields in `params.fields` when the database says which.
+All three are `ConcurrencyConflict`s, so the [use case runs again](/concepts/use-cases/#retries-on-a-conflict), up to three times by default, before the error reaches the client. `DuplicateValue` lists the fields in `params.fields` when the database says which.
 
 :::note
 Of the retries, at most one follows a `DuplicateValue` by default (`conflictRetries.duplicates`). A value someone else keeps is usually still taken on the next run.
@@ -201,7 +229,10 @@ Of the retries, at most one follows a `DuplicateValue` by default (`conflictRetr
 `ReferenceNotFound` (`400`, code `reference_not_found`) says an id points to nothing: `The project 0190… does not exist`. Throw it yourself, or use `resolveRefs`, which looks up several ids and throws it for the first missing one:
 
 ```ts
-const refs = await resolveRefs({ project: projectId }, { project: projectFinder })
+const refs = await resolveRefs(
+  { project: projectId },
+  { project: projectFinder },
+)
 // { project: { id, name } }
 ```
 
@@ -209,7 +240,7 @@ Each finder has `find({ id: [id] })`, returning `{ id, name }` objects. An id gi
 
 ## Text the database cannot keep
 
-A string holding the NUL character or a lone surrogate cannot be stored as text. Saving one throws `TextWithNul` (`400`, code `text_with_nul`). `unstorable(text)` and `holdsNul(value)` check a value beforehand.
+A string holding the NUL character or a lone surrogate cannot be stored as text. Saving one throws `TextWithNul` (`400`, code `text_with_nul`). `holdsNul(value)` checks a value beforehand, inside strings, arrays and objects.
 
 ## Scope
 

@@ -65,7 +65,11 @@ export function tasksModules(base: ContextBase, router: HttpRouter) {
 The module keeps them and passes them to `Module`'s constructor:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
-private constructor(base: ContextBase, private readonly tasks: Task_Repository, private readonly deps: Task_Deps) {
+private constructor(
+  base: ContextBase,
+  private readonly tasks: Task_Repository,
+  private readonly deps: Task_Deps,
+) {
   super('task', base.useCaseRunner, deps)
   // ...
 }
@@ -89,7 +93,18 @@ Passing `deps` to `super` lets newt describe the app: `describeApplication` list
 - **Read through another module's use cases.** `this.deps.project.get(...)`, `find(...)` and `paginate(...)` are fine.
 - **Do not save through them.** A use case saves only its own module: a use case of `project` that saves, called from `task`, breaks the [write rule](/concepts/use-cases/#the-write-rule) and throws. To change a project when something happens to a task, publish an event and let `project` react to it in a worker (see [Events and subscriptions](/concepts/events/)).
 - **No cycles.** If `task` uses `project`, `project` cannot use `task`, even through a third module. `newt add deps` refuses a cycle.
-- **Only modules of the same context.** Another context's modules are not a module's dependency.
+- **Modules of the same context.** A module uses another context's modules only once its context is opened with that context, and the CLI does not write that yet. See [how contexts talk to each other](/concepts/contexts-and-modules/#how-contexts-talk-to-each-other).
+
+This is what `task` may reach of `project`, and what the lint refuses:
+
+```mermaid
+flowchart TD
+  T["task module"] -->|"this.deps.project"| P["project.module.ts"]
+  T -->|"imports"| S["project.schema.ts"]
+  T -->|"imports"| E["project events/ and errors/"]
+  T -.->|"refused by lint"| X["project's entity, repository, value objects, routes, workers, services"]
+  P -.->|"refused: a cycle"| T
+```
 
 What the lint checks:
 

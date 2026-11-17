@@ -7,7 +7,7 @@ sidebar:
 
 Un proyecto de newt tiene siempre la misma distribución: unos pocos ficheros en la raíz, la conexión del backend en `src/`, y una carpeta por contexto en `src/contexts/`. Esta página los recorre todos.
 
-El árbol es de un proyecto con un contexto, `tasks`, dos módulos, `task` y `project`, y una pieza de cada tipo que puede añadir la CLI.
+El árbol es de un proyecto con un contexto, `tasks`, dos módulos, `task` y `project`, y una pieza de cada tipo que puede añadir el CLI.
 
 ## El árbol
 
@@ -74,6 +74,29 @@ newthub/
                     └── services/
                         └── due-dates.ts
 ```
+
+## Cómo se conectan los ficheros
+
+Cada fichero abre el siguiente, desde `index.ts` hasta los módulos:
+
+```mermaid
+flowchart TD
+  index[index.ts] --> backend[backend.ts]
+  backend --> contexts[contexts.ts]
+  contexts --> ctx[tasks.context.ts]
+  ctx --> stores[stores.ts]
+  ctx --> auth[auth.ts]
+  ctx --> modules[tasks-modules.ts]
+  modules --> task[task.module.ts]
+  task --> routes[task.routes.ts]
+  task --> repo[task.repository.ts]
+```
+
+- `index.ts` llama a `startBackend` con `PORT`.
+- `backend.ts` elige el clúster, abre todos los contextos con `openContexts` y los sirve con `runContexts`.
+- `contexts.ts` abre cada contexto, una línea por contexto.
+- `tasks.context.ts` abre la base de datos y los ficheros (`stores.ts`), crea el router con `authenticate` (`auth.ts`) y crea los módulos.
+- `tasks-modules.ts` crea cada módulo. Un módulo registra sus rutas y sus workers al crearse.
 
 ## Ficheros de la raíz
 

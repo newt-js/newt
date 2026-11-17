@@ -46,6 +46,19 @@ Every context imports the same `authenticate`, so one function covers the whole 
 
 ## Private and public routes
 
+This is what the router does with each request before your route runs:
+
+```mermaid
+flowchart TD
+  req[Request] --> origin{A write from another origin?}
+  origin -->|yes| r403[403 cross_origin_refused]
+  origin -->|no| pub{Public route?}
+  pub -->|yes| open[Route runs, no actor]
+  pub -->|no| auth[authenticate]
+  auth -->|null| r401[401 not_signed_in]
+  auth -->|userId| actor[Route runs as that actor]
+```
+
 Every route is private by default. Before a private route runs, the router calls the authenticator:
 
 - It returns `{ userId }`: the route runs, with that user as the [actor](/concepts/actor-and-scope/).
@@ -131,17 +144,24 @@ export const authenticate: Authenticator = async request => {
 ```ts
 import { bodyOf, setSessionCookie } from '@newt-js/core/http'
 
-router.post('/tasks/sign-in', async request => {
-  const session = await signIn(await bodyOf(request))
-  setSessionCookie(request, SESSION_COOKIE, session, { secure: Bun.env.NODE_ENV === 'production', maxAgeSeconds: 60 * 60 * 24 * 30 })
-  return new Response(null, { status: 204 })
-}, { public: true })
+router.post(
+  '/tasks/sign-in',
+  async request => {
+    const session = await signIn(await bodyOf(request))
+    setSessionCookie(request, SESSION_COOKIE, session, {
+      secure: Bun.env.NODE_ENV === 'production',
+      maxAgeSeconds: 60 * 60 * 24 * 30,
+    })
+    return new Response(null, { status: 204 })
+  },
+  { public: true },
+)
 ```
 
 `userOfSession` and `signIn` stand for your own code: how you check a password or a session is up to you.
 
 :::caution
-A request other than `GET` from a page of another origin is refused with a 403 (`cross_origin_refused`), unless the route's `cors` allows that origin and the request carries no cookie. Pages served by the same backend are not affected.
+A request other than `GET` from a page of another origin is refused with a 403 (`cross_origin_refused`), unless the route's `cors` allows that origin and the request carries no cookie. Pages served by the same backend are not affected. A route with `crossOrigin: true` skips this check.
 :::
 
 ## The actor in your code

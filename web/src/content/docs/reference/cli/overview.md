@@ -5,7 +5,7 @@ sidebar:
   order: 0
 ---
 
-`newt` is the command line that creates a project and adds its pieces: contexts, modules, use cases, routes, events and more. It writes the code the way newt's lint expects it.
+`newt` is the command line that creates a project and adds its pieces: contexts, modules, use cases, routes, events and more. You use it every time you add a piece, and it writes the code the way newt's lint expects it.
 
 ## How to run it
 
@@ -42,6 +42,24 @@ These pages write `newt <command>` for short.
 | [`newt add service`](/reference/cli/add-service/) | Adds a function that use cases share |
 | [`newt add deps`](/reference/cli/add-deps/) | Lets a module use another module of its context |
 | [`newt add frontend`](/reference/cli/add-frontend/) | Adds a React frontend served at `/<context>` |
+
+### What each command needs first
+
+Each arrow goes from what a command needs to that command. A new module already comes with some use cases (`create`, `get`…) and the event `created`, so `add route` and `add subscription` may not need `add use-case` or `add event` first.
+
+```mermaid
+flowchart TD
+  backend["Backend: init or add backend"] --> context["Context: add context"]
+  context --> frontend["add frontend"]
+  context --> module["Module: add module"]
+  module --> pieces["add error, value-object, service, schedule"]
+  module --> deps["add deps, with a second module"]
+  module --> useCase["Use case: add use-case"]
+  module --> event["Event: add event"]
+  useCase --> route["add route"]
+  useCase --> subscription["add subscription"]
+  event --> subscription
+```
 
 ## Global flags
 
@@ -101,7 +119,9 @@ On success, on stdout:
 On failure, also on stdout, with exit code 1:
 
 ```json
-{ "error": "The backend has no context chat: add it with newt add context chat" }
+{
+  "error": "The backend has no context chat: add it with newt add context chat"
+}
 ```
 
 - Paths are relative to the folder where you run the command.

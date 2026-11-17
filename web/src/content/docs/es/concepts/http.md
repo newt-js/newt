@@ -14,15 +14,36 @@ Cada opción que aparece aquí está, con su tipo y su valor por defecto, en la 
 Cada módulo guarda sus rutas en `<módulo>.routes.ts`. Este es el del módulo de tareas de un proyecto generado:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-import { bodyOf, pageRequestFrom, type HttpRouter } from '@newt-js/core/http'
+import {
+  bodyOf,
+  pageRequestFrom,
+  type HttpRouter,
+} from '@newt-js/core/http'
 import type { Task_Module } from './task.module'
 import { TaskId } from './value-objects/task-id'
 
-export function registerTaskRoutes(router: HttpRouter, tasks: Task_Module): void {
-  router.post('/tasks/tasks/:id/complete-task', async request => Response.json(await tasks.completeTask({ id: TaskId.from(request.params.id) })))
-  router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }))
-  router.get('/tasks/tasks', async request => Response.json(await tasks.paginate({}, pageRequestFrom(request))))
-  router.get('/tasks/tasks/:id', async request => Response.json(await tasks.get({ id: TaskId.from(request.params.id) })))
+export function registerTaskRoutes(
+  router: HttpRouter,
+  tasks: Task_Module,
+): void {
+  router.post('/tasks/tasks/:id/complete-task', async request =>
+    Response.json(
+      await tasks.completeTask({ id: TaskId.from(request.params.id) }),
+    ),
+  )
+  router.post('/tasks/tasks', async request =>
+    Response.json(await tasks.create(await bodyOf(request)), {
+      status: 201,
+    }),
+  )
+  router.get('/tasks/tasks', async request =>
+    Response.json(await tasks.paginate({}, pageRequestFrom(request))),
+  )
+  router.get('/tasks/tasks/:id', async request =>
+    Response.json(
+      await tasks.get({ id: TaskId.from(request.params.id) }),
+    ),
+  )
 }
 ```
 
@@ -80,7 +101,10 @@ El cuerpo se comprueba antes de que tu código lo vea:
 - Un cuerpo por encima del límite de la ruta responde `413` con el código `payload_too_large`. El límite es 1 MiB por defecto; súbelo por ruta con `maxBodyBytes`.
 
 ```ts
-router.put('/tasks/files/*', request => storage.handler(request), { public: true, maxBodyBytes: 100 * 1024 * 1024 })
+router.put('/tasks/files/*', request => storage.handler(request), {
+  public: true,
+  maxBodyBytes: 100 * 1024 * 1024,
+})
 ```
 
 :::tip
@@ -105,7 +129,9 @@ El autenticador generado no reconoce a nadie, así que toda ruta privada respond
 Una ruta a la que puede llamar cualquiera lleva `public: true`:
 
 ```ts
-router.get('/tasks/files/*', request => storage.handler(request), { public: true })
+router.get('/tasks/files/*', request => storage.handler(request), {
+  public: true,
+})
 ```
 
 ## Opciones de ruta
@@ -139,34 +165,36 @@ const reports = router.group('/tasks/reports', async (request, next) => {
 reports.get('/overdue', async () => Response.json(await tasks.find({})))
 ```
 
-`/overdue` responde en `/api/tasks/reports/overdue`. El middleware se ejecuta después de las comprobaciones de newt (sesión, límites) y alrededor de la ruta: llama a `next()` para ejecutarla, o devuelve tu propio `Response` para cortar.
+`/overdue` responde en `/api/tasks/reports/overdue`. El middleware se ejecuta después de las comprobaciones de newt (sesión, límites, clave de idempotencia) y alrededor de la ruta: llama a `next()` para ejecutarla, o devuelve tu propio `Response` para cortar.
+
+## Por dónde pasa una petición
+
+Este es el orden en que una petición pasa por las comprobaciones de newt antes de que se ejecute tu ruta:
+
+```mermaid
+flowchart TD
+  R[Petición] --> F{¿Ruta y método conocidos?}
+  F -->|no| N[404 o 405]
+  F -->|sí| B[Límite del cuerpo]
+  B --> O["Comprobación de origen (no GET)"]
+  O --> S["Sesión (rutas privadas)"]
+  S --> L["Límites de peticiones, si hay"]
+  L --> I["Clave de idempotencia (POST, si está activa)"]
+  I --> M[Middleware del grupo]
+  M --> H[Tu ruta]
+```
+
+Una comprobación que falla corta la petición ahí y responde con su error, como cuenta la sección "Errores". Así, quien no ha iniciado sesión recibe `401` antes de que ningún límite lo cuente.
 
 ## Errores
 
-Cuando una ruta lanza un error, newt responde JSON con un estado que sale del tipo (*kind*) del error:
-
-| Kind | Estado | Lo lanza, por ejemplo |
-|---|---|---|
-| `validation` | 400 | `ValidationError`, un cuerpo incorrecto |
-| `unauthorized` | 401 | `UnauthorizedError`, sin sesión |
-| `forbidden` | 403 | `ForbiddenError`, un origen rechazado |
-| `not_found` | 404 | `NotFoundError`, una ruta desconocida |
-| `method_not_allowed` | 405 | un método que la ruta no acepta |
-| `conflict` | 409 | `ConflictError`, una versión desfasada |
-| `too_large` | 413 | un cuerpo por encima de su límite |
-| `unsupported_media_type` | 415 | un cuerpo que no es JSON |
-| `unprocessable` | 422 | una clave de idempotencia reutilizada |
-| `too_many_requests` | 429 | un límite de peticiones, con cabecera `Retry-After` |
-
-El cuerpo lleva el mensaje y el código del error, y sus parámetros si los tiene:
+Cuando una ruta lanza un error, newt responde JSON con un estado que sale del tipo (*kind*) del error: `400` para `validation`, `404` para `not_found`, `409` para `conflict`, y así. El cuerpo lleva el mensaje y el código del error, y sus parámetros si los tiene:
 
 ```json
 { "error": "Already done", "code": "task.already_done" }
 ```
 
-Un error de zod de un schema responde `400` con el código `validation` y los `issues` de zod. Cualquier otro responde `500` con el código `internal` y el mensaje `Something went wrong`; el error real va al [log](/es/concepts/logs/), nunca al cliente.
-
-Mira [Errores](/es/concepts/errors/) para escribir los tuyos.
+Un error de zod responde `400` con el código `validation` y los `issues` de zod. Cualquier otro responde `500` con el código `internal`; el error real va al [log](/es/concepts/logs/), nunca al cliente. En [Errores](/es/concepts/errors/) tienes la tabla completa de tipos y estados, los errores propios de newt y cómo escribir los tuyos.
 
 Además, toda respuesta del router lleva `cache-control: no-store` salvo que la ruta ponga el suyo.
 
@@ -190,7 +218,10 @@ Una ruta `GET` no debe cambiar nada. Usa `POST`, `PUT`, `PATCH` o `DELETE` para 
 Para que páginas de otros orígenes llamen a tu API, dale al router o a la ruta la opción `cors`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database, cors: { origin: ['https://newthub.app'] } })
+const router = new HttpRouter({
+  database,
+  cors: { origin: ['https://newthub.app'] },
+})
 ```
 
 | Campo | Significado | Por defecto |
@@ -205,11 +236,21 @@ const router = new HttpRouter({ database, cors: { origin: ['https://newthub.app'
 Un límite de peticiones (*rate limit*) pone un tope a cuántas peticiones hace quien llama en una ventana de tiempo. Defínelo en la base del contexto y dáselo a las rutas:
 
 ```ts
-const creating = base.rateLimits.define('task.create', { limit: 20, windowMs: 60_000 })
-
-router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }), {
-  rateLimit: { limit: creating },
+const creating = base.rateLimits.define('task.create', {
+  limit: 20,
+  windowMs: 60_000,
 })
+
+router.post(
+  '/tasks/tasks',
+  async request =>
+    Response.json(await tasks.create(await bodyOf(request)), {
+      status: 201,
+    }),
+  {
+    rateLimit: { limit: creating },
+  },
+)
 ```
 
 Un límite se llama `<módulo>.<nombre>` y recibe `limit` (peticiones) y `windowMs` (la ventana). `by` dice quién es "quien llama":
@@ -231,9 +272,16 @@ Los contadores viven en el clúster de la plataforma, así que todas las instanc
 Un móvil pierde la cobertura justo después de enviar "crear tarea". ¿Llegó? Si la app la reenvía, tienes dos tareas. Una clave de idempotencia lo arregla: el cliente envía la misma cabecera aleatoria `Idempotency-Key` en cada reintento, y newt ejecuta la petición una sola vez.
 
 ```ts
-router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }), {
-  idempotency: true,
-})
+router.post(
+  '/tasks/tasks',
+  async request =>
+    Response.json(await tasks.create(await bodyOf(request)), {
+      status: 201,
+    }),
+  {
+    idempotency: true,
+  },
+)
 ```
 
 - La primera respuesta se guarda en la base de datos del contexto (tabla `newt_idempotency_key`) durante un día; cámbialo con `{ ttlMs }`.
@@ -250,7 +298,10 @@ Reglas: solo `POST`, solo rutas privadas (las claves se guardan por usuario con 
 Dos ayudas escriben una cookie de sesión en `request.cookies`, `httpOnly` y `sameSite: 'lax'`:
 
 ```ts
-setSessionCookie(request, 'session', token, { secure: true, maxAgeSeconds: 60 * 60 * 24 * 30 })
+setSessionCookie(request, 'session', token, {
+  secure: true,
+  maxAgeSeconds: 60 * 60 * 24 * 30,
+})
 clearSessionCookie(request, 'session', { secure: true })
 ```
 
@@ -261,7 +312,10 @@ clearSessionCookie(request, 'session', { secure: true })
 `runContexts` abre un servidor de Bun para los routers de todos los contextos, arranca sus workers y lo para todo limpiamente con `SIGINT` o `SIGTERM`:
 
 ```ts title="src/backend.ts"
-return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true, frontend: frontends } })
+return runContexts(contexts, {
+  platformWithoutContexts: platform,
+  serve: { port, health: true, frontend: frontends },
+})
 ```
 
 Las opciones de `serve` que más vas a tocar:
@@ -269,7 +323,7 @@ Las opciones de `serve` que más vas a tocar:
 | Opción | Qué hace |
 |---|---|
 | `port` | El puerto. Obligatorio. |
-| `health` | `true` responde `GET /api/health` con `{ "status": "ok" }`; un string elige otra ruta. Mientras para, responde `503` con `{ "status": "stopping" }`. |
+| `health` | `true` responde `GET /api/health` con `{ "status": "ok" }`; un string la sirve en esa ruta; si lo omites, no hay ruta de salud. No pide sesión. Mientras para, responde `503` con `{ "status": "stopping" }`. |
 | `drainMs` | Al parar, sigue sirviendo este tiempo antes, para que el balanceador vea el `503` y deje de enviar tráfico. |
 | `trustProxy` | Cuántos proxies hay delante. Con él, la IP y el host del cliente salen de `X-Forwarded-For` y `X-Forwarded-Host`. Ponlo detrás de un proxy, o los límites por IP y la comprobación de origen verán el proxy. |
 | `maxBodyBytes` | Límite del cuerpo por defecto del servidor. |
@@ -285,7 +339,7 @@ Pon en `trustProxy` solo el número de proxies que tienes de verdad. Con un núm
 
 La lista completa de opciones de `serve` y `runContexts` está en la [referencia de la API HTTP](/es/reference/http/).
 
-## Con la CLI
+## Con el CLI
 
 `newt add route` escribe una ruta que llama a un caso de uso que ya existe, y un test para ella:
 

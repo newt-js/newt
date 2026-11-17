@@ -89,7 +89,12 @@ To get hot reloading in the browser, turn on `development` in `src/backend.ts`:
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true, frontend: frontends, development: Bun.env.NODE_ENV !== 'production' },
+  serve: {
+    port,
+    health: true,
+    frontend: frontends,
+    development: Bun.env.NODE_ENV !== 'production',
+  },
 })
 ```
 

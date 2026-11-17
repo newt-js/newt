@@ -84,16 +84,16 @@
   letter-spacing: -0.02em;
 }
 
-/* ── GitBook-like layout: the landing's width (max-w-6xl, px-6) and header, light chrome. ── */
+/* ── GitBook-like layout: the landing's width (max-w-7xl, px-6) and header, light chrome. ── */
 
 :root {
   --sl-nav-height: 3.5rem;
-  --sl-sidebar-width: 15rem;
-  --sl-content-width: 42rem;
+  --sl-sidebar-width: 16rem;
+  --sl-content-width: 47rem;
   --sl-text-h1: 2.25rem;
   --sl-color-bg-sidebar: var(--background);
-  --docs-max: 72rem;
-  --docs-toc: 12rem;
+  --docs-max: 80rem;
+  --docs-toc: 14rem;
   --docs-gutter: max(0rem, (100vw - var(--docs-max)) / 2);
 }
 
@@ -171,7 +171,9 @@ header.header {
   padding-bottom: 0.25rem;
 }
 .sidebar-content a {
-  font-size: var(--sl-text-sm);
+  font-size: var(--sl-text-xs);
+  line-height: 1.25;
+  padding-block: 0.3rem;
   border-radius: calc(var(--radius) - 2px);
 }
 .sidebar-content a.large:not([aria-current="page"]) {
@@ -188,8 +190,13 @@ header.header {
   color: var(--sl-color-text-accent);
   background-color: color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
 }
+.sidebar-content summary {
+  padding-block: 0.3rem;
+}
 .sidebar-content .group-label .large {
-  font-size: var(--sl-text-xs);
+  display: inline-block;
+  font-size: var(--sl-text-2xs);
+  line-height: 1.6;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -210,7 +217,7 @@ header.header {
   color: var(--sl-color-text-accent);
 }
 .page-lead {
-  font-size: var(--sl-text-lg);
+  font-size: var(--sl-text-base);
   color: var(--sl-color-gray-3);
 }
 .sl-markdown-content {
@@ -275,4 +282,87 @@ header.header {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--sl-color-gray-3);
+}
+
+/* Scrollbars: thin, in the theme's colours; the sidebar's shows only while you are over it. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar-pane {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: auto;
+}
+.sidebar-pane:hover {
+  scrollbar-color: var(--border) transparent;
+}
+
+/* Code blocks: the same thin scrollbar as the page. */
+.expressive-code .frame pre {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.expressive-code .frame pre::-webkit-scrollbar {
+  height: 6px;
+}
+.expressive-code .frame pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+.expressive-code .frame pre::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: 9999px;
+  background-color: var(--border);
+}
+
+/* A code block's file name: small mono text in the bar, as on the landing. */
+.expressive-code .frame.has-title:not(.is-terminal) .header .title {
+  padding-inline: 1rem;
+  font-family: var(--font-mono, var(--__ec-codeFontFamily));
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+/* Diagrams: SVG drawn at build time (remark-diagrams), centred, never wider than the column. */
+.sl-markdown-content .diagram {
+  display: flex;
+  justify-content: center;
+  margin-block: 1.75rem;
+}
+.diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+.diagram svg text {
+  font-family: var(--font-sans);
+}
+.diagram svg .node :is(rect, polygon) {
+  rx: 6px;
+}
+
+/* Reading column: one step smaller, with room around callouts and code. */
+:root {
+  --sl-text-body: 0.9375rem;
+  --sl-text-h1: 2rem;
+  --sl-text-h2: 1.375rem;
+  --sl-text-h3: 1.125rem;
+}
+.sl-markdown-content {
+  font-size: var(--sl-text-body);
+  line-height: 1.7;
+}
+.sl-markdown-content .starlight-aside {
+  margin-block: 1.75rem;
+  padding: 0.75rem 1rem;
+  font-size: var(--sl-text-sm);
+}
+.sl-markdown-content .starlight-aside__title {
+  font-size: var(--sl-text-sm);
+  margin-bottom: 0.25rem;
+}
+.sl-markdown-content .expressive-code {
+  margin-block: 1.5rem;
+}
+.page-lead {
+  font-size: var(--sl-text-body);
 }

@@ -7,7 +7,7 @@ sidebar:
 
 A known error is an error your app throws on purpose, such as "there is no such task". It carries a kind, a code and a message, and newt turns it into an HTTP answer with the right status.
 
-You throw it from anywhere: an entity, a value object, a use case. You never write status codes by hand.
+It exists so the rules of your app can say *what* went wrong without knowing about HTTP. You throw it from anywhere: an entity, a value object, a use case. You never write status codes by hand.
 
 ## An error
 
@@ -61,7 +61,11 @@ export class InvalidPriority extends ValidationError<{ value: string }> {
 ```
 
 ```json
-{ "error": "'' is not a valid priority", "code": "task.invalid_priority", "params": { "value": "" } }
+{
+  "error": "'' is not a valid priority",
+  "code": "task.invalid_priority",
+  "params": { "value": "" }
+}
 ```
 
 `params` appears in the body only when it has something in it.
@@ -104,7 +108,20 @@ When to use each:
 - **`ConflictError`**: the request is valid, but the current state refuses it, as completing a task already done.
 - **`ConcurrencyConflict`**: two saves collided. The use case [runs again](/concepts/use-cases/#retries-on-a-conflict) before the client sees it.
 
-## Other answers
+## How a thrown error becomes an answer
+
+This is how newt picks the answer when a route throws:
+
+```mermaid
+flowchart TD
+  T[A route throws] --> K{"KnownError with a kind from the table?"}
+  K -->|yes| S[Status of its kind]
+  K -->|no| Z{A ZodError?}
+  Z -->|yes| V["400, code validation"]
+  Z -->|no| I["Logged, 500, code internal"]
+```
+
+A route's `onError` option replaces this with your own answer (see [HTTP and routes](/concepts/http/#route-options)).
 
 | What was thrown | HTTP | Body |
 |---|---|---|
@@ -117,7 +134,16 @@ A schema that refuses the input gives:
 {
   "error": "The input is not valid",
   "code": "validation",
-  "issues": [{ "origin": "string", "code": "too_small", "minimum": 1, "inclusive": true, "path": ["name"], "message": "Too small: expected string to have >=1 characters" }]
+  "issues": [
+    {
+      "origin": "string",
+      "code": "too_small",
+      "minimum": 1,
+      "inclusive": true,
+      "path": ["name"],
+      "message": "Too small: expected string to have >=1 characters"
+    }
+  ]
 }
 ```
 
@@ -145,6 +171,7 @@ The errors of an [entity](/concepts/entities/#errors), such as `InvalidEntity`, 
 | `InvalidFilter` | `validation` | `invalid_filter` |
 | `InvalidSort` | `validation` | `invalid_sort` |
 | `TooManyRequests` | `too_many_requests` | `too_many_requests` |
+| `UploadTooLarge` | `too_large` | `upload_too_large` |
 
 Their details, in `params`:
 
@@ -152,6 +179,7 @@ Their details, in `params`:
 - `ReferenceNotFound`: `{ resource, id }`.
 - `InvalidFilter`, `InvalidSort`: `{ issues }`, each `{ path, message }`.
 - `TooManyRequests`: `{ limit, retryAfterSeconds }`.
+- `UploadTooLarge`: `{ maxBytes }`. See [Files](/concepts/files/#uploads-from-the-browser).
 
 The built-in [value objects](/concepts/value-objects/#built-in-value-objects) throw `ValidationError`s: `invalid_email`, `invalid_key`, `invalid_search_text`, `invalid_secret_token` and `invalid_uuid`.
 

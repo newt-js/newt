@@ -9,23 +9,45 @@ Cada contexto guarda sus datos en su propia base de datos. Describes sus tablas 
 
 ## Una base de datos por contexto
 
-El contexto `tasks` tiene una base de datos; un contexto `chat` tendría otra. Ningún contexto lee las tablas de otro. Se comunican mediante [eventos](/es/concepts/events/).
+El contexto `tasks` tiene una base de datos; un contexto `chat` tendría otra. Ningún contexto lee las tablas de otro, así que puedes cambiar las tablas de un contexto sin romper el resto.
+
+```mermaid
+flowchart TD
+  B["tu backend"] --> T["contexto tasks"]
+  B --> C["contexto chat"]
+  T --> TD["data/tasks.sqlite"]
+  C --> CD["data/chat.sqlite"]
+  TD --> TT["tus tablas + tablas newt_"]
+  CD --> CT["tus tablas + tablas newt_"]
+```
 
 `src/stores.ts` abre la base de datos de cada contexto. Con SQLite, la opción por defecto:
 
 ```ts title="src/stores.ts"
-export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {
+export async function openDatabase(
+  context: string,
+  migrations: string,
+  stores: Stores,
+): Promise<Database> {
   if (stores === 'memory') {
     return SqliteDatabase.open({ path: ':memory:', migrations })
   }
-  return SqliteDatabase.open({ path: Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`, migrations })
+  return SqliteDatabase.open({
+    path:
+      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+    migrations,
+  })
 }
 ```
 
 El contexto pasa su propia carpeta `migrations`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const database = await openDatabase('tasks', join(import.meta.dir, 'migrations'), stores)
+const database = await openDatabase(
+  'tasks',
+  join(import.meta.dir, 'migrations'),
+  stores,
+)
 ```
 
 Así, el contexto `tasks` vive en `data/tasks.sqlite`, o donde indique `TASKS_DATABASE`. Los tests la abren con `stores: 'memory'`: una base de datos SQLite nueva con las mismas migraciones.
@@ -34,11 +56,15 @@ Así, el contexto `tasks` vive en `data/tasks.sqlite`, o donde indique `TASKS_DA
 
 `SqliteDatabase.open(options)`, de `@newt-js/core/database/sqlite`:
 
-| Opción | Tipo | Por defecto | Qué es |
-|---|---|---|---|
-| `path` | `string` | obligatoria | el fichero de la base de datos; si su carpeta no existe, se crea. `':memory:'` crea un fichero temporal que se borra al llamar a `close()` |
-| `migrations` | `string` | ninguna | la carpeta de tus migraciones; sin ella solo se crean las tablas propias de newt |
-| `waitTimeoutMs` | `number` | `30000` | cuánto espera una transacción su turno antes de fallar |
+| Opción | Tipo | Por defecto |
+|---|---|---|
+| `path` | `string` | obligatoria |
+| `migrations` | `string` | ninguna |
+| `waitTimeoutMs` | `number` | `30000` |
+
+- `path`: el fichero de la base de datos. Si su carpeta no existe, se crea. `':memory:'` crea un fichero temporal que se borra al llamar a `close()`.
+- `migrations`: la carpeta de tus migraciones. Sin ella solo se crean las tablas propias de newt.
+- `waitTimeoutMs`: cuánto espera una transacción su turno antes de fallar.
 
 `open` se conecta, aplica las migraciones pendientes, revisa las tablas y devuelve la base de datos. Si falla algún paso, la cierra y lanza el error.
 
@@ -82,11 +108,23 @@ Los demás ficheros de la carpeta, como `.gitkeep`, se ignoran. Un fichero que a
 
 ### Cuándo se ejecutan
 
-Cada vez que se abre la base de datos de un contexto, es decir, cada vez que arranca el backend:
+Cada vez que se abre la base de datos de un contexto, es decir, cada vez que arranca el backend. Esto es lo que hace `open`:
+
+```mermaid
+flowchart TD
+  A["conecta"] --> B["aplica las migraciones de newt"]
+  B --> C["revisa las ya aplicadas"]
+  C --> D["aplica las tuyas pendientes"]
+  D --> E["revisa las columnas de texto"]
+  E --> F["base de datos lista"]
+  C -.->|"cambiada o ausente"| X["cierra y lanza un error"]
+  E -.->|"collation incorrecta"| X
+```
 
 1. newt aplica primero sus propias migraciones (sus tablas `newt_`).
-2. Después aplica las tuyas que aún no se han ejecutado, en orden, en una transacción.
-3. Apunta cada una en la tabla `newt_migrations`, con un checksum de su fichero `up`.
+2. Revisa las tuyas que ya se ejecutaron: ninguna ha cambiado, y la última sigue en la carpeta.
+3. Aplica las que aún no se han ejecutado, en orden, en una transacción.
+4. Apunta cada una en la tabla `newt_migrations`, con un checksum de su fichero `up`.
 
 Si arrancan varias instancias a la vez en Postgres o MySQL, un bloqueo hace que solo una las aplique. Un fichero puede contener varias sentencias separadas por `;`.
 
@@ -181,7 +219,7 @@ Todas las bases de datos (SQLite, Postgres, MySQL, memoria) ofrecen la misma int
 | `afterRollback(fn)` | ejecuta `fn` si la transacción actual hace rollback |
 | `close()` | espera a las transacciones en marcha y cierra las conexiones |
 
-Rara vez los llamas tú. Los usan los repositorios, el bus de eventos y los workers.
+No los llamas desde un módulo. Los usan los repositorios, el bus de eventos y los workers.
 
 ### Records
 
@@ -195,18 +233,21 @@ super(base, base.database.records<TaskRow>('task'), { scope: 'none' })
 
 ## Transacciones
 
+Una transacción es un grupo de escrituras que la base de datos guarda todas juntas o ninguna.
+
 Cada `persist` de un repositorio se ejecuta en una transacción. Escribe las entidades y, en la misma transacción, los jobs de los [eventos](/es/concepts/events/) que han emitido. O se guardan ambos o ninguno.
 
-Para agrupar varios guardados de un módulo en una sola transacción, envuélvelos en `run`. El `base.transactions` del contexto es su base de datos:
+Un caso de uso no es una transacción: dos llamadas a `persist` son dos transacciones. Para guardar varias entidades juntas, pásalas en una sola llamada:
 
 ```ts
-await base.transactions.run(async () => {
-  await tasks.persist(first)
-  await tasks.persist(second)
-})
+await this.tasks.persist([first, second])
 ```
 
-Un guardado dentro de una transacción se une a ella. Reglas a tener en cuenta:
+:::caution
+No abras tú una transacción con `base.transactions.run` dentro de un módulo. La regla de lint `module-transactions` lo rechaza: `persist` ya ejecuta la transacción, comprueba la regla de escritura y guarda los eventos.
+:::
+
+Reglas que se cumplen dentro de una transacción:
 
 - **Un módulo por transacción.** Una transacción que guarda `task` no puede guardar también `project`. Guarda el segundo desde una [suscripción](/es/concepts/events/) cuando el primero haya hecho commit.
 - **Espera (`await`) cada llamada de dentro.** Una llamada que sigue en marcha cuando la transacción termina falla.

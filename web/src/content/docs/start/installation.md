@@ -69,14 +69,16 @@ A command never overwrites a file that is already there. Run it twice and the se
 ## Options of `newt init`
 
 ```sh
-newt init [name] [--port <port>] [--db <database>] [--files <storage>] [--cluster <cluster>] [--monorepo] [--backend <folder>]
+newt init [name] [--port <port>] [--db <database>] \
+  [--files <storage>] [--cluster <cluster>] [--monorepo] \
+  [--backend <folder>]
 ```
 
 | Option | Values | Default |
 |---|---|---|
 | `--port` | 1 to 65535 | `3000` |
 | `--db` | `sqlite`, `postgres`, `mysql`, `memory` | `sqlite` |
-| `--files` | `local`, `s3` | `local` |
+| `--files` | `local`, `s3`, `memory` | `local` |
 | `--cluster` | `memory`, `valkey` | `memory` |
 | `--monorepo` | | off |
 | `--backend` | a folder | `apps/api` |
@@ -85,6 +87,7 @@ newt init [name] [--port <port>] [--db <database>] [--files <storage>] [--cluste
 - Without a name, in a terminal, newt asks for the name and whether you want a backend or a monorepo.
 - `--db` sets the database every context opens. See [SQLite](/guides/databases/sqlite/), [Postgres](/guides/databases/postgres/) and [MySQL](/guides/databases/mysql/).
 - `--files` sets where contexts keep uploaded files: a local folder or S3. See [files](/concepts/files/).
+- `memory`, for `--db` or `--files`, keeps everything in memory and loses it when the backend stops. It suits a quick try, not an app.
 - `--cluster` sets what several running instances share. See [running several instances](/guides/scaling/).
 - `--monorepo` and `--backend` are explained in [monorepos](/guides/monorepo/).
 

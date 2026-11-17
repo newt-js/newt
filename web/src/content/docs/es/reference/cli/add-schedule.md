@@ -70,7 +70,10 @@ Next steps:
 ```
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
-    this.remindOverdueSchedule = base.schedules.define('task.remindOverdue', '0 9 * * *')
+this.remindOverdueSchedule = base.schedules.define(
+  'task.remindOverdue',
+  '0 9 * * *',
+)
 ```
 
 ```ts title="src/contexts/tasks/modules/task/task.workers.ts"

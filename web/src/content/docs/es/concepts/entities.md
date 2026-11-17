@@ -18,7 +18,10 @@ import { Entity, type EntityInput } from '@newt-js/core'
 import { Task_Created } from './events/task-created'
 import { TaskSchema, type TaskDTO } from './task.schema'
 
-/** What `create` takes, already checked: the entity's own words, never a DTO. */
+/**
+ * What `create` takes, already checked: the entity's own words,
+ * never a DTO.
+ */
 export type TaskCreateProps = { name: string }
 
 export class Task extends Entity<typeof TaskSchema> {
@@ -32,7 +35,9 @@ export class Task extends Entity<typeof TaskSchema> {
 
   static create(props: TaskCreateProps): Task {
     const task = new Task(props, true)
-    task.trackEvent(new Task_Created({ id: task.id, name: task.data.name }))
+    task.trackEvent(
+      new Task_Created({ id: task.id, name: task.data.name }),
+    )
     return task
   }
 }
@@ -95,6 +100,8 @@ complete(): void {
 }
 ```
 
+`now` viene de `@newt-js/core` y lee el reloj del contexto. `AlreadyDone` es un error creado con `newt add error`, y `Task_Completed` un evento creado con `newt add event`. Un caso de uso llama a `task.complete()` antes de `persist` (ver [Casos de uso](/es/concepts/use-cases/#un-caso-de-uso)).
+
 :::tip
 Pon la regla en la entidad, no en el caso de uso. `complete()` rechaza una tarea ya hecha la llame quien la llame: una ruta, un worker o un test.
 :::
@@ -108,7 +115,7 @@ Pon la regla en la entidad, no en el caso de uso. `complete()` rechaza una tarea
 - `updatedAt` pasa a ahora solo cuando un valor cambió de verdad.
 - Una entidad borrada lanza `DeletedEntityNotChangeable`.
 
-Para borrarla, un método llama al protegido `markAsDeleted()`. El repositorio borra la fila en el siguiente guardado. Una entidad nunca guardada lanza `NewEntityNotDeletable`, y una ya borrada lanza `EntityAlreadyDeleted`.
+Para borrarla, un método llama al protegido `markAsDeleted()`. El repositorio borra la fila en el siguiente guardado, o solo rellena su `deletedAt` si el repositorio usa `softDelete` (ver [Repositorios](/es/concepts/repositories/)). Una entidad nunca guardada lanza `NewEntityNotDeletable`, y una ya borrada lanza `EntityAlreadyDeleted`.
 
 Un método de una entidad recibe sus propias palabras. La regla del lint `entity-method-params` rechaza un parámetro con tipo de DTO o un objeto escrito en el sitio: declara `export type TaskRenameProps = { … }` junto a la entidad y recibe eso. El constructor y `fromDTO` son la excepción.
 
@@ -136,7 +143,10 @@ Por defecto `toDTO()` devuelve todos los campos. Para ocultar algunos, pasa al c
 ```ts
 const TaskPublicSchema = TaskSchema.omit({ internalNote: true })
 
-export class Task extends Entity<typeof TaskSchema, typeof TaskPublicSchema> {
+export class Task extends Entity<
+  typeof TaskSchema,
+  typeof TaskPublicSchema
+> {
   private constructor(input: EntityInput<TaskDTO>, isNew: boolean) {
     super(TaskSchema, input, isNew, TaskPublicSchema)
   }
@@ -145,13 +155,35 @@ export class Task extends Entity<typeof TaskSchema, typeof TaskPublicSchema> {
 
 Cada campo del schema público tiene que estar en el principal, o el constructor lanza un error.
 
+## Su vida
+
+Esta es la vida de una tarea, desde que se crea o se lee hasta que se borra:
+
+```mermaid
+stateDiagram-v2
+  state "Nueva, versión 0" as New
+  state "Guardada" as Saved
+  state "Cambiada" as Changed
+  state "Por borrar" as Deleting
+  [*] --> New: Task.create()
+  [*] --> Saved: fromDTO(row)
+  New --> Saved: persist
+  Saved --> Changed: un método llama a change()
+  Changed --> Saved: persist
+  Saved --> Deleting: markAsDeleted()
+  Changed --> Deleting: markAsDeleted()
+  Deleting --> [*]: persist
+```
+
+Los eventos registrados con `trackEvent` esperan en la entidad y salen con el siguiente `persist`.
+
 ## Versiones
 
 Cada guardado suma uno a `version`. El repositorio actualiza una fila solo si su versión en la base de datos sigue siendo la que leyó la entidad. Si alguien la guardó entre medias, el guardado falla con `StaleVersion` y el [caso de uso se ejecuta otra vez](/es/concepts/use-cases/#reintentos-ante-un-conflicto). Ver [Repositorios](/es/concepts/repositories/#versiones-y-conflictos).
 
 ## Tras un guardado fallido
 
-Cuando un guardado se deshace, la entidad vuelve al estado que tenía antes. Además queda marcada: guardarla otra vez lanza `SaveRolledBack`.
+Cuando un guardado se deshace, la entidad olvida ese guardado: su `version` y su `isNew` vuelven a lo que eran. Además queda marcada: guardarla otra vez lanza `SaveRolledBack`.
 
 :::caution
 No captures un guardado fallido para hacer `persist` de la misma entidad. Léela otra vez del repositorio y guarda la nueva.

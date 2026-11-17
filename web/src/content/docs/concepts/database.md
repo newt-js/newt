@@ -9,23 +9,45 @@ Each context keeps its data in its own database. You describe its tables with pl
 
 ## One database per context
 
-The `tasks` context has one database; a `chat` context would have another. No context reads another's tables. They talk through [events](/concepts/events/) instead.
+The `tasks` context has one database; a `chat` context would have another. No context reads another's tables, so you can change one context's tables without breaking the rest.
+
+```mermaid
+flowchart TD
+  B["your backend"] --> T["tasks context"]
+  B --> C["chat context"]
+  T --> TD["data/tasks.sqlite"]
+  C --> CD["data/chat.sqlite"]
+  TD --> TT["your tables + newt_ tables"]
+  CD --> CT["your tables + newt_ tables"]
+```
 
 `src/stores.ts` opens each context's database. With SQLite, the default:
 
 ```ts title="src/stores.ts"
-export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {
+export async function openDatabase(
+  context: string,
+  migrations: string,
+  stores: Stores,
+): Promise<Database> {
   if (stores === 'memory') {
     return SqliteDatabase.open({ path: ':memory:', migrations })
   }
-  return SqliteDatabase.open({ path: Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`, migrations })
+  return SqliteDatabase.open({
+    path:
+      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+    migrations,
+  })
 }
 ```
 
 The context passes its own `migrations` folder:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const database = await openDatabase('tasks', join(import.meta.dir, 'migrations'), stores)
+const database = await openDatabase(
+  'tasks',
+  join(import.meta.dir, 'migrations'),
+  stores,
+)
 ```
 
 So the `tasks` context lives in `data/tasks.sqlite`, or wherever `TASKS_DATABASE` points. Tests open it with `stores: 'memory'`: a fresh SQLite database with the same migrations.
@@ -34,11 +56,15 @@ So the `tasks` context lives in `data/tasks.sqlite`, or wherever `TASKS_DATABASE
 
 `SqliteDatabase.open(options)`, from `@newt-js/core/database/sqlite`:
 
-| Option | Type | Default | What it is |
-|---|---|---|---|
-| `path` | `string` | required | the database file; its folder is created if missing. `':memory:'` makes a temporary file that is removed on `close()` |
-| `migrations` | `string` | none | the folder of your migrations; without it, only newt's own tables are created |
-| `waitTimeoutMs` | `number` | `30000` | how long a transaction waits for its turn before it fails |
+| Option | Type | Default |
+|---|---|---|
+| `path` | `string` | required |
+| `migrations` | `string` | none |
+| `waitTimeoutMs` | `number` | `30000` |
+
+- `path`: the database file. Its folder is created if missing. `':memory:'` makes a temporary file that is removed on `close()`.
+- `migrations`: the folder of your migrations. Without it, only newt's own tables are created.
+- `waitTimeoutMs`: how long a transaction waits for its turn before it fails.
 
 `open` connects, applies pending migrations, checks the tables, and returns the database. If any step fails, it closes the database and throws.
 
@@ -82,11 +108,23 @@ Other files in the folder, such as `.gitkeep`, are ignored. A file that ends in 
 
 ### When they run
 
-Every time a context's database opens, which is every time the backend starts:
+Every time a context's database opens, which is every time the backend starts. This is what `open` does:
+
+```mermaid
+flowchart TD
+  A["connect"] --> B["apply newt's migrations"]
+  B --> C["check applied ones"]
+  C --> D["apply yours not yet run"]
+  D --> E["check text columns"]
+  E --> F["database ready"]
+  C -.->|"changed or missing"| X["close and throw"]
+  E -.->|"wrong collation"| X
+```
 
 1. newt applies its own migrations first (its `newt_` tables).
-2. Then it applies yours that have not run yet, in order, in one transaction.
-3. It records each one in the `newt_migrations` table, with a checksum of its `up` file.
+2. It checks yours that already ran: none changed, and the last one is still in the folder.
+3. It applies the ones that have not run yet, in order, in one transaction.
+4. It records each one in the `newt_migrations` table, with a checksum of its `up` file.
 
 When several instances start at once on Postgres or MySQL, a lock makes only one apply them. A file can hold several statements, separated by `;`.
 
@@ -181,7 +219,7 @@ Every database (SQLite, Postgres, MySQL, memory) offers the same `Database` inte
 | `afterRollback(fn)` | runs `fn` if the current transaction rolls back |
 | `close()` | waits for running transactions and closes the connections |
 
-You rarely call these yourself. Repositories, the event bus and the workers do.
+You do not call these from a module. Repositories, the event bus and the workers do.
 
 ### Records
 
@@ -195,18 +233,21 @@ super(base, base.database.records<TaskRow>('task'), { scope: 'none' })
 
 ## Transactions
 
+A transaction is a group of writes that the database keeps all together or not at all.
+
 Each `persist` of a repository runs in one transaction. It writes the entities and, in the same transaction, the jobs for the [events](/concepts/events/) they emitted. Either both are saved or neither is.
 
-To group several saves of one module into one transaction, wrap them in `run`. The context's `base.transactions` is its database:
+A use case is not one transaction: two `persist` calls are two transactions. To save several entities together, pass them in one call:
 
 ```ts
-await base.transactions.run(async () => {
-  await tasks.persist(first)
-  await tasks.persist(second)
-})
+await this.tasks.persist([first, second])
 ```
 
-A save inside a transaction joins it. Rules to keep in mind:
+:::caution
+Do not open a transaction yourself with `base.transactions.run` inside a module. The lint rule `module-transactions` refuses it: `persist` already runs the transaction, checks the write rule and saves the events.
+:::
+
+Rules that hold inside a transaction:
 
 - **One module per transaction.** A transaction that saves `task` cannot also save `project`. Save the second from a [subscription](/concepts/events/) after the first commits.
 - **Await every call inside it.** A call left running after the transaction ends fails.

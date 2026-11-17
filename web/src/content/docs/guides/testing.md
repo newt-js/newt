@@ -53,7 +53,10 @@ A module test builds the context by hand, with a database in memory, and calls t
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { join } from 'node:path'
 import { SqliteDatabase } from '@newt-js/core/database/sqlite'
-import { testContext, type TestContext } from '@newt-js/core/application/testing'
+import {
+  testContext,
+  type TestContext,
+} from '@newt-js/core/application/testing'
 import { MemoryCluster } from '@newt-js/core/cluster/memory'
 import { HttpRouter } from '@newt-js/core/http'
 import { tasksModules } from '../../tasks-modules'
@@ -65,11 +68,20 @@ let tasks: Task_Module
 let signedIn: boolean
 
 beforeEach(async () => {
-  const database = await SqliteDatabase.open({ path: ':memory:', migrations: join(import.meta.dir, '../../migrations') })
-  context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database })
+  const database = await SqliteDatabase.open({
+    path: ':memory:',
+    migrations: join(import.meta.dir, '../../migrations'),
+  })
+  context = testContext({
+    name: 'tasks',
+    cluster: new MemoryCluster(),
+    database,
+  })
   router = new HttpRouter({ database })
   signedIn = true
-  router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
+  router.authenticateWith(async () =>
+    signedIn ? { userId: 'tester' } : null,
+  )
   tasks = tasksModules(context.base, router).task
 })
 
@@ -78,8 +90,26 @@ afterEach(() => context.close())
 test('creates a task and reads it back', async () => {
   const created = await tasks.create({ name: ' First ' })
 
-  expect(await tasks.get({ id: created.id })).toMatchObject({ id: created.id, name: 'First' })
+  expect(await tasks.get({ id: created.id })).toMatchObject({
+    id: created.id,
+    name: 'First',
+  })
 })
+```
+
+This is what `beforeEach` builds for every test:
+
+```mermaid
+flowchart TD
+  migrations[migrations/] --> db[(SQLite in memory)]
+  db --> ctx[testContext]
+  db --> router[HttpRouter]
+  signedIn[test authenticator] --> router
+  ctx -->|context.base| modules[tasksModules]
+  router --> modules
+  modules --> tasks[task module]
+  test[Your test] -->|calls a use case| tasks
+  test -->|router.answer| router
 ```
 
 Step by step:
@@ -105,11 +135,14 @@ Step by step:
 | `at` | no | The clock's start, a `Date` or ISO string |
 | `storage` | no | The context's file storage |
 | `worker` | no | Worker options, such as `backoffMs` |
-| `writeRule` | no | `'error'`, `'warn'` or `'off'` |
-| `guardRule` | no | `'error'`, `'warn'` or `'off'` |
-| `conflictRetries` | no | `{ times, backoffMs }` for conflicts |
+| `writeRule` | no | `'error'` (default), `'warn'` or `'off'` |
+| `guardRule` | no | `'error'` (default), `'warn'` or `'off'` |
+| `conflictRetries` | no | `{ times, duplicates, backoffMs }` |
 
-The test clock starts at `2026-01-01T00:00:00.000Z` unless you pass `at`.
+- `writeRule`: what happens when a use case writes to another module outside a worker.
+- `guardRule`: what happens when a save reads tables without naming them in its guard.
+- `conflictRetries`: how often a use case retries when another save changed the same row first.
+- The test clock starts at `2026-01-01T00:00:00.000Z` unless you pass `at`.
 
 ### What a TestContext gives you
 
@@ -129,15 +162,19 @@ The test clock starts at `2026-01-01T00:00:00.000Z` unless you pass `at`.
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 test('creates one by its route and reads it by another', async () => {
-  const posted = await router.answer(new Request('http://backend.test/api/tasks/tasks', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'Second' }),
-  }))
+  const posted = await router.answer(
+    new Request('http://backend.test/api/tasks/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Second' }),
+    }),
+  )
   expect(posted?.status).toBe(201)
-  const { id } = await posted!.json() as { id: string }
+  const { id } = (await posted!.json()) as { id: string }
 
-  const read = await router.answer(new Request(`http://backend.test/api/tasks/tasks/${id}`))
+  const read = await router.answer(
+    new Request(`http://backend.test/api/tasks/tasks/${id}`),
+  )
   expect(await read?.json()).toMatchObject({ id, name: 'Second' })
 })
 ```
@@ -153,7 +190,12 @@ test('POST /tasks/tasks/:id/complete-task calls completeTask', async () => {
   const created = await tasks.create({ name: 'First' })
   const called = spyOn(tasks, 'completeTask')
 
-  const response = await router.answer(new Request(`http://backend.test/api/tasks/tasks/${created.id}/complete-task`, { method: 'POST' }))
+  const response = await router.answer(
+    new Request(
+      `http://backend.test/api/tasks/tasks/${created.id}/complete-task`,
+      { method: 'POST' },
+    ),
+  )
   expect(response?.status).toBe(200)
   expect(called).toHaveBeenCalledWith({ id: created.id })
 })
@@ -170,11 +212,16 @@ router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
 To test a request from someone not signed in, set `signedIn = false` before the request. Every private route then answers 401:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
-test('GET /api/tasks/tasks answers 401 to who has not signed in', async () => {
-  signedIn = false
-  const response = await router.answer(new Request('http://backend.test/api/tasks/tasks'))
-  expect(response?.status).toBe(401)
-})
+test(
+  'GET /api/tasks/tasks answers 401 to who has not signed in',
+  async () => {
+    signedIn = false
+    const response = await router.answer(
+      new Request('http://backend.test/api/tasks/tasks'),
+    )
+    expect(response?.status).toBe(401)
+  },
+)
 ```
 
 To test two different people, return a different `userId`, for example from a request header you set in the test.
@@ -184,7 +231,9 @@ When you call a use case directly, no one is signed in. If the use case reads wh
 ```ts
 import { runAsActor } from '@newt-js/core'
 
-const created = await runAsActor({ userId: 'ana' }, () => tasks.create({ name: 'First' }))
+const created = await runAsActor({ userId: 'ana' }, () =>
+  tasks.create({ name: 'First' }),
+)
 ```
 
 :::caution
@@ -220,7 +269,11 @@ test('notifies the assignee once a task is completed', async () => {
   await context.settle()
 
   const jobs = await context.base.database.outbox.list()
-  expect(jobs.find(job => job.queue === 'task.notifyAssignee.on.task.completed')?.status).toBe('done')
+  expect(
+    jobs.find(
+      job => job.queue === 'task.notifyAssignee.on.task.completed',
+    )?.status,
+  ).toBe('done')
 })
 ```
 
@@ -260,7 +313,11 @@ test('remindOverdue runs at 0 9 * * *', async () => {
   await context.settle()
 
   const queued = await context.base.database.outbox.list()
-  expect(queued.find(each => each.queue === 'task.remindOverdue.on.task.remindOverdue')?.status).toBe('done')
+  expect(
+    queued.find(
+      each => each.queue === 'task.remindOverdue.on.task.remindOverdue',
+    )?.status,
+  ).toBe('done')
 })
 ```
 
@@ -297,9 +354,15 @@ On a Postgres or MySQL backend, module tests open their database through `src/te
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 beforeEach(async () => {
-  const { database, drop } = await testDatabase(join(import.meta.dir, '../../migrations'))
+  const { database, drop } = await testDatabase(
+    join(import.meta.dir, '../../migrations'),
+  )
   dropDatabase = drop
-  context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database })
+  context = testContext({
+    name: 'tasks',
+    cluster: new MemoryCluster(),
+    database,
+  })
   // ...
 })
 
@@ -318,7 +381,8 @@ To try your migrations on a real server:
 2. Run the tests with its URL:
 
    ```sh
-   TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun test
+   TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres \
+     bun test
    ```
 
    For MySQL: `TEST_DATABASE_URL=mysql://root:root@localhost:3306/mysql bun test`.

@@ -53,7 +53,10 @@ Un test de módulo construye el contexto a mano, con una base de datos en memori
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { join } from 'node:path'
 import { SqliteDatabase } from '@newt-js/core/database/sqlite'
-import { testContext, type TestContext } from '@newt-js/core/application/testing'
+import {
+  testContext,
+  type TestContext,
+} from '@newt-js/core/application/testing'
 import { MemoryCluster } from '@newt-js/core/cluster/memory'
 import { HttpRouter } from '@newt-js/core/http'
 import { tasksModules } from '../../tasks-modules'
@@ -65,11 +68,20 @@ let tasks: Task_Module
 let signedIn: boolean
 
 beforeEach(async () => {
-  const database = await SqliteDatabase.open({ path: ':memory:', migrations: join(import.meta.dir, '../../migrations') })
-  context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database })
+  const database = await SqliteDatabase.open({
+    path: ':memory:',
+    migrations: join(import.meta.dir, '../../migrations'),
+  })
+  context = testContext({
+    name: 'tasks',
+    cluster: new MemoryCluster(),
+    database,
+  })
   router = new HttpRouter({ database })
   signedIn = true
-  router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
+  router.authenticateWith(async () =>
+    signedIn ? { userId: 'tester' } : null,
+  )
   tasks = tasksModules(context.base, router).task
 })
 
@@ -78,8 +90,26 @@ afterEach(() => context.close())
 test('creates a task and reads it back', async () => {
   const created = await tasks.create({ name: ' First ' })
 
-  expect(await tasks.get({ id: created.id })).toMatchObject({ id: created.id, name: 'First' })
+  expect(await tasks.get({ id: created.id })).toMatchObject({
+    id: created.id,
+    name: 'First',
+  })
 })
+```
+
+Esto es lo que construye `beforeEach` para cada test:
+
+```mermaid
+flowchart TD
+  migrations[migrations/] --> db[(SQLite en memoria)]
+  db --> ctx[testContext]
+  db --> router[HttpRouter]
+  signedIn[autenticador del test] --> router
+  ctx -->|context.base| modules[tasksModules]
+  router --> modules
+  modules --> tasks[módulo task]
+  test[Tu test] -->|llama a un caso de uso| tasks
+  test -->|router.answer| router
 ```
 
 Paso a paso:
@@ -105,11 +135,14 @@ Paso a paso:
 | `at` | no | El inicio del reloj, un `Date` o un texto ISO |
 | `storage` | no | El almacenamiento de ficheros del contexto |
 | `worker` | no | Opciones del worker, como `backoffMs` |
-| `writeRule` | no | `'error'`, `'warn'` u `'off'` |
-| `guardRule` | no | `'error'`, `'warn'` u `'off'` |
-| `conflictRetries` | no | `{ times, backoffMs }` ante conflictos |
+| `writeRule` | no | `'error'` (por defecto), `'warn'` u `'off'` |
+| `guardRule` | no | `'error'` (por defecto), `'warn'` u `'off'` |
+| `conflictRetries` | no | `{ times, duplicates, backoffMs }` |
 
-El reloj de test empieza en `2026-01-01T00:00:00.000Z` salvo que pases `at`.
+- `writeRule`: qué pasa cuando un caso de uso escribe en otro módulo fuera de un worker.
+- `guardRule`: qué pasa cuando un guardado lee tablas sin nombrarlas en su guard.
+- `conflictRetries`: cuántas veces reintenta un caso de uso cuando otro guardado cambió antes la misma fila.
+- El reloj de test empieza en `2026-01-01T00:00:00.000Z` salvo que pases `at`.
 
 ### Qué te da un TestContext
 
@@ -129,15 +162,19 @@ El reloj de test empieza en `2026-01-01T00:00:00.000Z` salvo que pases `at`.
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 test('creates one by its route and reads it by another', async () => {
-  const posted = await router.answer(new Request('http://backend.test/api/tasks/tasks', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'Second' }),
-  }))
+  const posted = await router.answer(
+    new Request('http://backend.test/api/tasks/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Second' }),
+    }),
+  )
   expect(posted?.status).toBe(201)
-  const { id } = await posted!.json() as { id: string }
+  const { id } = (await posted!.json()) as { id: string }
 
-  const read = await router.answer(new Request(`http://backend.test/api/tasks/tasks/${id}`))
+  const read = await router.answer(
+    new Request(`http://backend.test/api/tasks/tasks/${id}`),
+  )
   expect(await read?.json()).toMatchObject({ id, name: 'Second' })
 })
 ```
@@ -153,7 +190,12 @@ test('POST /tasks/tasks/:id/complete-task calls completeTask', async () => {
   const created = await tasks.create({ name: 'First' })
   const called = spyOn(tasks, 'completeTask')
 
-  const response = await router.answer(new Request(`http://backend.test/api/tasks/tasks/${created.id}/complete-task`, { method: 'POST' }))
+  const response = await router.answer(
+    new Request(
+      `http://backend.test/api/tasks/tasks/${created.id}/complete-task`,
+      { method: 'POST' },
+    ),
+  )
   expect(response?.status).toBe(200)
   expect(called).toHaveBeenCalledWith({ id: created.id })
 })
@@ -170,11 +212,16 @@ router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
 Para probar una petición de alguien sin sesión, pon `signedIn = false` antes de la petición. Entonces toda ruta privada responde 401:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
-test('GET /api/tasks/tasks answers 401 to who has not signed in', async () => {
-  signedIn = false
-  const response = await router.answer(new Request('http://backend.test/api/tasks/tasks'))
-  expect(response?.status).toBe(401)
-})
+test(
+  'GET /api/tasks/tasks answers 401 to who has not signed in',
+  async () => {
+    signedIn = false
+    const response = await router.answer(
+      new Request('http://backend.test/api/tasks/tasks'),
+    )
+    expect(response?.status).toBe(401)
+  },
+)
 ```
 
 Para probar con dos personas distintas, devuelve otro `userId`, por ejemplo a partir de una cabecera que pongas en el test.
@@ -184,7 +231,9 @@ Cuando llamas a un caso de uso directamente, no hay nadie con sesión. Si el cas
 ```ts
 import { runAsActor } from '@newt-js/core'
 
-const created = await runAsActor({ userId: 'ana' }, () => tasks.create({ name: 'First' }))
+const created = await runAsActor({ userId: 'ana' }, () =>
+  tasks.create({ name: 'First' }),
+)
 ```
 
 :::caution
@@ -220,7 +269,11 @@ test('notifies the assignee once a task is completed', async () => {
   await context.settle()
 
   const jobs = await context.base.database.outbox.list()
-  expect(jobs.find(job => job.queue === 'task.notifyAssignee.on.task.completed')?.status).toBe('done')
+  expect(
+    jobs.find(
+      job => job.queue === 'task.notifyAssignee.on.task.completed',
+    )?.status,
+  ).toBe('done')
 })
 ```
 
@@ -260,7 +313,11 @@ test('remindOverdue runs at 0 9 * * *', async () => {
   await context.settle()
 
   const queued = await context.base.database.outbox.list()
-  expect(queued.find(each => each.queue === 'task.remindOverdue.on.task.remindOverdue')?.status).toBe('done')
+  expect(
+    queued.find(
+      each => each.queue === 'task.remindOverdue.on.task.remindOverdue',
+    )?.status,
+  ).toBe('done')
 })
 ```
 
@@ -297,9 +354,15 @@ En un backend con Postgres o MySQL, los tests de módulo abren su base de datos 
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 beforeEach(async () => {
-  const { database, drop } = await testDatabase(join(import.meta.dir, '../../migrations'))
+  const { database, drop } = await testDatabase(
+    join(import.meta.dir, '../../migrations'),
+  )
   dropDatabase = drop
-  context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database })
+  context = testContext({
+    name: 'tasks',
+    cluster: new MemoryCluster(),
+    database,
+  })
   // ...
 })
 
@@ -318,7 +381,8 @@ Para probar tus migraciones en un servidor real:
 2. Ejecuta los tests con su URL:
 
    ```sh
-   TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun test
+   TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres \
+     bun test
    ```
 
    Para MySQL: `TEST_DATABASE_URL=mysql://root:root@localhost:3306/mysql bun test`.

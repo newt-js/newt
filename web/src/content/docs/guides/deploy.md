@@ -14,6 +14,18 @@ Deploying a newt backend means running `bun src/index.ts` on a server, with the 
 - The environment variables your stores need.
 - On SQLite or local files: a persistent folder for `data/`.
 
+A backend on one machine, with SQLite and local files, looks like this:
+
+```mermaid
+flowchart TD
+  users[Users] -->|HTTPS| proxy[Proxy or load balancer]
+  proxy -->|HTTP on PORT| bun[bun src/index.ts]
+  bun --> db[(data/tasks.sqlite)]
+  bun --> files[(data/files/tasks/)]
+```
+
+Everything under `data/` lives on a persistent volume.
+
 ## 1. Start the backend
 
 The generated `package.json` has a `start` script:
@@ -36,8 +48,8 @@ bun run start
 On start, the backend:
 
 1. Opens each context's database and runs its pending [migrations](/concepts/database/). If one fails, the backend stops with the error and serves nothing.
-2. Starts each context's worker and scheduled tasks.
-3. Serves HTTP on `PORT`.
+2. Serves HTTP on `PORT`.
+3. Starts each context's worker and scheduled tasks.
 
 :::note
 Migrations run on every start, before the backend serves. You do not run them as a separate step.
@@ -120,7 +132,8 @@ ENV PORT=3000
 EXPOSE 3000
 VOLUME /app/data
 
-HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/api/health') \
+  .then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 CMD ["bun", "run", "start"]
 ```
@@ -135,7 +148,8 @@ Build and run it with a named volume for `data/`, and the variables in a file ke
 
 ```sh
 docker build -t newthub .
-docker run -d -p 3000:3000 -v newthub-data:/app/data --env-file production.env newthub
+docker run -d -p 3000:3000 -v newthub-data:/app/data \
+  --env-file production.env newthub
 ```
 
 :::caution
@@ -147,7 +161,10 @@ Generate `FILES_SECRET` once and keep it in your host's secret settings. A new s
 Most hosts put a proxy or load balancer in front of your backend, which handles HTTPS. These serve options in `src/backend.ts` matter then:
 
 ```ts title="src/backend.ts"
-return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true, trustProxy: 1, drainMs: 5000 } })
+return runContexts(contexts, {
+  platformWithoutContexts: platform,
+  serve: { port, health: true, trustProxy: 1, drainMs: 5000 },
+})
 ```
 
 - `trustProxy`: how many proxies stand in front of the backend. With `1`, newt takes the caller's IP from `X-Forwarded-For` and the host from `X-Forwarded-Host`. Without it, every request seems to come from the proxy, and [rate limits](/concepts/http/) by IP count everyone together. `0` by default.

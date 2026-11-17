@@ -30,7 +30,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 
 ## Reglas del nombre
 
-- Palabras en minúsculas unidas por `-`, cada una empezando por una letra: `complete-task` se convierte en el método `completeTask`.
+- Letras minúsculas y dígitos, palabras unidas por `-`, empezando por una letra: `complete-task` se convierte en el método `completeTask`.
 - No `find`, `get`, `paginate` ni `search`: el lint de newt da forma a esas lecturas.
 - No `name`, `useCaseRunner`, `on`, `deps` ni `events`, que tiene todo módulo, ni una palabra que JavaScript se reserva.
 - No un nombre que el módulo ya tenga como miembro, o cuyo schema (`TaskCompleteTaskSchema`, `TaskCompleteTaskDTO`) ya esté en `<módulo>.schema.ts`.
@@ -62,7 +62,10 @@ export type TaskCompleteTaskDTO = z.input<typeof TaskCompleteTaskSchema>
   @UseCase()
   async completeTask(input: TaskCompleteTaskDTO): Promise<TaskDTO> {
     const { id } = TaskCompleteTaskSchema.parse(input)
-    const [task] = await this.tasks.find(TaskFilter.toCriteria<TaskRow>({ id }), { limit: 1 })
+    const [task] = await this.tasks.find(
+      TaskFilter.toCriteria<TaskRow>({ id }),
+      { limit: 1 },
+    )
     if (!task) {
       throw new TaskNotFound()
     }

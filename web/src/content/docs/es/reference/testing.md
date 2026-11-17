@@ -5,10 +5,14 @@ sidebar:
   order: 3
 ---
 
-`@newt-js/core/application/testing` monta un contexto para un test: base de datos real, un reloj que mueves a mano y jobs que se ejecutan cuando lo pides. Para cómo escribir los tests, lee [Testing](/es/guides/testing/).
+`@newt-js/core/application/testing` monta un contexto para un test: base de datos real, un reloj que mueves a mano y jobs que se ejecutan cuando lo pides. Lo usas en cada test de módulo. Para cómo escribir los tests, lee [Testing](/es/guides/testing/).
 
 ```ts
-import { testContext, TestClock, type TestContext } from '@newt-js/core/application/testing'
+import {
+  testContext,
+  TestClock,
+  type TestContext,
+} from '@newt-js/core/application/testing'
 ```
 
 ## testContext
@@ -17,10 +21,19 @@ import { testContext, TestClock, type TestContext } from '@newt-js/core/applicat
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 beforeEach(async () => {
-  const database = await SqliteDatabase.open({ path: ':memory:', migrations: join(import.meta.dir, '../../migrations') })
-  context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database })
+  const database = await SqliteDatabase.open({
+    path: ':memory:',
+    migrations: join(import.meta.dir, '../../migrations'),
+  })
+  context = testContext({
+    name: 'tasks',
+    cluster: new MemoryCluster(),
+    database,
+  })
   router = new HttpRouter({ database })
-  router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
+  router.authenticateWith(async () =>
+    signedIn ? { userId: 'tester' } : null,
+  )
   tasks = tasksModules(context.base, router).task
 })
 
@@ -38,8 +51,8 @@ afterEach(() => context.close())
 | `cluster` | `Cluster` | — (obligatoria) | Normalmente `new MemoryCluster()` de `@newt-js/core/cluster/memory`. |
 | `at` | `Date \| string` | `'2026-01-01T00:00:00.000Z'` | La hora con la que empieza el reloj. |
 | `worker` | `WorkerOptionsGiven` | los del worker | Ajustes del worker (`concurrency`, `leaseMs`, `backoffMs`…). |
-| `writeRule` | `WriteRule` | ninguna | Igual que en [ContextBase](/es/reference/core/). |
-| `guardRule` | `GuardRule` | ninguna | Igual que en ContextBase. |
+| `writeRule` | `WriteRule` | `'error'` | Igual que en [ContextBase](/es/reference/core/). |
+| `guardRule` | `GuardRule` | `'error'` | Igual que en ContextBase. |
 | `conflictRetries` | `Partial<ConflictRetries>` | los de ContextBase | Igual que en ContextBase. |
 | `storage` | `StorageOptions` | ninguno | Almacenamiento de ficheros, por ejemplo `{ private: new MemoryStorage() }`. |
 
@@ -78,7 +91,11 @@ await context.base.schedules.tick()
 await context.settle()
 
 const queued = await context.base.database.outbox.list()
-expect(queued.find(each => each.queue === 'task.remindOverdue.on.task.remindOverdue')?.status).toBe('done')
+expect(
+  queued.find(
+    each => each.queue === 'task.remindOverdue.on.task.remindOverdue',
+  )?.status,
+).toBe('done')
 ```
 
 ### logs
@@ -117,11 +134,13 @@ clock.now().toISOString() // '2026-03-01T09:01:00.000Z'
 No hay una ayuda especial: llama a `router.answer` con un `Request`. Ejecuta la ruta con todas sus comprobaciones (identificación, cuerpo, errores) y sin servidor. Mira [HttpRouter](/es/reference/http/#httprouter).
 
 ```ts
-const response = await router.answer(new Request('http://backend.test/api/tasks/tasks', {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ name: 'Second' }),
-}))
+const response = await router.answer(
+  new Request('http://backend.test/api/tasks/tasks', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'Second' }),
+  }),
+)
 expect(response?.status).toBe(201)
 ```
 

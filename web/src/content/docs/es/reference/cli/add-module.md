@@ -34,7 +34,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 
 ## Reglas del nombre
 
-- Palabras en minúsculas unidas por `-`, cada una empezando por una letra: `task`, `price-change`. El plural sigue la misma forma.
+- Letras minúsculas y dígitos, palabras unidas por `-`, empezando por una letra: `task`, `price-change`. El plural sigue la misma forma.
 - No una palabra que JavaScript se reserva (`class`, `delete`, `new`…).
 - No un nombre que el código generado de newt usa para otra cosa (`module`, `base`, `router`, `events`, `id`, `name`, `entity`, `page`…).
 - Su plural no puede ser `files`: `/<contexto>/files` sirve los ficheros del contexto.

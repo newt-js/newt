@@ -30,7 +30,7 @@ It also takes the [global flags](/reference/cli/overview/#global-flags).
 
 ## Name rules
 
-- Lowercase words joined by `-`, each starting with a letter: `complete-task` becomes the method `completeTask`.
+- Lowercase letters and digits, words joined by `-`, starting with a letter: `complete-task` becomes the method `completeTask`.
 - Not `find`, `get`, `paginate` or `search`: newt's lint shapes those reads.
 - Not `name`, `useCaseRunner`, `on`, `deps` or `events`, which every module has, nor a word JavaScript keeps.
 - Not a name the module already has as a member, or whose schema (`TaskCompleteTaskSchema`, `TaskCompleteTaskDTO`) is already in `<module>.schema.ts`.
@@ -62,7 +62,10 @@ export type TaskCompleteTaskDTO = z.input<typeof TaskCompleteTaskSchema>
   @UseCase()
   async completeTask(input: TaskCompleteTaskDTO): Promise<TaskDTO> {
     const { id } = TaskCompleteTaskSchema.parse(input)
-    const [task] = await this.tasks.find(TaskFilter.toCriteria<TaskRow>({ id }), { limit: 1 })
+    const [task] = await this.tasks.find(
+      TaskFilter.toCriteria<TaskRow>({ id }),
+      { limit: 1 },
+    )
     if (!task) {
       throw new TaskNotFound()
     }

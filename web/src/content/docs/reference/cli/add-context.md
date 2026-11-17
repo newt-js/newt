@@ -29,7 +29,7 @@ It also takes the [global flags](/reference/cli/overview/#global-flags).
 
 ## Name rules
 
-- Lowercase words joined by `-`: `tasks`, `web-session`. Each word starts with a letter.
+- Lowercase letters and digits, words joined by `-`, starting with a letter: `tasks`, `web-session`.
 - Not `api`: its frontend would be served at `/api`, where the routes are.
 - With Postgres or MySQL, the database name is `<backend>__<context>`; with S3, the bucket is `<backend>--<context>`. Each must fit in 63 characters.
 

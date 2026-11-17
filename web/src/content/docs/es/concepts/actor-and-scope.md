@@ -62,7 +62,10 @@ import { currentActor, UseCase } from '@newt-js/core'
 @UseCase()
 async create(input: TaskCreateDTO): Promise<TaskDTO> {
   const { userId } = currentActor()
-  const task = Task.create({ ...TaskCreateSchema.parse(input), createdBy: userId })
+  const task = Task.create({
+    ...TaskCreateSchema.parse(input),
+    createdBy: userId,
+  })
   await this.tasks.persist(task)
   return task.toDTO()
 }
@@ -79,7 +82,9 @@ Usa `findCurrentActor()` cuando puede haber sesión o no, por ejemplo en una rut
 ```ts
 import { runAsActor } from '@newt-js/core'
 
-const task = await runAsActor({ userId: 'ana' }, () => tasks.create({ name: 'Write the docs' }))
+const task = await runAsActor({ userId: 'ana' }, () =>
+  tasks.create({ name: 'Write the docs' }),
+)
 ```
 
 ### El actor en eventos y jobs
@@ -87,10 +92,28 @@ const task = await runAsActor({ userId: 'ana' }, () => tasks.create({ name: 'Wri
 Cuando se emite un evento, newt apunta quién lo emitió: el `userId` del actor actual, o `null`. Una suscripción lo lee en el segundo argumento, `meta`:
 
 ```ts title="src/contexts/tasks/modules/task/task.workers.ts"
-tasks.on(tasks.events.completed, 'notifyAssignee', (completed, meta) => [{ id: completed.id, completedBy: meta.actor }])
+tasks.on(
+  tasks.events.completed,
+  'notifyAssignee',
+  (completed, meta) => [{ id: completed.id, completedBy: meta.actor }],
+)
 ```
 
 Un job se ejecuta más tarde, en un [worker](/es/concepts/jobs-and-workers/), **sin actor**, aunque el código que lo puso en la cola tuviera uno. Dentro de un caso de uso que ejecuta una suscripción o una [tarea programada](/es/concepts/schedules/), `currentActor()` lanza un error. Pasa lo que necesites desde `meta.actor` o desde el payload del evento.
+
+Así viaja el actor desde una petición hasta todo lo que pone en marcha:
+
+```mermaid
+flowchart TD
+  R[Petición a una ruta privada] --> A{Tu authenticator}
+  A -- null --> X[401 not_signed_in]
+  A -- un actor --> B[runAsActor]
+  B --> C[Ruta y sus casos de uso]
+  C --> D[Casos de uso que llaman: mismo actor]
+  C --> E[Evento guardado con el userId]
+  E --> F[Job en un worker: sin actor]
+  F --> G[La suscripción lee meta.actor]
+```
 
 :::caution
 Llamar a `currentActor()` en un caso de uso que ejecuta una suscripción es un error habitual: ahí siempre lanza un error. Lee `meta.actor` en la suscripción.
@@ -128,9 +151,13 @@ Cada scope guarda su propio valor; dos scopes nunca se mezclan.
 Fíjalo en el middleware de un grupo de rutas. El middleware se ejecuta después del authenticator, así que ahí también conoces al actor:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-const teams = router.group('/teams/:teamId', (request, next) => team.run(request.params.teamId, next))
+const teams = router.group('/teams/:teamId', (request, next) =>
+  team.run(request.params.teamId, next),
+)
 
-teams.get('/tasks', async request => Response.json(await tasks.paginate({}, pageRequestFrom(request))))
+teams.get('/tasks', async request =>
+  Response.json(await tasks.paginate({}, pageRequestFrom(request))),
+)
 ```
 
 Comprueba que el actor pertenece al equipo antes de llamar a `next`, y responde `404` o `403` si no. newt no sabe quién pertenece a qué equipo.

@@ -7,6 +7,8 @@ sidebar:
 
 A log line is a short message your backend writes about what it is doing. newt writes its own lines (a job that failed, a lost connection) and gives you the same tool for yours, so all of them go to one place you choose.
 
+You read them to find out what went wrong once the backend runs somewhere you cannot watch it.
+
 ## Writing a line
 
 Import `log` and call one of its four levels:
@@ -81,7 +83,16 @@ A logger that throws never breaks your use case. The failure is printed with `co
 
 ## Where lines go
 
-There are two loggers, and you usually set both to the same one:
+There are two loggers, and you usually set both to the same one. This is how newt picks one for each line:
+
+```mermaid
+flowchart TD
+  L["log.info(...)"] --> Q{"inside a use case, worker or schedule?"}
+  Q -->|"yes"| P["the platform's logger"]
+  Q -->|"no"| S["the process's logger"]
+  P -.->|"if it throws"| E["console.error"]
+  S -.->|"if it throws"| E
+```
 
 | Logger | Set with | Gets lines written |
 |---|---|---|
@@ -98,10 +109,16 @@ Both start as a `ConsoleLogger`.
 import { Platform, setLogger } from '@newt-js/core/application'
 import { JsonLogger } from './json-logger'
 
-export async function startBackend(port: number, { stores = 'configured' }: { stores?: Stores } = {}): Promise<RunningContexts> {
+export async function startBackend(
+  port: number,
+  { stores = 'configured' }: { stores?: Stores } = {},
+): Promise<RunningContexts> {
   const logger = new JsonLogger()
   setLogger(logger)
-  const platform = new Platform({ cluster: new MemoryCluster(), logger })
+  const platform = new Platform({
+    cluster: new MemoryCluster(),
+    logger,
+  })
   // ...
 }
 ```
@@ -144,7 +161,10 @@ Logs tell you what happened. To measure use cases, such as how long each takes o
 
 ```ts
 interface Observability {
-  useCase<T>(call: ObservedUseCase, run: (attempt: UseCaseAttempt) => Promise<T>): Promise<T>
+  useCase<T>(
+    call: ObservedUseCase,
+    run: (attempt: UseCaseAttempt) => Promise<T>,
+  ): Promise<T>
   warn(message: string, fields: Record<string, unknown>): void
 }
 ```
@@ -164,10 +184,13 @@ export const timing: Observability = {
     const started = performance.now()
     try {
       return await run({
-        retrying: (error, attempt) => log.warn(`${call.name} retried`, { attempt }),
+        retrying: (error, attempt) =>
+          log.warn(`${call.name} retried`, { attempt }),
       })
     } finally {
-      log.debug(`${call.name} took`, { ms: Math.round(performance.now() - started) })
+      log.debug(`${call.name} took`, {
+        ms: Math.round(performance.now() - started),
+      })
     }
   },
   warn: () => {},
@@ -175,7 +198,11 @@ export const timing: Observability = {
 ```
 
 ```ts
-const platform = new Platform({ cluster: new MemoryCluster(), logger, observability: timing })
+const platform = new Platform({
+  cluster: new MemoryCluster(),
+  logger,
+  observability: timing,
+})
 ```
 
 You can also set it later with `platform.useObservability(timing)`. Without one, newt uses `noObservability`, which does nothing.
@@ -188,9 +215,17 @@ Use it in tests to check how things are wired, or to feed a tool that draws or c
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 test('remindOverdue runs at 0 9 * * *', async () => {
-  const described = describeApplication([context.base]).contexts.find(each => each.name === 'tasks')
-  const events = described?.modules.find(each => each.name === 'task')?.events ?? []
-  expect(events).toContainEqual(expect.objectContaining({ name: 'task.remindOverdue', schedule: { cron: '0 9 * * *' } }))
+  const described = describeApplication([context.base]).contexts.find(
+    each => each.name === 'tasks',
+  )
+  const events =
+    described?.modules.find(each => each.name === 'task')?.events ?? []
+  expect(events).toContainEqual(
+    expect.objectContaining({
+      name: 'task.remindOverdue',
+      schedule: { cron: '0 9 * * *' },
+    }),
+  )
   // ...
 })
 ```
@@ -208,14 +243,30 @@ It takes a list of contexts (each a `BoundedContext` or a `ContextBase`) and ret
       "name": "task",
       "className": "Task_Module",
       "useCases": [
-        { "id": "tasks/task.create", "name": "task.create", "retryOnConflict": true }
+        {
+          "id": "tasks/task.create",
+          "name": "task.create",
+          "retryOnConflict": true
+        }
       ],
       "events": [
-        { "id": "tasks/task.completed", "name": "task.completed", "schedule": null },
-        { "id": "tasks/task.remindOverdue", "name": "task.remindOverdue", "schedule": { "cron": "0 9 * * *" } }
+        {
+          "id": "tasks/task.completed",
+          "name": "task.completed",
+          "schedule": null
+        },
+        {
+          "id": "tasks/task.remindOverdue",
+          "name": "task.remindOverdue",
+          "schedule": { "cron": "0 9 * * *" }
+        }
       ],
       "deps": [
-        { "name": "project", "kind": "module", "target": "tasks/project" }
+        {
+          "name": "project",
+          "kind": "module",
+          "target": "tasks/project"
+        }
       ]
     }
   ],

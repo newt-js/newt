@@ -15,7 +15,10 @@ You define an event with `defineEvent`: a name and a zod schema for what it carr
 import { defineEvent } from '@newt-js/core'
 import { TaskSchema } from '../task.schema'
 
-export const Task_Completed = defineEvent('task.completed', TaskSchema.pick({ id: true }))
+export const Task_Completed = defineEvent(
+  'task.completed',
+  TaskSchema.pick({ id: true }),
+)
 ```
 
 `defineEvent` returns a class. `new Task_Completed({ id })` checks the payload against the schema and throws `InvalidEvent` if it does not pass.
@@ -46,7 +49,7 @@ Keep payloads small: the id of what changed, and little else. The use case that 
 
 ## Emitting an event
 
-An entity records an event with `trackEvent`, in the method that makes the change:
+An event goes out only when an entity records it, with `trackEvent`, in the method that makes the change. Say `TaskSchema` has a `doneAt` field (see [Entities](/concepts/entities/#changing-it)):
 
 ```ts title="src/contexts/tasks/modules/task/task.ts"
 complete(): void {
@@ -57,6 +60,29 @@ complete(): void {
   this.trackEvent(new Task_Completed({ id: this.id }))
 }
 ```
+
+A use case calls that method and saves the task:
+
+```ts title="src/contexts/tasks/modules/task/task.module.ts"
+@UseCase()
+async completeTask(input: TaskCompleteTaskDTO): Promise<TaskDTO> {
+  const { id } = TaskCompleteTaskSchema.parse(input)
+  const [task] = await this.tasks.find(
+    TaskFilter.toCriteria<TaskRow>({ id }),
+    { limit: 1 },
+  )
+  if (!task) {
+    throw new TaskNotFound()
+  }
+  task.complete()
+  await this.tasks.persist(task)
+  return task.toDTO()
+}
+```
+
+:::caution[The CLI does not emit for you]
+`newt add event` writes the event class, and `newt add use-case` writes a use case that reads and saves without changing anything. Until an entity method calls `trackEvent` and a use case calls that method, the event never happens and no subscription to it runs.
+:::
 
 The event goes out when the repository saves the entity:
 
@@ -73,9 +99,16 @@ A module lists the events others may react to in its `events` field, with `event
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 readonly events
 
-private constructor(base: ContextBase, private readonly tasks: Task_Repository, private readonly deps: Task_Deps) {
+private constructor(
+  base: ContextBase,
+  private readonly tasks: Task_Repository,
+  private readonly deps: Task_Deps,
+) {
   super('task', base.useCaseRunner, deps)
-  this.events = eventsOf(base.bus, { created: Task_Created, completed: Task_Completed })
+  this.events = eventsOf(base.bus, {
+    created: Task_Created,
+    completed: Task_Completed,
+  })
 }
 ```
 
@@ -89,7 +122,9 @@ A subscription runs a use case each time an event happens. You write it with `mo
 import type { Task_Module } from './task.module'
 
 export function registerTaskWorkers(tasks: Task_Module): void {
-  tasks.on(tasks.events.completed, 'notifyAssignee', completed => [{ id: completed.id }])
+  tasks.on(tasks.events.completed, 'notifyAssignee', completed => [
+    { id: completed.id },
+  ])
 }
 ```
 
@@ -112,7 +147,11 @@ The map also gets `meta`, with what newt knows about the event:
 | `signal` | an `AbortSignal`, aborted when the worker stops |
 
 ```ts
-tasks.on(tasks.events.completed, 'notifyAssignee', (completed, meta) => [{ id: completed.id, completedBy: meta.actor }])
+tasks.on(
+  tasks.events.completed,
+  'notifyAssignee',
+  (completed, meta) => [{ id: completed.id, completedBy: meta.actor }],
+)
 ```
 
 :::caution
@@ -130,7 +169,12 @@ A fourth argument takes options:
 | `queue` | the queue's name | `<module>.<useCase>.on.<event>` |
 
 ```ts
-tasks.on(tasks.events.completed, 'notifyAssignee', completed => [{ id: completed.id }], { attempts: 3 })
+tasks.on(
+  tasks.events.completed,
+  'notifyAssignee',
+  completed => [{ id: completed.id }],
+  { attempts: 3 },
+)
 ```
 
 `when` is checked when the event is emitted: if it returns `false`, no job is queued at all.
@@ -139,10 +183,29 @@ The queue name is how newt finds the jobs of a subscription. A custom `queue` mu
 
 ## What happens when an event is emitted
 
-1. The use case saves the entity. In the same transaction, newt writes one job per subscription to that event in the context's database (the [outbox](/concepts/jobs-and-workers/)).
-2. The transaction commits. The worker of that instance wakes up.
-3. The worker takes the job and runs the subscribed use case.
-4. If the use case throws, the job is tried again later, up to `attempts` times. After the last failure it is marked dead.
+This is what happens, in order, when `completeTask` saves a task that tracked `task.completed`:
+
+```mermaid
+sequenceDiagram
+  participant U as completeTask
+  participant R as Repository
+  participant D as Database
+  participant W as Worker
+  participant S as notifyAssignee
+  U->>R: persist(task)
+  R->>D: update the task row
+  R->>D: one job per subscription
+  D-->>W: commit wakes the worker
+  W->>D: take the job
+  W->>S: run the use case
+  alt it succeeds
+    W->>D: mark the job done
+  else it throws
+    W->>D: try again later, or mark it dead
+  end
+```
+
+The jobs are written in the same transaction as the change, in the context's database (the [outbox](/concepts/jobs-and-workers/), the queue of jobs kept in your database). If the use case throws, the job is tried again later, up to `attempts` times; after the last failure it is marked dead.
 
 So a subscription is never lost when the process crashes: the job is in the database.
 
@@ -157,7 +220,9 @@ There is no order between jobs: two events can be handled in a different order t
 A module can subscribe to the events of another module of the same context. The use case that runs is still its own:
 
 ```ts
-tasks.on(project.events.created, 'addFirstTask', created => [{ projectId: created.id }])
+tasks.on(project.events.created, 'addFirstTask', created => [
+  { projectId: created.id },
+])
 ```
 
 Its queue is `task.addFirstTask.on.project.created`.
@@ -173,7 +238,10 @@ Subscribing to the events of a module in another context is not covered here, be
 An event's `subscribe` method also takes a handler that runs in memory, right after the commit, on the same instance:
 
 ```ts
-tasks.events.completed.subscribe(payload => console.log('completed', payload.id), { strategy: 'fire-and-forget' })
+tasks.events.completed.subscribe(
+  payload => console.log('completed', payload.id),
+  { strategy: 'fire-and-forget' },
+)
 ```
 
 No job is saved. If the handler throws, newt logs the error and does nothing more. Use it only for things you can afford to lose; for real work, use `module.on`.
@@ -188,7 +256,11 @@ test('notifyAssignee runs on task.created', async () => {
   await context.settle()
 
   const queued = await context.base.database.outbox.list()
-  expect(queued.find(each => each.queue === 'task.notifyAssignee.on.task.created')?.status).toBe('done')
+  expect(
+    queued.find(
+      each => each.queue === 'task.notifyAssignee.on.task.created',
+    )?.status,
+  ).toBe('done')
 })
 ```
 

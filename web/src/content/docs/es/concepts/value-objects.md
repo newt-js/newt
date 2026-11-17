@@ -16,7 +16,10 @@ import { defineValueObject } from '@newt-js/core'
 import { z } from 'zod'
 import { InvalidPriority } from '../errors/invalid-priority'
 
-export const Priority = defineValueObject(z.string().trim().min(1).max(100).brand<'Priority'>(), text => new InvalidPriority(text))
+export const Priority = defineValueObject(
+  z.string().trim().min(1).max(100).brand<'Priority'>(),
+  text => new InvalidPriority(text),
+)
 export type Priority = z.output<typeof Priority.schema>
 ```
 
@@ -27,6 +30,26 @@ Priority.tryFrom('  ')   // undefined
 ```
 
 En ejecución, un `Priority` es un string. El `.brand<'Priority'>()` solo existe para TypeScript, así que un `string` normal no es un `Priority` hasta que `from` lo comprueba.
+
+## Usarlo en un schema
+
+Pon su `schema` en el schema del módulo. El campo tiene entonces las reglas y el tipo del value object:
+
+```ts title="src/contexts/tasks/modules/task/task.schema.ts"
+export const TaskSchema = z.object({
+  id: TaskId.schema,
+  name: z.string().trim().min(1).max(100),
+  priority: Priority.schema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+```
+
+`TaskDTO['priority']` es ahora un `Priority`. Dentro de un schema, un valor malo falla como cualquier otra comprobación de zod: HTTP responde `400` con el código `validation`. Solo `from` lanza tu propio error.
+
+:::caution
+Un campo nuevo en el schema necesita también su columna. Escribe una migración para ella (ver [Base de datos y migraciones](/es/concepts/database/)).
+:::
 
 ## defineValueObject
 
@@ -71,7 +94,11 @@ export type TaskId = Uuid<'TaskId'>
 Las rutas convierten el texto de la ruta en un id antes de llamar a un caso de uso:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.get('/tasks/tasks/:id', async request => Response.json(await tasks.get({ id: TaskId.from(request.params.id) })))
+router.get('/tasks/tasks/:id', async request =>
+  Response.json(
+    await tasks.get({ id: TaskId.from(request.params.id) }),
+  ),
+)
 ```
 
 `Uuid` es un `uuidFactory('Uuid')` ya hecho, para un id que no es de ningún tipo concreto.
@@ -82,7 +109,7 @@ Un módulo que guarda el id de otro módulo, como el `projectId` de una tarea, d
 
 ## Value objects incluidos
 
-`@newt-js/core` trae estos. Cada uno tiene también una factoría (`emailFactory()`, `keyFactory(name, pattern?)`, etc.) que crea uno nuevo con las mismas reglas.
+`@newt-js/core` trae estos. Cada uno salvo `EventId` tiene también una factoría (`emailFactory()`, `keyFactory(name, pattern?)`, etc.) que crea uno nuevo con las mismas reglas.
 
 | Value object | Para qué sirve | Error y código |
 |---|---|---|

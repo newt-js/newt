@@ -14,7 +14,10 @@ sidebar:
 ```ts title="eslint.config.ts"
 import { newt } from '@newt-js/lint'
 
-export default newt({ root: import.meta.dirname, contexts: { folder: 'src/contexts' } })
+export default newt({
+  root: import.meta.dirname,
+  contexts: { folder: 'src/contexts' },
+})
 ```
 
 Run it through the `lint` script, which calls ESLint with Bun so it loads the package's TypeScript as it is:
@@ -60,6 +63,21 @@ If you pass `uses`, list every context, even those that use none (`[]`). A missi
 
 Without `contexts`, `route-context` still runs on module files.
 
+## What may import what
+
+This is what the import rules (`context-imports`, `module-imports`, `schema-imports`, `frontend-imports`) allow, with the `tasks` and `chat` contexts as the example:
+
+```mermaid
+flowchart TD
+  chat["chat context"] -->|"only if chat.context.ts imports tasks"| tasks["tasks context"]
+  task["task module"] -->|"any file"| own["task's own files"]
+  task -->|".module.ts, .schema.ts, events/, errors/"| project["project module"]
+  schema["task.schema.ts"] -->|"only"| deps["zod, @newt-js/core, value-objects/, other *.schema.ts"]
+  frontend["tasks frontend"] -->|"import type only"| schemas["tasks *.schema.ts"]
+```
+
+Each rule is described in the sections that follow.
+
 ## Modules and contexts
 
 ### newt/module-files
@@ -83,8 +101,12 @@ A module keeps one entity: only its `<module>.ts` declares a class that extends 
 
 ```ts
 // modules/task/task.ts
-export class Task extends Entity<typeof TaskSchema> { /* ... */ }
-export class Comment extends Entity<typeof CommentSchema> { /* ... */ }  // wrong: a second entity
+export class Task extends Entity<typeof TaskSchema> {
+  /* ... */
+}
+export class Comment extends Entity<typeof CommentSchema> {
+  /* ... */
+} // wrong: a second entity
 ```
 
 Right: make `comment` a module of its own (`newt add module tasks/comment`) and keep its id in the task.
@@ -97,8 +119,10 @@ A module imports from another module only its `.module.ts`, its `.schema.ts`, it
 
 ```ts
 // modules/task/task.module.ts
-import { Project_Repository } from '../project/project.repository'  // wrong
-import { ProjectNotFound } from '../project/errors/project-not-found' // right
+// wrong
+import { Project_Repository } from '../project/project.repository'
+// right
+import { ProjectNotFound } from '../project/errors/project-not-found'
 ```
 
 A file outside the modules (such as `tasks-modules.ts`) may import what it composes, but re-exports only what a module offers.
@@ -114,7 +138,8 @@ What a context uses is the `uses` option or, without it, the contexts its `<name
 ```ts
 // src/contexts/chat/modules/message/message.module.ts
 import type { Task_Module } from '../../../tasks/modules/task/task.module'
-// wrong, unless chat.context.ts imports tasks (or uses says chat: ['tasks'])
+// wrong, unless chat.context.ts imports tasks
+// (or uses says chat: ['tasks'])
 ```
 
 Why: contexts depend on each other in one direction only, so each can be read, tested and moved on its own.
@@ -151,10 +176,10 @@ Why: server code must never reach the browser.
 In a `*.module.ts`, every public method of a class that extends `Module` is marked `@UseCase()`. A public function in a field, or in a public constructor parameter, is refused too.
 
 ```ts
-async archive(input: TaskArchiveDTO) { /* ... */ }              // wrong
+async archive(input: TaskArchiveDTO) { /* ... */ } // wrong
 @UseCase()
-async archive(input: TaskArchiveDTO) { /* ... */ }              // right
-private toRow(task: Task) { /* ... */ }                         // right: private
+async archive(input: TaskArchiveDTO) { /* ... */ } // right
+private toRow(task: Task) { /* ... */ }            // right: private
 ```
 
 Why: `@UseCase` is what runs a method as a use case (write rule, retry on conflict, trace).
@@ -167,11 +192,11 @@ Refused: `unknown` or `any`, an object type written in place, a bare `string`, `
 
 ```ts
 @UseCase()
-async completeTask(id: string) { /* ... */ }                    // wrong: bare string
+async completeTask(id: string) { /* ... */ }       // wrong: bare string
 
 @UseCase()
 async completeTask(input: TaskCompleteTaskDTO): Promise<TaskDTO> {
-  const { id } = TaskCompleteTaskSchema.parse(input)            // right
+  const { id } = TaskCompleteTaskSchema.parse(input) // right
   // ...
 }
 ```
@@ -196,7 +221,7 @@ What a module does with its files is done by use cases named after it: `uploadUr
 ```ts
 @UseCase()
 async attach(input: DocumentAttachDTO) {
-  await this.files.uploadUrl(/* ... */)    // wrong: call it from uploadStart
+  await this.files.uploadUrl(/* ... */) // wrong: call it from uploadStart
 }
 ```
 
@@ -241,7 +266,7 @@ Every route a context registers, on its router or a group of it, starts with the
 // src/contexts/tasks/modules/task/task.routes.ts
 router.get('/items/:id', handle)           // wrong
 router.get('/tasks/tasks/:id', handle)     // right
-router.group('/tasks').get('/tasks', handle) // right
+router.group('/tasks', middleware).get('/tasks', handle) // right
 ```
 
 Paths are read through consts, templates and a group's prefix. A path the rule cannot read is reported too: write it as text or as a const that holds text. Test files are skipped.
@@ -254,10 +279,16 @@ In a `*.routes.ts`, the request body is never given a type before something pars
 
 ```ts
 router.post('/tasks/tasks', async request =>
-  Response.json(await tasks.create(await request.json() as TaskCreateDTO)))  // wrong
+  Response.json(
+    await tasks.create((await request.json()) as TaskCreateDTO),
+  ),
+) // wrong
 
 router.post('/tasks/tasks', async request =>
-  Response.json(await tasks.create(await bodyOf(request)), { status: 201 })) // right
+  Response.json(await tasks.create(await bodyOf(request)), {
+    status: 201,
+  }),
+) // right
 ```
 
 Why: the use case parses the body with its schema; a cast would hide a missing parse.
@@ -268,10 +299,14 @@ A subscription's queue is `<module>.<useCase>.on.<module>.<event>`. In a module'
 
 ```ts
 // modules/task/task.workers.ts
-tasks.events.completed.subscribe(c => tasks.notifyAssignee({ id: c.id }),
-  { strategy: 'handler', queue: 'project.notify.on.task.completed' })   // wrong
+tasks.events.completed.subscribe(
+  c => tasks.notifyAssignee({ id: c.id }),
+  { strategy: 'handler', queue: 'project.notify.on.task.completed' },
+) // wrong
 
-tasks.on(tasks.events.completed, 'notifyAssignee', completed => [{ id: completed.id }]) // right
+tasks.on(tasks.events.completed, 'notifyAssignee', completed => [
+  { id: completed.id },
+]) // right
 ```
 
 Why: the queue's name says who reacts to what, and must not lie. `Module.on` names it for you.
@@ -306,12 +341,12 @@ Why: `newt_…` tables are newt's (jobs, schedule ticks, idempotency keys, appli
 No comment turns off, for a stretch of code, a `newt/…` rule or one the preset turns on, nor changes it. One line may be let off with `eslint-disable-next-line` or `eslint-disable-line` when the comment names the rule and gives a reason after `--`.
 
 ```ts
-/* eslint-disable newt/module-imports */                        // wrong
-/* eslint newt/module-imports: "off" */                         // wrong
-// eslint-disable-next-line curly                               // wrong: no reason
-// eslint-disable-next-line                                     // wrong: names no rule
-// eslint-disable-next-line curly -- generated by a tool that writes no braces
-if (a) b()                                                      // right
+/* eslint-disable newt/module-imports */ // wrong
+/* eslint newt/module-imports: "off" */ // wrong
+// eslint-disable-next-line curly // wrong: no reason
+// eslint-disable-next-line       // wrong: names no rule
+// eslint-disable-next-line curly -- generated by a tool, no braces
+if (a) b() // right
 ```
 
 A bare `/* eslint-disable */` is reported too: the preset's processor keeps it from silencing this rule.

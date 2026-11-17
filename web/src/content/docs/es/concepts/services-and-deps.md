@@ -65,7 +65,11 @@ export function tasksModules(base: ContextBase, router: HttpRouter) {
 El módulo las guarda y se las pasa al constructor de `Module`:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
-private constructor(base: ContextBase, private readonly tasks: Task_Repository, private readonly deps: Task_Deps) {
+private constructor(
+  base: ContextBase,
+  private readonly tasks: Task_Repository,
+  private readonly deps: Task_Deps,
+) {
   super('task', base.useCaseRunner, deps)
   // ...
 }
@@ -89,7 +93,18 @@ Pasar `deps` a `super` permite a newt describir la app: `describeApplication` li
 - **Leer a través de los casos de uso de otro módulo.** `this.deps.project.get(...)`, `find(...)` y `paginate(...)` están bien.
 - **No guardar a través de ellos.** Un caso de uso solo guarda su propio módulo: un caso de uso de `project` que guarda, llamado desde `task`, rompe la [regla de escritura](/es/concepts/use-cases/#la-regla-de-escritura) y lanza un error. Para cambiar un proyecto cuando le pasa algo a una tarea, publica un evento y deja que `project` reaccione en un worker (ver [Eventos y suscripciones](/es/concepts/events/)).
 - **Sin ciclos.** Si `task` usa `project`, `project` no puede usar `task`, ni siquiera a través de un tercer módulo. `newt add deps` rechaza un ciclo.
-- **Solo módulos del mismo contexto.** Los módulos de otro contexto no son dependencias de un módulo.
+- **Módulos del mismo contexto.** Un módulo usa los módulos de otro contexto solo cuando su contexto se abre con ese contexto, y el CLI todavía no lo escribe. Ver [cómo hablan los contextos entre sí](/es/concepts/contexts-and-modules/#cómo-hablan-los-contextos-entre-sí).
+
+Esto es lo que `task` puede alcanzar de `project`, y lo que rechaza el lint:
+
+```mermaid
+flowchart TD
+  T["módulo task"] -->|"this.deps.project"| P["project.module.ts"]
+  T -->|"importa"| S["project.schema.ts"]
+  T -->|"importa"| E["events/ y errors/ de project"]
+  T -.->|"lo rechaza el lint"| X["entidad, repositorio, value objects, rutas, workers y servicios de project"]
+  P -.->|"rechazado: un ciclo"| T
+```
 
 Lo que comprueba el lint:
 

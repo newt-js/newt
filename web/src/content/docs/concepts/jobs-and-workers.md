@@ -67,6 +67,20 @@ When the app gets `SIGINT` or `SIGTERM`, the worker stops taking jobs and waits 
 
 ## Retries and dead jobs
 
+These are the states a job goes through:
+
+```mermaid
+stateDiagram-v2
+  [*] --> pending: event saved
+  pending --> running: a worker takes it
+  running --> done: use case returns
+  running --> pending: it throws, wait and retry
+  running --> dead: it throws on the last attempt
+  running --> running: lease ran out, taken again
+  dead --> pending: outbox.retry(id, now)
+  done --> [*]: deleted after keepDoneMs
+```
+
 A failed job waits before its next attempt, twice as long each time:
 
 ```text
@@ -88,7 +102,13 @@ A use case that throws a [known error](/concepts/errors/), such as `TaskNotFound
 You pass them to the context base, as `worker`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const base = new ContextBase({ name: 'tasks', platform, database, worker: { concurrency: 4 }, storage: await openStorage('tasks', router, stores) })
+const base = new ContextBase({
+  name: 'tasks',
+  platform,
+  database,
+  worker: { concurrency: 4 },
+  storage: await openStorage('tasks', router, stores),
+})
 ```
 
 | Option | What it is | Default |
@@ -124,7 +144,10 @@ The worker and the outbox give you what you need to build an admin page or an al
 A rate limit caps how many times something happens in a time window, per key: "20 tasks created per user per minute". You define it on the context base:
 
 ```ts
-const creating = base.rateLimits.define('task.create', { limit: 20, windowMs: 60_000 })
+const creating = base.rateLimits.define('task.create', {
+  limit: 20,
+  windowMs: 60_000,
+})
 ```
 
 - The name is `<module>.<name>`, in camelCase, and is defined once per context.

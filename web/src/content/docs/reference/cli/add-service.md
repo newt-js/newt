@@ -30,7 +30,7 @@ It also takes the [global flags](/reference/cli/overview/#global-flags).
 
 ## Name rules
 
-- Lowercase words joined by `-`, each starting with a letter: `due-dates` becomes the function `dueDates`.
+- Lowercase letters and digits, words joined by `-`, starting with a letter: `due-dates` becomes the function `dueDates`.
 - Not a word JavaScript keeps, nor a name newt's generated code uses (`module`, `base`, `router`, `id`, `name`…).
 
 ## What it writes

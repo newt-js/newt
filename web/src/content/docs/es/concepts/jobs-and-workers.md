@@ -67,6 +67,20 @@ Cuando la aplicación recibe `SIGINT` o `SIGTERM`, el worker deja de coger jobs 
 
 ## Reintentos y jobs muertos
 
+Estos son los estados por los que pasa un job:
+
+```mermaid
+stateDiagram-v2
+  [*] --> pending: evento guardado
+  pending --> running: un worker lo coge
+  running --> done: el caso de uso termina
+  running --> pending: lanza un error, espera y reintenta
+  running --> dead: lanza un error en el último intento
+  running --> running: caduca el bloqueo, otro lo coge
+  dead --> pending: outbox.retry(id, now)
+  done --> [*]: se borra pasado keepDoneMs
+```
+
 Un job fallido espera antes del siguiente intento, el doble cada vez:
 
 ```text
@@ -88,7 +102,13 @@ Un caso de uso que lanza un [error conocido](/es/concepts/errors/), como `TaskNo
 Se pasan a la base del contexto, como `worker`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const base = new ContextBase({ name: 'tasks', platform, database, worker: { concurrency: 4 }, storage: await openStorage('tasks', router, stores) })
+const base = new ContextBase({
+  name: 'tasks',
+  platform,
+  database,
+  worker: { concurrency: 4 },
+  storage: await openStorage('tasks', router, stores),
+})
 ```
 
 | Opción | Qué es | Por defecto |
@@ -124,7 +144,10 @@ El worker y el outbox te dan lo necesario para montar una página de administrac
 Un límite de frecuencia pone un tope a cuántas veces pasa algo en una ventana de tiempo, por clave: "20 tareas creadas por usuario y minuto". Lo defines en la base del contexto:
 
 ```ts
-const creating = base.rateLimits.define('task.create', { limit: 20, windowMs: 60_000 })
+const creating = base.rateLimits.define('task.create', {
+  limit: 20,
+  windowMs: 60_000,
+})
 ```
 
 - El nombre es `<módulo>.<nombre>`, en camelCase, y se define una vez por contexto.

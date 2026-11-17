@@ -30,7 +30,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 
 ## Reglas del nombre
 
-- Palabras en minúscula unidas por `-`, cada una empezando por una letra.
+- Letras minúsculas y dígitos, palabras unidas por `-`, empezando por una letra.
 - No repite el módulo: en `tasks/task`, `completed`, no `task-completed`. El fichero se llama `task-completed.ts` igualmente.
 - Ni `module`, ni `repository`, ni `deps`: `Task_Module`, `Task_Repository` y `Task_Deps` son del propio módulo.
 
@@ -52,7 +52,10 @@ Next steps:
 import { defineEvent } from '@newt-js/core'
 import { TaskSchema } from '../task.schema'
 
-export const Task_Completed = defineEvent('task.completed', TaskSchema.pick({ id: true }))
+export const Task_Completed = defineEvent(
+  'task.completed',
+  TaskSchema.pick({ id: true }),
+)
 ```
 
 Si el módulo no tiene `TaskSchema` en `<module>.schema.ts`, el schema del evento se escribe en el propio fichero.

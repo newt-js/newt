@@ -11,18 +11,28 @@ Routes, workers, scheduled tasks and tests all call use cases. newt runs every c
 
 ## A use case
 
+`newt add use-case tasks/task complete-task` writes a method that reads the task and saves it. It changes nothing yet: the change is the line you add, here `task.complete()` (its code is in [Entities](/concepts/entities/#changing-it)).
+
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 @UseCase()
 async completeTask(input: TaskCompleteTaskDTO): Promise<TaskDTO> {
   const { id } = TaskCompleteTaskSchema.parse(input)
-  const [task] = await this.tasks.find(TaskFilter.toCriteria<TaskRow>({ id }), { limit: 1 })
+  const [task] = await this.tasks.find(
+    TaskFilter.toCriteria<TaskRow>({ id }),
+    { limit: 1 },
+  )
   if (!task) {
     throw new TaskNotFound()
   }
+  task.complete()
   await this.tasks.persist(task)
   return task.toDTO()
 }
 ```
+
+:::caution
+Until you add the change, the generated use case saves nothing and emits no event. Saving an entity that did not change writes nothing.
+:::
 
 The shape is always the same:
 
@@ -31,6 +41,36 @@ The shape is always the same:
 3. Change it through its own methods.
 4. Save it with `persist`.
 5. Return a DTO, a plain object (see [Schemas and DTOs](/concepts/schemas-and-dtos/)).
+
+## What happens on a call
+
+This is what happens when a route, a worker or a test calls `completeTask`:
+
+```mermaid
+sequenceDiagram
+  participant C as Caller
+  participant U as @UseCase
+  participant M as completeTask
+  participant R as Repository
+  participant D as Database
+  C->>U: completeTask({ id })
+  U->>M: run your method
+  M->>R: find({ id })
+  R->>D: read the row
+  M->>M: task.complete()
+  M->>R: persist(task)
+  R->>D: begin transaction
+  R->>D: update row if version matches
+  R->>D: queue a job per subscription
+  R->>D: commit
+  alt someone saved the row first
+    R-->>U: StaleVersion
+    U->>M: wait, run it again
+  else saved
+    M-->>U: TaskDTO
+  end
+  U-->>C: TaskDTO
+```
 
 ## What `@UseCase` does around your method
 
@@ -88,7 +128,12 @@ You set how in the context's `conflictRetries` option:
 | `backoffMs` | `10` | Before retry *n*, it waits a random time up to `backoffMs × n` milliseconds. |
 
 ```ts
-new ContextBase({ name: 'tasks', platform, database, conflictRetries: { times: 5 } })
+new ContextBase({
+  name: 'tasks',
+  platform,
+  database,
+  conflictRetries: { times: 5 },
+})
 ```
 
 Only the outermost use case retries. When one use case calls another, a conflict in the inner one goes up to the outer one, which runs again from the start.
@@ -116,7 +161,10 @@ async create(input: TaskCreateDTO): Promise<TaskDTO> {
 
 @UseCase()
 async get(criteria: TaskFilterDTO): Promise<TaskDTO> {
-  const [task] = await this.tasks.find(TaskFilter.toCriteria<TaskRow>(TaskFilter.schema.parse(criteria)), { limit: 1 })
+  const [task] = await this.tasks.find(
+    TaskFilter.toCriteria<TaskRow>(TaskFilter.schema.parse(criteria)),
+    { limit: 1 },
+  )
   if (!task) {
     throw new TaskNotFound()
   }
@@ -124,15 +172,30 @@ async get(criteria: TaskFilterDTO): Promise<TaskDTO> {
 }
 
 @UseCase()
-async find(criteria: TaskFilterDTO, sort?: TaskSortDTO): Promise<TaskDTO[]> {
-  const orderBy = TaskFilter.toOrder<TaskRow>(sort === undefined ? undefined : TaskFilter.sortSchema.parse(sort))
-  const found = await this.tasks.find(TaskFilter.toCriteria<TaskRow>(TaskFilter.schema.parse(criteria)), { orderBy })
+async find(
+  criteria: TaskFilterDTO,
+  sort?: TaskSortDTO,
+): Promise<TaskDTO[]> {
+  const orderBy = TaskFilter.toOrder<TaskRow>(
+    sort === undefined ? undefined : TaskFilter.sortSchema.parse(sort),
+  )
+  const found = await this.tasks.find(
+    TaskFilter.toCriteria<TaskRow>(TaskFilter.schema.parse(criteria)),
+    { orderBy },
+  )
   return found.map(each => each.toDTO())
 }
 
 @UseCase()
-async paginate(criteria: TaskFilterDTO, page: PageRequest): Promise<Page<TaskDTO>> {
-  const found = await this.tasks.paginate(TaskFilter.toCriteria<TaskRow>(TaskFilter.schema.parse(criteria)), page, { newestFirst: true })
+async paginate(
+  criteria: TaskFilterDTO,
+  page: PageRequest,
+): Promise<Page<TaskDTO>> {
+  const found = await this.tasks.paginate(
+    TaskFilter.toCriteria<TaskRow>(TaskFilter.schema.parse(criteria)),
+    page,
+    { newestFirst: true },
+  )
   return mapPage(found, each => each.toDTO())
 }
 ```

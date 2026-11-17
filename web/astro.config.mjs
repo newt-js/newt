@@ -4,6 +4,7 @@ import starlight from '@astrojs/starlight'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import { remarkPackageName } from './src/plugins/remark-package-name.mjs'
+import { remarkDiagrams } from './src/plugins/remark-diagrams.mjs'
 // The one place the package name lives; the docs write %PKG% for it.
 import { PACKAGE } from './src/config/site.ts'
 
@@ -13,12 +14,43 @@ export default defineConfig({
   // The folder it is served from: '/' at a domain's root, '/newt' on GitHub Pages without a domain.
   base: process.env.BASE_PATH ?? '/',
   markdown: {
-    remarkPlugins: [remarkPackageName(PACKAGE)],
+    remarkPlugins: [remarkPackageName(PACKAGE), remarkDiagrams],
   },
   integrations: [
     starlight({
       title: 'newt',
       favicon: '/favicon.svg',
+      // Code in gruvbox, the same themes as the landing's blocks (Blocks.astro).
+      // Long lines wrap (keeping their indent) instead of scrolling; the code itself is kept under 76 columns.
+      expressiveCode: {
+        themes: ['gruvbox-dark-medium', 'gruvbox-light-medium'],
+        defaultProps: { wrap: true, preserveIndent: true },
+        // The landing's code window (Blocks.astro): gruvbox tokens on the site's card, 13px, a muted bar.
+        styleOverrides: {
+          codeBackground: 'var(--card)',
+          codeFontSize: '0.8125rem',
+          codeLineHeight: '1.7',
+          borderColor: 'var(--border)',
+          borderRadius: 'calc(var(--radius) + 2px)',
+          frames: {
+            // No tab: the file name sits in a plain bar, like the landing's code window.
+            editorTabBarBackground: 'color-mix(in srgb, var(--muted) 50%, var(--card))',
+            editorActiveTabBackground: 'transparent',
+            editorActiveTabForeground: 'var(--muted-foreground)',
+            editorActiveTabBorderColor: 'transparent',
+            editorTabBorderRadius: '0',
+            editorTabsMarginInlineStart: '0',
+            editorTabsMarginBlockStart: '0',
+            editorActiveTabIndicatorTopColor: 'transparent',
+            editorActiveTabIndicatorBottomColor: 'transparent',
+            editorTabBarBorderBottomColor: 'var(--border)',
+            terminalTitlebarBackground: 'color-mix(in srgb, var(--muted) 50%, var(--card))',
+            terminalBackground: 'var(--card)',
+            terminalTitlebarBorderBottomColor: 'var(--border)',
+            frameBoxShadowCssValue: 'none',
+          },
+        },
+      },
       defaultLocale: 'root',
       locales: {
         root: { label: 'English', lang: 'en' },

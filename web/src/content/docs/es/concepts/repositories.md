@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-Un repositorio es la clase que lee las entidades de un módulo de su tabla y las vuelve a guardar. Los casos de uso nunca escriben SQL: piden al repositorio con criterios y le pasan entidades para guardar.
+Un repositorio es la clase que lee las entidades de un módulo de su tabla y las vuelve a guardar. Existe para que tus casos de uso nunca escriban SQL: le piden entidades con criterios, las cambian y se las devuelven para guardarlas.
 
 El `Repository` de newt ya sabe leer, guardar, comprobar versiones y publicar eventos. Tu repositorio solo dice qué tabla usa y cómo una fila se convierte en entidad.
 
@@ -67,7 +67,8 @@ Los criterios dicen qué filas leer. Son un objeto plano, con los campos de la f
 ```ts
 { name: 'Write the docs' }                       // igual a
 { name: { ieq: 'write the docs' } }              // con un operador
-{ createdAt: { gte: '2026-01-01', lt: '2026-02-01' } }  // varios, deben cumplirse todos
+// varios, deben cumplirse todos
+{ createdAt: { gte: '2026-01-01', lt: '2026-02-01' } }
 { doneAt: null }                                 // el campo está vacío
 { or: [{ name: 'A' }, { name: 'B' }] }           // cualquiera de
 { and: [{ projectId }, { doneAt: null }] }       // todos
@@ -120,7 +121,9 @@ Utilidades para páginas:
 | `allPages(read, size?)` | Llama a `read` página tras página, de 100 en 100 por defecto, y devuelve todos los elementos. |
 
 ```ts
-const found = await this.tasks.paginate(criteria, page, { newestFirst: true })
+const found = await this.tasks.paginate(criteria, page, {
+  newestFirst: true,
+})
 return mapPage(found, each => each.toDTO())
 ```
 
@@ -178,11 +181,36 @@ Un guardado cuyos hooks leen sin guard lanza `[guard rule] … reads task in a s
 
 Cada `persist` es una transacción. Un módulo nunca abre una por su cuenta: la regla del lint `module-transactions` rechaza cualquier uso de las `transactions` de la base en un módulo. Para guardar varias entidades juntas, pásalas a un solo `persist`.
 
-`TransactionSpoiled` se lanza cuando falló un guardado que se unió a una transacción, aunque su error se capturara: se deshace la transacción entera.
+Si un guardado falla dentro de una transacción que abrió otro guardado, se deshace la transacción entera, aunque tu código capture el error. newt lanza entonces `TransactionSpoiled`, para que nunca se confirme un guardado a medias.
 
 ## Versiones y conflictos
 
-Cada fila tiene una `version`. Un guardado actualiza o borra una fila solo si su versión sigue siendo la que leyó la entidad, y le suma uno.
+Dos personas pueden cambiar la misma tarea a la vez. Sin una comprobación, el segundo guardado pisaría al primero sin avisar. newt lo evita con un número en cada fila, su `version`:
+
+- Una inserción escribe `version` 1.
+- Una actualización o un borrado solo se hace si la versión de la fila sigue siendo la que leyó la entidad, y le suma uno.
+- Si la fila cambió entretanto, no se escribe nada y el guardado lanza `StaleVersion`.
+
+Esto es lo que pasa cuando dos casos de uso completan la misma tarea a la vez:
+
+```mermaid
+sequenceDiagram
+  participant A as Caso de uso A
+  participant B as Caso de uso B
+  participant DB as Base de datos
+  A->>DB: lee la tarea (versión 3)
+  B->>DB: lee la tarea (versión 3)
+  A->>DB: actualiza si la versión es 3
+  DB-->>A: guardado, ahora versión 4
+  B->>DB: actualiza si la versión es 3
+  DB-->>B: ninguna fila cambiada
+  Note over B: StaleVersion, se repite
+  B->>DB: lee la tarea (versión 4)
+  B->>DB: actualiza si la versión es 4
+  DB-->>B: guardado, ahora versión 5
+```
+
+Los errores que puede lanzar un guardado cuando choca con otro:
 
 | Error | Cuándo | HTTP |
 |---|---|---|
@@ -190,7 +218,7 @@ Cada fila tiene una `version`. Un guardado actualiza o borra una fila solo si su
 | `DuplicateValue` | Un índice único rechazó un valor. | `409` |
 | `TransactionConflict` | Postgres o MySQL rechazó la transacción (un interbloqueo, un fallo de serialización). | `409` |
 
-Los tres son `ConcurrencyConflict`, así que el [caso de uso se ejecuta otra vez](/es/concepts/use-cases/#reintentos-ante-un-conflicto) antes de que el error llegue al cliente. `DuplicateValue` lista los campos en `params.fields` cuando la base de datos dice cuáles.
+Los tres son `ConcurrencyConflict`, así que el [caso de uso se ejecuta otra vez](/es/concepts/use-cases/#reintentos-ante-un-conflicto), hasta tres veces por defecto, antes de que el error llegue al cliente. `DuplicateValue` lista los campos en `params.fields` cuando la base de datos dice cuáles.
 
 :::note
 De los reintentos, como mucho uno sigue a un `DuplicateValue` por defecto (`conflictRetries.duplicates`). Un valor que guarda otro suele seguir ocupado en la siguiente ejecución.
@@ -201,7 +229,10 @@ De los reintentos, como mucho uno sigue a un `DuplicateValue` por defecto (`conf
 `ReferenceNotFound` (`400`, código `reference_not_found`) dice que un id no apunta a nada: `The project 0190… does not exist`. Lánzalo tú, o usa `resolveRefs`, que busca varios ids y lo lanza para el primero que falte:
 
 ```ts
-const refs = await resolveRefs({ project: projectId }, { project: projectFinder })
+const refs = await resolveRefs(
+  { project: projectId },
+  { project: projectFinder },
+)
 // { project: { id, name } }
 ```
 
@@ -209,7 +240,7 @@ Cada buscador tiene `find({ id: [id] })`, que devuelve objetos `{ id, name }`. U
 
 ## Texto que la base de datos no puede guardar
 
-Un string con el carácter NUL o con un surrogate suelto no se puede guardar como texto. Guardarlo lanza `TextWithNul` (`400`, código `text_with_nul`). `unstorable(text)` y `holdsNul(value)` comprueban un valor antes.
+Un string con el carácter NUL o con un surrogate suelto no se puede guardar como texto. Guardarlo lanza `TextWithNul` (`400`, código `text_with_nul`). `holdsNul(value)` comprueba un valor antes, mirando dentro de strings, arrays y objetos.
 
 ## Scope
 

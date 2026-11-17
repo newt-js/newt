@@ -166,8 +166,10 @@ To turn an existing backend into a monorepo, create the monorepo in a new folder
 ## Options
 
 ```sh
-newt init [name] --monorepo [--backend <folder>] [--port <port>] [--db <database>] [--files <storage>] [--cluster <cluster>]
-newt add backend <folder> [--port <port>] [--db <database>] [--files <storage>] [--cluster <cluster>]
+newt init [name] --monorepo [--backend <folder>] [--port <port>] \
+  [--db <database>] [--files <storage>] [--cluster <cluster>]
+newt add backend <folder> [--port <port>] [--db <database>] \
+  [--files <storage>] [--cluster <cluster>]
 ```
 
 See the [`newt init`](/reference/cli/init/) and [`newt add backend`](/reference/cli/add-backend/) references.

@@ -49,8 +49,12 @@ The lint's parser needs TypeScript 6's API, whatever TypeScript your project use
 
 ```json title="package.json"
 "overrides": {
-  "typescript-eslint": { "typescript": "npm:@typescript/typescript6@6.0.2" },
-  "@typescript-eslint/parser": { "typescript": "npm:@typescript/typescript6@6.0.2" }
+  "typescript-eslint": {
+    "typescript": "npm:@typescript/typescript6@6.0.2"
+  },
+  "@typescript-eslint/parser": {
+    "typescript": "npm:@typescript/typescript6@6.0.2"
+  }
 }
 ```
 
@@ -145,10 +149,16 @@ It is read by `src/test-database.ts`, which only exists with Postgres or MySQL. 
 `src/backend.ts` exports the function that starts everything:
 
 ```ts title="src/backend.ts"
-export async function startBackend(port: number, { stores = 'configured' }: { stores?: Stores } = {}): Promise<RunningContexts> {
+export async function startBackend(
+  port: number,
+  { stores = 'configured' }: { stores?: Stores } = {},
+): Promise<RunningContexts> {
   const platform = new Platform({ cluster: new MemoryCluster() })
   const contexts = await openContexts(platform, stores)
-  return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true, frontend: frontends } })
+  return runContexts(contexts, {
+    platformWithoutContexts: platform,
+    serve: { port, health: true, frontend: frontends },
+  })
 }
 ```
 
@@ -197,7 +207,12 @@ The `serve` options the generated project sets:
 Each context builds a `ContextBase` in its `<context>.context.ts`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const base = new ContextBase({ name: 'tasks', platform, database, storage: await openStorage('tasks', router, stores) })
+const base = new ContextBase({
+  name: 'tasks',
+  platform,
+  database,
+  storage: await openStorage('tasks', router, stores),
+})
 ```
 
 | Option | Meaning | Default |
@@ -245,7 +260,10 @@ const base = new ContextBase({ name: 'tasks', platform, database, storage: await
 ```ts title="eslint.config.ts"
 import { newt } from '@newt-js/lint'
 
-export default newt({ root: import.meta.dirname, contexts: { folder: 'src/contexts' } })
+export default newt({
+  root: import.meta.dirname,
+  contexts: { folder: 'src/contexts' },
+})
 ```
 
 Options and rules: [Lint rules](/reference/lint/).

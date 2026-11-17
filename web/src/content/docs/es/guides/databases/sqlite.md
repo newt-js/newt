@@ -36,11 +36,19 @@ TASKS_DATABASE=data/tasks.sqlite
 `src/stores.ts` la lee, y usa `data/<context>.sqlite` si no está definida:
 
 ```ts title="src/stores.ts"
-export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {
+export async function openDatabase(
+  context: string,
+  migrations: string,
+  stores: Stores,
+): Promise<Database> {
   if (stores === 'memory') {
     return SqliteDatabase.open({ path: ':memory:', migrations })
   }
-  return SqliteDatabase.open({ path: Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`, migrations })
+  return SqliteDatabase.open({
+    path:
+      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+    migrations,
+  })
 }
 ```
 

@@ -29,11 +29,17 @@ export const TaskSchema = z.object({
 /** What a client sends to create one: the entity's own rules, picked. */
 export const TaskCreateSchema = TaskSchema.pick({ name: true })
 
-/** What they are read by: these fields and operators, nothing else; and what a list may be sorted by. */
-export const TaskFilter = defineFilter({
-  id: { field: 'id', value: TaskId.schema, ops: ['eq', 'in'] },
-  name: { field: 'name', value: z.string(), ops: ['eq', 'ieq'] },
-}, { sort: ['name', 'createdAt'] })
+/**
+ * What they are read by: these fields and operators, nothing else;
+ * and what a list may be sorted by.
+ */
+export const TaskFilter = defineFilter(
+  {
+    id: { field: 'id', value: TaskId.schema, ops: ['eq', 'in'] },
+    name: { field: 'name', value: z.string(), ops: ['eq', 'ieq'] },
+  },
+  { sort: ['name', 'createdAt'] },
+)
 
 export type TaskDTO = z.infer<typeof TaskSchema>
 export type TaskCreateDTO = z.input<typeof TaskCreateSchema>
@@ -45,6 +51,18 @@ export type TaskCompleteTaskDTO = z.input<typeof TaskCompleteTaskSchema>
 ```
 
 The lint rule `schema-imports` keeps it a contract. A schema file imports only `zod`, `@newt-js/core`, the module's own `value-objects/` and other modules' `*.schema.ts`. Never the entity, the repository or the module.
+
+This is how everything in the file comes from `TaskSchema` and the id's value object:
+
+```mermaid
+flowchart TD
+  V[TaskId.schema] --> S[TaskSchema]
+  V --> F[TaskFilter]
+  S -->|pick name| C[TaskCreateSchema]
+  S -->|pick id| K[TaskCompleteTaskSchema]
+  S -->|z.infer| D[TaskDTO]
+  S -->|parses its data| E[Task entity]
+```
 
 ## The entity's schema
 

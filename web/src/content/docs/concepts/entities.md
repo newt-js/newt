@@ -18,7 +18,10 @@ import { Entity, type EntityInput } from '@newt-js/core'
 import { Task_Created } from './events/task-created'
 import { TaskSchema, type TaskDTO } from './task.schema'
 
-/** What `create` takes, already checked: the entity's own words, never a DTO. */
+/**
+ * What `create` takes, already checked: the entity's own words,
+ * never a DTO.
+ */
 export type TaskCreateProps = { name: string }
 
 export class Task extends Entity<typeof TaskSchema> {
@@ -32,7 +35,9 @@ export class Task extends Entity<typeof TaskSchema> {
 
   static create(props: TaskCreateProps): Task {
     const task = new Task(props, true)
-    task.trackEvent(new Task_Created({ id: task.id, name: task.data.name }))
+    task.trackEvent(
+      new Task_Created({ id: task.id, name: task.data.name }),
+    )
     return task
   }
 }
@@ -95,6 +100,8 @@ complete(): void {
 }
 ```
 
+`now` comes from `@newt-js/core` and reads the context's clock. `AlreadyDone` is an error made with `newt add error`, and `Task_Completed` an event made with `newt add event`. A use case calls `task.complete()` before `persist` (see [Use cases](/concepts/use-cases/#a-use-case)).
+
 :::tip
 Put the rule in the entity, not in the use case. `complete()` refuses a task already done wherever it is called from: a route, a worker or a test.
 :::
@@ -108,7 +115,7 @@ Put the rule in the entity, not in the use case. `complete()` refuses a task alr
 - `updatedAt` moves to now only when a value really changed.
 - A deleted entity throws `DeletedEntityNotChangeable`.
 
-To delete it, a method calls the protected `markAsDeleted()`. The repository deletes the row on the next save. An entity never saved throws `NewEntityNotDeletable`, and one already deleted throws `EntityAlreadyDeleted`.
+To delete it, a method calls the protected `markAsDeleted()`. The repository deletes the row on the next save, or only stamps its `deletedAt` when the repository uses `softDelete` (see [Repositories](/concepts/repositories/)). An entity never saved throws `NewEntityNotDeletable`, and one already deleted throws `EntityAlreadyDeleted`.
 
 A method of an entity takes its own words. The lint rule `entity-method-params` refuses a parameter typed with a DTO or an object written in place: declare `export type TaskRenameProps = { … }` next to the entity and take that. The constructor and `fromDTO` are the exceptions.
 
@@ -136,7 +143,10 @@ By default `toDTO()` returns every field. To hide some, give the constructor a s
 ```ts
 const TaskPublicSchema = TaskSchema.omit({ internalNote: true })
 
-export class Task extends Entity<typeof TaskSchema, typeof TaskPublicSchema> {
+export class Task extends Entity<
+  typeof TaskSchema,
+  typeof TaskPublicSchema
+> {
   private constructor(input: EntityInput<TaskDTO>, isNew: boolean) {
     super(TaskSchema, input, isNew, TaskPublicSchema)
   }
@@ -145,13 +155,35 @@ export class Task extends Entity<typeof TaskSchema, typeof TaskPublicSchema> {
 
 Every field of the public schema must be in the main one, or the constructor throws.
 
+## Its life
+
+This is the life of a task, from the moment it is made or read until it is deleted:
+
+```mermaid
+stateDiagram-v2
+  state "New, version 0" as New
+  state "Saved" as Saved
+  state "Changed" as Changed
+  state "To delete" as Deleting
+  [*] --> New: Task.create()
+  [*] --> Saved: fromDTO(row)
+  New --> Saved: persist
+  Saved --> Changed: a method calls change()
+  Changed --> Saved: persist
+  Saved --> Deleting: markAsDeleted()
+  Changed --> Deleting: markAsDeleted()
+  Deleting --> [*]: persist
+```
+
+Events tracked with `trackEvent` wait on the entity and go out with the next `persist`.
+
 ## Versions
 
 Each save adds one to `version`. The repository updates a row only when its version in the database is still the one the entity read. If someone saved it in between, the save fails with `StaleVersion` and the [use case runs again](/concepts/use-cases/#retries-on-a-conflict). See [Repositories](/concepts/repositories/#versions-and-conflicts).
 
 ## After a failed save
 
-When a save rolls back, the entity goes back to the state it had before it. It is also marked: saving it again throws `SaveRolledBack`.
+When a save rolls back, the entity forgets that save: its `version` and `isNew` go back to what they were. It is also marked: saving it again throws `SaveRolledBack`.
 
 :::caution
 Do not catch a failed save and `persist` the same entity again. Read it again from the repository and save the new one.

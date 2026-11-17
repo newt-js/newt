@@ -34,7 +34,7 @@ It also takes the [global flags](/reference/cli/overview/#global-flags).
 
 ## Name rules
 
-- Lowercase words joined by `-`, each starting with a letter: `task`, `price-change`. The plural follows the same form.
+- Lowercase letters and digits, words joined by `-`, starting with a letter: `task`, `price-change`. The plural follows the same form.
 - Not a word JavaScript keeps (`class`, `delete`, `new`…).
 - Not a name newt's generated code uses for something else (`module`, `base`, `router`, `events`, `id`, `name`, `entity`, `page`…).
 - Its plural cannot be `files`: `/<context>/files` serves the context's files.

@@ -14,6 +14,18 @@ Desplegar un backend de newt consiste en ejecutar `bun src/index.ts` en un servi
 - Las variables de entorno que necesitan tus almacenes.
 - En SQLite o con ficheros locales: una carpeta persistente para `data/`.
 
+Un backend en una sola máquina, con SQLite y ficheros locales, tiene esta forma:
+
+```mermaid
+flowchart TD
+  users[Usuarios] -->|HTTPS| proxy[Proxy o balanceador]
+  proxy -->|HTTP en PORT| bun[bun src/index.ts]
+  bun --> db[(data/tasks.sqlite)]
+  bun --> files[(data/files/tasks/)]
+```
+
+Todo lo que hay en `data/` vive en un volumen persistente.
+
 ## 1. Arranca el backend
 
 El `package.json` generado tiene un script `start`:
@@ -36,8 +48,8 @@ bun run start
 Al arrancar, el backend:
 
 1. Abre la base de datos de cada contexto y ejecuta sus [migraciones](/es/concepts/database/) pendientes. Si una falla, el backend se detiene con el error y no sirve nada.
-2. Pone en marcha el worker y las tareas programadas de cada contexto.
-3. Sirve HTTP en `PORT`.
+2. Sirve HTTP en `PORT`.
+3. Pone en marcha el worker y las tareas programadas de cada contexto.
 
 :::note
 Las migraciones se ejecutan en cada arranque, antes de que el backend sirva. No las ejecutas como un paso aparte.
@@ -120,7 +132,8 @@ ENV PORT=3000
 EXPOSE 3000
 VOLUME /app/data
 
-HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/api/health') \
+  .then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 CMD ["bun", "run", "start"]
 ```
@@ -135,7 +148,8 @@ Constrúyelo y ejecútalo con un volumen con nombre para `data/` y las variables
 
 ```sh
 docker build -t newthub .
-docker run -d -p 3000:3000 -v newthub-data:/app/data --env-file production.env newthub
+docker run -d -p 3000:3000 -v newthub-data:/app/data \
+  --env-file production.env newthub
 ```
 
 :::caution
@@ -147,7 +161,10 @@ Genera `FILES_SECRET` una vez y guárdalo en la configuración de secretos de tu
 La mayoría de proveedores ponen un proxy o un balanceador delante de tu backend, que se encarga de HTTPS. Entonces importan estas opciones de `serve` en `src/backend.ts`:
 
 ```ts title="src/backend.ts"
-return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true, trustProxy: 1, drainMs: 5000 } })
+return runContexts(contexts, {
+  platformWithoutContexts: platform,
+  serve: { port, health: true, trustProxy: 1, drainMs: 5000 },
+})
 ```
 
 - `trustProxy`: cuántos proxies hay delante del backend. Con `1`, newt toma la IP de quien llama de `X-Forwarded-For` y el host de `X-Forwarded-Host`. Sin ella, todas las peticiones parecen venir del proxy, y los [límites de peticiones](/es/concepts/http/) por IP cuentan a todo el mundo junto. `0` por defecto.

@@ -30,7 +30,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 
 ## Reglas del nombre
 
-- Palabras en minúscula unidas por `-`, cada una empezando por una letra: `due-dates` se convierte en la función `dueDates`.
+- Letras minúsculas y dígitos, palabras unidas por `-`, empezando por una letra: `due-dates` se convierte en la función `dueDates`.
 - Ni una palabra que JavaScript se reserva, ni un nombre que usa el código que genera newt (`module`, `base`, `router`, `id`, `name`…).
 
 ## Qué escribe

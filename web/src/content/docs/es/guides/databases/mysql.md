@@ -22,13 +22,16 @@ newt necesita MySQL 8.0 o posterior, que tiene la collation `utf8mb4_0900_bin` q
 2. Arranca un servidor MySQL para desarrollo, si no tienes uno. Con Docker:
 
    ```sh
-   docker run -d --name newthub-mysql -e MYSQL_ROOT_PASSWORD=root -p 3306:3306 mysql
+   docker run -d --name newthub-mysql -e MYSQL_ROOT_PASSWORD=root \
+     -p 3306:3306 mysql
    ```
 
 3. Crea una base de datos por contexto (consulta [Crear las bases de datos](#crear-las-bases-de-datos)):
 
    ```sh
-   docker exec newthub-mysql mysql -uroot -proot -e "CREATE DATABASE newthub__tasks CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin"
+   docker exec newthub-mysql mysql -uroot -proot \
+     -e "CREATE DATABASE newthub__tasks \
+     CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin"
    ```
 
 4. Arranca el backend:
@@ -54,11 +57,18 @@ TASKS_DATABASE_URL=mysql://root:root@localhost:3306/newthub__tasks
 `src/stores.ts` abre cada una:
 
 ```ts title="src/stores.ts"
-export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {
+export async function openDatabase(
+  context: string,
+  migrations: string,
+  stores: Stores,
+): Promise<Database> {
   if (stores === 'memory') {
     return new MemoryDatabase()
   }
-  return MysqlDatabase.open({ url: requiredEnv(`${envOf(context)}_DATABASE_URL`), migrations })
+  return MysqlDatabase.open({
+    url: requiredEnv(`${envOf(context)}_DATABASE_URL`),
+    migrations,
+  })
 }
 ```
 
@@ -67,7 +77,9 @@ export async function openDatabase(context: string, migrations: string, stores: 
 newt no crea bases de datos: cada una debe existir antes de arrancar el backend. Crea una por contexto, con la collation binaria:
 
 ```sql
-CREATE DATABASE newthub__tasks CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+CREATE DATABASE newthub__tasks
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_0900_bin;
 ```
 
 Con esa collation, el texto se compara y se ordena por sus caracteres exactos, igual que en SQLite y Postgres. El usuario de la URL necesita poder crear tablas en la base de datos: las migraciones se ejecutan con ese usuario.
@@ -116,7 +128,11 @@ newt se conecta con el cliente SQL de Bun (`Bun.SQL`), que es quien lee la URL. 
 Para cambiar el tamaño del pool, edita `src/stores.ts`:
 
 ```ts title="src/stores.ts"
-return MysqlDatabase.open({ url: requiredEnv(`${envOf(context)}_DATABASE_URL`), migrations, connections: 20 })
+return MysqlDatabase.open({
+  url: requiredEnv(`${envOf(context)}_DATABASE_URL`),
+  migrations,
+  connections: 20,
+})
 ```
 
 :::note

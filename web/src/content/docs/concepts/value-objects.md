@@ -16,7 +16,10 @@ import { defineValueObject } from '@newt-js/core'
 import { z } from 'zod'
 import { InvalidPriority } from '../errors/invalid-priority'
 
-export const Priority = defineValueObject(z.string().trim().min(1).max(100).brand<'Priority'>(), text => new InvalidPriority(text))
+export const Priority = defineValueObject(
+  z.string().trim().min(1).max(100).brand<'Priority'>(),
+  text => new InvalidPriority(text),
+)
 export type Priority = z.output<typeof Priority.schema>
 ```
 
@@ -27,6 +30,26 @@ Priority.tryFrom('  ')   // undefined
 ```
 
 At run time a `Priority` is a string. The `.brand<'Priority'>()` only exists for TypeScript, so a plain `string` is not a `Priority` until `from` checked it.
+
+## Using one in a schema
+
+Put its `schema` in the module's schema. The field then has the value object's rules and type:
+
+```ts title="src/contexts/tasks/modules/task/task.schema.ts"
+export const TaskSchema = z.object({
+  id: TaskId.schema,
+  name: z.string().trim().min(1).max(100),
+  priority: Priority.schema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+```
+
+`TaskDTO['priority']` is now a `Priority`. Inside a schema, a bad value fails like any other zod check: HTTP answers `400` with the code `validation`. Only `from` throws your own error.
+
+:::caution
+A new field in the schema needs its column too. Write a migration for it (see [Database and migrations](/concepts/database/)).
+:::
 
 ## defineValueObject
 
@@ -71,7 +94,11 @@ export type TaskId = Uuid<'TaskId'>
 Routes turn the path's text into an id before calling a use case:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.get('/tasks/tasks/:id', async request => Response.json(await tasks.get({ id: TaskId.from(request.params.id) })))
+router.get('/tasks/tasks/:id', async request =>
+  Response.json(
+    await tasks.get({ id: TaskId.from(request.params.id) }),
+  ),
+)
 ```
 
 `Uuid` itself is a ready-made `uuidFactory('Uuid')` for an id of no particular kind.
@@ -82,7 +109,7 @@ A module that keeps another module's id, such as a task's `projectId`, declares 
 
 ## Built-in value objects
 
-`@newt-js/core` ships these. Each also has a factory (`emailFactory()`, `keyFactory(name, pattern?)` and so on) that makes a new one with the same rules.
+`@newt-js/core` ships these. Each one except `EventId` also has a factory (`emailFactory()`, `keyFactory(name, pattern?)` and so on) that makes a new one with the same rules.
 
 | Value object | What it is for | Error and code |
 |---|---|---|

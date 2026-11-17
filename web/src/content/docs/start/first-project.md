@@ -85,6 +85,9 @@ bunx newt add context tasks
   updated  .env
   updated  .env.example
   updated  src/contexts.ts
+
+Next steps:
+  bun run dev
 ```
 
 The context opens its SQLite database at `data/tasks.sqlite`, created on the next start. `.env` now says so:
@@ -112,8 +115,8 @@ bunx newt add module tasks/task
   created  src/contexts/tasks/modules/task/task.ts
   created  src/contexts/tasks/modules/task/task.repository.ts
   created  src/contexts/tasks/modules/task/task.module.ts
-  created  src/contexts/tasks/modules/task/task.module.test.ts
   created  src/contexts/tasks/modules/task/task.routes.ts
+  created  src/contexts/tasks/modules/task/task.module.test.ts
   created  src/contexts/tasks/migrations/00001_task_up.sql
   created  src/contexts/tasks/migrations/00001_task_down.sql
   updated  src/contexts/tasks/tasks-modules.ts
@@ -126,10 +129,23 @@ Next steps:
 The module comes with four use cases (`create`, `get`, `find`, `paginate`), a table, and three routes:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-export function registerTaskRoutes(router: HttpRouter, tasks: Task_Module): void {
-  router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }))
-  router.get('/tasks/tasks', async request => Response.json(await tasks.paginate({}, pageRequestFrom(request))))
-  router.get('/tasks/tasks/:id', async request => Response.json(await tasks.get({ id: TaskId.from(request.params.id) })))
+export function registerTaskRoutes(
+  router: HttpRouter,
+  tasks: Task_Module,
+): void {
+  router.post('/tasks/tasks', async request =>
+    Response.json(await tasks.create(await bodyOf(request)), {
+      status: 201,
+    }),
+  )
+  router.get('/tasks/tasks', async request =>
+    Response.json(await tasks.paginate({}, pageRequestFrom(request))),
+  )
+  router.get('/tasks/tasks/:id', async request =>
+    Response.json(
+      await tasks.get({ id: TaskId.from(request.params.id) }),
+    ),
+  )
 }
 ```
 
@@ -140,13 +156,14 @@ A route's path is `/api`, then the context, then the module's plural: `POST /api
 Try to create a task:
 
 ```sh
-curl -X POST localhost:3000/api/tasks/tasks \
+curl -i -X POST localhost:3000/api/tasks/tasks \
   -H 'content-type: application/json' \
   -d '{"name":"Write the docs"}'
 ```
 
 ```txt
 HTTP/1.1 401 Unauthorized
+...
 
 {"error":"Sign in first","code":"not_signed_in"}
 ```
@@ -157,6 +174,29 @@ This is on purpose. Every route is private unless you mark it `{ public: true }`
 import type { Authenticator } from '@newt-js/core/http'
 
 export const authenticate: Authenticator = async () => null
+```
+
+This is the path every request to a private route takes:
+
+```mermaid
+sequenceDiagram
+  participant Client as curl
+  participant Router as tasks router
+  participant Auth as authenticate
+  participant Route as task.routes.ts
+  participant Task as Task_Module
+  Client->>Router: POST /api/tasks/tasks
+  Router->>Auth: who is calling?
+  alt nobody
+    Auth-->>Router: null
+    Router-->>Client: 401 not_signed_in
+  else a user
+    Auth-->>Router: { userId }
+    Router->>Route: run the route
+    Route->>Task: create(body)
+    Task-->>Route: the new task
+    Route-->>Client: 201 and the task
+  end
 ```
 
 ## Sign in for local testing
@@ -189,7 +229,12 @@ curl -X POST localhost:3000/api/tasks/tasks \
 ```
 
 ```json
-{"id":"01a1e8be-dbae-7142-8f59-770eb529979d","name":"Write the docs","createdAt":"2026-11-17T09:03:04.622Z","updatedAt":"2026-11-17T09:03:04.622Z"}
+{
+  "id": "01a1e8be-dbae-7142-8f59-770eb529979d",
+  "name": "Write the docs",
+  "createdAt": "2026-11-17T09:03:04.622Z",
+  "updatedAt": "2026-11-17T09:03:04.622Z"
+}
 ```
 
 List the tasks:
@@ -199,7 +244,17 @@ curl localhost:3000/api/tasks/tasks -H 'authorization: Bearer let-me-in'
 ```
 
 ```json
-{"items":[{"id":"01a1e8be-dbae-7142-8f59-770eb529979d","name":"Write the docs","createdAt":"2026-11-17T09:03:04.622Z","updatedAt":"2026-11-17T09:03:04.622Z"}],"total":1}
+{
+  "items": [
+    {
+      "id": "01a1e8be-dbae-7142-8f59-770eb529979d",
+      "name": "Write the docs",
+      "createdAt": "2026-11-17T09:03:04.622Z",
+      "updatedAt": "2026-11-17T09:03:04.622Z"
+    }
+  ],
+  "total": 1
+}
 ```
 
 ## When something is wrong

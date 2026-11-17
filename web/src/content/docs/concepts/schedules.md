@@ -14,9 +14,16 @@ You define it in the module's constructor with `base.schedules.define(name, cron
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 readonly remindOverdueSchedule
 
-private constructor(base: ContextBase, private readonly tasks: Task_Repository, private readonly deps: Task_Deps) {
+private constructor(
+  base: ContextBase,
+  private readonly tasks: Task_Repository,
+  private readonly deps: Task_Deps,
+) {
   super('task', base.useCaseRunner, deps)
-  this.remindOverdueSchedule = base.schedules.define('task.remindOverdue', '0 9 * * *')
+  this.remindOverdueSchedule = base.schedules.define(
+    'task.remindOverdue',
+    '0 9 * * *',
+  )
 }
 
 @UseCase()
@@ -43,7 +50,9 @@ export function registerTaskWorkers(tasks: Task_Module): void {
 The event's payload is `{ dueAt }`: the time the run was due, as an ISO date. A use case with no input ignores it. To pass it on, map it:
 
 ```ts
-tasks.on(tasks.remindOverdueSchedule, 'remindOverdue', tick => [{ until: tick.dueAt }])
+tasks.on(tasks.remindOverdueSchedule, 'remindOverdue', tick => [
+  { until: tick.dueAt },
+])
 ```
 
 :::tip
@@ -96,11 +105,19 @@ Each context starts its schedules when [`runContexts`](/concepts/http/#running-t
 
 The schedules look at the clock at least once a minute, and sooner when the next run is closer. A run starts within about a minute of its time.
 
-When a run is due:
+Each time it looks, it does this for every schedule:
 
-1. Newt writes the due time in the `newt_schedule_tick` table of the context's database.
-2. In the same transaction, it emits the schedule's event, which queues one job per subscription.
-3. A worker runs the use case, with the same retries as any [job](/concepts/jobs-and-workers/).
+```mermaid
+flowchart TD
+  A[Find the latest due time] --> B{Row in newt_schedule_tick?}
+  B -- no --> C[Record the time, run nothing]
+  B -- yes, older --> D[Update the row and emit the event]
+  B -- yes, same --> E[Nothing to do]
+  D --> F[One job per subscription]
+  F --> G[A worker runs the use case]
+```
+
+Updating the row and emitting the event happen in one transaction, and the job runs with the same retries as any [job](/concepts/jobs-and-workers/).
 
 ### Once across instances
 
@@ -108,7 +125,7 @@ When you run several instances, each one looks at the clock. Only one wins: the 
 
 ### The first run, and missed runs
 
-- The first time an instance sees a new schedule, it only records the latest due time. The first real run is the next one.
+- The first time a schedule is seen by a database (no row yet), newt only records its latest due time. The first real run is the next one.
 - If the app was down when runs were due, it runs **once** when it comes back, for the latest of them, not once per missed run.
 
 :::note
@@ -127,7 +144,11 @@ test('remindOverdue runs at 0 9 * * *', async () => {
   await context.settle()
 
   const queued = await context.base.database.outbox.list()
-  expect(queued.find(each => each.queue === 'task.remindOverdue.on.task.remindOverdue')?.status).toBe('done')
+  expect(
+    queued.find(
+      each => each.queue === 'task.remindOverdue.on.task.remindOverdue',
+    )?.status,
+  ).toBe('done')
 })
 ```
 

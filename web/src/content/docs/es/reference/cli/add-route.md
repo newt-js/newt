@@ -57,7 +57,11 @@ Next steps:
 ```
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-  router.post('/tasks/tasks/:id/complete-task', async request => Response.json(await tasks.completeTask({ id: TaskId.from(request.params.id) })))
+router.post('/tasks/tasks/:id/complete-task', async request =>
+  Response.json(
+    await tasks.completeTask({ id: TaskId.from(request.params.id) }),
+  ),
+)
 ```
 
 Cómo llama la ruta al caso de uso:

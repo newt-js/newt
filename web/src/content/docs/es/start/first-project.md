@@ -85,6 +85,9 @@ bunx newt add context tasks
   updated  .env
   updated  .env.example
   updated  src/contexts.ts
+
+Next steps:
+  bun run dev
 ```
 
 El contexto abre su base de datos SQLite en `data/tasks.sqlite`, que se crea en el siguiente arranque. `.env` ahora lo indica:
@@ -112,8 +115,8 @@ bunx newt add module tasks/task
   created  src/contexts/tasks/modules/task/task.ts
   created  src/contexts/tasks/modules/task/task.repository.ts
   created  src/contexts/tasks/modules/task/task.module.ts
-  created  src/contexts/tasks/modules/task/task.module.test.ts
   created  src/contexts/tasks/modules/task/task.routes.ts
+  created  src/contexts/tasks/modules/task/task.module.test.ts
   created  src/contexts/tasks/migrations/00001_task_up.sql
   created  src/contexts/tasks/migrations/00001_task_down.sql
   updated  src/contexts/tasks/tasks-modules.ts
@@ -126,10 +129,23 @@ Next steps:
 El módulo trae cuatro casos de uso (`create`, `get`, `find`, `paginate`), una tabla y tres rutas:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-export function registerTaskRoutes(router: HttpRouter, tasks: Task_Module): void {
-  router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }))
-  router.get('/tasks/tasks', async request => Response.json(await tasks.paginate({}, pageRequestFrom(request))))
-  router.get('/tasks/tasks/:id', async request => Response.json(await tasks.get({ id: TaskId.from(request.params.id) })))
+export function registerTaskRoutes(
+  router: HttpRouter,
+  tasks: Task_Module,
+): void {
+  router.post('/tasks/tasks', async request =>
+    Response.json(await tasks.create(await bodyOf(request)), {
+      status: 201,
+    }),
+  )
+  router.get('/tasks/tasks', async request =>
+    Response.json(await tasks.paginate({}, pageRequestFrom(request))),
+  )
+  router.get('/tasks/tasks/:id', async request =>
+    Response.json(
+      await tasks.get({ id: TaskId.from(request.params.id) }),
+    ),
+  )
 }
 ```
 
@@ -140,13 +156,14 @@ La dirección de una ruta es `/api`, luego el contexto y luego el plural del mó
 Intenta crear una tarea:
 
 ```sh
-curl -X POST localhost:3000/api/tasks/tasks \
+curl -i -X POST localhost:3000/api/tasks/tasks \
   -H 'content-type: application/json' \
   -d '{"name":"Write the docs"}'
 ```
 
 ```txt
 HTTP/1.1 401 Unauthorized
+...
 
 {"error":"Sign in first","code":"not_signed_in"}
 ```
@@ -157,6 +174,29 @@ Es intencionado. Todas las rutas son privadas salvo que las marques con `{ publi
 import type { Authenticator } from '@newt-js/core/http'
 
 export const authenticate: Authenticator = async () => null
+```
+
+Este es el camino que sigue toda petición a una ruta privada:
+
+```mermaid
+sequenceDiagram
+  participant Client as curl
+  participant Router as router de tasks
+  participant Auth as authenticate
+  participant Route as task.routes.ts
+  participant Task as Task_Module
+  Client->>Router: POST /api/tasks/tasks
+  Router->>Auth: ¿quién llama?
+  alt nadie
+    Auth-->>Router: null
+    Router-->>Client: 401 not_signed_in
+  else un usuario
+    Auth-->>Router: { userId }
+    Router->>Route: ejecuta la ruta
+    Route->>Task: create(body)
+    Task-->>Route: la tarea nueva
+    Route-->>Client: 201 y la tarea
+  end
 ```
 
 ## Inicia sesión para probar en local
@@ -189,7 +229,12 @@ curl -X POST localhost:3000/api/tasks/tasks \
 ```
 
 ```json
-{"id":"01a1e8be-dbae-7142-8f59-770eb529979d","name":"Write the docs","createdAt":"2026-11-17T09:03:04.622Z","updatedAt":"2026-11-17T09:03:04.622Z"}
+{
+  "id": "01a1e8be-dbae-7142-8f59-770eb529979d",
+  "name": "Write the docs",
+  "createdAt": "2026-11-17T09:03:04.622Z",
+  "updatedAt": "2026-11-17T09:03:04.622Z"
+}
 ```
 
 Lista las tareas:
@@ -199,7 +244,17 @@ curl localhost:3000/api/tasks/tasks -H 'authorization: Bearer let-me-in'
 ```
 
 ```json
-{"items":[{"id":"01a1e8be-dbae-7142-8f59-770eb529979d","name":"Write the docs","createdAt":"2026-11-17T09:03:04.622Z","updatedAt":"2026-11-17T09:03:04.622Z"}],"total":1}
+{
+  "items": [
+    {
+      "id": "01a1e8be-dbae-7142-8f59-770eb529979d",
+      "name": "Write the docs",
+      "createdAt": "2026-11-17T09:03:04.622Z",
+      "updatedAt": "2026-11-17T09:03:04.622Z"
+    }
+  ],
+  "total": 1
+}
 ```
 
 ## Cuando algo falla

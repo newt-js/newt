@@ -23,24 +23,39 @@ Casi todos los ficheros son privados: adjuntos de tareas, documentos. El almacen
 El contexto abre su almacenamiento en `src/stores.ts` y se lo pasa a `ContextBase` como `storage`. Esto es lo que genera `newt init` para ficheros locales:
 
 ```ts title="src/stores.ts"
-export async function openStorage(context: string, router: HttpRouter, stores: Stores): Promise<StorageOptions> {
+export async function openStorage(
+  context: string,
+  router: HttpRouter,
+  stores: Stores,
+): Promise<StorageOptions> {
   if (stores === 'memory') {
     return { private: new MemoryStorage() }
   }
   const path = `/${context}/files`
   const storage = await LocalStorage.open({
-    folder: Bun.env[`${envOf(context)}_FILES`] ?? `data/files/${context}`,
+    folder:
+      Bun.env[`${envOf(context)}_FILES`] ?? `data/files/${context}`,
     baseUrl: `${requiredEnv('PUBLIC_URL')}${router.prefix}${path}`,
     secret: requiredEnv('FILES_SECRET'),
   })
-  router.get(`${path}/*`, request => storage.handler(request), { public: true })
-  router.put(`${path}/*`, request => storage.handler(request), { public: true, maxBodyBytes: MAX_UPLOAD_BYTES })
+  router.get(`${path}/*`, request => storage.handler(request), {
+    public: true,
+  })
+  router.put(`${path}/*`, request => storage.handler(request), {
+    public: true,
+    maxBodyBytes: MAX_UPLOAD_BYTES,
+  })
   return { private: storage }
 }
 ```
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const base = new ContextBase({ name: 'tasks', platform, database, storage: await openStorage('tasks', router, stores) })
+const base = new ContextBase({
+  name: 'tasks',
+  platform,
+  database,
+  storage: await openStorage('tasks', router, stores),
+})
 ```
 
 `StorageOptions` tiene dos campos opcionales:
@@ -62,7 +77,11 @@ import type { PrivateFiles } from '@newt-js/core'
 export class Task_Module extends Module {
   private readonly attachments: PrivateFiles
 
-  private constructor(base: ContextBase, private readonly tasks: Task_Repository, private readonly deps: Task_Deps) {
+  private constructor(
+    base: ContextBase,
+    private readonly tasks: Task_Repository,
+    private readonly deps: Task_Deps,
+  ) {
     super('task', base.useCaseRunner, deps)
     this.attachments = base.storage.private.in('task')
     // ...
@@ -112,9 +131,31 @@ Los ficheros van directos del navegador al almacenamiento, sin pasar por tu caso
 2. El navegador envía allí el fichero con `PUT`, con las cabeceras que recibió.
 3. Otro caso de uso comprueba la subida con `verifyUpload` y solo entonces la registra.
 
+Esto es quién habla con quién; los bytes del fichero nunca pasan por tus casos de uso:
+
+```mermaid
+sequenceDiagram
+  participant Br as Navegador
+  participant UC as Tus casos de uso
+  participant St as Almacenamiento
+  Br->>UC: pide una dirección de subida
+  UC->>St: uploadUrl(key, options)
+  St-->>UC: url y cabeceras
+  UC-->>Br: url y cabeceras
+  Br->>St: PUT del fichero
+  St-->>Br: 200
+  Br->>UC: la subida ha terminado
+  UC->>St: verifyUpload(key, rule)
+  St-->>UC: null o un rechazo
+  Note over UC: registra el fichero solo con null
+```
+
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 @UseCase()
-async attachmentUploadUrl(input: { id: string, size: number }): Promise<UploadAddress> {
+async attachmentUploadUrl(input: {
+  id: string
+  size: number
+}): Promise<UploadAddress> {
   return this.attachments.uploadUrl(`${input.id}/report.pdf`, {
     expiresIn: 600,
     contentType: 'application/pdf',
@@ -125,7 +166,10 @@ async attachmentUploadUrl(input: { id: string, size: number }): Promise<UploadAd
 ```
 
 ```ts
-const { url, headers } = await api.attachmentUploadUrl({ id, size: file.size })
+const { url, headers } = await api.attachmentUploadUrl({
+  id,
+  size: file.size,
+})
 await fetch(url, { method: 'PUT', headers, body: file })
 ```
 
@@ -147,7 +191,10 @@ La dirección solo acepta el tipo y la longitud con los que se firmó. Si el nav
 El navegador puede mentir, o no subir nada. Compruébalo antes de fiarte del fichero:
 
 ```ts
-const refusal = await this.attachments.verifyUpload(`${id}/report.pdf`, { contentType: 'application/pdf', maxBytes: 10 * 1024 * 1024 })
+const refusal = await this.attachments.verifyUpload(
+  `${id}/report.pdf`,
+  { contentType: 'application/pdf', maxBytes: 10 * 1024 * 1024 },
+)
 if (refusal) {
   throw new AttachmentRefused(refusal)
 }
@@ -289,7 +336,10 @@ const storage = await S3Storage.open({
 Guarda los ficheros en memoria y los olvida al terminar el proceso. Para tests y para probar cosas.
 
 ```ts
-import { MemoryStorage, MemoryPublicStorage } from '@newt-js/core/files/memory'
+import {
+  MemoryStorage,
+  MemoryPublicStorage,
+} from '@newt-js/core/files/memory'
 
 const storage = new MemoryStorage()
 ```
@@ -297,9 +347,21 @@ const storage = new MemoryStorage()
 No recibe opciones. Sus direcciones empiezan por `memory://`, y `storage.send(url, init)` hace de navegador en un test:
 
 ```ts
-const address = await files.uploadUrl('t1/report.pdf', { expiresIn: 600, contentType: 'application/pdf', size: 8 })
-await storage.send(address.url, { method: 'PUT', headers: address.headers, body: '%PDF-1.7' })
-expect(await files.verifyUpload('t1/report.pdf', { contentType: 'application/pdf' })).toBeNull()
+const address = await files.uploadUrl('t1/report.pdf', {
+  expiresIn: 600,
+  contentType: 'application/pdf',
+  size: 8,
+})
+await storage.send(address.url, {
+  method: 'PUT',
+  headers: address.headers,
+  body: '%PDF-1.7',
+})
+expect(
+  await files.verifyUpload('t1/report.pdf', {
+    contentType: 'application/pdf',
+  }),
+).toBeNull()
 ```
 
 ## En los tests
@@ -307,12 +369,17 @@ expect(await files.verifyUpload('t1/report.pdf', { contentType: 'application/pdf
 Los tests generados abren el backend con `stores: 'memory'`, así que cada contexto recibe un `MemoryStorage` nuevo. Si usas `testContext`, pásale tú el almacenamiento:
 
 ```ts
-context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database, storage: { private: new MemoryStorage() } })
+context = testContext({
+  name: 'tasks',
+  cluster: new MemoryCluster(),
+  database,
+  storage: { private: new MemoryStorage() },
+})
 ```
 
 Mira [Testing](/es/guides/testing/).
 
-## Con la CLI
+## Con el CLI
 
 No hay un comando `newt add` para ficheros. Eliges el almacenamiento al crear un backend, con `--files local` (por defecto), `--files s3` o `--files memory`:
 

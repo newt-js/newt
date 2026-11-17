@@ -30,7 +30,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 
 ## Reglas del nombre
 
-- Palabras en minúscula unidas por `-`, cada una empezando por una letra.
+- Letras minúsculas y dígitos, palabras unidas por `-`, empezando por una letra.
 - No `<module>-id`: cada módulo ya tiene su id (`TaskId`).
 
 ## Qué escribe
@@ -54,7 +54,10 @@ import { defineValueObject } from '@newt-js/core'
 import { z } from 'zod'
 import { InvalidPriority } from '../errors/invalid-priority'
 
-export const Priority = defineValueObject(z.string().trim().min(1).max(100).brand<'Priority'>(), text => new InvalidPriority(text))
+export const Priority = defineValueObject(
+  z.string().trim().min(1).max(100).brand<'Priority'>(),
+  text => new InvalidPriority(text),
+)
 export type Priority = z.output<typeof Priority.schema>
 ```
 

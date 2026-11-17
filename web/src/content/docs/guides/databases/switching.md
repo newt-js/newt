@@ -44,11 +44,18 @@ import { MemoryDatabase } from '@newt-js/core/database/memory'
 import { PostgresDatabase } from '@newt-js/core/database/postgres'
 import { requiredEnv } from './env'
 
-export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {
+export async function openDatabase(
+  context: string,
+  migrations: string,
+  stores: Stores,
+): Promise<Database> {
   if (stores === 'memory') {
     return new MemoryDatabase()
   }
-  return PostgresDatabase.open({ url: requiredEnv(`${envOf(context)}_DATABASE_URL`), migrations })
+  return PostgresDatabase.open({
+    url: requiredEnv(`${envOf(context)}_DATABASE_URL`),
+    migrations,
+  })
 }
 ```
 
@@ -102,9 +109,15 @@ Module tests written on SQLite open `SqliteDatabase` with `':memory:'`, which wo
    let dropDatabase: () => Promise<void>
 
    beforeEach(async () => {
-     const { database, drop } = await testDatabase(join(import.meta.dir, '../../migrations'))
+     const { database, drop } = await testDatabase(
+       join(import.meta.dir, '../../migrations'),
+     )
      dropDatabase = drop
-     context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database })
+     context = testContext({
+       name: 'tasks',
+       cluster: new MemoryCluster(),
+       database,
+     })
      // ...
    })
 
@@ -117,7 +130,8 @@ Module tests written on SQLite open `SqliteDatabase` with `':memory:'`, which wo
 3. Run the tests against a real server, so the new migrations run:
 
    ```sh
-   TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun test
+   TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres \
+     bun test
    ```
 
 More in [Testing](/guides/testing/#run-module-tests-on-postgres-or-mysql).
@@ -139,7 +153,9 @@ newt does not copy data between databases. A short Bun script does it, table by 
    const to = new SQL(Bun.env.TASKS_DATABASE_URL!)
 
    for (const table of tables) {
-     const rows = from.query(`SELECT * FROM "${table}"`).all() as Record<string, unknown>[]
+     const rows = from
+       .query(`SELECT * FROM "${table}"`)
+       .all() as Record<string, unknown>[]
      for (const row of rows) {
        await to`INSERT INTO ${to(table)} ${to(row)}`
      }

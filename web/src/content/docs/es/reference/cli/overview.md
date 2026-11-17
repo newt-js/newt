@@ -5,7 +5,7 @@ sidebar:
   order: 0
 ---
 
-`newt` es la línea de comandos que crea un proyecto y le añade piezas: contextos, módulos, casos de uso, rutas, eventos y más. Escribe el código tal como lo espera el lint de newt.
+`newt` es la línea de comandos que crea un proyecto y le añade piezas: contextos, módulos, casos de uso, rutas, eventos y más. Lo usas cada vez que añades una pieza, y escribe el código tal como lo espera el lint de newt.
 
 ## Cómo ejecutarlo
 
@@ -42,6 +42,24 @@ Estas páginas escriben `newt <comando>` para abreviar.
 | [`newt add service`](/es/reference/cli/add-service/) | Añade una función que comparten los casos de uso |
 | [`newt add deps`](/es/reference/cli/add-deps/) | Deja que un módulo use otro módulo de su contexto |
 | [`newt add frontend`](/es/reference/cli/add-frontend/) | Añade un frontend React servido en `/<contexto>` |
+
+### Qué necesita cada comando antes
+
+Cada flecha va de lo que un comando necesita a ese comando. Un módulo nuevo ya trae algunos casos de uso (`create`, `get`…) y el evento `created`, así que `add route` y `add subscription` pueden no necesitar `add use-case` ni `add event` antes.
+
+```mermaid
+flowchart TD
+  backend["Backend: init o add backend"] --> context["Contexto: add context"]
+  context --> frontend["add frontend"]
+  context --> module["Módulo: add module"]
+  module --> pieces["add error, value-object, service, schedule"]
+  module --> deps["add deps, con un segundo módulo"]
+  module --> useCase["Caso de uso: add use-case"]
+  module --> event["Evento: add event"]
+  useCase --> route["add route"]
+  useCase --> subscription["add subscription"]
+  event --> subscription
+```
 
 ## Flags globales
 
@@ -101,7 +119,9 @@ Si todo va bien, en stdout:
 Si falla, también en stdout, con código de salida 1:
 
 ```json
-{ "error": "The backend has no context chat: add it with newt add context chat" }
+{
+  "error": "The backend has no context chat: add it with newt add context chat"
+}
 ```
 
 - Las rutas son relativas a la carpeta donde ejecutas el comando.

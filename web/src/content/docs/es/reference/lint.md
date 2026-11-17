@@ -14,7 +14,10 @@ sidebar:
 ```ts title="eslint.config.ts"
 import { newt } from '@newt-js/lint'
 
-export default newt({ root: import.meta.dirname, contexts: { folder: 'src/contexts' } })
+export default newt({
+  root: import.meta.dirname,
+  contexts: { folder: 'src/contexts' },
+})
 ```
 
 Se ejecuta con el script `lint`, que lanza ESLint con Bun para que cargue el TypeScript del paquete tal cual:
@@ -60,6 +63,21 @@ Si pasas `uses`, lista todos los contextos, también los que no usan ninguno (`[
 
 Sin `contexts`, `route-context` se sigue aplicando a los ficheros de los módulos.
 
+## Qué puede importar qué
+
+Esto es lo que permiten las reglas de imports (`context-imports`, `module-imports`, `schema-imports`, `frontend-imports`), con los contextos `tasks` y `chat` como ejemplo:
+
+```mermaid
+flowchart TD
+  chat["contexto chat"] -->|"solo si chat.context.ts importa tasks"| tasks["contexto tasks"]
+  task["módulo task"] -->|"cualquier fichero"| own["ficheros propios de task"]
+  task -->|".module.ts, .schema.ts, events/, errors/"| project["módulo project"]
+  schema["task.schema.ts"] -->|"solo"| deps["zod, @newt-js/core, value-objects/, otros *.schema.ts"]
+  frontend["frontend de tasks"] -->|"solo import type"| schemas["*.schema.ts de tasks"]
+```
+
+Cada regla se describe en las secciones siguientes.
+
 ## Módulos y contextos
 
 ### newt/module-files
@@ -83,8 +101,12 @@ Un módulo guarda una sola entidad: solo su `<módulo>.ts` declara una clase que
 
 ```ts
 // modules/task/task.ts
-export class Task extends Entity<typeof TaskSchema> { /* ... */ }
-export class Comment extends Entity<typeof CommentSchema> { /* ... */ }  // mal: una segunda entidad
+export class Task extends Entity<typeof TaskSchema> {
+  /* ... */
+}
+export class Comment extends Entity<typeof CommentSchema> {
+  /* ... */
+} // mal: una segunda entidad
 ```
 
 Bien: haz de `comment` un módulo propio (`newt add module tasks/comment`) y guarda su id en la tarea.
@@ -97,8 +119,10 @@ Un módulo importa de otro módulo solo su `.module.ts`, su `.schema.ts`, sus `e
 
 ```ts
 // modules/task/task.module.ts
-import { Project_Repository } from '../project/project.repository'  // mal
-import { ProjectNotFound } from '../project/errors/project-not-found' // bien
+// mal
+import { Project_Repository } from '../project/project.repository'
+// bien
+import { ProjectNotFound } from '../project/errors/project-not-found'
 ```
 
 Un fichero fuera de los módulos (como `tasks-modules.ts`) puede importar lo que compone, pero solo reexporta lo que un módulo ofrece.
@@ -114,7 +138,8 @@ Lo que usa un contexto lo dice la opción `uses` o, sin ella, los contextos que 
 ```ts
 // src/contexts/chat/modules/message/message.module.ts
 import type { Task_Module } from '../../../tasks/modules/task/task.module'
-// mal, salvo que chat.context.ts importe tasks (o uses diga chat: ['tasks'])
+// mal, salvo que chat.context.ts importe tasks
+// (o uses diga chat: ['tasks'])
 ```
 
 Por qué: los contextos dependen unos de otros en un solo sentido, así cada uno se puede leer, probar y mover por separado.
@@ -151,10 +176,10 @@ Por qué: el código del servidor nunca debe llegar al navegador.
 En un `*.module.ts`, cada método público de una clase que extiende `Module` lleva `@UseCase()`. También se rechaza una función pública en un campo o en un parámetro público del constructor.
 
 ```ts
-async archive(input: TaskArchiveDTO) { /* ... */ }              // mal
+async archive(input: TaskArchiveDTO) { /* ... */ } // mal
 @UseCase()
-async archive(input: TaskArchiveDTO) { /* ... */ }              // bien
-private toRow(task: Task) { /* ... */ }                         // bien: privado
+async archive(input: TaskArchiveDTO) { /* ... */ } // bien
+private toRow(task: Task) { /* ... */ }            // bien: privado
 ```
 
 Por qué: `@UseCase` es lo que ejecuta un método como caso de uso (regla de escritura, reintento ante conflicto, traza).
@@ -167,11 +192,11 @@ Se rechazan: `unknown` o `any`, un tipo objeto escrito en el sitio, un `string`,
 
 ```ts
 @UseCase()
-async completeTask(id: string) { /* ... */ }                    // mal: string suelto
+async completeTask(id: string) { /* ... */ }       // mal: string suelto
 
 @UseCase()
 async completeTask(input: TaskCompleteTaskDTO): Promise<TaskDTO> {
-  const { id } = TaskCompleteTaskSchema.parse(input)            // bien
+  const { id } = TaskCompleteTaskSchema.parse(input) // bien
   // ...
 }
 ```
@@ -196,7 +221,7 @@ Lo que un módulo hace con sus ficheros lo hacen casos de uso con nombre fijo: `
 ```ts
 @UseCase()
 async attach(input: DocumentAttachDTO) {
-  await this.files.uploadUrl(/* ... */)    // mal: llámalo desde uploadStart
+  await this.files.uploadUrl(/* ... */) // mal: llámalo desde uploadStart
 }
 ```
 
@@ -241,7 +266,7 @@ Cada ruta que registra un contexto, en su router o en un grupo de él, empieza p
 // src/contexts/tasks/modules/task/task.routes.ts
 router.get('/items/:id', handle)             // mal
 router.get('/tasks/tasks/:id', handle)       // bien
-router.group('/tasks').get('/tasks', handle) // bien
+router.group('/tasks', middleware).get('/tasks', handle) // bien
 ```
 
 Las rutas se leen a través de constantes, plantillas y el prefijo de un grupo. También se avisa de una ruta que la regla no puede leer: escríbela como texto o como una constante que guarde texto. Los ficheros de test no se revisan.
@@ -254,10 +279,16 @@ En un `*.routes.ts`, el cuerpo de la petición nunca recibe un tipo antes de que
 
 ```ts
 router.post('/tasks/tasks', async request =>
-  Response.json(await tasks.create(await request.json() as TaskCreateDTO)))  // mal
+  Response.json(
+    await tasks.create((await request.json()) as TaskCreateDTO),
+  ),
+) // mal
 
 router.post('/tasks/tasks', async request =>
-  Response.json(await tasks.create(await bodyOf(request)), { status: 201 })) // bien
+  Response.json(await tasks.create(await bodyOf(request)), {
+    status: 201,
+  }),
+) // bien
 ```
 
 Por qué: el caso de uso valida el cuerpo con su schema; un cast escondería que falta esa validación.
@@ -268,10 +299,14 @@ La cola de una suscripción es `<módulo>.<casoDeUso>.on.<módulo>.<evento>`. En
 
 ```ts
 // modules/task/task.workers.ts
-tasks.events.completed.subscribe(c => tasks.notifyAssignee({ id: c.id }),
-  { strategy: 'handler', queue: 'project.notify.on.task.completed' })   // mal
+tasks.events.completed.subscribe(
+  c => tasks.notifyAssignee({ id: c.id }),
+  { strategy: 'handler', queue: 'project.notify.on.task.completed' },
+) // mal
 
-tasks.on(tasks.events.completed, 'notifyAssignee', completed => [{ id: completed.id }]) // bien
+tasks.on(tasks.events.completed, 'notifyAssignee', completed => [
+  { id: completed.id },
+]) // bien
 ```
 
 Por qué: el nombre de la cola dice quién reacciona a qué, y no puede mentir. `Module.on` lo pone por ti.
@@ -306,12 +341,12 @@ Por qué: las tablas `newt_…` son de newt (jobs, ejecuciones de tareas program
 Ningún comentario desactiva, para un tramo de código, una regla `newt/…` o una que active el preset, ni la cambia. Se puede eximir una sola línea con `eslint-disable-next-line` o `eslint-disable-line` si el comentario nombra la regla y da un motivo tras `--`.
 
 ```ts
-/* eslint-disable newt/module-imports */                        // mal
-/* eslint newt/module-imports: "off" */                         // mal
-// eslint-disable-next-line curly                               // mal: sin motivo
-// eslint-disable-next-line                                     // mal: no nombra regla
-// eslint-disable-next-line curly -- generated by a tool that writes no braces
-if (a) b()                                                      // bien
+/* eslint-disable newt/module-imports */ // mal
+/* eslint newt/module-imports: "off" */ // mal
+// eslint-disable-next-line curly // mal: sin motivo
+// eslint-disable-next-line       // mal: no nombra regla
+// eslint-disable-next-line curly -- generated by a tool, no braces
+if (a) b() // bien
 ```
 
 Un `/* eslint-disable */` a secas también se señala: el procesador del preset impide que silencie esta regla.

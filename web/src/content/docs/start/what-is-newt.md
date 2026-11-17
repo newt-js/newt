@@ -19,13 +19,19 @@ The ideas behind this are on the [principles](/principles/) page.
 
 ## The shape of a backend
 
-A newt backend is made of a few kinds of pieces, one inside the other:
+A newt backend is made of a few kinds of pieces, one inside the other. This is Newthub with two contexts:
 
-```txt
-backend
-└── context        tasks, chat, docs…   (one database each)
-    └── module     task, project…
-        └── use case   create, completeTask…
+```mermaid
+flowchart TD
+  backend[Backend] --> tasks[Context: tasks]
+  backend --> chat[Context: chat]
+  tasks --> tasksdb[(tasks database)]
+  chat --> chatdb[(chat database)]
+  tasks --> task[Module: task]
+  tasks --> project[Module: project]
+  chat --> message[Module: message]
+  task --> create[Use case: create]
+  task --> complete[Use case: completeTask]
 ```
 
 - **Backend**: the program you run. It serves HTTP and runs the work in the background.
@@ -41,7 +47,21 @@ See [contexts and modules](/concepts/contexts-and-modules/) and [use cases](/con
 
 Modules talk to each other through **events**: short facts such as `task.completed`. A module that cares about one subscribes to it and runs one of its own use cases.
 
-An event is saved in the same transaction as the change that caused it. It waits in the outbox, the queue of jobs that lives in your database, until a **worker** runs each reaction as a **job**. A job that fails is retried, so a reaction is not lost if the process stops halfway.
+An event is saved in the same transaction as the change that caused it, as one job per subscription. The jobs wait in the *outbox*, the queue of jobs that lives in your database, until a **worker** runs them. This is what happens when a task is completed and `notifyAssignee` subscribes to `task.completed`:
+
+```mermaid
+sequenceDiagram
+  participant C as completeTask
+  participant DB as tasks database
+  participant W as Worker
+  participant N as notifyAssignee
+  C->>DB: save the task and its jobs, in one transaction
+  W->>DB: take the next job
+  W->>N: run it
+  N-->>W: done, or failed and retried later
+```
+
+A job that fails is retried, so a reaction is not lost if the process stops halfway.
 
 A **schedule** runs a use case on a cron, such as "every day at 9:00", through the same kind of job.
 

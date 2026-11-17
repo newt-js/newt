@@ -39,7 +39,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 
 ## Reglas del nombre
 
-- Palabras en minúscula unidas por `-`, cada una empezando por una letra.
+- Letras minúsculas y dígitos, palabras unidas por `-`, empezando por una letra.
 - No el nombre de una clase que extienden los errores de newt (`validation-error`, `known-error`…).
 - Su código, `<module>.<nombre con _>`, no lo usa otro error del módulo. Un nombre que empieza por el módulo lo quita del código: `task-already-done` y `already-done` dan los dos `task.already_done`.
 

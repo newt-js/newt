@@ -14,15 +14,36 @@ Every option named here is listed with its type and default in the [HTTP API ref
 Each module keeps its routes in `<module>.routes.ts`. This is the task module of a generated project:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-import { bodyOf, pageRequestFrom, type HttpRouter } from '@newt-js/core/http'
+import {
+  bodyOf,
+  pageRequestFrom,
+  type HttpRouter,
+} from '@newt-js/core/http'
 import type { Task_Module } from './task.module'
 import { TaskId } from './value-objects/task-id'
 
-export function registerTaskRoutes(router: HttpRouter, tasks: Task_Module): void {
-  router.post('/tasks/tasks/:id/complete-task', async request => Response.json(await tasks.completeTask({ id: TaskId.from(request.params.id) })))
-  router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }))
-  router.get('/tasks/tasks', async request => Response.json(await tasks.paginate({}, pageRequestFrom(request))))
-  router.get('/tasks/tasks/:id', async request => Response.json(await tasks.get({ id: TaskId.from(request.params.id) })))
+export function registerTaskRoutes(
+  router: HttpRouter,
+  tasks: Task_Module,
+): void {
+  router.post('/tasks/tasks/:id/complete-task', async request =>
+    Response.json(
+      await tasks.completeTask({ id: TaskId.from(request.params.id) }),
+    ),
+  )
+  router.post('/tasks/tasks', async request =>
+    Response.json(await tasks.create(await bodyOf(request)), {
+      status: 201,
+    }),
+  )
+  router.get('/tasks/tasks', async request =>
+    Response.json(await tasks.paginate({}, pageRequestFrom(request))),
+  )
+  router.get('/tasks/tasks/:id', async request =>
+    Response.json(
+      await tasks.get({ id: TaskId.from(request.params.id) }),
+    ),
+  )
 }
 ```
 
@@ -80,7 +101,10 @@ The body is checked before your code sees it:
 - A body over the route's limit answers `413` with code `payload_too_large`. The limit is 1 MiB by default; raise it per route with `maxBodyBytes`.
 
 ```ts
-router.put('/tasks/files/*', request => storage.handler(request), { public: true, maxBodyBytes: 100 * 1024 * 1024 })
+router.put('/tasks/files/*', request => storage.handler(request), {
+  public: true,
+  maxBodyBytes: 100 * 1024 * 1024,
+})
 ```
 
 :::tip
@@ -105,7 +129,9 @@ The generated authenticator signs no one in, so every private route answers `401
 A route that anyone may call takes `public: true`:
 
 ```ts
-router.get('/tasks/files/*', request => storage.handler(request), { public: true })
+router.get('/tasks/files/*', request => storage.handler(request), {
+  public: true,
+})
 ```
 
 ## Route options
@@ -139,34 +165,36 @@ const reports = router.group('/tasks/reports', async (request, next) => {
 reports.get('/overdue', async () => Response.json(await tasks.find({})))
 ```
 
-`/overdue` answers at `/api/tasks/reports/overdue`. The middleware runs after newt's own checks (sign-in, rate limits) and around the route: call `next()` to run it, or return your own `Response` to stop.
+`/overdue` answers at `/api/tasks/reports/overdue`. The middleware runs after newt's own checks (sign-in, rate limits, idempotency key) and around the route: call `next()` to run it, or return your own `Response` to stop.
+
+## What a request goes through
+
+This is the order in which a request meets newt's checks before your route runs:
+
+```mermaid
+flowchart TD
+  R[Request] --> F{Path and method known?}
+  F -->|no| N[404 or 405]
+  F -->|yes| B[Body size limit]
+  B --> O["Origin check (not GET)"]
+  O --> S["Sign-in (private routes)"]
+  S --> L["Rate limits, if any"]
+  L --> I["Idempotency key (POST, if on)"]
+  I --> M[Group middleware]
+  M --> H[Your route]
+```
+
+A check that fails stops the request there and answers its error, as described in the section "Errors". So a caller who is not signed in gets `401` before any rate limit counts it.
 
 ## Errors
 
-When a route throws, newt answers JSON with a status that comes from the error's kind:
-
-| Kind | Status | Thrown by, for example |
-|---|---|---|
-| `validation` | 400 | `ValidationError`, a bad body |
-| `unauthorized` | 401 | `UnauthorizedError`, not signed in |
-| `forbidden` | 403 | `ForbiddenError`, a refused origin |
-| `not_found` | 404 | `NotFoundError`, an unknown route |
-| `method_not_allowed` | 405 | a method the path does not take |
-| `conflict` | 409 | `ConflictError`, a stale version |
-| `too_large` | 413 | a body over its limit |
-| `unsupported_media_type` | 415 | a body that is not JSON |
-| `unprocessable` | 422 | a reused idempotency key |
-| `too_many_requests` | 429 | a rate limit, with a `Retry-After` header |
-
-The body has the error's message and code, and its params if it has any:
+When a route throws, newt answers JSON with a status that comes from the error's kind: `400` for `validation`, `404` for `not_found`, `409` for `conflict`, and so on. The body has the error's message and code, and its params if it has any:
 
 ```json
 { "error": "Already done", "code": "task.already_done" }
 ```
 
-A zod error from a schema answers `400` with code `validation` and the zod `issues`. Anything else answers `500` with code `internal` and the message `Something went wrong`; the real error goes to the [log](/concepts/logs/), never to the client.
-
-See [Errors](/concepts/errors/) to write your own.
+A zod error answers `400` with code `validation` and the zod `issues`. Anything else answers `500` with code `internal`; the real error goes to the [log](/concepts/logs/), never to the client. [Errors](/concepts/errors/) has the full table of kinds and statuses, newt's own errors, and how to write yours.
 
 Every answer from the router also gets `cache-control: no-store` unless the route sets its own.
 
@@ -190,7 +218,10 @@ A `GET` route must not change anything. Use `POST`, `PUT`, `PATCH` or `DELETE` f
 To let pages on other origins call your API, give the router or the route a `cors` option:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database, cors: { origin: ['https://newthub.app'] } })
+const router = new HttpRouter({
+  database,
+  cors: { origin: ['https://newthub.app'] },
+})
 ```
 
 | Field | Meaning | Default |
@@ -205,11 +236,21 @@ const router = new HttpRouter({ database, cors: { origin: ['https://newthub.app'
 A rate limit caps how many requests one caller makes in a time window. Define it on the context base, then give it to routes:
 
 ```ts
-const creating = base.rateLimits.define('task.create', { limit: 20, windowMs: 60_000 })
-
-router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }), {
-  rateLimit: { limit: creating },
+const creating = base.rateLimits.define('task.create', {
+  limit: 20,
+  windowMs: 60_000,
 })
+
+router.post(
+  '/tasks/tasks',
+  async request =>
+    Response.json(await tasks.create(await bodyOf(request)), {
+      status: 201,
+    }),
+  {
+    rateLimit: { limit: creating },
+  },
+)
 ```
 
 A limit is named `<module>.<name>` and takes `limit` (requests) and `windowMs` (the window). `by` says who "one caller" is:
@@ -231,9 +272,16 @@ The counters live in the platform's cluster, so they are shared by every instanc
 A phone loses signal after sending "create task". Did it arrive? If the app sends it again, you get two tasks. An idempotency key fixes that: the client sends the same random `Idempotency-Key` header on every retry, and newt runs the request only once.
 
 ```ts
-router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }), {
-  idempotency: true,
-})
+router.post(
+  '/tasks/tasks',
+  async request =>
+    Response.json(await tasks.create(await bodyOf(request)), {
+      status: 201,
+    }),
+  {
+    idempotency: true,
+  },
+)
 ```
 
 - The first answer is kept in the context's database (table `newt_idempotency_key`) for a day; change it with `{ ttlMs }`.
@@ -250,7 +298,10 @@ Rules: `POST` only, private routes only (keys are kept per signed-in user, so ne
 Two helpers write a session cookie on `request.cookies`, `httpOnly` and `sameSite: 'lax'`:
 
 ```ts
-setSessionCookie(request, 'session', token, { secure: true, maxAgeSeconds: 60 * 60 * 24 * 30 })
+setSessionCookie(request, 'session', token, {
+  secure: true,
+  maxAgeSeconds: 60 * 60 * 24 * 30,
+})
 clearSessionCookie(request, 'session', { secure: true })
 ```
 
@@ -261,7 +312,10 @@ clearSessionCookie(request, 'session', { secure: true })
 `runContexts` opens one Bun server for every context's router, starts their workers, and stops it all cleanly on `SIGINT` or `SIGTERM`:
 
 ```ts title="src/backend.ts"
-return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true, frontend: frontends } })
+return runContexts(contexts, {
+  platformWithoutContexts: platform,
+  serve: { port, health: true, frontend: frontends },
+})
 ```
 
 The `serve` options you are most likely to touch:
@@ -269,7 +323,7 @@ The `serve` options you are most likely to touch:
 | Option | What it does |
 |---|---|
 | `port` | The port. Required. |
-| `health` | `true` answers `GET /api/health` with `{ "status": "ok" }`; a string picks another path. While stopping it answers `503` with `{ "status": "stopping" }`. |
+| `health` | `true` answers `GET /api/health` with `{ "status": "ok" }`; a string serves it at that path instead; leave it out for no health route. It needs no sign-in. While stopping it answers `503` with `{ "status": "stopping" }`. |
 | `drainMs` | On stop, keep serving this long first, so a load balancer sees the `503` and moves away. |
 | `trustProxy` | How many proxies stand in front. With it, the client IP and host come from `X-Forwarded-For` and `X-Forwarded-Host`. Set it behind a proxy, or IP rate limits and the origin check see the proxy. |
 | `maxBodyBytes` | Default body limit for the server. |

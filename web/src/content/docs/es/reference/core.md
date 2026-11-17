@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-`@newt-js/core` es el framework en sí: las piezas con las que haces tus módulos y los adaptadores que los guardan y los sirven. Esta página lista lo que exporta. Cada sección enlaza con la página que explica la idea.
+`@newt-js/core` es el framework en sí: las piezas con las que haces tus módulos y los adaptadores que los guardan y los sirven. Vuelve aquí para ver la firma o el valor por defecto exactos de lo que importes de él; cada sección enlaza con la página que explica la idea.
 
 ## Puntos de entrada
 
@@ -92,13 +92,20 @@ defineValueObject<Schema extends z.ZodType, Extra extends object = {}>(
   schema: Schema,
   invalid: (input: z.input<Schema>) => KnownError,
   extra?: Extra,
-): { schema: Schema, from(input): z.output<Schema>, tryFrom(input: unknown): z.output<Schema> | undefined } & Extra
+): {
+  schema: Schema
+  from(input): z.output<Schema>
+  tryFrom(input: unknown): z.output<Schema> | undefined
+} & Extra
 ```
 
 `from` lanza lo que devuelve `invalid`; `tryFrom` devuelve `undefined` en su lugar. `extra` añade tus propios miembros.
 
 ```ts title="src/contexts/tasks/modules/task/value-objects/priority.ts"
-export const Priority = defineValueObject(z.string().trim().min(1).max(100).brand<'Priority'>(), text => new InvalidPriority(text))
+export const Priority = defineValueObject(
+  z.string().trim().min(1).max(100).brand<'Priority'>(),
+  text => new InvalidPriority(text),
+)
 export type Priority = z.output<typeof Priority.schema>
 ```
 
@@ -271,7 +278,10 @@ Tipos: `Filter`, `FilterField` (`{ field, value: z.ZodType, ops: Operator[] }`),
 Lo que leen los repositorios: un objeto de campos, cada uno un valor (igual a) o una `Condition`, más `and` / `or`.
 
 ```ts
-await tasks.find({ name: { ieq: 'escribir la doc' }, or: [{ id: a }, { id: b }] })
+await tasks.find({
+  name: { ieq: 'escribir la doc' },
+  or: [{ id: a }, { id: b }],
+})
 ```
 
 | Operador | Significado |
@@ -313,7 +323,10 @@ Mira [Eventos y suscripciones](/es/concepts/events/).
 Una clase de evento. Su payload lo valida `schema`, que debe devolver lo mismo que recibe (sin transformaciones ni valores por defecto; marcas solo sobre strings y números).
 
 ```ts title="src/contexts/tasks/modules/task/events/task-completed.ts"
-export const Task_Completed = defineEvent('task.completed', TaskSchema.pick({ id: true }))
+export const Task_Completed = defineEvent(
+  'task.completed',
+  TaskSchema.pick({ id: true }),
+)
 ```
 
 Una instancia tiene `name`, `payload` y `occurredAt` (del reloj).
@@ -329,7 +342,10 @@ La clase tiene `eventName`. Un payload que no pasa el schema lanza `InvalidEvent
 Convierte clases de evento en los emisores que ofrece un módulo.
 
 ```ts
-this.events = eventsOf(base.bus, { created: Task_Created, completed: Task_Completed })
+this.events = eventsOf(base.bus, {
+  created: Task_Created,
+  completed: Task_Completed,
+})
 ```
 
 ### `DomainEventEmitter<TPayload>`
@@ -509,7 +525,9 @@ La clase base de un módulo: un nombre, sus casos de uso y sus suscripciones.
 | `on(event, useCase, args?, options?)` | Ejecuta `useCase` como job cuando ocurre `event`. `args(payload, meta)` devuelve los argumentos del caso de uso; puedes omitirlo si el caso de uso no recibe ninguno. |
 
 ```ts title="src/contexts/tasks/modules/task/task.workers.ts"
-tasks.on(tasks.events.completed, 'notifyAssignee', completed => [{ id: completed.id }])
+tasks.on(tasks.events.completed, 'notifyAssignee', completed => [
+  { id: completed.id },
+])
 tasks.on(tasks.remindOverdueSchedule, 'remindOverdue')
 ```
 
@@ -656,7 +674,10 @@ Mira [Tareas programadas](/es/concepts/schedules/). `base.schedules` es el `Sche
 | `tick()` | `=> Promise<void>` | Mira una vez qué toca. |
 
 ```ts
-this.remindOverdueSchedule = base.schedules.define('task.remindOverdue', '0 9 * * *')
+this.remindOverdueSchedule = base.schedules.define(
+  'task.remindOverdue',
+  '0 9 * * *',
+)
 ```
 
 Un cron tiene cinco campos: minuto, hora, día del mes, mes, día de la semana (0–7; 0 y 7 son domingo). `ScheduleTick` es `{ dueAt: string }`.
@@ -695,7 +716,10 @@ Mira [Jobs y workers](/es/concepts/jobs-and-workers/). `base.worker` es el `Work
 `base.rateLimits` es el `RateLimits` del contexto. El router HTTP también los usa; mira la [API HTTP](/es/reference/http/).
 
 ```ts
-const creates = base.rateLimits.define('task.create', { limit: 30, windowMs: 60_000 })
+const creates = base.rateLimits.define('task.create', {
+  limit: 30,
+  windowMs: 60_000,
+})
 await creates.take(currentActor().userId)
 ```
 
@@ -742,12 +766,16 @@ Cada adaptador tiene su propio punto de entrada, así una app solo carga lo que 
 | `waitTimeoutMs` | `30000` | Cuánto espera su turno una transacción o un guard. |
 
 ```ts title="src/stores.ts"
-return SqliteDatabase.open({ path: Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`, migrations })
+return SqliteDatabase.open({
+  path:
+    Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+  migrations,
+})
 ```
 
 `open()` conecta, aplica las migraciones pendientes (primero las de newt, luego las tuyas) y comprueba que la base de datos guarda el texto como debe. `connect()` solo conecta. Las bases de datos SQL tienen además `migrations` (`up()`, `down()`, `status()` → `{ applied, pending, changed }`) y `query(sql, params?)`. Estos puntos de entrada también exportan `Migrations`, `MigrationStatus`, `TransactionConflict` (un `ConcurrencyConflict`, code `transaction_conflict`), y `SqliteDatabaseOptions` o `SqlServerDatabaseOptions`.
 
-El punto de entrada de memoria exporta también `MemoryOutbox`, `MemoryRecords` y `MemoryTransactions`.
+El punto de entrada de memoria exporta también `MemoryOutbox`, `MemoryRecords`, `MemoryTransactions` y su tipo `Staged`.
 
 ### Ficheros
 

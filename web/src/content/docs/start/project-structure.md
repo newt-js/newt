@@ -75,6 +75,29 @@ newthub/
                         └── due-dates.ts
 ```
 
+## How the files connect
+
+Each file opens the next one, from `index.ts` down to the modules:
+
+```mermaid
+flowchart TD
+  index[index.ts] --> backend[backend.ts]
+  backend --> contexts[contexts.ts]
+  contexts --> ctx[tasks.context.ts]
+  ctx --> stores[stores.ts]
+  ctx --> auth[auth.ts]
+  ctx --> modules[tasks-modules.ts]
+  modules --> task[task.module.ts]
+  task --> routes[task.routes.ts]
+  task --> repo[task.repository.ts]
+```
+
+- `index.ts` calls `startBackend` with `PORT`.
+- `backend.ts` picks the cluster, opens every context with `openContexts` and serves them with `runContexts`.
+- `contexts.ts` opens each context, one line per context.
+- `tasks.context.ts` opens the database and the files (`stores.ts`), creates the router with `authenticate` (`auth.ts`), and creates the modules.
+- `tasks-modules.ts` creates each module. A module registers its routes and its workers when it is created.
+
 ## Root files
 
 | File | What it is for |

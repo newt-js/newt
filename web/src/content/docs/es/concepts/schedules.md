@@ -14,9 +14,16 @@ La defines en el constructor del módulo con `base.schedules.define(nombre, cron
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 readonly remindOverdueSchedule
 
-private constructor(base: ContextBase, private readonly tasks: Task_Repository, private readonly deps: Task_Deps) {
+private constructor(
+  base: ContextBase,
+  private readonly tasks: Task_Repository,
+  private readonly deps: Task_Deps,
+) {
   super('task', base.useCaseRunner, deps)
-  this.remindOverdueSchedule = base.schedules.define('task.remindOverdue', '0 9 * * *')
+  this.remindOverdueSchedule = base.schedules.define(
+    'task.remindOverdue',
+    '0 9 * * *',
+  )
 }
 
 @UseCase()
@@ -43,7 +50,9 @@ export function registerTaskWorkers(tasks: Task_Module): void {
 El payload del evento es `{ dueAt }`: la hora a la que tocaba la ejecución, como fecha ISO. Un caso de uso sin entrada lo ignora. Para pasárselo, conviértelo:
 
 ```ts
-tasks.on(tasks.remindOverdueSchedule, 'remindOverdue', tick => [{ until: tick.dueAt }])
+tasks.on(tasks.remindOverdueSchedule, 'remindOverdue', tick => [
+  { until: tick.dueAt },
+])
 ```
 
 :::tip
@@ -96,11 +105,19 @@ Cada contexto arranca sus tareas programadas cuando [`runContexts`](/es/concepts
 
 Las tareas miran el reloj al menos una vez por minuto, y antes si la próxima ejecución está más cerca. Una ejecución empieza como mucho un minuto después de su hora.
 
-Cuando toca una ejecución:
+Cada vez que mira, hace esto con cada tarea:
 
-1. Newt escribe la hora en la tabla `newt_schedule_tick` de la base de datos del contexto.
-2. En la misma transacción, emite el evento de la tarea, que encola un job por suscripción.
-3. Un worker ejecuta el caso de uso, con los mismos reintentos que cualquier [job](/es/concepts/jobs-and-workers/).
+```mermaid
+flowchart TD
+  A[Busca la última hora prevista] --> B{¿Fila en newt_schedule_tick?}
+  B -- no --> C[Apunta la hora, no ejecuta nada]
+  B -- sí, anterior --> D[Actualiza la fila y emite el evento]
+  B -- sí, la misma --> E[Nada que hacer]
+  D --> F[Un job por suscripción]
+  F --> G[Un worker ejecuta el caso de uso]
+```
+
+Actualizar la fila y emitir el evento ocurren en una sola transacción, y el job se ejecuta con los mismos reintentos que cualquier [job](/es/concepts/jobs-and-workers/).
 
 ### Una sola vez entre instancias
 
@@ -108,7 +125,7 @@ Si ejecutas varias instancias, todas miran el reloj. Solo gana una: la fila de `
 
 ### La primera ejecución y las perdidas
 
-- La primera vez que una instancia ve una tarea nueva, solo apunta la última hora prevista. La primera ejecución real es la siguiente.
+- La primera vez que una base de datos ve una tarea (aún no tiene fila), newt solo apunta su última hora prevista. La primera ejecución real es la siguiente.
 - Si la aplicación estaba parada cuando tocaban ejecuciones, al volver se ejecuta **una vez**, por la última de ellas, no una por cada ejecución perdida.
 
 :::note
@@ -127,7 +144,11 @@ test('remindOverdue runs at 0 9 * * *', async () => {
   await context.settle()
 
   const queued = await context.base.database.outbox.list()
-  expect(queued.find(each => each.queue === 'task.remindOverdue.on.task.remindOverdue')?.status).toBe('done')
+  expect(
+    queued.find(
+      each => each.queue === 'task.remindOverdue.on.task.remindOverdue',
+    )?.status,
+  ).toBe('done')
 })
 ```
 

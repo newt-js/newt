@@ -5,10 +5,15 @@ sidebar:
   order: 2
 ---
 
-`@newt-js/core/http` is the part of newt that turns HTTP requests into calls to your use cases and runs your contexts on a Bun server. For the ideas behind it, read [HTTP and routes](/concepts/http/).
+`@newt-js/core/http` is the part of newt that turns HTTP requests into calls to your use cases and runs your contexts on a Bun server. You need this page when you write routes or change how the server starts. For the ideas behind it, read [HTTP and routes](/concepts/http/).
 
 ```ts
-import { HttpRouter, bodyOf, pageRequestFrom, runContexts } from '@newt-js/core/http'
+import {
+  HttpRouter,
+  bodyOf,
+  pageRequestFrom,
+  runContexts,
+} from '@newt-js/core/http'
 ```
 
 ## HttpRouter
@@ -46,7 +51,9 @@ router.authenticateWith(authenticate)
 `answer` is also how module tests call routes without a server:
 
 ```ts
-const response = await router.answer(new Request(`http://backend.test/api/tasks/tasks/${id}`))
+const response = await router.answer(
+  new Request(`http://backend.test/api/tasks/tasks/${id}`),
+)
 ```
 
 ### Paths
@@ -67,6 +74,24 @@ What the router answers on its own:
 | Path known, method not registered | 405, code `method_not_allowed`, with an `Allow` header |
 | `HEAD` on a path with `GET` | The `GET` answer without a body |
 | `OPTIONS` on a route with `cors` | 204 with the CORS preflight headers |
+
+This is the order of the checks a request goes through, from the router to your route:
+
+```mermaid
+flowchart TD
+  request["Request"] --> path{"A route's path?"}
+  path -->|"no, under the prefix"| notFound["404 route_not_found"]
+  path -->|"no, outside the prefix"| none["null: the server tries its frontends"]
+  path -->|"yes"| method{"Its method?"}
+  method -->|"no"| other["HEAD runs GET, OPTIONS with cors 204, else 405"]
+  method -->|"yes"| body["Body size and JSON checks"]
+  body --> origin["Same-origin check, unless GET"]
+  origin --> signIn["Sign-in, unless public"]
+  signIn --> limits["Rate limits, then idempotency for POST"]
+  limits --> route["Your route"]
+```
+
+Any error thrown along the way becomes a response through the route's `onError`. [What every route does](#what-every-route-does) lists every step.
 
 ### HttpGroup
 
@@ -97,7 +122,10 @@ reports.get('/overdue', async () => Response.json({ items: [] }))
 | `onError` | `ErrorHandler` | `toErrorResponse` | Turns a thrown error into a response. |
 
 ```ts
-router.put(`${path}/*`, request => storage.handler(request), { public: true, maxBodyBytes: 100 * 1024 * 1024 })
+router.put(`${path}/*`, request => storage.handler(request), {
+  public: true,
+  maxBodyBytes: 100 * 1024 * 1024,
+})
 ```
 
 ### What every route does
@@ -120,7 +148,12 @@ A request that changes something (`POST`, `PUT`, `PATCH`, `DELETE`) is refused w
 ### Cors
 
 ```ts
-type Cors = { origin: '*' | string[], headers?: string[], expose?: string[], maxAge?: number }
+type Cors = {
+  origin: '*' | string[]
+  headers?: string[]
+  expose?: string[]
+  maxAge?: number
+}
 ```
 
 | Field | Default | Meaning |
@@ -148,7 +181,10 @@ type HttpRateLimit = {
 You make a `RateLimit` with `base.rateLimits.define('<module>.<name>', { limit, windowMs })` (see [@newt-js/core](/reference/core/)). Limits of the router, the group and the route all apply; one with the same name counts once. Answers carry `ratelimit-limit` and `ratelimit-remaining` of the closest limit. Over the limit → 429 `too_many_requests` with a `retry-after` header in seconds.
 
 ```ts
-const create = base.rateLimits.define('task.create', { limit: 10, windowMs: 60_000 })
+const create = base.rateLimits.define('task.create', {
+  limit: 10,
+  windowMs: 60_000,
+})
 router.post('/tasks/tasks', route, { rateLimit: { limit: create } })
 ```
 
@@ -199,8 +235,14 @@ Inside a route, `request.json()` throws 415 `unsupported_media_type` when the `c
 `Unchecked` is `any`.
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.post('/tasks/tasks', async request => Response.json(await tasks.create(await bodyOf(request)), { status: 201 }))
-router.get('/tasks/tasks', async request => Response.json(await tasks.paginate({}, pageRequestFrom(request))))
+router.post('/tasks/tasks', async request =>
+  Response.json(await tasks.create(await bodyOf(request)), {
+    status: 201,
+  }),
+)
+router.get('/tasks/tasks', async request =>
+  Response.json(await tasks.paginate({}, pageRequestFrom(request))),
+)
 ```
 
 ## Sign-in
@@ -243,7 +285,12 @@ A thrown error becomes a JSON response by its `kind`:
 A zod error (`ZodError`) answers 400 with code `validation` and its `issues`. Any other error answers 500 `{ "error": "Something went wrong", "code": "internal" }` and is logged.
 
 ```ts
-type ErrorBody = { error: string, code: string, params?: Record<string, unknown>, issues?: unknown[] }
+type ErrorBody = {
+  error: string
+  code: string
+  params?: Record<string, unknown>
+  issues?: unknown[]
+}
 ```
 
 ```json
@@ -282,7 +329,10 @@ type ErrorBody = { error: string, code: string, params?: Record<string, unknown>
 `runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` starts your contexts: their servers, workers and scheduled tasks.
 
 ```ts title="src/backend.ts"
-return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true, frontend: frontends } })
+return runContexts(contexts, {
+  platformWithoutContexts: platform,
+  serve: { port, health: true, frontend: frontends },
+})
 ```
 
 `ContextToRun` is what each context's `open` returns:
@@ -323,7 +373,7 @@ return runContexts(contexts, { platformWithoutContexts: platform, serve: { port,
 | `publicFolder` | `string` | none | Files served as they are next to an HTML-import frontend. |
 | `proxy` | `Record<string, string>` | none | Path → URL to forward to (for example a dev server). |
 | `development` | `boolean` | `false` | Bun's development mode (HMR for HTML imports, detailed errors). |
-| `health` | `boolean \| string` | none | `true` adds `GET /api/health`; a string sets another path. Answers `{"status":"ok"}`, or 503 `{"status":"stopping"}` while stopping. |
+| `health` | `boolean \| string` | off | `true` serves `GET /api/health`; a string serves it at that path instead (`'/healthz'`). Public. Answers `{"status":"ok"}`, or 503 `{"status":"stopping"}` while stopping. |
 | `drainMs` | `number` | `0` | On stop, keep answering this long first (health already says `stopping`). |
 | `trustProxy` | `number` | `0` | How many proxies in front to trust for `X-Forwarded-For` and `X-Forwarded-Host`. |
 | `securityHeaders` | `Record<string, string \| null> \| false` | `SECURITY_HEADERS` | Headers added to every response that lacks them. `null` drops one; `false` drops all. |
@@ -347,7 +397,11 @@ Default security headers (`SECURITY_HEADERS`):
 ### Frontends
 
 ```ts
-type FrontendMount = { path: string, app: string | Bun.HTMLBundle, publicFolder?: string }
+type FrontendMount = {
+  path: string
+  app: string | Bun.HTMLBundle
+  publicFolder?: string
+}
 ```
 
 ```ts title="src/frontends.ts"

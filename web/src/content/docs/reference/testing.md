@@ -5,10 +5,14 @@ sidebar:
   order: 3
 ---
 
-`@newt-js/core/application/testing` builds a context for a test: real database, a clock you move by hand, and jobs that run when you ask. For how to write tests, read [Testing](/guides/testing/).
+`@newt-js/core/application/testing` builds a context for a test: real database, a clock you move by hand, and jobs that run when you ask. You use it in every module test. For how to write tests, read [Testing](/guides/testing/).
 
 ```ts
-import { testContext, TestClock, type TestContext } from '@newt-js/core/application/testing'
+import {
+  testContext,
+  TestClock,
+  type TestContext,
+} from '@newt-js/core/application/testing'
 ```
 
 ## testContext
@@ -17,10 +21,19 @@ import { testContext, TestClock, type TestContext } from '@newt-js/core/applicat
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 beforeEach(async () => {
-  const database = await SqliteDatabase.open({ path: ':memory:', migrations: join(import.meta.dir, '../../migrations') })
-  context = testContext({ name: 'tasks', cluster: new MemoryCluster(), database })
+  const database = await SqliteDatabase.open({
+    path: ':memory:',
+    migrations: join(import.meta.dir, '../../migrations'),
+  })
+  context = testContext({
+    name: 'tasks',
+    cluster: new MemoryCluster(),
+    database,
+  })
   router = new HttpRouter({ database })
-  router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
+  router.authenticateWith(async () =>
+    signedIn ? { userId: 'tester' } : null,
+  )
   tasks = tasksModules(context.base, router).task
 })
 
@@ -38,8 +51,8 @@ afterEach(() => context.close())
 | `cluster` | `Cluster` | — (required) | Usually `new MemoryCluster()` from `@newt-js/core/cluster/memory`. |
 | `at` | `Date \| string` | `'2026-01-01T00:00:00.000Z'` | The time the clock starts at. |
 | `worker` | `WorkerOptionsGiven` | the worker's defaults | Worker settings (`concurrency`, `leaseMs`, `backoffMs`…). |
-| `writeRule` | `WriteRule` | none | Same as in [ContextBase](/reference/core/). |
-| `guardRule` | `GuardRule` | none | Same as in ContextBase. |
+| `writeRule` | `WriteRule` | `'error'` | Same as in [ContextBase](/reference/core/). |
+| `guardRule` | `GuardRule` | `'error'` | Same as in ContextBase. |
 | `conflictRetries` | `Partial<ConflictRetries>` | ContextBase's | Same as in ContextBase. |
 | `storage` | `StorageOptions` | none | File storage, for example `{ private: new MemoryStorage() }`. |
 
@@ -78,7 +91,11 @@ await context.base.schedules.tick()
 await context.settle()
 
 const queued = await context.base.database.outbox.list()
-expect(queued.find(each => each.queue === 'task.remindOverdue.on.task.remindOverdue')?.status).toBe('done')
+expect(
+  queued.find(
+    each => each.queue === 'task.remindOverdue.on.task.remindOverdue',
+  )?.status,
+).toBe('done')
 ```
 
 ### logs
@@ -117,11 +134,13 @@ clock.now().toISOString() // '2026-03-01T09:01:00.000Z'
 There is no special helper: call `router.answer` with a `Request`. It runs the route with every check (sign-in, body, errors) and no server. See [HttpRouter](/reference/http/#httprouter).
 
 ```ts
-const response = await router.answer(new Request('http://backend.test/api/tasks/tasks', {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ name: 'Second' }),
-}))
+const response = await router.answer(
+  new Request('http://backend.test/api/tasks/tasks', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'Second' }),
+  }),
+)
 expect(response?.status).toBe(201)
 ```
 

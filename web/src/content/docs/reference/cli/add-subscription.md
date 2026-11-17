@@ -50,7 +50,9 @@ Next steps:
 import type { Task_Module } from './task.module'
 
 export function registerTaskWorkers(tasks: Task_Module): void {
-  tasks.on(tasks.events.completed, 'notifyAssignee', completed => [{ id: completed.id }])
+  tasks.on(tasks.events.completed, 'notifyAssignee', completed => [
+    { id: completed.id },
+  ])
 }
 ```
 

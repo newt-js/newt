@@ -39,7 +39,7 @@ It also takes the [global flags](/reference/cli/overview/#global-flags).
 
 ## Name rules
 
-- Lowercase words joined by `-`, each starting with a letter.
+- Lowercase letters and digits, words joined by `-`, starting with a letter.
 - Not the name of a class newt's errors extend (`validation-error`, `known-error`…).
 - Its code, `<module>.<name with _>`, is not used by another error of the module. A name that starts with the module drops it from the code: `task-already-done` and `already-done` both give `task.already_done`.
 

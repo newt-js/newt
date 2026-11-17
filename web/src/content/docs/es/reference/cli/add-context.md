@@ -29,7 +29,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 
 ## Reglas del nombre
 
-- Palabras en minúsculas unidas por `-`: `tasks`, `web-session`. Cada palabra empieza por una letra.
+- Letras minúsculas y dígitos, palabras unidas por `-`, empezando por una letra: `tasks`, `web-session`.
 - No `api`: su frontend se serviría en `/api`, donde están las rutas.
 - Con Postgres o MySQL, la base de datos se llama `<backend>__<contexto>`; con S3, el bucket es `<backend>--<contexto>`. Cada uno debe caber en 63 caracteres.
 

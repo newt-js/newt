@@ -19,13 +19,19 @@ Las ideas de fondo están en la página de [principios](/es/principios/).
 
 ## La forma de un backend
 
-Un backend de newt se compone de unas pocas clases de piezas, una dentro de otra:
+Un backend de newt se compone de unas pocas clases de piezas, una dentro de otra. Este es Newthub con dos contextos:
 
-```txt
-backend
-└── contexto       tasks, chat, docs…   (una base de datos cada uno)
-    └── módulo     task, project…
-        └── caso de uso   create, completeTask…
+```mermaid
+flowchart TD
+  backend[Backend] --> tasks[Contexto: tasks]
+  backend --> chat[Contexto: chat]
+  tasks --> tasksdb[(base de datos de tasks)]
+  chat --> chatdb[(base de datos de chat)]
+  tasks --> task[Módulo: task]
+  tasks --> project[Módulo: project]
+  chat --> message[Módulo: message]
+  task --> create[Caso de uso: create]
+  task --> complete[Caso de uso: completeTask]
 ```
 
 - **Backend**: el programa que ejecutas. Sirve HTTP y hace el trabajo en segundo plano.
@@ -41,7 +47,21 @@ Consulta [contextos y módulos](/es/concepts/contexts-and-modules/) y [casos de 
 
 Los módulos se hablan mediante **eventos**: hechos breves como `task.completed`. Un módulo al que le interesa uno se suscribe y ejecuta uno de sus propios casos de uso.
 
-Un evento se guarda en la misma transacción que el cambio que lo provocó. Espera en el outbox, la cola de jobs que vive en tu base de datos, hasta que un **worker** ejecuta cada reacción como un **job**. Un job que falla se reintenta, así que una reacción no se pierde aunque el proceso se pare a medias.
+Un evento se guarda en la misma transacción que el cambio que lo provocó, como un job por cada suscripción. Los jobs esperan en el *outbox*, la cola de jobs que vive en tu base de datos, hasta que un **worker** los ejecuta. Esto es lo que pasa cuando se completa una tarea y `notifyAssignee` está suscrito a `task.completed`:
+
+```mermaid
+sequenceDiagram
+  participant C as completeTask
+  participant DB as base de datos de tasks
+  participant W as Worker
+  participant N as notifyAssignee
+  C->>DB: guarda la tarea y sus jobs, en una transacción
+  W->>DB: toma el siguiente job
+  W->>N: lo ejecuta
+  N-->>W: hecho, o falla y se reintenta más tarde
+```
+
+Un job que falla se reintenta, así que una reacción no se pierde aunque el proceso se pare a medias.
 
 Una **tarea programada** ejecuta un caso de uso según un cron, como "todos los días a las 9:00", con el mismo tipo de job.
 
