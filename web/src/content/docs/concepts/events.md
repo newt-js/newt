@@ -229,6 +229,8 @@ tasks.on(project.events.created, 'addFirstTask', created => [
 
 Its queue is `task.addFirstTask.on.project.created`.
 
+`project` is the module `task` is given as a dependency (see [Services and dependencies](/concepts/services-and-deps/)): a module reaches another's events through it, never importing them. To name an event's type, import it as a type only, `import type { Project_Created } from '../project/events/project-created'`; the lint rule `module-imports` refuses it as a value, since only `project` publishes its events.
+
 This is how one module changes another's data. A use case may write only to its own module; to change another module, emit an event and let that module react. See [the write rule](/concepts/use-cases/#the-write-rule).
 
 :::note

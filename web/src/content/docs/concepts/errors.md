@@ -200,6 +200,25 @@ The HTTP layer has its own, from `@newt-js/core/http`:
 
 See [HTTP and routes](/concepts/http/) for when each one happens, and for a route's `onError` option, which answers errors your own way.
 
+## Another module's errors
+
+A module's errors are part of what it offers the other modules of its context: how its use cases fail. A module that calls another's use case may import its errors, as they are, to tell one apart:
+
+```ts title="src/contexts/tasks/modules/task/task.module.ts"
+import { ProjectNotFound } from '../project/errors/project-not-found'
+
+try {
+  await this.deps.project.get({ id: projectId })
+} catch (error) {
+  if (error instanceof ProjectNotFound) {
+    // ...
+  }
+  throw error
+}
+```
+
+The lint rule [`module-imports`](/reference/lint/) lets it: of another module, only its errors are imported as values; its module, schema and events come as types only.
+
 ## With the CLI
 
 ```sh

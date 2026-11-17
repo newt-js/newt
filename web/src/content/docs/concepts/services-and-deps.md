@@ -33,7 +33,7 @@ Write a service when two use cases repeat the same steps, such as a calculation 
 A service is a plain function. It needs no class, no decorator and no registration, and you test it by calling it.
 :::
 
-A service belongs to its module. The lint rule `module-imports` lets other modules import only a module's `*.module.ts`, `*.schema.ts`, `events/` and `errors/`, so no other module can import its services.
+A service belongs to its module. The lint rule `module-imports` lets other modules import only the types of a module's `*.module.ts`, `*.schema.ts` and `events/`, and its `errors/`, so no other module can import its services.
 
 ## Dependencies
 
@@ -99,10 +99,10 @@ This is what `task` may reach of `project`, and what the lint refuses:
 
 ```mermaid
 flowchart TD
-  T["task module"] -->|"this.deps.project"| P["project.module.ts"]
-  T -->|"imports"| S["project.schema.ts"]
-  T -->|"imports"| E["project events/ and errors/"]
-  T -.->|"refused by lint"| X["project's entity, repository, value objects, routes, workers, services"]
+  T["task module"] -->|"this.deps.project: use cases, events"| P["project.module.ts"]
+  T -->|"import type"| S["project.module.ts, project.schema.ts, events/"]
+  T -->|"imports"| E["project errors/"]
+  T -.->|"refused by lint"| X["project's schemas as values, entity, repository, value objects, routes, workers, services"]
   P -.->|"refused: a cycle"| T
 ```
 
@@ -110,7 +110,7 @@ What the lint checks:
 
 | Rule | What it refuses |
 |---|---|
-| `module-imports` | Importing another module's entity, repository, value objects, routes, workers or services. |
+| `module-imports` | Importing another module's entity, repository, value objects, routes, workers or services, or its module, schema or events as values (they come as `import type`). |
 | `module-files` | A file or folder a module does not have. `services/` and `<module>.deps.ts` are allowed. |
 | `module-transactions` | A module opening a transaction of its own. |
 

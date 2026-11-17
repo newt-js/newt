@@ -1,29 +1,16 @@
-import { TSESLint }      from '@typescript-eslint/utils'
-import type { TSESTree } from '@typescript-eslint/utils'
-import { isBuiltin }     from 'node:module'
+import { TSESLint }   from '@typescript-eslint/utils'
+import { isBuiltin }  from 'node:module'
 // --------------------------------------------------------
-import { fromNewt }      from '../../ast/ast'
-import { ROOT }          from '../../paths/paths'
-import { absolute }      from '../../paths/paths'
-import { contextOf }     from '../../paths/paths'
-import { importsOf }     from '../../paths/paths'
-import { real }          from '../../paths/paths'
-import { resolved }      from '../../paths/paths'
-import { rootOf }        from '../../paths/paths'
-import { slashed }       from '../../paths/paths'
-
-/** Whether an import brings only types. */
-function isTypeOnly(source: TSESTree.Node): boolean {
-  const parent = source.parent
-  if (parent?.type === 'TSImportType') return true
-  if (parent?.type === 'ExportAllDeclaration') return parent.exportKind === 'type'
-  if (parent?.type === 'ExportNamedDeclaration') {
-    return parent.exportKind === 'type' || (parent.specifiers.length > 0 && parent.specifiers.every(each => each.exportKind === 'type'))
-  }
-  if (parent?.type !== 'ImportDeclaration') return false
-  if (parent.importKind === 'type') return true
-  return parent.specifiers.length > 0 && parent.specifiers.every(each => each.type === 'ImportSpecifier' && each.importKind === 'type')
-}
+import { fromNewt }   from '../../ast/ast'
+import { isTypeOnly } from '../../ast/ast'
+import { ROOT }       from '../../paths/paths'
+import { absolute }   from '../../paths/paths'
+import { contextOf }  from '../../paths/paths'
+import { importsOf }  from '../../paths/paths'
+import { real }       from '../../paths/paths'
+import { resolved }   from '../../paths/paths'
+import { rootOf }     from '../../paths/paths'
+import { slashed }    from '../../paths/paths'
 
 /** A context's app imports its own files, and only types from its context's schemas and from newt. */
 export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server' | 'runtime', [{ folder: string }]> = {

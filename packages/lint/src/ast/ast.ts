@@ -8,6 +8,23 @@ export function fromNewt(source: string): boolean {
   return source === CORE || source.startsWith(`${CORE}/`)
 }
 
+/**
+ * Whether the import or re-export whose path is `source` brings only types: `import type`,
+ * every name marked `type`, `export type`, `import('…')` as a type, `import type x = require('…')`.
+ */
+export function isTypeOnly(source: TSESTree.Node): boolean {
+  const parent = source.parent
+  if (parent?.type === 'TSImportType') return true
+  if (parent?.type === 'TSExternalModuleReference') return parent.parent.type === 'TSImportEqualsDeclaration' && parent.parent.importKind === 'type'
+  if (parent?.type === 'ExportAllDeclaration') return parent.exportKind === 'type'
+  if (parent?.type === 'ExportNamedDeclaration') {
+    return parent.exportKind === 'type' || (parent.specifiers.length > 0 && parent.specifiers.every(each => each.exportKind === 'type'))
+  }
+  if (parent?.type !== 'ImportDeclaration') return false
+  if (parent.importKind === 'type') return true
+  return parent.specifiers.length > 0 && parent.specifiers.every(each => each.type === 'ImportSpecifier' && each.importKind === 'type')
+}
+
 /** Every node under `node`, itself included: it walks what holds a `type`, as ESLint's visitor keys would. */
 export function* nodes(node: TSESTree.Node | null | undefined): Generator<TSESTree.Node> {
   if (!node || typeof node.type !== 'string') return

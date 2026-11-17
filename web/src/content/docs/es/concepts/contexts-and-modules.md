@@ -55,7 +55,7 @@ Dentro de un contexto, un módulo llega a otro de dos formas:
 - Llama a los casos de uso del otro, que recibe como dependencia. Ver [Servicios y dependencias](/es/concepts/services-and-deps/).
 - Reacciona a los eventos del otro. Ver [Eventos y suscripciones](/es/concepts/events/).
 
-Un módulo importa de otro solo su `*.module.ts`, su `*.schema.ts`, sus `events/` y sus `errors/`. La regla de lint `module-imports` rechaza el resto.
+Esa es la API de un módulo, y todo lo que otro módulo alcanza de él. De otro módulo importa solo tipos (`import type`) de su `*.module.ts`, su `*.schema.ts` (los DTOs) y sus `events/`, y sus `errors/` (para distinguir un error conocido). La regla de lint `module-imports` rechaza el resto: sus schemas como valores, su entidad, sus value objects, su repositorio, sus rutas, sus workers y sus servicios.
 
 ## Cómo hablan los contextos entre sí
 
