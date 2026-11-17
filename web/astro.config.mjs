@@ -3,7 +3,6 @@ import { defineConfig } from 'astro/config'
 import starlight from '@astrojs/starlight'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
-import starlightVersions from 'starlight-versions'
 import { remarkPackageName } from './src/plugins/remark-package-name.mjs'
 // The one place the package name lives; the docs write %PKG% for it.
 import { PACKAGE } from './src/config/site.ts'
@@ -19,11 +18,6 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'newt',
-      plugins: [
-        starlightVersions({
-          versions: [{ slug: '0.5' }],
-        }),
-      ],
       favicon: '/favicon.svg',
       defaultLocale: 'root',
       locales: {
@@ -33,15 +27,44 @@ export default defineConfig({
       customCss: ['./src/styles/docs.css'],
       components: {
         Header: './src/components/docs/Header.astro',
-        Sidebar: './src/components/docs/Sidebar.astro',
         PageTitle: './src/components/docs/PageTitle.astro',
         MobileMenuFooter: './src/components/docs/MobileMenuFooter.astro',
       },
       editLink: undefined,
       lastUpdated: false,
+      // Versions: off until there is an old one to keep. When 0.2 ships, archive 0.1:
+      //   plugins: [starlightVersions({ current: { label: '0.2' }, versions: [{ slug: '0.1' }] })]
+      //   + `versions: defineCollection({ loader: docsVersionsLoader() })` in content.config.ts
+      //   + <VersionMenu><VersionSelect /></VersionMenu> on top of the sidebar, <VersionNotice /> under the title.
       sidebar: [
-        { slug: 'guide/getting-started' },
-        { slug: 'tutorial' },
+        { label: 'Get started', translations: { es: 'Empezar' }, items: [{ autogenerate: { directory: 'start' } }] },
+        { label: 'Tutorial', translations: { es: 'Tutorial' }, items: [{ autogenerate: { directory: 'tutorial' } }] },
+        { label: 'Concepts', translations: { es: 'Conceptos' }, items: [{ autogenerate: { directory: 'concepts' } }] },
+        {
+          label: 'Guides',
+          translations: { es: 'Guías' },
+          items: [
+            { slug: 'guides/authentication' },
+            { slug: 'guides/testing' },
+            { label: 'Databases', translations: { es: 'Bases de datos' }, items: [{ autogenerate: { directory: 'guides/databases' } }] },
+            { slug: 'guides/frontend' },
+            { slug: 'guides/monorepo' },
+            { slug: 'guides/deploy' },
+            { slug: 'guides/scaling' },
+          ],
+        },
+        {
+          label: 'Reference',
+          translations: { es: 'Referencia' },
+          items: [
+            { label: 'CLI', translations: { es: 'CLI' }, collapsed: true, items: [{ autogenerate: { directory: 'reference/cli' } }] },
+            { slug: 'reference/core' },
+            { slug: 'reference/http' },
+            { slug: 'reference/testing' },
+            { slug: 'reference/lint' },
+            { slug: 'reference/configuration' },
+          ],
+        },
       ],
     }),
     react(),
