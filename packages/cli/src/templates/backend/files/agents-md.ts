@@ -22,13 +22,13 @@ A backend built with newt (@newt-js/core), on Bun.
 ## Layout
 
 - \`src/index.ts\`: starts the backend on \`PORT\` (from \`.env\`).
-- \`src/backend.ts\`: opens the contexts and serves them, with \`GET /api/health\`.
+- \`src/backend.ts\`: opens the contexts and serves them, with \`GET /health-check\`.
 - \`src/stores.ts\`: the database and the files each context opens. Tests start the backend with
   \`startBackend(0, { stores: 'memory' })\`: databases, files and cluster in memory, sqlite with its migrations.
 - \`src/auth.ts\`: \`authenticate\`, who calls the backend, for every context's router.
 - \`src/env.ts\`: \`requiredEnv\`, for the variables the backend cannot start without.
 - \`src/contexts.ts\`: the list of contexts the backend opens.
-${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/api/<context>/\`.
+${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/<context>/api/\`.
 
 ## Sign-in
 

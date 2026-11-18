@@ -21,7 +21,7 @@ import {
 Las rutas de un contexto. Cada contexto tiene su propio router.
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
@@ -31,7 +31,7 @@ router.authenticateWith(authenticate)
 
 | Opción | Tipo | Por defecto | Qué hace |
 |---|---|---|---|
-| `prefix` | `string` | `'/api'` | Va delante de cada ruta. `''` para ninguno. |
+| `prefix` | `string` | `'/api'` | Va delante de cada ruta. El router de un contexto lleva `/<contexto>/api`. `''` para ninguno. |
 | `database` | `Pick<Database, 'records'>` | ninguna | Guarda las respuestas de las rutas idempotentes (tabla `newt_idempotency_key`). Obligatoria si alguna ruta es idempotente. |
 | `clock` | `Clock` | reloj del sistema | La hora con la que caducan las claves de idempotencia. |
 
@@ -52,7 +52,7 @@ Con `answer` también llaman los tests de módulo a las rutas sin servidor:
 
 ```ts
 const response = await router.answer(
-  new Request(`http://backend.test/api/tasks/tasks/${id}`),
+  new Request(`http://backend.test/tasks/api/tasks/${id}`),
 )
 ```
 
@@ -60,8 +60,8 @@ const response = await router.answer(
 
 | Pieza | Ejemplo | Coincide con |
 |---|---|---|
-| Fija | `/tasks/tasks` | Ese segmento exacto. |
-| Parámetro | `/tasks/tasks/:id` | Un segmento no vacío, que lees en `request.params.id` (ya decodificado). |
+| Fija | `/tasks` | Ese segmento exacto. |
+| Parámetro | `/tasks/:id` | Un segmento no vacío, que lees en `request.params.id` (ya decodificado). |
 | Resto | `/files/*` | Uno o más segmentos. Solo al final. |
 
 Un camino empieza por `/` (o es `''`). Si coinciden varias rutas, gana el segmento fijo sobre el parámetro, y el parámetro sobre `*`.
@@ -98,7 +98,7 @@ Cualquier error lanzado por el camino se convierte en respuesta con el `onError`
 `router.group(prefix, middleware, options?)` devuelve un `HttpGroup` con `get`, `post`, `put`, `patch` y `delete`, con las mismas firmas que el router. Cada camino es el prefijo del grupo más el suyo. El middleware se ejecuta después de identificar al usuario y antes de la ruta:
 
 ```ts
-const reports = router.group('/tasks/reports', async (request, next) => {
+const reports = router.group('/reports', async (request, next) => {
   const response = await next()
   return response
 }, { maxBodyBytes: 64 * 1024 })
@@ -185,7 +185,7 @@ const create = base.rateLimits.define('task.create', {
   limit: 10,
   windowMs: 60_000,
 })
-router.post('/tasks/tasks', route, { rateLimit: { limit: create } })
+router.post('/tasks', route, { rateLimit: { limit: create } })
 ```
 
 ### Idempotencia
@@ -235,12 +235,12 @@ Dentro de una ruta, `request.json()` lanza 415 `unsupported_media_type` si el `c
 `Unchecked` es `any`.
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.post('/tasks/tasks', async request =>
+router.post('/tasks', async request =>
   Response.json(await tasks.create(await bodyOf(request)), {
     status: 201,
   }),
 )
-router.get('/tasks/tasks', async request =>
+router.get('/tasks', async request =>
   Response.json(await tasks.paginate({}, pageRequestFrom(request))),
 )
 ```
@@ -373,7 +373,7 @@ return runContexts(contexts, {
 | `publicFolder` | `string` | ninguna | Ficheros servidos tal cual junto a un frontend de import de HTML. |
 | `proxy` | `Record<string, string>` | ninguno | Camino → URL a la que reenviar (por ejemplo, un servidor de desarrollo). |
 | `development` | `boolean` | `false` | Modo desarrollo de Bun (HMR para imports de HTML, errores detallados). |
-| `health` | `boolean \| string` | apagado | `true` sirve `GET /api/health`; un texto lo sirve en ese camino en su lugar (`'/healthz'`). Público. Responde `{"status":"ok"}`, o 503 `{"status":"stopping"}` mientras se para. |
+| `health` | `boolean` | apagado | `true` sirve `GET /health-check` para todo el backend, y `GET /<contexto>/health-check` para cada contexto que sirve rutas. Público. Responde `{"status":"ok"}`, o 503 `{"status":"stopping"}` mientras se para. |
 | `drainMs` | `number` | `0` | Al parar, sigue respondiendo este tiempo antes (health ya dice `stopping`). |
 | `trustProxy` | `number` | `0` | Cuántos proxies delante son de confianza para `X-Forwarded-For` y `X-Forwarded-Host`. |
 | `securityHeaders` | `Record<string, string \| null> \| false` | `SECURITY_HEADERS` | Cabeceras añadidas a cada respuesta que no las tenga. `null` quita una; `false` las quita todas. |

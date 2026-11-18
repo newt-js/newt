@@ -96,7 +96,7 @@ Haz copia de seguridad de la carpeta: [SQLite](/es/guides/databases/sqlite/#copi
 El backend generado sirve una ruta de salud:
 
 ```sh
-curl https://newthub.example.com/api/health
+curl https://newthub.example.com/health-check
 ```
 
 | Estado | Código | Cuerpo |
@@ -104,7 +104,7 @@ curl https://newthub.example.com/api/health
 | En marcha | `200` | `{"status":"ok"}` |
 | Parándose | `503` | `{"status":"stopping"}` |
 
-Apunta a `/api/health` la comprobación de salud de tu proveedor o de tu balanceador. Para servirla en otra ruta, dale una ruta a `health` en `src/backend.ts`: `health: '/healthz'`.
+Apunta a `/health-check` la comprobación de salud de tu proveedor o de tu balanceador. Cada contexto que sirve rutas responde además la suya, como `/tasks/health-check`.
 
 ## 5. Para sin cortar nada
 
@@ -132,7 +132,7 @@ ENV PORT=3000
 EXPOSE 3000
 VOLUME /app/data
 
-HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/api/health') \
+HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/health-check') \
   .then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 CMD ["bun", "run", "start"]

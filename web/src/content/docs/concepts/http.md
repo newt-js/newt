@@ -26,20 +26,20 @@ export function registerTaskRoutes(
   router: HttpRouter,
   tasks: Task_Module,
 ): void {
-  router.post('/tasks/tasks/:id/complete-task', async request =>
+  router.post('/tasks/:id/complete-task', async request =>
     Response.json(
       await tasks.completeTask({ id: TaskId.from(request.params.id) }),
     ),
   )
-  router.post('/tasks/tasks', async request =>
+  router.post('/tasks', async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
     }),
   )
-  router.get('/tasks/tasks', async request =>
+  router.get('/tasks', async request =>
     Response.json(await tasks.paginate({}, pageRequestFrom(request))),
   )
-  router.get('/tasks/tasks/:id', async request =>
+  router.get('/tasks/:id', async request =>
     Response.json(
       await tasks.get({ id: TaskId.from(request.params.id) }),
     ),
@@ -54,12 +54,11 @@ A route takes the request and returns a standard `Response`. It does not catch e
 Each context has one `HttpRouter`. The context creates it and hands it to every module:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
-- **Prefix.** Every path is under `/api` by default. The route `/tasks/tasks` answers at `/api/tasks/tasks`. Change it with `new HttpRouter({ prefix: '/v1' })`, or `''` for none.
-- **Context first.** A module's paths start with its context's name (`/tasks/...`), so two contexts never take the same path. If they do, the server refuses to start.
+- **Prefix.** A context's router puts `/<context>/api` before every path: the route `/tasks` answers at `/tasks/api/tasks`. Since each context has its own prefix, two contexts never take the same path. A route never repeats its context's name (the [`route-context`](/reference/lint/#newtroute-context) rule checks it). Without a `prefix`, `HttpRouter` uses `/api`.
 - **Database.** The router needs the context's database only for [idempotency keys](#idempotency-keys).
 - **Defaults.** Any [route option](#route-options) given to the router applies to all its routes.
 
@@ -69,11 +68,11 @@ Methods: `get`, `post`, `put`, `patch`, `delete`. Registering the same method an
 
 | Segment | Matches | Example |
 |---|---|---|
-| `tasks` | that exact text | `/tasks/tasks` |
-| `:id` | any one non-empty segment, kept in `request.params.id` | `/tasks/tasks/:id` |
-| `*` | one or more segments; only at the end | `/tasks/files/*` |
+| `tasks` | that exact text | `/tasks` |
+| `:id` | any one non-empty segment, kept in `request.params.id` | `/tasks/:id` |
+| `*` | one or more segments; only at the end | `/files/*` |
 
-`request.params` is typed from the path: on `'/tasks/tasks/:id'` TypeScript knows `request.params.id` is a `string`. Values arrive URL-decoded.
+`request.params` is typed from the path: on `'/tasks/:id'` TypeScript knows `request.params.id` is a `string`. Values arrive URL-decoded.
 
 When several paths match, the more specific one wins: text beats `:param`, and `:param` beats `*`.
 
@@ -101,7 +100,7 @@ The body is checked before your code sees it:
 - A body over the route's limit answers `413` with code `payload_too_large`. The limit is 1 MiB by default; raise it per route with `maxBodyBytes`.
 
 ```ts
-router.put('/tasks/files/*', request => storage.handler(request), {
+router.put('/files/*', request => storage.handler(request), {
   public: true,
   maxBodyBytes: 100 * 1024 * 1024,
 })
@@ -129,7 +128,7 @@ The generated authenticator signs no one in, so every private route answers `401
 A route that anyone may call takes `public: true`:
 
 ```ts
-router.get('/tasks/files/*', request => storage.handler(request), {
+router.get('/files/*', request => storage.handler(request), {
   public: true,
 })
 ```
@@ -155,7 +154,7 @@ A route's options override its group's and router's. Rate limits add up instead 
 A group shares a path prefix, a middleware and options:
 
 ```ts
-const reports = router.group('/tasks/reports', async (request, next) => {
+const reports = router.group('/reports', async (request, next) => {
   const started = performance.now()
   const response = await next()
   console.log(request.method, request.url, performance.now() - started)
@@ -165,7 +164,7 @@ const reports = router.group('/tasks/reports', async (request, next) => {
 reports.get('/overdue', async () => Response.json(await tasks.find({})))
 ```
 
-`/overdue` answers at `/api/tasks/reports/overdue`. The middleware runs after newt's own checks (sign-in, rate limits, idempotency key) and around the route: call `next()` to run it, or return your own `Response` to stop.
+`/overdue` answers at `/tasks/api/reports/overdue`. The middleware runs after newt's own checks (sign-in, rate limits, idempotency key) and around the route: call `next()` to run it, or return your own `Response` to stop.
 
 ## What a request goes through
 
@@ -219,6 +218,7 @@ To let pages on other origins call your API, give the router or the route a `cor
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
 const router = new HttpRouter({
+  prefix: '/tasks/api',
   database,
   cors: { origin: ['https://newthub.app'] },
 })
@@ -242,7 +242,7 @@ const creating = base.rateLimits.define('task.create', {
 })
 
 router.post(
-  '/tasks/tasks',
+  '/tasks',
   async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
@@ -273,7 +273,7 @@ A phone loses signal after sending "create task". Did it arrive? If the app send
 
 ```ts
 router.post(
-  '/tasks/tasks',
+  '/tasks',
   async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
@@ -323,7 +323,7 @@ The `serve` options you are most likely to touch:
 | Option | What it does |
 |---|---|
 | `port` | The port. Required. |
-| `health` | `true` answers `GET /api/health` with `{ "status": "ok" }`; a string serves it at that path instead; leave it out for no health route. It needs no sign-in. While stopping it answers `503` with `{ "status": "stopping" }`. |
+| `health` | `true` answers `GET /health-check` for the whole backend, and `GET /<context>/health-check` for each context that serves routes, with `{ "status": "ok" }`; leave it out for no health route. It needs no sign-in. While stopping it answers `503` with `{ "status": "stopping" }`. |
 | `drainMs` | On stop, keep serving this long first, so a load balancer sees the `503` and moves away. |
 | `trustProxy` | How many proxies stand in front. With it, the client IP and host come from `X-Forwarded-For` and `X-Forwarded-Host`. Set it behind a proxy, or IP rate limits and the origin check see the proxy. |
 | `maxBodyBytes` | Default body limit for the server. |

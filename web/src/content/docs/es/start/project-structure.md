@@ -142,7 +142,7 @@ Borra `data/` para empezar de nuevo con las bases de datos vacías. Los tests nu
 |---|---|
 | `index.ts` | arranca el backend en `PORT` |
 | `backend.ts` | `startBackend`: abre los contextos y los sirve |
-| `backend.test.ts` | comprueba que `/api/health` responde |
+| `backend.test.ts` | comprueba que `/health-check` responde |
 | `contexts.ts` | la lista de contextos que abre el backend |
 | `stores.ts` | abre la base de datos y los ficheros de cada contexto |
 | `auth.ts` | `authenticate`: quién llama |
@@ -166,7 +166,7 @@ Borra `data/` para empezar de nuevo con las bases de datos vacías. Los tests nu
 | `modules/` | una carpeta por módulo |
 
 - Las migraciones van por parejas: `<número>_<tabla>_up.sql` hace el cambio y `<número>_<tabla>_down.sql` lo deshace. El backend ejecuta las pendientes al abrir la base de datos. Consulta [base de datos y migraciones](/es/concepts/database/).
-- Las rutas del contexto viven bajo `/api/<contexto>/`, y su frontend en `/<contexto>`.
+- Las rutas del contexto viven bajo `/<contexto>/api/`, y su frontend en `/<contexto>`.
 
 ## Un módulo: `modules/<módulo>/`
 

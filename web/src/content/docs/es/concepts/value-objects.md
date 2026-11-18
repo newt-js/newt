@@ -94,7 +94,7 @@ export type TaskId = Uuid<'TaskId'>
 Las rutas convierten el texto de la ruta en un id antes de llamar a un caso de uso:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.get('/tasks/tasks/:id', async request =>
+router.get('/tasks/:id', async request =>
   Response.json(
     await tasks.get({ id: TaskId.from(request.params.id) }),
   ),

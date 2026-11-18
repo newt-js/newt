@@ -18,7 +18,7 @@ Newthub could have three contexts: `tasks`, `chat` and `docs`. Each one owns:
 | Its folder | `src/contexts/tasks/` |
 | Its database | `data/tasks.sqlite`, or the path in `TASKS_DATABASE` |
 | Its migrations | `src/contexts/tasks/migrations/` |
-| Its routes | under `/api/tasks/` |
+| Its routes | under `/tasks/api/` |
 | Its files | its own storage |
 | Its jobs | a queue kept in its own database |
 
@@ -118,7 +118,7 @@ export class Tasks_Context extends BoundedContext {
       MIGRATIONS_FOLDER,
       stores,
     )
-    const router = new HttpRouter({ database })
+    const router = new HttpRouter({ prefix: '/tasks/api', database })
     router.authenticateWith(authenticate)
     const base = new ContextBase({
       name: 'tasks',

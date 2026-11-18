@@ -148,4 +148,4 @@ A scheduled task runs once only if every instance uses the same database. Instan
 2. Files on S3, with the same bucket variables on every instance.
 3. `ValkeyCluster`, with the same `VALKEY_URL` on every instance.
 4. The same other variables and secrets on every instance.
-5. A load balancer that checks `/api/health`, and `trustProxy` set in `src/backend.ts`. See [Deploying](/guides/deploy/#behind-a-reverse-proxy).
+5. A load balancer that checks `/health-check`, and `trustProxy` set in `src/backend.ts`. See [Deploying](/guides/deploy/#behind-a-reverse-proxy).

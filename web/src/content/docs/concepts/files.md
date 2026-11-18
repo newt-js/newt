@@ -270,7 +270,7 @@ import { LocalStorage } from '@newt-js/core/files/local'
 
 const storage = await LocalStorage.open({
   folder: 'data/files/tasks',
-  baseUrl: 'http://localhost:3000/api/tasks/files',
+  baseUrl: 'http://localhost:3000/tasks/api/files',
   secret: Bun.env.FILES_SECRET!,
 })
 ```

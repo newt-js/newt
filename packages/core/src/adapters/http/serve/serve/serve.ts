@@ -14,13 +14,15 @@ import type { ServeOptions } from '../serve-options'
 import { sourceFrontends }   from '../source-frontends/source-frontends'
 import { wrapped }           from '../wrapped/wrapped'
 
+const HEALTH_PATH = '/health-check'
+
 export function serve(options: ServeOptions): Bun.Server<undefined> {
   const development = options.development ?? false
   const routers = options.routers ?? []
   let stopping = false
-  const health = options.health
-    ? { [typeof options.health === 'string' ? options.health : '/api/health']: { GET: () => Response.json({ status: stopping ? 'stopping' : 'ok' }, { status: stopping ? 503 : 200 }) } }
-    : {}
+  const answerHealth = () => Response.json({ status: stopping ? 'stopping' : 'ok' }, { status: stopping ? 503 : 200 })
+  const healthPaths = options.health ? [HEALTH_PATH, ...(options.healthContexts ?? []).map(name => `/${name}${HEALTH_PATH}`)] : []
+  const health = Object.fromEntries(healthPaths.map(path => [path, { GET: answerHealth }]))
   const headers = securityHeadersOf(options.securityHeaders, options.hsts)
   const trustProxy = options.trustProxy ?? 0
   const around = (handler: Handler): Handler => async (request, server) => {

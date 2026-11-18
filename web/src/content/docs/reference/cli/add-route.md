@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-`newt add route` adds a URL that runs a use case, such as `POST /api/tasks/tasks/:id/complete-task`. It writes the route and its tests.
+`newt add route` adds a URL that runs a use case, such as `POST /tasks/api/tasks/:id/complete-task`. It writes the route and its tests.
 
 ## Usage
 
@@ -25,20 +25,19 @@ newt add route <context>/<module> <use-case> [options]
 | Option | Default | Meaning |
 |---|---|---|
 | `--method <method>` | `post` | `get`, `post`, `put`, `patch` or `delete` |
-| `--path <path>` | see the list | The path under `/api`, starting with the context |
+| `--path <path>` | see the list | The path under `/<context>/api` |
 | `--backend <folder>` | the one you are in | The backend, in a monorepo with several |
 
 It also takes the [global flags](/reference/cli/overview/#global-flags).
 
-- The default path is `/<context>/<plural>/:id/<use-case>`, as in `/tasks/tasks/:id/complete-task`.
+- The default path is `/<plural>/:id/<use-case>`, as in `/tasks/:id/complete-task`.
 - `--method` is not case sensitive.
 
 ## Path rules
 
 - Starts with `/` and has only letters, digits and `/ : _ -`.
-- Does not start with `/api/`: every route is under `/api` already.
-- Starts with `/<context>/`.
-- Is not `/<context>/files` or under it: that is where the context's files are served.
+- Does not start with `/api/` nor `/<context>/`: every route of the context is under `/<context>/api` already.
+- Is not `/files` or under it: that is where the context's files are served.
 - No empty segments (no `//`, no trailing `/`), and each `:param` once.
 - No other route of the backend has the same method and path.
 
@@ -57,7 +56,7 @@ Next steps:
 ```
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.post('/tasks/tasks/:id/complete-task', async request =>
+router.post('/tasks/:id/complete-task', async request =>
   Response.json(
     await tasks.completeTask({ id: TaskId.from(request.params.id) }),
   ),

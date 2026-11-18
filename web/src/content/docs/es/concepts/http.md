@@ -26,20 +26,20 @@ export function registerTaskRoutes(
   router: HttpRouter,
   tasks: Task_Module,
 ): void {
-  router.post('/tasks/tasks/:id/complete-task', async request =>
+  router.post('/tasks/:id/complete-task', async request =>
     Response.json(
       await tasks.completeTask({ id: TaskId.from(request.params.id) }),
     ),
   )
-  router.post('/tasks/tasks', async request =>
+  router.post('/tasks', async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
     }),
   )
-  router.get('/tasks/tasks', async request =>
+  router.get('/tasks', async request =>
     Response.json(await tasks.paginate({}, pageRequestFrom(request))),
   )
-  router.get('/tasks/tasks/:id', async request =>
+  router.get('/tasks/:id', async request =>
     Response.json(
       await tasks.get({ id: TaskId.from(request.params.id) }),
     ),
@@ -54,12 +54,11 @@ Una ruta recibe la petición y devuelve un `Response` estándar. No captura erro
 Cada contexto tiene un `HttpRouter`. El contexto lo crea y se lo pasa a cada módulo:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
-- **Prefijo.** Todas las rutas cuelgan de `/api` por defecto. `/tasks/tasks` responde en `/api/tasks/tasks`. Cámbialo con `new HttpRouter({ prefix: '/v1' })`, o `''` para ninguno.
-- **Primero el contexto.** Las rutas de un módulo empiezan por el nombre de su contexto (`/tasks/...`), así dos contextos nunca cogen la misma. Si lo hacen, el servidor no arranca.
+- **Prefijo.** El router de un contexto pone `/<contexto>/api` delante de cada ruta: la ruta `/tasks` responde en `/tasks/api/tasks`. Como cada contexto tiene su prefijo, dos contextos nunca cogen la misma ruta. Una ruta nunca repite el nombre de su contexto (lo comprueba la regla [`route-context`](/es/reference/lint/#newtroute-context)). Sin `prefix`, `HttpRouter` usa `/api`.
 - **Base de datos.** El router solo necesita la base de datos del contexto para las [claves de idempotencia](#claves-de-idempotencia).
 - **Valores por defecto.** Cualquier [opción de ruta](#opciones-de-ruta) que le des al router se aplica a todas sus rutas.
 
@@ -69,11 +68,11 @@ Métodos: `get`, `post`, `put`, `patch`, `delete`. Registrar dos veces el mismo 
 
 | Segmento | Encaja con | Ejemplo |
 |---|---|---|
-| `tasks` | ese texto exacto | `/tasks/tasks` |
-| `:id` | un segmento cualquiera no vacío, en `request.params.id` | `/tasks/tasks/:id` |
-| `*` | uno o más segmentos; solo al final | `/tasks/files/*` |
+| `tasks` | ese texto exacto | `/tasks` |
+| `:id` | un segmento cualquiera no vacío, en `request.params.id` | `/tasks/:id` |
+| `*` | uno o más segmentos; solo al final | `/files/*` |
 
-`request.params` tiene tipos sacados de la ruta: en `'/tasks/tasks/:id'` TypeScript sabe que `request.params.id` es un `string`. Los valores llegan ya decodificados.
+`request.params` tiene tipos sacados de la ruta: en `'/tasks/:id'` TypeScript sabe que `request.params.id` es un `string`. Los valores llegan ya decodificados.
 
 Si encajan varias rutas, gana la más concreta: el texto gana a `:param`, y `:param` gana a `*`.
 
@@ -101,7 +100,7 @@ El cuerpo se comprueba antes de que tu código lo vea:
 - Un cuerpo por encima del límite de la ruta responde `413` con el código `payload_too_large`. El límite es 1 MiB por defecto; súbelo por ruta con `maxBodyBytes`.
 
 ```ts
-router.put('/tasks/files/*', request => storage.handler(request), {
+router.put('/files/*', request => storage.handler(request), {
   public: true,
   maxBodyBytes: 100 * 1024 * 1024,
 })
@@ -129,7 +128,7 @@ El autenticador generado no reconoce a nadie, así que toda ruta privada respond
 Una ruta a la que puede llamar cualquiera lleva `public: true`:
 
 ```ts
-router.get('/tasks/files/*', request => storage.handler(request), {
+router.get('/files/*', request => storage.handler(request), {
   public: true,
 })
 ```
@@ -155,7 +154,7 @@ Las opciones de una ruta mandan sobre las de su grupo y su router. Los límites 
 Un grupo comparte un prefijo, un middleware y opciones:
 
 ```ts
-const reports = router.group('/tasks/reports', async (request, next) => {
+const reports = router.group('/reports', async (request, next) => {
   const started = performance.now()
   const response = await next()
   console.log(request.method, request.url, performance.now() - started)
@@ -165,7 +164,7 @@ const reports = router.group('/tasks/reports', async (request, next) => {
 reports.get('/overdue', async () => Response.json(await tasks.find({})))
 ```
 
-`/overdue` responde en `/api/tasks/reports/overdue`. El middleware se ejecuta después de las comprobaciones de newt (sesión, límites, clave de idempotencia) y alrededor de la ruta: llama a `next()` para ejecutarla, o devuelve tu propio `Response` para cortar.
+`/overdue` responde en `/tasks/api/reports/overdue`. El middleware se ejecuta después de las comprobaciones de newt (sesión, límites, clave de idempotencia) y alrededor de la ruta: llama a `next()` para ejecutarla, o devuelve tu propio `Response` para cortar.
 
 ## Por dónde pasa una petición
 
@@ -219,6 +218,7 @@ Para que páginas de otros orígenes llamen a tu API, dale al router o a la ruta
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
 const router = new HttpRouter({
+  prefix: '/tasks/api',
   database,
   cors: { origin: ['https://newthub.app'] },
 })
@@ -242,7 +242,7 @@ const creating = base.rateLimits.define('task.create', {
 })
 
 router.post(
-  '/tasks/tasks',
+  '/tasks',
   async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
@@ -273,7 +273,7 @@ Un móvil pierde la cobertura justo después de enviar "crear tarea". ¿Llegó? 
 
 ```ts
 router.post(
-  '/tasks/tasks',
+  '/tasks',
   async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
@@ -323,7 +323,7 @@ Las opciones de `serve` que más vas a tocar:
 | Opción | Qué hace |
 |---|---|
 | `port` | El puerto. Obligatorio. |
-| `health` | `true` responde `GET /api/health` con `{ "status": "ok" }`; un string la sirve en esa ruta; si lo omites, no hay ruta de salud. No pide sesión. Mientras para, responde `503` con `{ "status": "stopping" }`. |
+| `health` | `true` responde `GET /health-check` para todo el backend, y `GET /<contexto>/health-check` para cada contexto que sirve rutas, con `{ "status": "ok" }`; si lo omites, no hay ruta de salud. No pide sesión. Mientras para, responde `503` con `{ "status": "stopping" }`. |
 | `drainMs` | Al parar, sigue sirviendo este tiempo antes, para que el balanceador vea el `503` y deje de enviar tráfico. |
 | `trustProxy` | Cuántos proxies hay delante. Con él, la IP y el host del cliente salen de `X-Forwarded-For` y `X-Forwarded-Host`. Ponlo detrás de un proxy, o los límites por IP y la comprobación de origen verán el proxy. |
 | `maxBodyBytes` | Límite del cuerpo por defecto del servidor. |

@@ -17,7 +17,7 @@ import { ADD_BACKEND }      from './add-backend'
 
 async function healthOn(port: number): Promise<number> {
   for (let attempt = 0; attempt < 50; attempt++) {
-    const status = await fetch(`http://localhost:${port}/api/health`).then(response => response.status, () => null)
+    const status = await fetch(`http://localhost:${port}/health-check`).then(response => response.status, () => null)
     if (status !== null) return status
     await Bun.sleep(100)
   }

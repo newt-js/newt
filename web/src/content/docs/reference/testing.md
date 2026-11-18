@@ -30,7 +30,7 @@ beforeEach(async () => {
     cluster: new MemoryCluster(),
     database,
   })
-  router = new HttpRouter({ database })
+  router = new HttpRouter({ prefix: '/tasks/api', database })
   router.authenticateWith(async () =>
     signedIn ? { userId: 'tester' } : null,
   )
@@ -135,7 +135,7 @@ There is no special helper: call `router.answer` with a `Request`. It runs the r
 
 ```ts
 const response = await router.answer(
-  new Request('http://backend.test/api/tasks/tasks', {
+  new Request('http://backend.test/tasks/api/tasks', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name: 'Second' }),
@@ -148,7 +148,7 @@ To test the whole backend, start it on port `0` with stores in memory, as the ge
 
 ```ts title="src/backend.test.ts"
 const backend = await startBackend(0, { stores: 'memory' })
-const response = await fetch(new URL('/api/health', backend.server!.url))
+const response = await fetch(new URL('/health-check', backend.server!.url))
 expect(response.status).toBe(200)
 await backend.stop()
 ```
