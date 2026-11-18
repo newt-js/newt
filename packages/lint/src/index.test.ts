@@ -41,13 +41,15 @@ describe('the preset of newt', () => {
     expect(await complaints('src/contexts/ws/ws.context.ts', "import { x } from '../auth/auth.context'\nexport const y = x\n")).toEqual([])
   })
 
-  test('reaches another feature only through its entry point', async () => {
+  test('reaches another feature only through its entry point, one its own entry point imports', async () => {
     const campaign = 'src/contexts/ws/features/campaigns/modules/campaign/campaign.module.ts'
     await complaints('src/contexts/ws/features/contacts/contacts.feature.ts', 'export type ContactDTO = { id: string }\n')
     await complaints('src/contexts/ws/features/contacts/modules/contact/contact.schema.ts', 'export type ContactDTO = { id: string }\n')
+    await complaints('src/contexts/ws/features/campaigns/campaigns.feature.ts', "import type { ContactDTO } from '../contacts/contacts.feature'\nexport type C = ContactDTO\n")
 
     expect(await complaints(campaign, "import type { ContactDTO } from '../../../contacts/modules/contact/contact.schema'\nexport type C = ContactDTO\n")).toEqual(['newt/feature-imports'])
     expect(await complaints(campaign, "import type { ContactDTO } from '../../../contacts/contacts.feature'\nexport type C = ContactDTO\n")).toEqual([])
+    expect(await complaints('src/contexts/ws/features/contacts/modules/contact/contact.module.ts', "import type { C } from '../../../campaigns/campaigns.feature'\nexport type D = C\n")).toEqual(['newt/feature-imports'])
   })
 
   test('refuses contexts that are no tree', () => {
