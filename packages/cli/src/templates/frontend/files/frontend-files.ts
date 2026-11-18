@@ -31,7 +31,10 @@ export function appTsx({ type }: ContextNames): string {
 
 /** Where the backend serves the app, and its API: what its client router and its fetches start with. */
 export function baseTs({ folder }: ContextNames): string {
-  return `export const BASE = '/${folder}'
+  return `const PATH = '/${folder}'
+
+/** Under its context's path on the backend's host, or at the root of the context's own host. */
+export const BASE = location.pathname === PATH || location.pathname.startsWith(\`\${PATH}/\`) ? PATH : ''
 export const API = \`\${BASE}/api\`
 `
 }
