@@ -3,6 +3,7 @@ import { platformScope }           from '../../../../application/platform/platfo
 import { ABORTED_GRACE_MS }        from '../../../../application/runtime/worker/worker/worker'
 import { mountsOf }                from '../../serve/mounts-of/mounts-of'
 import { serve }                   from '../../serve/serve/serve'
+import { hostsOf }                 from '../hosts-of/hosts-of'
 import { platformToRun }           from '../platform-to-run/platform-to-run'
 import type { ContextToRun }       from '../run-contexts-options'
 import type { RunContextsOptions } from '../run-contexts-options'
@@ -29,7 +30,7 @@ export function runContexts(contexts: ContextToRun[], options: RunContextsOption
       const served = contexts.filter(({ router }) => router).map(({ context }) => context.name)
       const apps = contexts.flatMap(({ context, app }) => app ? [{ path: `/${context.name}`, app }] : [])
       const frontend = [...mountsOf(options.serve.frontend, options.serve.publicFolder), ...apps]
-      server = serve({ ...options.serve, routers: shared, healthContexts: served, frontend })
+      server = serve({ ...options.serve, routers: shared, healthContexts: served, frontend, hosts: hostsOf(contexts) })
     }
   } catch (error) {
     for (const each of Object.values(servers)) {

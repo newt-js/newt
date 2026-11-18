@@ -192,6 +192,43 @@ describe('runContexts, one server for every context', () => {
     await rm(built, { recursive: true })
   })
 
+  test('a context with a host answers there at its own paths, and never by its name on another host', async () => {
+    const log: string[] = []
+    const { default: notes } = await import('../../frontend/fixtures/frontend/index.html')
+    const app = runContexts([
+      { context: context('notes', log), router: routerOf('notes', '/folders', '/notes/api'), app: notes, host: 'Notes.Test' },
+      { context: context('auth', log), router: routerOf('auth', '/session', '/auth/api'), host: 'auth.test' },
+      { context: context('boards', log), router: routerOf('boards', '/boards', '/boards/api') },
+    ], { signals: false, serve: { port: 0, health: true, trustProxy: 1 } })
+    const at = (path: string, host?: string, forwarded?: string) => fetch(new URL(path, app.server!.url), {
+      headers: { ...host ? { host } : {}, ...forwarded ? { 'x-forwarded-host': forwarded } : {} },
+    })
+
+    expect(await (await at('/api/folders', 'notes.test')).json()).toBe('notes')
+    expect(await (await at('/api/folders', undefined, 'notes.test')).json()).toBe('notes')
+    expect(await (await at('/folders/12', 'notes.test')).text()).toContain('A frontend for serve\'s test')
+    expect((await at('/health-check', 'notes.test')).status).toBe(200)
+    expect(await (await at('/api/session', 'auth.test')).json()).toBe('auth')
+    expect((await at('/auth/api/session', 'auth.test')).status).toBe(404)
+    expect((await at('/api/boards', 'auth.test')).status).toBe(404)
+    expect((await at('/notes/api/folders')).status).toBe(404)
+    expect((await at('/auth/health-check')).status).toBe(404)
+    expect(await (await at('/boards/api/boards')).json()).toBe('boards')
+    expect((await at('/health-check')).status).toBe(200)
+
+    await app.stop()
+  })
+
+  test('two contexts at one host stop it before anything starts', () => {
+    const log: string[] = []
+
+    expect(() => runContexts([
+      { context: context('auth', log), router: routerOf('auth', '/session', '/auth/api'), host: 'midominio.com' },
+      { context: context('boards', log), router: routerOf('boards', '/boards', '/boards/api'), host: 'MIDOMINIO.com' },
+    ], { signals: false, serve: { port: 0 } })).toThrow('auth and boards both answer at the host midominio.com')
+    expect(log).toEqual([])
+  })
+
   test('with no context yet, it serves the health on platformWithoutContexts', async () => {
     const app = runContexts([], { signals: false, platformWithoutContexts: platform, serve: { port: 0, health: true } })
 
