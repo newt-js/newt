@@ -2,6 +2,9 @@ import { afterEach }          from 'bun:test'
 import { describe }           from 'bun:test'
 import { expect }             from 'bun:test'
 import { test }               from 'bun:test'
+import { mkdtemp }            from 'node:fs/promises'
+import { rm }                 from 'node:fs/promises'
+import { tmpdir }             from 'node:os'
 import { join }               from 'node:path'
 // --------------------------------------------------------
 import { MemoryCluster }      from '../../../../application/cluster/memory-cluster/memory-cluster'
@@ -38,8 +41,8 @@ function context(name: string, log: string[], of = platform): ContextToRun['cont
   }
 }
 
-function routerOf(answer: string, path = '/who'): HttpRouter {
-  const router = new HttpRouter()
+function routerOf(answer: string, path = '/who', prefix?: string): HttpRouter {
+  const router = new HttpRouter(prefix === undefined ? {} : { prefix })
   router.get(path, () => Response.json(answer), { public: true })
   return router
 }
@@ -159,6 +162,34 @@ describe('runContexts, one server for every context', () => {
     await app.stop()
     expect(await at('/health-check').then(() => 'answered', () => 'closed')).toBe('closed')
     expect(log.slice(3)).toEqual(['auth worker stopped', 'boards worker stopped', 'quiet worker stopped', 'quiet closed', 'boards closed', 'auth closed'])
+  })
+
+  test('serves each context\'s app at its base, every page under it, beside its API and its health', async () => {
+    const log: string[] = []
+    const built = await mkdtemp(join(tmpdir(), 'newt-app-'))
+    await Bun.write(join(built, 'index.html'), '<p>the boards app</p>')
+    const { default: notes } = await import('../../frontend/fixtures/frontend/index.html')
+    const app = runContexts([
+      { context: context('notes', log), router: routerOf('notes', '/folders', '/notes/api'), app: notes },
+      { context: context('boards', log), router: routerOf('boards', '/boards', '/boards/api'), app: built },
+    ], { signals: false, serve: { port: 0, health: true } })
+    const at = (path: string) => fetch(new URL(path, app.server!.url))
+
+    for (const path of ['/notes', '/notes/folders/12']) {
+      expect(await (await at(path)).text()).toContain('A frontend for serve\'s test')
+    }
+    for (const path of ['/boards', '/boards/12']) {
+      expect(await (await at(path)).text()).toBe('<p>the boards app</p>')
+    }
+    expect(await (await at('/notes/api/folders')).json()).toBe('notes')
+    expect(await (await at('/boards/api/boards')).json()).toBe('boards')
+    expect((await at('/notes/api/nothing')).status).toBe(404)
+    expect((await at('/boards/api/nothing')).status).toBe(404)
+    expect((await at('/notes/health-check')).status).toBe(200)
+    expect((await at('/elsewhere')).status).toBe(404)
+
+    await app.stop()
+    await rm(built, { recursive: true })
   })
 
   test('with no context yet, it serves the health on platformWithoutContexts', async () => {

@@ -14,6 +14,7 @@ export type ContextToRun = {
   context: Pick<BoundedContext, 'name' | 'base' | 'start' | 'stopWorker' | 'close'>
   serve?: ServeOptions
   router?: HttpRouter
+  app?: string | Bun.HTMLBundle
 }
 
 export type RunningContexts = {
