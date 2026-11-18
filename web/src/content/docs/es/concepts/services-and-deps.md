@@ -122,6 +122,80 @@ No importes el repositorio de otro módulo para leer su tabla "solo esta vez". E
 El id que un módulo guarda de la entidad de otro, como el `projectId` de una tarea, es un value object de su propio módulo. Ver [Value objects](/es/concepts/value-objects/).
 :::
 
+## Recursos anidados
+
+Algunas URLs ponen un recurso dentro de otro: las notas de una carpeta responden en `/notes/api/folders/:folderId/notes`. Supón que un contexto `notes` tiene dos módulos, y `note` usa `folder` para comprobar que una carpeta existe antes de meter una nota en ella. `folder` no puede servir esa URL: necesitaría `note`, y `note` ya usa `folder`, un ciclo.
+
+Así que newt sigue dos reglas:
+
+- **Una ruta anidada es del módulo que lee o cambia**, y cuelga del grupo que expone el padre.
+- **Un padre nunca usa a sus hijos.** Emite eventos que ellos siguen, y ellos le cuentan lo que tiene que saber por sus workers.
+
+### El hijo cuelga sus rutas de las del padre
+
+La función de rutas de cada módulo devuelve sus grupos, y el módulo los guarda en `routes`. `folder` expone `one`, un grupo en `/folders/:folderId` que no hace nada por sí mismo:
+
+```ts title="src/contexts/notes/modules/folder/folder.routes.ts"
+return { one: router.group('/folders/:folderId') }
+```
+
+Cuando `note` usa `folder` (`newt add deps notes/note folder`), su función de rutas recibe sus deps, y registra las notas de una carpeta en ese grupo. `request.params.folderId` tiene tipo:
+
+```ts title="src/contexts/notes/modules/note/note.routes.ts"
+export function registerNoteRoutes(
+  router: HttpRouter,
+  notes: Note_Module,
+  deps: Note_Deps,
+) {
+  deps.folder.routes.one.get('/notes', async request =>
+    Response.json(
+      await notes.paginateInFolder(
+        FolderId.from(request.params.folderId),
+        pageRequestFrom(request),
+      ),
+    ),
+  )
+  // ...
+}
+```
+
+Si `folder` cambia su URL, sus notas se mueven con ella. Su caso de uso lee la carpeta a través de `folder`, así que una carpeta que no existe responde `404` en lugar de una lista vacía:
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+@UseCase()
+async paginateInFolder(folderId: FolderId, page: PageRequest): Promise<Page<NoteDTO>> {
+  await this.deps.folder.get({ id: folderId })
+  return this.paginate({ folderId }, page)
+}
+```
+
+### El padre cambia, los hijos le siguen
+
+Borrar una carpeta debería borrar sus notas. `folder` borra la carpeta y emite `folder.deleted`; `note` se suscribe a él a través de sus deps, que su `initialize` pasa a `registerNoteWorkers(module, deps)`, y borra las notas de la carpeta en un job:
+
+```ts title="src/contexts/notes/modules/note/note.workers.ts"
+export function registerNoteWorkers(notes: Note_Module, { folder }: Note_Deps): void {
+  notes.on(folder.events.deleted, 'deleteInFolder', deleted => [deleted.id])
+}
+```
+
+### Los hijos cambian, el padre lleva la cuenta
+
+Supón que una carpeta muestra cuántas notas tiene. `folder` no puede escuchar a `note`, que no usa. Así que `note` se lo cuenta: un worker de `note` sigue su propio `note.created` y llama a un caso de uso de `folder` a través de sus deps:
+
+```ts title="src/contexts/notes/modules/note/note.workers.ts"
+notes.on(notes.events.created, 'countInFolder', created => [created.folderId])
+```
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+@UseCase()
+async countInFolder(folderId: FolderId): Promise<void> {
+  await this.deps.folder.countNote({ id: folderId })
+}
+```
+
+Componer casos de uso de varios módulos es cosa de los workers: una ruta solo lee y llama.
+
 ## Con el CLI
 
 ```sh

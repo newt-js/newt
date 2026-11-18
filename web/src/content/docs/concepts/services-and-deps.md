@@ -122,6 +122,80 @@ Do not import another module's repository to read its table "just this once". Th
 An id a module keeps of another module's entity, such as `projectId` on a task, is a value object of its own module. See [Value objects](/concepts/value-objects/).
 :::
 
+## Nested resources
+
+Some URLs put one resource inside another: the notes of a folder answer at `/notes/api/folders/:folderId/notes`. Say a `notes` context has two modules, and `note` uses `folder` to check that a folder exists before it puts a note in it. `folder` cannot serve that URL: it would need `note`, and `note` already uses `folder`, a cycle.
+
+So newt follows two rules:
+
+- **A nested route belongs to the module it reads or changes**, and hangs under the group the parent exposes.
+- **A parent never uses its children.** It emits events that they follow, and they tell it what it must know through their workers.
+
+### The child hangs its routes under the parent's
+
+Every module's routes function returns its groups, and the module keeps them in `routes`. `folder` exposes `one`, a group at `/folders/:folderId` that does nothing of its own:
+
+```ts title="src/contexts/notes/modules/folder/folder.routes.ts"
+return { one: router.group('/folders/:folderId') }
+```
+
+Once `note` uses `folder` (`newt add deps notes/note folder`), its routes function takes its deps, and registers the notes of a folder on that group. `request.params.folderId` is typed:
+
+```ts title="src/contexts/notes/modules/note/note.routes.ts"
+export function registerNoteRoutes(
+  router: HttpRouter,
+  notes: Note_Module,
+  deps: Note_Deps,
+) {
+  deps.folder.routes.one.get('/notes', async request =>
+    Response.json(
+      await notes.paginateInFolder(
+        FolderId.from(request.params.folderId),
+        pageRequestFrom(request),
+      ),
+    ),
+  )
+  // ...
+}
+```
+
+If `folder` moves its URL, its notes move with it. Its use case reads the folder through `folder`, so a folder that does not exist answers `404` instead of an empty list:
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+@UseCase()
+async paginateInFolder(folderId: FolderId, page: PageRequest): Promise<Page<NoteDTO>> {
+  await this.deps.folder.get({ id: folderId })
+  return this.paginate({ folderId }, page)
+}
+```
+
+### The parent changes, the children follow
+
+Deleting a folder should delete its notes. `folder` deletes the folder and emits `folder.deleted`; `note` subscribes to it through its deps, which its `initialize` hands to `registerNoteWorkers(module, deps)`, and deletes the folder's notes in a job:
+
+```ts title="src/contexts/notes/modules/note/note.workers.ts"
+export function registerNoteWorkers(notes: Note_Module, { folder }: Note_Deps): void {
+  notes.on(folder.events.deleted, 'deleteInFolder', deleted => [deleted.id])
+}
+```
+
+### The children change, the parent keeps track
+
+Say a folder shows how many notes it has. `folder` cannot listen to `note`, which it does not use. So `note` tells it: a worker of `note` follows its own `note.created` and calls a use case of `folder` through its deps:
+
+```ts title="src/contexts/notes/modules/note/note.workers.ts"
+notes.on(notes.events.created, 'countInFolder', created => [created.folderId])
+```
+
+```ts title="src/contexts/notes/modules/note/note.module.ts"
+@UseCase()
+async countInFolder(folderId: FolderId): Promise<void> {
+  await this.deps.folder.countNote({ id: folderId })
+}
+```
+
+Composing use cases of several modules is the workers' job: a route only reads and calls.
+
 ## With the CLI
 
 ```sh

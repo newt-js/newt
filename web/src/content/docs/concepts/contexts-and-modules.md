@@ -147,7 +147,7 @@ export function tasksModules(base: ContextBase, router: HttpRouter) {
 }
 ```
 
-Each module's `initialize` makes its repository and the module, then registers its routes and workers:
+Each module's `initialize` makes its repository and the module, which registers its routes and keeps their groups in `routes`, then registers its workers:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 export class Task_Module extends Module {
@@ -159,20 +159,24 @@ export class Task_Module extends Module {
     const module = new Task_Module(
       base,
       new Task_Repository(base),
+      router,
       deps,
     )
-    registerTaskRoutes(router, module)
     registerTaskWorkers(module)
     return module
   }
 
+  readonly routes
+
   private constructor(
     base: ContextBase,
     private readonly tasks: Task_Repository,
+    router: HttpRouter,
     private readonly deps: Task_Deps,
   ) {
     super('task', base.useCaseRunner, deps)
     // ...
+    this.routes = registerTaskRoutes(router, this, deps)
   }
 }
 ```

@@ -25,7 +25,7 @@ import { TaskId } from './value-objects/task-id'
 export function registerTaskRoutes(
   router: HttpRouter,
   tasks: Task_Module,
-): void {
+) {
   router.post('/tasks/:id/complete-task', async request =>
     Response.json(
       await tasks.completeTask({ id: TaskId.from(request.params.id) }),
@@ -44,10 +44,13 @@ export function registerTaskRoutes(
       await tasks.get({ id: TaskId.from(request.params.id) }),
     ),
   )
+  return { one: router.group('/tasks/:taskId') }
 }
 ```
 
 Una ruta recibe la petición y devuelve un `Response` estándar. No captura errores: newt los convierte en respuestas JSON (mira [Errores](#errores)).
+
+La función devuelve los grupos del módulo: `one`, en `/tasks/:taskId`, es donde los módulos que usan `task` cuelgan sus rutas. Mira [Recursos anidados](/es/concepts/services-and-deps/#recursos-anidados).
 
 ## El router
 
@@ -151,7 +154,7 @@ Las opciones de una ruta mandan sobre las de su grupo y su router. Los límites 
 
 ## Grupos y middleware
 
-Un grupo comparte un prefijo, un middleware y opciones:
+Un grupo comparte un prefijo, un middleware y opciones. El middleware es opcional: sin él, el grupo solo pone su prefijo delante de sus rutas.
 
 ```ts
 const reports = router.group('/reports', async (request, next) => {
