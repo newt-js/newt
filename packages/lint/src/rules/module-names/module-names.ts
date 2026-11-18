@@ -18,6 +18,15 @@ function isConst(value: TSESTree.Expression | null): boolean {
   return inner?.type === 'TSAsExpression' && inner.typeAnnotation.type === 'TSTypeReference' && inner.typeAnnotation.typeName.type === 'Identifier' && inner.typeAnnotation.typeName.name === 'const'
 }
 
+/** The keys of what a module exposes, written in place, that are neither useCases nor events. */
+function unknownKeys(value: TSESTree.Expression | null): (TSESTree.Identifier | TSESTree.Literal)[] {
+  let inner = value
+  while (inner?.type === 'TSSatisfiesExpression' || inner?.type === 'TSAsExpression') inner = inner.expression
+  if (inner?.type !== 'ObjectExpression') return []
+  return inner.properties.flatMap(each => each.type === 'Property' && !each.computed && (each.key.type === 'Identifier' || each.key.type === 'Literal')
+    && !['useCases', 'events'].includes(each.key.type === 'Identifier' ? each.key.name : String(each.key.value)) ? [each.key] : [])
+}
+
 /**
  * A module of a feature goes by `<feature>[<module>]`, from its folders: the name it gives
  * `super`, and the start of its events', schedules' and rate limits' names, which its use
@@ -25,7 +34,7 @@ function isConst(value: TSESTree.Expression | null): boolean {
  * feature or another module. And what it exposes is written `as const`: without it, its
  * names are just strings, and its feature's contract shows none of them.
  */
-export const moduleNames: TSESLint.RuleModule<'module' | 'name' | 'exposes' | 'expose'> = {
+export const moduleNames: TSESLint.RuleModule<'module' | 'name' | 'exposes' | 'expose' | 'key'> = {
   defaultOptions: [],
   meta: {
     type: 'problem',
@@ -35,6 +44,7 @@ export const moduleNames: TSESLint.RuleModule<'module' | 'name' | 'exposes' | 'e
       name: "Name it '{{expected}}.<name>', after its folders, not '{{found}}'.",
       exposes: 'Write what a module exposes `as const`: `{ useCases: [...], events: [...] } as const`. Without it its names are mere strings, and its feature\'s contract shows none of them.',
       expose: 'Rename `expose` to `exposes`: a module shows the other features what it lists there.',
+      key: "exposes lists useCases and events, not '{{key}}': a key of another name shows nothing.",
     },
     schema: [],
   },
@@ -58,6 +68,9 @@ export const moduleNames: TSESLint.RuleModule<'module' | 'name' | 'exposes' | 'e
         if (member.type === 'PropertyDefinition' && member.key.type === 'Identifier' && !member.computed) {
           if (member.key.name === 'exposes' && !isConst(member.value)) context.report({ node: member, messageId: 'exposes' })
           if (member.key.name === 'expose') context.report({ node: member.key, messageId: 'expose' })
+          if (member.key.name === 'exposes') {
+            for (const key of unknownKeys(member.value)) context.report({ node: key, messageId: 'key', data: { key: key.type === 'Identifier' ? key.name : String(key.value) } })
+          }
         }
         if (member.type !== 'MethodDefinition' || member.kind !== 'constructor') continue
         for (const statement of member.value.body?.body ?? []) {
