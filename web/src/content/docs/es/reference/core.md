@@ -622,12 +622,12 @@ Mira [Logs y observabilidad](/es/concepts/logs/). De `@newt-js/core/application`
 Lo que comparten todos los contextos de un proceso.
 
 ```ts title="src/backend.ts"
-const platform = new Platform({ cluster: new MemoryCluster() })
+const platform = new Platform()
 ```
 
 | Opción (`PlatformOptions`) | Por defecto | Significado |
 |---|---|---|
-| `cluster` | obligatoria | Un `Cluster`. |
+| `cluster` | `new MemoryCluster()` | Un `Cluster`. |
 | `logger` | `new ConsoleLogger()` | Adónde van las líneas de log. |
 | `observability` | `noObservability` | |
 

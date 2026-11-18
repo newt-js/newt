@@ -67,6 +67,8 @@ newt ofrece dos clústeres:
 | `MemoryCluster` | `@newt-js/core/cluster/memory` | Una instancia, y tests |
 | `ValkeyCluster` | `@newt-js/core/cluster/valkey` | Varias instancias |
 
+Una `Platform` sin clúster usa un `MemoryCluster`, así que `new Platform()` es un backend de una sola instancia.
+
 Con `MemoryCluster` en varias instancias no se rompe nada, pero:
 
 - Cada instancia cuenta sus propios límites: con 3 instancias, un límite de 10 deja pasar hasta 30 peticiones.

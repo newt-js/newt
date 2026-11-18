@@ -1,1 +1,1 @@
-export * from './memory-cluster/memory-cluster'
+export * from '../../../application/cluster/memory-cluster/memory-cluster'

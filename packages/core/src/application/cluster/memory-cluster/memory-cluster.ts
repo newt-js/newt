@@ -1,5 +1,5 @@
-import type { Cluster } from '../../../../application/cluster/cluster'
-import { log }          from '../../../../application/platform/log/log'
+import { log }          from '../../platform/log/log'
+import type { Cluster } from '../cluster'
 
 type Counter = { value: number, expiresAt: number }
 

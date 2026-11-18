@@ -67,6 +67,8 @@ newt offers two clusters:
 | `MemoryCluster` | `@newt-js/core/cluster/memory` | One instance, and tests |
 | `ValkeyCluster` | `@newt-js/core/cluster/valkey` | Several instances |
 
+A `Platform` given no cluster uses a `MemoryCluster`, so `new Platform()` is a backend on one instance.
+
 With `MemoryCluster` on several instances, nothing breaks, but:
 
 - Each instance counts its own rate limits: with 3 instances, a limit of 10 lets up to 30 requests through.

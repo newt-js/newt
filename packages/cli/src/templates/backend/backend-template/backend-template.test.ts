@@ -48,6 +48,17 @@ describe('backendTemplate', () => {
     ])
   })
 
+  test('on the memory cluster, leaves the platform its own; on Valkey, gives it one', () => {
+    const backendTs = (cluster: 'memory' | 'valkey') => {
+      const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, stores: { ...STORES, cluster }, versions: VERSIONS }), 'src/backend.ts')
+      return change?.action === 'create' ? change.content : ''
+    }
+    expect(backendTs('memory')).toContain('const platform = new Platform()\n')
+    expect(backendTs('memory')).not.toContain('MemoryCluster')
+    expect(backendTs('valkey')).toContain("import { ValkeyCluster } from '@newt-js/core/cluster/valkey'\n")
+    expect(backendTs('valkey')).toContain("new Platform({ cluster: stores === 'memory' ? new MemoryCluster() : new ValkeyCluster(Bun.env.VALKEY_URL) })")
+  })
+
   test("the lint's parser stack gets TypeScript 6, whatever TypeScript the project has", () => {
     const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, stores: STORES, versions: VERSIONS }), 'package.json')
     const overrides = (change?.action === 'complete-json' ? change.values.overrides : {}) as Record<string, unknown>

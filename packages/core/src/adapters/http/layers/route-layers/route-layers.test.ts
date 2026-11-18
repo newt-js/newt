@@ -2,9 +2,9 @@ import { describe }      from 'bun:test'
 import { expect }        from 'bun:test'
 import { test }          from 'bun:test'
 // --------------------------------------------------------
+import { MemoryCluster } from '../../../../application/cluster/memory-cluster/memory-cluster'
 import { RateLimits }    from '../../../../application/runtime/rate-limits/rate-limits/rate-limits'
 import { systemClock }   from '../../../../domain/clock/system-clock/system-clock'
-import { MemoryCluster } from '../../../cluster/memory/memory-cluster/memory-cluster'
 import { HttpRouter }    from '../../router/http-router/http-router'
 import { ROUTE_LAYERS }  from './route-layers'
 

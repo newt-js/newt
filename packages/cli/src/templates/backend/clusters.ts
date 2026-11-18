@@ -1,9 +1,9 @@
-export type ClusterTemplate = { importLines: string[], expression: string, env: Record<string, string> }
+/** How the backend gets its cluster: no `expression` for the platform's own, in memory. */
+export type ClusterTemplate = { importLines: string[], expression?: string | undefined, env: Record<string, string> }
 
 export const CLUSTERS = {
   memory: {
-    importLines: ["import { MemoryCluster } from '@newt-js/core/cluster/memory'"],
-    expression: 'new MemoryCluster()',
+    importLines: [],
     env: {},
   },
   valkey: {

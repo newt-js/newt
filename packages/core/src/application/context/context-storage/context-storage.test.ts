@@ -2,10 +2,10 @@ import { describe }            from 'bun:test'
 import { expect }              from 'bun:test'
 import { test }                from 'bun:test'
 // --------------------------------------------------------
-import { MemoryCluster }       from '../../../adapters/cluster/memory/memory-cluster/memory-cluster'
 import { MemoryDatabase }      from '../../../adapters/database/memory/memory-database/memory-database'
 import { MemoryPublicStorage } from '../../../adapters/files/memory/memory-public-storage/memory-public-storage'
 import { MemoryStorage }       from '../../../adapters/files/memory/memory-storage/memory-storage'
+import { MemoryCluster }       from '../../cluster/memory-cluster/memory-cluster'
 import { Platform }            from '../../platform/platform/platform'
 import { ContextBase }         from '../context-base/context-base'
 

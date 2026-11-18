@@ -2,7 +2,7 @@ import { describe }         from 'bun:test'
 import { expect }           from 'bun:test'
 import { test }             from 'bun:test'
 // --------------------------------------------------------
-import { MemoryCluster }    from '../../../../adapters/cluster/memory/memory-cluster/memory-cluster'
+import { MemoryCluster }    from '../../../cluster/memory-cluster/memory-cluster'
 import { RateLimitCounter } from './rate-limit-counter'
 
 const MINUTE = 60_000

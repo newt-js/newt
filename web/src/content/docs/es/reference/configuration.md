@@ -153,7 +153,7 @@ export async function startBackend(
   port: number,
   { stores = 'configured' }: { stores?: Stores } = {},
 ): Promise<RunningContexts> {
-  const platform = new Platform({ cluster: new MemoryCluster() })
+  const platform = new Platform()
   const contexts = await openContexts(platform, stores)
   return runContexts(contexts, {
     platformWithoutContexts: platform,
@@ -171,11 +171,11 @@ Devuelve `RunningContexts`: `server`, `servers` y `stop()`. Mira [API HTTP](/es/
 
 ## Platform
 
-Lo que comparten todos los contextos del backend. `new Platform(options)`, de `@newt-js/core/application`:
+Lo que comparten todos los contextos del backend. `new Platform(options?)`, de `@newt-js/core/application`:
 
 | Opción | Significado | Por defecto |
 |---|---|---|
-| `cluster` | Lo que comparten las instancias: `new MemoryCluster()` o `new ValkeyCluster(url?)`. Obligatoria. | ninguno |
+| `cluster` | Lo que comparten las instancias: `new MemoryCluster()` o `new ValkeyCluster(url?)`. | `new MemoryCluster()` |
 | `logger` | A dónde van los logs. | `new ConsoleLogger()` |
 | `observability` | A dónde van las trazas y las métricas. | ninguno (no se registra nada) |
 
