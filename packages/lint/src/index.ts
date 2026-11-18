@@ -92,8 +92,8 @@ export type NewtLintOptions = {
 }
 
 /**
- * The lint of an application built with newt. A module is a folder in a context's
- * `modules/`; the context is the folder that holds it. What it checks keeps every module
+ * The lint of an application built with newt. A module is a folder in a feature's
+ * `modules/`, `<context>/features/<feature>/modules/<module>/`. What it checks keeps every module
  * the same, whoever writes it, a person or an agent.
  *
  * ```ts

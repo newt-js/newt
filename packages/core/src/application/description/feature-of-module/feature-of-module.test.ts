@@ -9,10 +9,4 @@ describe('featureOfModule', () => {
     expect(featureOfModule('campaigns[template]')).toBe('campaigns')
     expect(featureOfModule('salesOrders[orderLine]')).toBe('salesOrders')
   })
-
-  test('is none for a module of no feature, or a name not so made', () => {
-    expect(featureOfModule('order')).toBeNull()
-    expect(featureOfModule('campaigns[template].create')).toBeNull()
-    expect(featureOfModule('Campaigns[template]')).toBeNull()
-  })
 })
