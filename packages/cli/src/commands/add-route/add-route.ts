@@ -23,7 +23,7 @@ export const ADD_ROUTE = defineCommand({
   args: '<context>/<module> <use-case>',
   options: {
     method: { type: 'string', value: 'method', description: `${METHODS.join(', ')}; post by default` },
-    path: { type: 'string', value: 'path', description: "Its path under /api, starting with its context; /<context>/<module's plural>/:id/<use-case> by default" },
+    path: { type: 'string', value: 'path', description: "Its path under /<context>/api; /<module's plural>/:id/<use-case> by default" },
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },
   run: async ({ args, cwd, options }) => {
