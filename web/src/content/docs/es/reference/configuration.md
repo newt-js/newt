@@ -77,6 +77,12 @@ Cuando el backend arranca con `stores: 'memory'` (sus tests), no lee ninguna var
 
 `newt init --port` lo escribe en `.env`.
 
+### El host de un contexto
+
+| Nombre | Significado | Por defecto |
+|---|---|---|
+| `<CONTEXTO>_HOST` | El host en el que responde el contexto, en sus propias rutas, en lugar de bajo `/<contexto>`. Mira [Un contexto en su propio host](/es/guides/deploy/#un-contexto-en-su-propio-host). | ninguno |
+
 ### Base de datos (`--db`)
 
 | Nombre | Con | Significado | Por defecto |

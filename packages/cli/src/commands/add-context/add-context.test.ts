@@ -30,6 +30,16 @@ test('sales keeps a file uploaded to its signed address, and serves it at anothe
   const download = await storage.signedUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain' })
   expect(await (await router.answer(new Request(download)))?.text()).toBe('hello')
 })
+
+test('with SALES_HOST, its files are signed at that host', async () => {
+  Bun.env.SALES_HOST = 'sales.midominio.com'
+  const router = new HttpRouter({ prefix: '/sales/api' })
+  const storage = (await openStorage('sales', router, 'configured')).private!
+  const download = new URL(await storage.signedUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain' }))
+  delete Bun.env.SALES_HOST
+  expect(download.host).toBe('sales.midominio.com')
+  expect(download.pathname).toStartWith('/api/files/')
+})
 `
 
 describe('newt add context', () => {

@@ -175,6 +175,32 @@ return runContexts(contexts, {
 Set `trustProxy` only to the number of proxies you really have. Too high, and a caller can fake their IP with their own `X-Forwarded-For` header.
 :::
 
+## A context on its own host
+
+Each context answers under its name on the backend's address: `https://midominio.com/backoffice/api/…`. Give a context a host, and it answers there instead, at its own paths:
+
+```sh
+BACKOFFICE_HOST=backoffice.midominio.com
+```
+
+| URL | Answered by |
+|---|---|
+| `https://backoffice.midominio.com/api/orders` | `backoffice`'s API |
+| `https://backoffice.midominio.com/orders/12` | `backoffice`'s app |
+| `https://backoffice.midominio.com/health-check` | `backoffice`'s health |
+| `https://midominio.com/shop/api/products` | `shop`, which has no host |
+| `https://midominio.com/backoffice/api/orders` | nothing: `404` |
+| `https://midominio.com/health-check` | the whole backend's health |
+
+- A context answers at its host or under its name, never both.
+- Point the host's DNS at the same server. Behind a proxy, set `trustProxy`: newt reads the host from `X-Forwarded-Host`.
+- Two contexts at one host stop the backend before it starts.
+- With local files, its file links are signed at its host, with the protocol of `PUBLIC_URL`.
+- Its generated app (`app/base.ts`) finds its base by itself. An app built elsewhere is built for `/` instead of `/<context>/`.
+- Point the load balancer's health check at an address that is not a context's host, such as the server's own.
+
+The generated `<context>.context.ts` reads the variable and hands it to run, next to its router: `host: Bun.env.BACKOFFICE_HOST`.
+
 ## Frontends
 
 A backend serves its contexts' apps from the same process. How each one is built and served is in [Adding a frontend](/guides/frontend/).

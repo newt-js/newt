@@ -77,6 +77,12 @@ When the backend starts with `stores: 'memory'` (its tests), it reads none of th
 
 `newt init --port` writes it to `.env`.
 
+### A context's host
+
+| Name | Meaning | Default |
+|---|---|---|
+| `<CONTEXT>_HOST` | The host the context answers at, at its own paths, instead of under `/<context>`. See [A context on its own host](/guides/deploy/#a-context-on-its-own-host). | none |
+
 ### Database (`--db`)
 
 | Name | With | Meaning | Default |

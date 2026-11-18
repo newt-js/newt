@@ -5,6 +5,7 @@ import { withHeaders }       from '../../responses/with-headers/with-headers'
 import { MAX_BODY_BYTES }    from '../../router/max-body-bytes/max-body-bytes'
 import { answerOf }          from '../answer-of/answer-of'
 import { builtFrontends }    from '../built-frontends/built-frontends'
+import { byHost }            from '../by-host/by-host'
 import type { Handler }      from '../handler'
 import { mountsOf }          from '../mounts-of/mounts-of'
 import { proxied }           from '../proxied/proxied'
@@ -25,13 +26,17 @@ export function serve(options: ServeOptions): Bun.Server<undefined> {
   const health = Object.fromEntries(healthPaths.map(path => [path, { GET: answerHealth }]))
   const headers = securityHeadersOf(options.securityHeaders, options.hsts)
   const trustProxy = options.trustProxy ?? 0
-  const around = (handler: Handler): Handler => async (request, server) => {
-    noteClientIp(request, server.requestIP(request)?.address ?? null, trustProxy)
-    noteRequestHost(request, trustProxy)
-    return withHeaders(await handler(request, server), headers)
-  }
   const mounts = mountsOf(options.frontend, options.publicFolder)
   const frontend = builtFrontends(mounts, options.csp)
+  const hosts = byHost(options.hosts ?? {}, { health: { paths: healthPaths, answer: answerHealth }, routers, mounts, frontend })
+  const around = (handler: Handler): Handler => {
+    const answered = hosts(handler)
+    return async (request, server) => {
+      noteClientIp(request, server.requestIP(request)?.address ?? null, trustProxy)
+      noteRequestHost(request, trustProxy)
+      return withHeaders(await answered(request, server), headers)
+    }
+  }
   const answer: Handler = (request, server) => answerOf(routers, request) ?? frontend(request, server)
   const server = Bun.serve({
     port: options.port,

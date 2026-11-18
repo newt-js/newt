@@ -1,7 +1,7 @@
 import type { ContextNames } from '../../../names/context-names/context-names'
 
 /** The line of <ctx>.context.ts that hands the context to run. */
-export const contextToRun = ({ type, camel }: ContextNames) => `return { context: new ${type}_Context(base, ${camel}Modules(base, router)), router }`
+export const contextToRun = ({ type, camel, env }: ContextNames) => `return { context: new ${type}_Context(base, ${camel}Modules(base, router)), router, host: Bun.env.${env}_HOST }`
 
 export function contextTs(names: ContextNames): string {
   const { folder, type, camel } = names

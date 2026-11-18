@@ -40,7 +40,7 @@ export const ADD_FRONTEND = defineCommand({
     const mounted = (changes: FileChange[]) => {
       const line = changes.find(change => change.action === 'replace-line')
       const again = line?.action === 'replace-line' && holds(line.with)
-      if (!again && holds('router, app')) {
+      if (!again && (holds(', app }') || holds(', app :'))) {
         throw new CommandError(`${contextFile} serves an app at /${context} already: take it out of it first to serve another`)
       }
       return changes

@@ -343,6 +343,7 @@ return runContexts(contexts, {
 | `router` | `HttpRouter` | Sus rutas, servidas por el servidor compartido (`options.serve`). |
 | `serve` | `ServeOptions` | Da a este contexto un servidor propio. |
 | `app` | `string \| Bun.HTMLBundle` | Su app, servida por el servidor compartido en `/<contexto>`: una carpeta compilada o un import de HTML. |
+| `host` | `string \| undefined` | El host en el que responde, en sus propias rutas, en lugar de bajo `/<contexto>`. Dos contextos en el mismo host lanzan un error. |
 
 `RunContextsOptions`:
 

@@ -15,6 +15,7 @@ export type ContextToRun = {
   serve?: ServeOptions
   router?: HttpRouter
   app?: string | Bun.HTMLBundle
+  host?: string | undefined
 }
 
 export type RunningContexts = {

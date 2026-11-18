@@ -19,6 +19,7 @@ export type ServeOptions = {
   development?: boolean
   health?: boolean
   healthContexts?: string[]
+  hosts?: Record<string, string>
   drainMs?: number
   trustProxy?: number
   securityHeaders?: SecurityHeaders | false
