@@ -51,7 +51,7 @@ describe('Schedules.define', () => {
     schedules.define('reports[report].nightly', '0 3 * * *')
 
     expect(() => schedules.define('nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
-    expect(() => schedules.define('report.nightly', '0 3 * * *')).toThrow("A schedule is named as an event, '<feature>[<module>].<name>': 'report.nightly' is not")
+    expect(() => schedules.define('report.nightly', '0 3 * * *')).toThrow("A schedule is named as an event, '<feature>[<module>].<name>', as 'sales[order].nightly': 'report.nightly' is not")
     expect(() => schedules.define('Reports[report].nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
     expect(() => schedules.define('reports[Report].nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
     expect(schedules.define('reports[report].daily', '0 3 * * *').name).toBe('reports[report].daily')

@@ -95,6 +95,12 @@ describe('on', () => {
     expect(subscriptions[0]!.options).toEqual({ strategy: 'handler', queue: 'shop[order].fulfilPlaced_on_order.placed', attempts: 10, when: when as NonNullable<Subscription['when']> })
   })
 
+  test("a queue said by hand is still the module's", () => {
+    const { placed } = eventsOf(recordingBus().bus, { placed: Placed })
+
+    expect(() => new Orders().on(placed, 'fulfil', (order, { id }) => [order.id, id], { queue: 'billing[invoice].fulfil_on_order.placed' })).toThrow("shop[order].on(order.placed, 'fulfil'): a queue said by hand is still shop[order]'s, 'shop[order].<use case>_on_order.placed', not 'billing[invoice].fulfil_on_order.placed': leave queue out, and on names it")
+  })
+
   test('a queue said by hand still ends with its event', () => {
     const { placed } = eventsOf(recordingBus().bus, { placed: Placed })
 

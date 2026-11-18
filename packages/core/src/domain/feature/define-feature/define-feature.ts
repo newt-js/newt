@@ -44,7 +44,8 @@ export function defineFeature<Modules extends Record<string, Module>, const Inte
     }
     const [, feature, own] = /^(.*)\[(.*)\]$/.exec(module.name) ?? []
     if (feature !== name) {
-      throw new Error(`defineFeature('${name}'): ${key} is ${module.name}, ${feature === undefined ? 'a module of no feature' : `a module of the feature ${feature}`}: a feature shows only its own modules, ${name}[<module>]`)
+      const named = Object.values(modules).every(each => each.name.startsWith(`${feature}[`)) ? `; or is this feature named ${feature}? defineFeature('${feature}', …)` : ''
+      throw new Error(`defineFeature('${name}'): ${key} is ${module.name}, a module of the feature ${feature}: a feature shows only its own modules, ${name}[<module>]${named}`)
     }
     if (own !== key) {
       throw new Error(`defineFeature('${name}'): ${module.name} is shown as ${key}: show it as ${own}`)

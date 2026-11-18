@@ -8,12 +8,11 @@ import type { HandlerQueue }  from '../../events/subscription/subscription'
 import type { Subscription }  from '../../events/subscription/subscription'
 import { UseCaseRunner }      from '../../use-case/use-case-runner/use-case-runner'
 import { MODULE_BRAND }       from '../is-module/is-module'
+import { MODULE_NAME }        from '../module-name/module-name'
+import { moduleNameError }    from '../module-name/module-name'
 import type { Reaction }      from '../reaction/reaction'
 import type { Ref }           from '../ref/ref'
 import type { RefFinder }     from '../ref/ref-finder'
-
-/** `<feature>[<module>]`: a module is always of a feature, and named after both. */
-const MODULE_NAME = /^[a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\]$/
 
 export abstract class Module {
 
@@ -27,7 +26,7 @@ export abstract class Module {
     deps?: object,
   ) {
     if (!MODULE_NAME.test(name)) {
-      throw new Error(`A module is named after its feature and itself, '<feature>[<module>]' in camelCase, as 'campaigns[template]': '${name}' is not`)
+      throw moduleNameError(name)
     }
     useCaseRunner.registry?.module(this, deps)
   }
@@ -38,6 +37,9 @@ export abstract class Module {
     ...[args, options]: Reaction<this[K], TPayload, TSeen>
   ): () => void {
     const queue = options?.queue ?? queueOf(this.name, useCase, event.name) as HandlerQueue
+    if (!queue.startsWith(`${this.name}.`)) {
+      throw new Error(`${this.name}.on(${event.name}, '${useCase}'): a queue said by hand is still ${this.name}'s, '${this.name}.<use case>_on_${event.name}', not '${queue}': leave queue out, and on names it`)
+    }
     const run = this[useCase] as (...values: unknown[]) => unknown
     const subscription: Subscription<TPayload, TSeen> = {
       strategy: 'handler',
