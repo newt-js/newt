@@ -56,7 +56,7 @@ Everything else is its own: its schemas as values (another module never parses, 
 | `newt/module-imports` | A module reaches another of its context only through its API: its use cases, through the dependency `newt add deps` gives it, and, as imports, only the types (`import type`) of its module, its schema (the DTOs) and its events, and its errors. Never its schemas as values, entity, value objects, repository, routes, workers or services. A file outside the modules re-exports only that API. |
 | `newt/module-names` | A module of a feature is named `<feature>[<module>]` after its folders: in `super`, and at the start of its events', schedules' and rate limits' names. It writes its `exposes` `as const`. |
 | `newt/context-imports` | A context imports only the contexts it says it uses, never in a cycle. |
-| `newt/feature-imports` | Another feature of a context is reached only through its entry point, `features/<feature>/<feature>.feature.ts`, which returns its contract and re-exports the types and errors it makes public; never a module inside it. A feature uses only the features its entry point imports, never in a cycle. |
+| `newt/feature-imports` | Another feature is imported only through its entry point, `<feature>.feature.ts`, which re-exports the types and errors it makes public; never a module inside it. And only a feature its own entry point imports (its `uses`), never in a cycle. |
 | `newt/schema-imports` | A module's schema imports only zod, `@newt-js/core` (its root), the module's value objects and other modules' DTO types (`import type`, which `newt/module-imports` checks). |
 
 ### Use cases
@@ -76,7 +76,7 @@ Everything else is its own: its schemas as values (another module never parses, 
 | `newt/repository-public-methods` | A repository declares no public method of its own: `persist`, `find`, `count`, `paginate` and `purge` are all it has. |
 | `newt/route-context` | No route a context's files register, on its router or a group of it, starts with the context: the router already serves them under `/<context>/api`, so `/shop/orders` would answer at `/shop/api/shop/orders`. Paths are read through consts, templates and a group's prefix; one it cannot read is let be. |
 | `newt/route-body-unchecked` | A route passes the body to a use case as it came, never asserting its type. |
-| `newt/reaction-queue` | A reaction's queue names the module that reacts, the use case it calls and the event: `<feature>[<module>].<use case>_on_<module>.<event>` in a module of a feature. |
+| `newt/reaction-queue` | A reaction's queue names the module that reacts, the use case it calls and the event: `<feature>[<module>].<use case>_on_<event>` in a module of a feature, the event by its whole name (`shipping[delivery].prepare_on_sales[order].placed`). |
 | `newt/module-transactions` | A module never runs a transaction of its own from its base's `transactions`: it writes through its repository's `persist`. A field of its own named `transactions` is no transaction. |
 | `newt/framework-tables` | An application never names a table `newt_…`, to `records('…')` or in SQL. |
 

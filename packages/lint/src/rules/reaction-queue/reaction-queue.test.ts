@@ -58,7 +58,7 @@ tester.run('reaction-queue', asRule(reactionQueue), {
     {
       code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'template.welcome.on.contacts[contact].created' })",
       filename: TEMPLATE_WORKERS,
-      errors: [{ messageId: 'shape', data: { queue: 'template.welcome.on.contacts[contact].created', shape: '<feature>[<module>].<use case>_on_<module>.<event>', example: 'sales[order].fulfil_on_sales[order].placed' } }],
+      errors: [{ messageId: 'shape', data: { queue: 'template.welcome.on.contacts[contact].created', shape: '<feature>[<module>].<use case>_on_<event>', example: 'shipping[delivery].prepare_on_sales[order].placed' } }],
     },
     { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'emails[template].welcome_on_contacts[contact].created' })", filename: TEMPLATE_WORKERS, errors: [{ messageId: 'module', data: { module: 'campaigns[template]', found: 'emails[template]', file: 'template.workers.ts' } }] },
     { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'campaigns[tag].welcome_on_contacts[contact].created' })", filename: TEMPLATE_WORKERS, errors: [{ messageId: 'module' }] },
