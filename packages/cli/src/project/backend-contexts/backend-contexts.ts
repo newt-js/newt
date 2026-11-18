@@ -13,7 +13,7 @@ async function foldersIn(folder: string): Promise<string[]> {
   return entries.filter(entry => entry.isDirectory()).map(entry => entry.name).sort()
 }
 
-/** A backend's contexts, read from its folders: each one of src/contexts with its <name>.context.ts, and its features, each with its modules. */
+/** A backend's contexts, read from its folders: each one of src/contexts with its <name>.context.ts, and its features, each with its modules, the folders with their <module>.module.ts. */
 export async function backendContexts(backend: string): Promise<ContextFolder[]> {
   const contexts: ContextFolder[] = []
   for (const name of await foldersIn(join(backend, CONTEXTS_FOLDER))) {
@@ -21,7 +21,13 @@ export async function backendContexts(backend: string): Promise<ContextFolder[]>
     if (await Bun.file(join(folder, `${name}.context.ts`)).exists()) {
       const features: FeatureFolder[] = []
       for (const feature of await foldersIn(join(folder, 'features'))) {
-        features.push({ name: feature, modules: await foldersIn(join(folder, 'features', feature)) })
+        const featureFolder = join(folder, 'features', feature)
+        // A module is a folder with its <module>.module.ts: any other folder of the feature is none.
+        const modules = []
+        for (const each of await foldersIn(featureFolder)) {
+          if (await Bun.file(join(featureFolder, each, `${each}.module.ts`)).exists()) modules.push(each)
+        }
+        features.push({ name: feature, modules })
       }
       contexts.push({ name, features })
     }

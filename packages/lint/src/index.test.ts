@@ -30,6 +30,11 @@ beforeAll(async () => {
   root = await mkdtemp(join(tmpdir(), 'newt-lint-'))
   await writeFile(join(root, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'ESNext', moduleResolution: 'bundler', paths: { '@/*': ['./src/*'] } }, include: ['**/*.ts'] }))
   eslint = new ESLint({ cwd: root, overrideConfigFile: true, overrideConfig: newt({ contexts: { folder: 'src/contexts', uses: { auth: [], ws: ['auth'], cs: ['auth'] } } }) })
+  // A module is a folder with its <module>.module.ts: these are the modules the tests write files in.
+  for (const module of ['src/contexts/ws/features/sales/order', 'src/contexts/ws/features/sales/brand', 'src/contexts/ws/features/sales/transaction', 'src/contexts/ws/features/sales/folder', 'src/contexts/ws/features/sales/note', 'app/contexts/ws/features/sales/order']) {
+    await mkdir(join(root, module), { recursive: true })
+    await writeFile(join(root, module, `${module.split('/').at(-1)}.module.ts`), '')
+  }
 })
 
 afterAll(() => rm(root, { recursive: true, force: true }))
