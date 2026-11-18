@@ -163,7 +163,7 @@ La mayoría de proveedores ponen un proxy o un balanceador delante de tu backend
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true, trustProxy: 1, drainMs: 5000 },
+  serve: { port, trustProxy: 1, drainMs: 5000 },
 })
 ```
 

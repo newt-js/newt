@@ -334,7 +334,7 @@ type ErrorBody = {
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true },
+  serve: { port },
 })
 ```
 
@@ -344,7 +344,6 @@ return runContexts(contexts, {
 |---|---|---|
 | `context` | `BoundedContext` | The context. |
 | `router` | `HttpRouter` | Its routes, served by the shared server (`options.serve`). Its prefix must be `/<context>/api`, or `runContexts` throws before anything starts. |
-| `serve` | `ServeOptions` | Gives this context a server of its own. |
 | `app` | `string \| Bun.HTMLBundle` | Its app, served by the shared server at `/<context>`: a built folder or an HTML import. |
 | `host` | `string \| undefined` | The host it answers at, at its own paths, instead of under `/<context>`. Two contexts at one host throw. |
 
@@ -362,7 +361,6 @@ return runContexts(contexts, {
 | Member | Type | Meaning |
 |---|---|---|
 | `server` | `Bun.Server` | The shared server, when `serve` was given. |
-| `servers` | `Record<string, Bun.Server>` | Each context's own server, by context name. |
 | `stop` | `() => Promise<void>` | Stops servers, then workers, then closes the contexts (last one first). Throws an `AggregateError` if a step failed; the others still run. |
 
 ### Serve options
@@ -378,7 +376,7 @@ return runContexts(contexts, {
 | `publicFolder` | `string` | none | Files served as they are next to an HTML-import frontend. |
 | `proxy` | `Record<string, string>` | none | Path → URL to forward to (for example a dev server). |
 | `development` | `boolean` | `false` | Bun's development mode (HMR for HTML imports, detailed errors). |
-| `health` | `boolean` | off | `true` serves `GET /health-check` for the whole backend, and `GET /<context>/health-check` for each context that serves routes. Public. Answers `{"status":"ok"}`, or 503 `{"status":"stopping"}` while stopping. |
+| `health` | `boolean` | on in `runContexts`, off in `serve` | Serves `GET /health-check` for the whole backend, and `GET /<context>/health-check` for each context that serves routes. Public. Answers `{"status":"ok"}`, or 503 `{"status":"stopping"}` while stopping. |
 | `drainMs` | `number` | `0` | On stop, keep answering this long first (health already says `stopping`). |
 | `trustProxy` | `number` | `0` | How many proxies in front to trust for `X-Forwarded-For` and `X-Forwarded-Host`. |
 | `securityHeaders` | `Record<string, string \| null> \| false` | `SECURITY_HEADERS` | Headers added to every response that lacks them. `null` drops one; `false` drops all. |

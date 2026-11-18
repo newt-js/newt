@@ -162,7 +162,7 @@ export async function startBackend(
   const contexts = await openContexts(platform, stores)
   return runContexts(contexts, {
     platformWithoutContexts: platform,
-    serve: { port, health: true },
+    serve: { port },
   })
 }
 ```
@@ -202,7 +202,7 @@ Las opciones de `serve` que usa el proyecto generado:
 | Opción | Significado | Por defecto |
 |---|---|---|
 | `port` | El puerto. Obligatoria. | ninguno |
-| `health` | `true` responde a `GET /health-check` con `{ "status": "ok" }` (`503` y `"stopping"` mientras se detiene), y `GET /<contexto>/health-check` para cada contexto que sirve rutas. | desactivado |
+| `health` | Responde a `GET /health-check` con `{ "status": "ok" }` (`503` y `"stopping"` mientras se detiene), y `GET /<contexto>/health-check` para cada contexto que sirve rutas. `false` lo apaga. | activado |
 
 `serve` tiene más opciones (`maxBodyBytes`, `trustProxy`, `securityHeaders`, `hsts`, `csp`, `proxy`, `drainMs`, `idleTimeoutSeconds`, `development`, `publicFolder`, `routes`). Mira [API HTTP](/es/reference/http/).
 

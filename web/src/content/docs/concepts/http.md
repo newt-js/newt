@@ -319,7 +319,7 @@ clearSessionCookie(request, 'session', { secure: true })
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true },
+  serve: { port },
 })
 ```
 
@@ -328,7 +328,7 @@ The `serve` options you are most likely to touch:
 | Option | What it does |
 |---|---|
 | `port` | The port. Required. |
-| `health` | `true` answers `GET /health-check` for the whole backend, and `GET /<context>/health-check` for each context that serves routes, with `{ "status": "ok" }`; leave it out for no health route. It needs no sign-in. While stopping it answers `503` with `{ "status": "stopping" }`. |
+| `health` | On unless `false`: answers `GET /health-check` for the whole backend, and `GET /<context>/health-check` for each context that serves routes, with `{ "status": "ok" }`. It needs no sign-in. While stopping it answers `503` with `{ "status": "stopping" }`. |
 | `drainMs` | On stop, keep serving this long first, so a load balancer sees the `503` and moves away. |
 | `trustProxy` | How many proxies stand in front. With it, the client IP and host come from `X-Forwarded-For` and `X-Forwarded-Host`. Set it behind a proxy, or IP rate limits and the origin check see the proxy. |
 | `maxBodyBytes` | Default body limit for the server. |

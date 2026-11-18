@@ -18,8 +18,6 @@ export type ServeOptions = {
   proxy?: Record<string, string>
   development?: boolean
   health?: boolean
-  healthContexts?: string[]
-  hosts?: Record<string, string>
   drainMs?: number
   trustProxy?: number
   securityHeaders?: SecurityHeaders | false

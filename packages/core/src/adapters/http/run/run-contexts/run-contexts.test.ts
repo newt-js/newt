@@ -48,24 +48,31 @@ function routerOf(answer: string, path = '/who', prefix = `/${answer}/api`): Htt
 }
 
 describe('runContexts', () => {
-  test('serves each context that is served, starts them all, and stops them the last one first', async () => {
+  test('serves every context\'s router on one server, with its health by default, starts them all, and stops them the last one first', async () => {
     const log: string[] = []
     const app = runContexts([
-      { context: context('auth', log), serve: { port: 0, routers: [routerOf('auth')], health: true } },
-      { context: context('shop', log), serve: { port: 0, routers: [routerOf('shop')] } },
+      { context: context('auth', log), router: routerOf('auth') },
+      { context: context('shop', log), router: routerOf('shop') },
       { context: context('reports', log) },
-    ], { signals: false })
+    ], { signals: false, serve: { port: 0 } })
 
-    expect(Object.keys(app.servers)).toEqual(['auth', 'shop'])
-    expect(await (await fetch(new URL('/shop/api/who', app.servers.shop!.url))).json()).toBe('shop')
-    expect((await fetch(new URL('/health-check', app.servers.auth!.url))).status).toBe(200)
+    expect(await (await fetch(new URL('/shop/api/who', app.server!.url))).json()).toBe('shop')
+    expect((await fetch(new URL('/health-check', app.server!.url))).status).toBe(200)
     expect(log).toEqual(['auth started', 'shop started', 'reports started'])
 
-    const url = app.servers.auth!.url
+    const url = app.server!.url
     await Promise.all([app.stop(), app.stop()])
     expect(log.slice(3, 6).sort()).toEqual(['auth worker stopped', 'reports worker stopped', 'shop worker stopped'])
     expect(log.slice(6)).toEqual(['reports closed', 'shop closed', 'auth closed'])
-    await expect(fetch(new URL('/api/who', url))).rejects.toThrow()
+    await expect(fetch(new URL('/shop/api/who', url))).rejects.toThrow()
+  })
+
+  test('with health: false, it answers no health', async () => {
+    const app = runContexts([{ context: context('auth', []), router: routerOf('auth') }], { signals: false, serve: { port: 0, health: false } })
+
+    expect((await fetch(new URL('/health-check', app.server!.url))).status).toBe(404)
+    expect((await fetch(new URL('/auth/health-check', app.server!.url))).status).toBe(404)
+    await app.stop()
   })
 
   test('a step that fails keeps none after it from running: every context closes, and then the stop throws', async () => {
@@ -96,7 +103,7 @@ describe('runContexts', () => {
     const log: string[] = []
 
     expect(() => runContexts([
-      { context: context('auth', log), serve: { port: 0, routers: [routerOf('auth')] } },
+      { context: context('auth', log), router: routerOf('auth') },
       { context: context('shop', log, new Platform({ cluster: new MemoryCluster() })) },
     ], { signals: false })).toThrow('The contexts auth, shop are not of one platform')
     expect(log).toEqual([])
@@ -157,7 +164,6 @@ describe('runContexts, one server for every context', () => {
     expect((await at('/boards/health-check')).status).toBe(200)
     expect((await at('/quiet/health-check')).status).toBe(404)
     expect((await at('/auth/api/nothing')).status).toBe(404)
-    expect(app.servers).toEqual({})
 
     await app.stop()
     expect(await at('/health-check').then(() => 'answered', () => 'closed')).toBe('closed')

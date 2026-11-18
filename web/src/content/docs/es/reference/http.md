@@ -334,7 +334,7 @@ type ErrorBody = {
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true },
+  serve: { port },
 })
 ```
 
@@ -344,7 +344,6 @@ return runContexts(contexts, {
 |---|---|---|
 | `context` | `BoundedContext` | El contexto. |
 | `router` | `HttpRouter` | Sus rutas, servidas por el servidor compartido (`options.serve`). Su prefijo tiene que ser `/<contexto>/api`, o `runContexts` lanza un error antes de arrancar nada. |
-| `serve` | `ServeOptions` | Da a este contexto un servidor propio. |
 | `app` | `string \| Bun.HTMLBundle` | Su app, servida por el servidor compartido en `/<contexto>`: una carpeta compilada o un import de HTML. |
 | `host` | `string \| undefined` | El host en el que responde, en sus propias rutas, en lugar de bajo `/<contexto>`. Dos contextos en el mismo host lanzan un error. |
 
@@ -362,7 +361,6 @@ return runContexts(contexts, {
 | Miembro | Tipo | Qué es |
 |---|---|---|
 | `server` | `Bun.Server` | El servidor compartido, si se dio `serve`. |
-| `servers` | `Record<string, Bun.Server>` | El servidor propio de cada contexto, por nombre. |
 | `stop` | `() => Promise<void>` | Para los servidores, luego los workers, y cierra los contextos (el último primero). Lanza un `AggregateError` si falló algún paso; los demás se ejecutan igual. |
 
 ### Opciones de serve
@@ -378,7 +376,7 @@ return runContexts(contexts, {
 | `publicFolder` | `string` | ninguna | Ficheros servidos tal cual junto a un frontend de import de HTML. |
 | `proxy` | `Record<string, string>` | ninguno | Camino → URL a la que reenviar (por ejemplo, un servidor de desarrollo). |
 | `development` | `boolean` | `false` | Modo desarrollo de Bun (HMR para imports de HTML, errores detallados). |
-| `health` | `boolean` | apagado | `true` sirve `GET /health-check` para todo el backend, y `GET /<contexto>/health-check` para cada contexto que sirve rutas. Público. Responde `{"status":"ok"}`, o 503 `{"status":"stopping"}` mientras se para. |
+| `health` | `boolean` | encendido en `runContexts`, apagado en `serve` | Sirve `GET /health-check` para todo el backend, y `GET /<contexto>/health-check` para cada contexto que sirve rutas. Público. Responde `{"status":"ok"}`, o 503 `{"status":"stopping"}` mientras se para. |
 | `drainMs` | `number` | `0` | Al parar, sigue respondiendo este tiempo antes (health ya dice `stopping`). |
 | `trustProxy` | `number` | `0` | Cuántos proxies delante son de confianza para `X-Forwarded-For` y `X-Forwarded-Host`. |
 | `securityHeaders` | `Record<string, string \| null> \| false` | `SECURITY_HEADERS` | Cabeceras añadidas a cada respuesta que no las tenga. `null` quita una; `false` las quita todas. |

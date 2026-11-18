@@ -86,7 +86,6 @@ return runContexts(contexts, {
   platformWithoutContexts: platform,
   serve: {
     port,
-    health: true,
     development: Bun.env.NODE_ENV !== 'production',
   },
 })

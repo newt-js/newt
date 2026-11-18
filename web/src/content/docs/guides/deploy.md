@@ -163,7 +163,7 @@ Most hosts put a proxy or load balancer in front of your backend, which handles 
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true, trustProxy: 1, drainMs: 5000 },
+  serve: { port, trustProxy: 1, drainMs: 5000 },
 })
 ```
 

@@ -134,12 +134,11 @@ describe('serve', () => {
     expect(output).not.toContain('application/json')
   })
 
-  test('health: GET /health-check, and /<context>/health-check for each context given, a 200 without a session', async () => {
-    const at = started({ routers: [api()], health: true, healthContexts: ['notes'] })
+  test('health: GET /health-check, a 200 without a session', async () => {
+    const at = started({ routers: [api()], health: true })
     expect(await (await at('/health-check')).json()).toEqual({ status: 'ok' })
-    expect(await (await at('/notes/health-check')).json()).toEqual({ status: 'ok' })
-    expect((await at('/chat/health-check')).status).toBe(404)
-    expect((await started({ routers: [api()], healthContexts: ['notes'] })('/notes/health-check')).status).toBe(404)
+    expect((await at('/notes/health-check')).status).toBe(404)
+    expect((await started({ routers: [api()] })('/health-check')).status).toBe(404)
   })
 
   test('once told to stop, its health is a 503 while it drains, and it answers the rest', async () => {
