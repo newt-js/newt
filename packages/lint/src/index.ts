@@ -94,8 +94,8 @@ export type NewtLintOptions = {
 }
 
 /**
- * The lint of an application built with newt. A module is a folder in a feature's
- * `modules/`, `<context>/features/<feature>/modules/<module>/`. What it checks keeps every module
+ * The lint of an application built with newt. A module is a folder of a feature's,
+ * `<context>/features/<feature>/<module>/`. What it checks keeps every module
  * the same, whoever writes it, a person or an agent.
  *
  * ```ts
@@ -152,7 +152,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       rules: {
         ...OTHERS,
         'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
-        // By the file's name, wherever it is: a module outside modules/, one every context shares, too.
+        // By the file's name, wherever it is: a module out of its feature's folder, one every context shares, too.
         'newt/use-case-public-methods': 'error',
         'newt/use-case-params': 'error',
         'newt/use-case-reads': 'error',

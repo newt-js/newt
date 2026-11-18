@@ -74,10 +74,9 @@ function inProject(file: string, root: string): string {
 }
 
 /**
- * Where a file of a module is, `<context>/features/<feature>/<module>/` (or in the feature's
- * `modules/`): its context (the folder that holds `features/`), its
+ * Where a file of a module is, `<context>/features/<feature>/<module>/`: its context (the folder that holds `features/`), its
  * feature, its module, and its path inside the module. `null` for a file of no module,
- * which a module always is of a feature. The path is read from the project's root, so a
+ * which a module always is of a feature; a folder `modules/` is none, but one out of place. The path is read from the project's root, so a
  * project that lives inside a folder named `features` is not mistaken for one; a
  * `features/` at the project's root has the project itself as its context (`.`).
  */
@@ -85,9 +84,9 @@ export function modulePlace(file: string, root = ''): Place | null {
   const whole = real(slashed(file))
   const path = inProject(whole, root)
   const inRoot = path !== whole
-  const topFeature = inRoot ? /^\/features\/([^/]+)\/(?:modules\/)?([^/]+)\/(.+)$/.exec(path) : null
+  const topFeature = inRoot ? /^\/features\/([^/]+)\/([^/]+)\/(.+)$/.exec(path) : null
   if (topFeature && topFeature[2] !== 'modules') return { context: '.', feature: topFeature[1]!, module: topFeature[2]!, inside: topFeature[3]! }
-  const ofFeature = /\/([^/]+)\/features\/([^/]+)\/(?:modules\/)?([^/]+)\/(.+)$/.exec(path)
+  const ofFeature = /\/([^/]+)\/features\/([^/]+)\/([^/]+)\/(.+)$/.exec(path)
   return ofFeature && ofFeature[3] !== 'modules' ? { context: ofFeature[1]!, feature: ofFeature[2]!, module: ofFeature[3]!, inside: ofFeature[4]! } : null
 }
 

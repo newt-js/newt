@@ -8,7 +8,7 @@ const at = (file: string) => ({ code: 'export const x = 1', filename: `${CONTEXT
 
 tester.run('module-place', asRule(modulePlace), {
   valid: [
-    at('sales/features/orders/modules/order/order.module.ts'),
+    at('sales/features/orders/order/order.module.ts'),
     at('sales/features/orders/orders.feature.ts'),
     at('sales/sales.context.ts'),
     at('sales/sales-features.ts'),
@@ -22,6 +22,6 @@ tester.run('module-place', asRule(modulePlace), {
       errors: [{ messageId: 'outside', data: { context: 'sales', module: 'order' } }],
     },
     { ...at('sales/feature/orders/modules/order/order.ts'), errors: [{ messageId: 'singular', data: { context: 'sales', found: 'feature', plural: 'features' } }] },
-    { ...at('sales/features/orders/module/order/order.ts'), errors: [{ messageId: 'singular', data: { context: 'sales', found: 'module', plural: 'modules' } }] },
+    { ...at('sales/features/orders/modules/order/order.ts'), errors: [{ messageId: 'inFeature', data: { context: 'sales', feature: 'orders', module: 'order' } }] },
   ],
 })
