@@ -18,7 +18,7 @@ export function routeTest({ plural }: ModuleNames, useCase: PieceNames, { method
   const url = path.split('/').map(segment => segment === ':id' ? '${created.id}' : segment).join('/')
   const verb = method.toUpperCase()
   const create = path.split('/').includes(':id') ? `\n  const created = await ${plural}.create({ name: 'First' })` : ''
-  const request = `router.answer(new Request(\`http://backend.test/api${url}\`, { method: '${verb}' }))`
+  const request = `router.answer(new Request(\`http://backend.test\${router.prefix}${url}\`, { method: '${verb}' }))`
   return `test('${verb} ${path} calls ${useCase.camel}', async () => {${create}
   const called = spyOn(${plural}, '${useCase.camel}')
 
