@@ -33,7 +33,7 @@ export const appImports: TSESLint.RuleModule<'outside' | 'schema' | 'server' | '
     if (!own || own === ROOT) return {}
     const app = `${folder}/${own}/app`
     if (!real(slashed(context.physicalFilename)).startsWith(`${app}/`)) return {}
-    const schema = new RegExp(`^${folder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/${own}/features/[^/]+/modules/([^/]+)/\\1\\.schema$`)
+    const schema = new RegExp(`^${folder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/${own}/features/[^/]+/(?:modules/)?([^/]+)/\\1\\.schema$`)
     return importsOf((node, specifier) => {
       const path = resolved(context, specifier)
       const data = { path: specifier, context: own }

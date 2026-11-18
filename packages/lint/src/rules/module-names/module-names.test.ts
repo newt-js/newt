@@ -4,11 +4,14 @@ import { tester }      from '../../testing/testing'
 import { moduleNames } from './module-names'
 
 const MODULE_TS = `${TEMPLATE}/template.module.ts`
+/** The module in its feature's folder, without `modules/`. */
+const IN_FEATURE = `${TEMPLATE.replace('/modules/', '/')}/template.module.ts`
 const CLASS = (body: string) => `import { Module } from '@newt-js/core'\nclass Template_Module extends Module {\n${body}\n}`
 
 tester.run('module-names', asRule(moduleNames), {
   valid: [
     { code: CLASS("constructor(base) { super('campaigns[template]', base.useCaseRunner) }"), filename: MODULE_TS },
+    { code: CLASS("constructor(base) { super('campaigns[template]', base.useCaseRunner) }"), filename: IN_FEATURE },
     { code: CLASS("readonly exposes = { useCases: ['get'], events: ['created'] } as const"), filename: MODULE_TS },
     { code: CLASS("readonly exposes = { useCases: ['get'] } as const satisfies Exposes"), filename: MODULE_TS },
     { code: CLASS('readonly exposes = EXPOSES'), filename: MODULE_TS },
@@ -26,6 +29,7 @@ tester.run('module-names', asRule(moduleNames), {
     { code: CLASS("constructor(base) { super('salesOrders[orderLine]', base.useCaseRunner) }"), filename: '/repo/src/contexts/shop/features/sales-orders/modules/order-line/order-line.module.ts' },
   ],
   invalid: [
+    { code: CLASS("constructor(base) { super('template', base.useCaseRunner) }"), filename: IN_FEATURE, errors: [{ messageId: 'module', data: { expected: 'campaigns[template]', found: 'template' } }] },
     { code: CLASS("constructor(base) { super('template', base.useCaseRunner) }"), filename: MODULE_TS, errors: [{ messageId: 'module', data: { expected: 'campaigns[template]', found: 'template' } }] },
     { code: CLASS("constructor(base) { super('emails[template]', base.useCaseRunner) }"), filename: MODULE_TS, errors: [{ messageId: 'module' }] },
     { code: CLASS("readonly exposes = { useCases: ['get'] }"), filename: MODULE_TS, errors: [{ messageId: 'exposes' }] },
