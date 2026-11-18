@@ -3,7 +3,7 @@ import { asRule }             from '../../testing/testing'
 import { tester }             from '../../testing/testing'
 import { routeBodyUnchecked } from './route-body-unchecked'
 
-const ROUTES = '/repo/src/contexts/ws/modules/order/order.routes.ts'
+const ROUTES = '/repo/src/contexts/ws/features/orders/modules/order/order.routes.ts'
 
 tester.run('route-body-unchecked', asRule(routeBodyUnchecked), {
   valid: [

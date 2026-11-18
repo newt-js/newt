@@ -11,7 +11,7 @@ import { tester }        from '../../testing/testing'
 import { moduleFiles }   from './module-files'
 
 /** A module whose other entity, a board's counter, has its repository beside it; its orphan has none. */
-const CARD = join(mkdtempSync(join(tmpdir(), 'newt-lint-files-')), 'src/contexts/boards/modules/card')
+const CARD = join(mkdtempSync(join(tmpdir(), 'newt-lint-files-')), 'src/contexts/boards/features/boards/modules/card')
 mkdirSync(CARD, { recursive: true })
 for (const file of ['card-counter.ts', 'card-counter.repository.ts', 'card-orphan.ts']) writeFileSync(join(CARD, file), '')
 
@@ -24,7 +24,10 @@ tester.run('module-files', asRule(moduleFiles), {
     // A module of a feature is made of the same files.
     ...['template.module.ts', 'template.ts', 'events/template-created.ts', 'value-objects/template-id.ts'].map(file => ({ code: '', filename: `${TEMPLATE}/${file}` })),
     { code: '', filename: '/repo/src/contexts/engagement/features/campaigns/campaigns.feature.ts' },
-    { code: '', filename: '/repo/examples/shop/modules/order/order.workers.ts' },
+    { code: '', filename: '/repo/examples/shop/features/orders/modules/order/order.workers.ts' },
+    // The old layout, a module of no feature, is no module: its files are not judged.
+    { code: '', filename: '/repo/src/contexts/ws/modules/price-change/helpers.ts' },
+    { code: '', filename: `${process.cwd()}/modules/order/helpers.ts` },
   ],
   invalid: [
     { code: '', filename: `${MODULE}/helpers.ts`, errors: [{ messageId: 'file' }] },
@@ -40,6 +43,6 @@ tester.run('module-files', asRule(moduleFiles), {
     { code: '', filename: `${MODULE}/infrastructure/price-change.table.ts`, errors: [{ messageId: 'folder' }] },
     { code: '', filename: `${MODULE}/events/recorded.ts`, errors: [{ messageId: 'event' }] },
     ...['constructor', 'toString', '__proto__'].map(folder => ({ code: '', filename: `${MODULE}/${folder}/x.ts`, errors: [{ messageId: 'folder' }] })),
-    { code: '', filename: `${process.cwd()}/modules/order/helpers.ts`, errors: [{ messageId: 'file' }] },
+    { code: '', filename: `${process.cwd()}/features/orders/modules/order/helpers.ts`, errors: [{ messageId: 'file' }] },
   ],
 })
