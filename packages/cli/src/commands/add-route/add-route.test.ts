@@ -21,8 +21,8 @@ describe('newt add route', () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
     expect((await run(ADD_ROUTE, ['sales/order', 'mark-paid'], backend)).code).toBe(0)
-    expect(await read(backend, 'order.routes.ts')).toContain("  router.post('/sales/orders/:id/mark-paid', async request => Response.json(await orders.markPaid({ id: OrderId.from(request.params.id) })))")
-    expect(await read(backend, 'order.module.test.ts')).toContain("test('POST /sales/orders/:id/mark-paid calls markPaid'")
+    expect(await read(backend, 'order.routes.ts')).toContain("  router.post('/orders/:id/mark-paid', async request => Response.json(await orders.markPaid({ id: OrderId.from(request.params.id) })))")
+    expect(await read(backend, 'order.module.test.ts')).toContain("test('POST /orders/:id/mark-paid calls markPaid'")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -33,16 +33,16 @@ describe('newt add route', () => {
     const routes = join(backend, ORDER_MODULE, 'order.routes.ts')
     const written = await Bun.file(routes).text()
     await Bun.write(routes, written.replace('await orders.markPaid({', 'await orders.get({'))
-    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /sales/orders/:id/mark-paid calls markPaid')
+    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /orders/:id/mark-paid calls markPaid')
     await Bun.write(routes, written.replace("OrderId.from(request.params.id) })))", "OrderId.from(request.params.id) })), { public: true })"))
-    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /sales/orders/:id/mark-paid answers 401 to who has not signed in')
+    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /orders/:id/mark-paid answers 401 to who has not signed in')
   }, 30_000)
 
   test('a use case that takes nothing and tells nothing answers 204', async () => {
     const backend = await moduleProject()
     await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', '0 3 * * *'], backend)
-    await run(ADD_ROUTE, ['sales/order', 'purge', '--method', 'delete', '--path', '/sales/orders/expired'], backend)
-    expect(await read(backend, 'order.routes.ts')).toContain("  router.delete('/sales/orders/expired', async () => {\n    await orders.purge()\n    return new Response(null, { status: 204 })\n  })")
+    await run(ADD_ROUTE, ['sales/order', 'purge', '--method', 'delete', '--path', '/orders/expired'], backend)
+    expect(await read(backend, 'order.routes.ts')).toContain("  router.delete('/orders/expired', async () => {\n    await orders.purge()\n    return new Response(null, { status: 204 })\n  })")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -56,18 +56,18 @@ describe('newt add route', () => {
 
   test('refuses a route registered already, a GET with a body, and a use case of two inputs', async () => {
     const backend = await moduleProject()
-    expect((await run(ADD_ROUTE, ['sales/order', 'paginate', '--method', 'get', '--path', '/sales/orders'], backend)).text).toStartWith('paginate takes 2 inputs')
-    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--method', 'get', '--path', '/sales/new-orders'], backend)).text).toStartWith('create takes an input, and a GET has no body')
+    expect((await run(ADD_ROUTE, ['sales/order', 'paginate', '--method', 'get', '--path', '/orders'], backend)).text).toStartWith('paginate takes 2 inputs')
+    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--method', 'get', '--path', '/new-orders'], backend)).text).toStartWith('create takes an input, and a GET has no body')
     await run(ADD_USE_CASE, ['sales/order', 'archive'], backend)
-    expect((await run(ADD_ROUTE, ['sales/order', 'archive', '--path', '/sales/orders'], backend)).text).toBe(`${ORDER_MODULE}/order.routes.ts has POST /sales/orders already: give the route another --path or --method`)
+    expect((await run(ADD_ROUTE, ['sales/order', 'archive', '--path', '/orders'], backend)).text).toBe(`${ORDER_MODULE}/order.routes.ts has POST /orders already: give the route another --path or --method`)
   })
 
   test('a route registered already in other quotes, or with its param named otherwise, is the same route', async () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'archive'], backend)
     const routes = join(backend, ORDER_MODULE, 'order.routes.ts')
-    await Bun.write(routes, (await Bun.file(routes).text()).replace("router.get('/sales/orders/:id'", 'router.get("/sales/orders/:orderId"'))
-    expect((await run(ADD_ROUTE, ['sales/order', 'archive', '--method', 'get', '--path', '/sales/orders/:id'], backend)).text).toBe(`${ORDER_MODULE}/order.routes.ts has GET /sales/orders/:id already: give the route another --path or --method`)
+    await Bun.write(routes, (await Bun.file(routes).text()).replace("router.get('/orders/:id'", 'router.get("/orders/:orderId"'))
+    expect((await run(ADD_ROUTE, ['sales/order', 'archive', '--method', 'get', '--path', '/orders/:id'], backend)).text).toBe(`${ORDER_MODULE}/order.routes.ts has GET /orders/:id already: give the route another --path or --method`)
   })
 
   test('run again, it is up to date', async () => {
@@ -83,25 +83,25 @@ describe('newt add route', () => {
 
   test('says when it writes no test for a route with a body', async () => {
     const backend = await moduleProject()
-    const report = JSON.parse((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/sales/orders/new', '--json'], backend)).text) as { warnings: string[] }
-    expect(report.warnings).toEqual(['POST /sales/orders/new takes a body, so newt wrote no test for it: write one in order.module.test.ts'])
+    const report = JSON.parse((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/orders/new', '--json'], backend)).text) as { warnings: string[] }
+    expect(report.warnings).toEqual(['POST /orders/new takes a body, so newt wrote no test for it: write one in order.module.test.ts'])
   })
 
   test('a second route that answers 204 is written whole', async () => {
     const backend = await moduleProject()
     await run(ADD_SCHEDULE, ['sales/order', 'purge', '--cron', '0 3 * * *'], backend)
     await run(ADD_SCHEDULE, ['sales/order', 'reindex', '--cron', '0 4 * * *'], backend)
-    await run(ADD_ROUTE, ['sales/order', 'purge', '--method', 'delete', '--path', '/sales/orders/purge'], backend)
-    await run(ADD_ROUTE, ['sales/order', 'reindex', '--path', '/sales/orders/reindex'], backend)
-    expect(await read(backend, 'order.routes.ts')).toContain("  router.post('/sales/orders/reindex', async () => {\n    await orders.reindex()\n    return new Response(null, { status: 204 })\n  })")
+    await run(ADD_ROUTE, ['sales/order', 'purge', '--method', 'delete', '--path', '/orders/purge'], backend)
+    await run(ADD_ROUTE, ['sales/order', 'reindex', '--path', '/orders/reindex'], backend)
+    expect(await read(backend, 'order.routes.ts')).toContain("  router.post('/orders/reindex', async () => {\n    await orders.reindex()\n    return new Response(null, { status: 204 })\n  })")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
   test('without an id in its path, the body goes to the use case as it came', async () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
-    await run(ADD_ROUTE, ['sales/order', 'mark-paid', '--path', '/sales/orders/paid'], backend)
-    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/sales/orders/paid', async request => Response.json(await orders.markPaid(await bodyOf(request))))")
+    await run(ADD_ROUTE, ['sales/order', 'mark-paid', '--path', '/orders/paid'], backend)
+    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/orders/paid', async request => Response.json(await orders.markPaid(await bodyOf(request))))")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -113,27 +113,27 @@ describe('newt add route', () => {
     expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', "/x'+String(1)+'"], backend)).text).toStartWith("'/x'+String(1)+'' is not a path")
   })
 
-  test("refuses a path outside its context's", async () => {
+  test('refuses a path that repeats its context, or where its files are served', async () => {
     const backend = await moduleProject()
-    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/orders/new'], backend)).text).toBe("'/orders/new' is not under /sales/: a module's routes start with its context")
-    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/sales/files/x'], backend)).text).toBe("'/sales/files/x' is where the files of sales are served: give the route another --path")
+    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/sales/orders/new'], backend)).text).toBe("'/sales/orders/new' starts with /sales, which every route of the context is under already: give --path /orders/new")
+    expect((await run(ADD_ROUTE, ['sales/order', 'create', '--path', '/files/x'], backend)).text).toBe("'/files/x' is where the files of sales are served: give the route another --path")
   })
 
   test('refuses /api, empty segments, a last / and a param given twice', async () => {
     const backend = await moduleProject()
     const refused = async (path: string) => (await run(ADD_ROUTE, ['sales/order', 'create', '--path', path], backend)).text
-    expect(await refused('/api/sales/orders/new')).toBe("'/api/sales/orders/new' starts with /api, which every route is under already: give --path /sales/orders/new")
-    expect(await refused('/sales//orders')).toBe("'/sales//orders' has an empty segment: no // and no / at the end")
-    expect(await refused('/sales/orders/')).toBe("'/sales/orders/' has an empty segment: no // and no / at the end")
-    expect(await refused('/sales/orders/:id/:id')).toBe("'/sales/orders/:id/:id' has :id twice: name each param once")
+    expect(await refused('/api/orders/new')).toBe("'/api/orders/new' starts with /api, which every route is under already: give --path /orders/new")
+    expect(await refused('/orders//new')).toBe("'/orders//new' has an empty segment: no // and no / at the end")
+    expect(await refused('/orders/')).toBe("'/orders/' has an empty segment: no // and no / at the end")
+    expect(await refused('/orders/:id/:id')).toBe("'/orders/:id/:id' has :id twice: name each param once")
   })
 
   test('a param that only starts like :id is not the id, and says it is not used', async () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
-    const report = JSON.parse((await run(ADD_ROUTE, ['sales/order', 'mark-paid', '--path', '/sales/orders/:idx/pay', '--json'], backend)).text) as { warnings: string[] }
-    expect(report.warnings).toContain(':idx of /sales/orders/:idx/pay is not given to markPaid: read it in order.routes.ts, request.params.idx')
-    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/sales/orders/:idx/pay', async request => Response.json(await orders.markPaid(await bodyOf(request))))")
+    const report = JSON.parse((await run(ADD_ROUTE, ['sales/order', 'mark-paid', '--path', '/orders/:idx/pay', '--json'], backend)).text) as { warnings: string[] }
+    expect(report.warnings).toContain(':idx of /orders/:idx/pay is not given to markPaid: read it in order.routes.ts, request.params.idx')
+    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/orders/:idx/pay', async request => Response.json(await orders.markPaid(await bodyOf(request))))")
     expect(await checkGenerated(backend, { tests: false })).toEqual([])
   }, 30_000)
 })

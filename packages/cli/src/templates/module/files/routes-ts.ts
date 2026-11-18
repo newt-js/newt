@@ -2,9 +2,8 @@ import type { ModuleNames } from '../../../names/module-names/module-names'
 
 export const routesHead = ({ type, plural }: ModuleNames) => `export function register${type}Routes(router: HttpRouter, ${plural}: ${type}_Module): void {`
 
-export function routesTs(names: ModuleNames, context: string): string {
-  const { folder, type, plural } = names
-  const path = `${context}/${names.path}`
+export function routesTs(names: ModuleNames): string {
+  const { folder, type, plural, path } = names
   return `import { bodyOf, pageRequestFrom, type HttpRouter } from '@newt-js/core/http'
 import type { ${type}_Module } from './${folder}.module'
 import { ${type}Id } from './value-objects/${folder}-id'

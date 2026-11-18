@@ -22,7 +22,7 @@ function databaseOf(database: DatabaseKind): { imports: string, open: string, dr
 
 export function moduleTestTs(names: ModuleNames, context: ContextNames, database: DatabaseKind): string {
   const { folder, type, plural, words } = names
-  const path = `${context.folder}/${names.path}`
+  const { path } = names
   const opened = databaseOf(database)
   return `import { afterEach, beforeEach, expect, test } from 'bun:test'
 ${opened.imports}
