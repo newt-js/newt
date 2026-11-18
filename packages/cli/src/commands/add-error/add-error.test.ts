@@ -18,7 +18,7 @@ describe('newt add error', () => {
   test('one of each kind, whose lint, types and tests pass, and which HTTP answers with its status', async () => {
     const backend = await moduleProject()
     for (const kind of Object.keys(STATUSES)) {
-      expect((await addError(['sales/order', `order-${kind}`, '--kind', kind], backend)).code).toBe(0)
+      expect((await addError(['sales/orders/order', `order-${kind}`, '--kind', kind], backend)).code).toBe(0)
     }
     expect(await checkGenerated(backend)).toEqual([])
     for (const [kind, status] of Object.entries(STATUSES)) {
@@ -30,31 +30,31 @@ describe('newt add error', () => {
 
   test('its code is the module\'s, without the module\'s name twice', async () => {
     const backend = await moduleProject()
-    await addError(['sales/order', 'order-already-paid', '--kind', 'conflict'], backend)
-    await addError(['sales/order', 'too-late', '--kind', 'validation'], backend)
+    await addError(['sales/orders/order', 'order-already-paid', '--kind', 'conflict'], backend)
+    await addError(['sales/orders/order', 'too-late', '--kind', 'validation'], backend)
     const paid = await Bun.file(join(backend, ORDER_MODULE, 'errors/order-already-paid.ts')).text()
-    expect(paid).toContain("export class OrderAlreadyPaid extends ConflictError {\n  readonly code = 'order.already_paid'")
+    expect(paid).toContain("export class OrderAlreadyPaid extends ConflictError {\n  readonly code = 'orders[order].already_paid'")
     expect(paid).toContain("super('Order already paid')")
-    expect(await Bun.file(join(backend, ORDER_MODULE, 'errors/too-late.ts')).text()).toContain("readonly code = 'order.too_late'")
+    expect(await Bun.file(join(backend, ORDER_MODULE, 'errors/too-late.ts')).text()).toContain("readonly code = 'orders[order].too_late'")
   })
 
   test('needs its kind', async () => {
     const backend = await moduleProject()
-    expect((await addError(['sales/order', 'too-late'], backend)).text).toStartWith('newt add error needs --kind')
-    expect((await addError(['sales/order', 'too-late', '--kind', 'gone'], backend)).text).toStartWith("'gone' is not a kind of error")
+    expect((await addError(['sales/orders/order', 'too-late'], backend)).text).toStartWith('newt add error needs --kind')
+    expect((await addError(['sales/orders/order', 'too-late', '--kind', 'gone'], backend)).text).toStartWith("'gone' is not a kind of error")
   })
 
   test('refuses the name of the class it would extend', async () => {
-    expect((await addError(['sales/order', 'validation-error', '--kind', 'validation'], await moduleProject())).text).toStartWith("'validation-error' cannot name an error")
+    expect((await addError(['sales/orders/order', 'validation-error', '--kind', 'validation'], await moduleProject())).text).toStartWith("'validation-error' cannot name an error")
   })
 
   test('refuses a code another error of the module has', async () => {
-    expect((await addError(['sales/order', 'not-found', '--kind', 'not-found'], await moduleProject())).text).toBe('errors/order-not-found.ts has the code order.not_found already: name the error by what else went wrong')
+    expect((await addError(['sales/orders/order', 'not-found', '--kind', 'not-found'], await moduleProject())).text).toBe('errors/order-not-found.ts has the code orders[order].not_found already: name the error by what else went wrong')
   })
 
   test('run again with another kind, says the error is there with its own', async () => {
     const backend = await moduleProject()
-    await addError(['sales/order', 'not-paid', '--kind', 'conflict'], backend)
-    expect((await addError(['sales/order', 'not-paid', '--kind', 'validation'], backend)).text).toStartWith('errors/not-paid.ts is there already and extends ConflictError, not ValidationError')
+    await addError(['sales/orders/order', 'not-paid', '--kind', 'conflict'], backend)
+    expect((await addError(['sales/orders/order', 'not-paid', '--kind', 'validation'], backend)).text).toStartWith('errors/not-paid.ts is there already and extends ConflictError, not ValidationError')
   })
 })

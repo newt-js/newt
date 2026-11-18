@@ -8,7 +8,7 @@ import { AUTH_KEPT }          from '../../backend/files/src-auth-ts'
 import { SRC_AUTH_TS }        from '../../backend/files/src-auth-ts'
 import { STORE_DATABASES }    from '../../stores/store-databases'
 import { STORE_FILES }        from '../../stores/store-files'
-import { contextModulesTs }   from '../files/context-modules-ts'
+import { contextFeaturesTs }  from '../files/context-features-ts'
 import { contextTs }          from '../files/context-ts'
 
 export type ContextTemplateOptions = { backend: string, packageName: string, names: ContextNames, stores: Required<{ [K in keyof BackendStores]: NonNullable<BackendStores[K]> }> }
@@ -24,7 +24,7 @@ export function contextTemplate({ backend, packageName, names, stores }: Context
   const variables = { ...database.contextEnv(names.env, names.folder, packageName), ...files.contextEnv(names.env, names.folder, packageName) }
   return [
     { action: 'create', path: join(folder, `${names.folder}.context.ts`), content: contextTs(names) },
-    { action: 'create', path: join(folder, `${names.folder}-modules.ts`), content: contextModulesTs(names) },
+    { action: 'create', path: join(folder, `${names.folder}-features.ts`), content: contextFeaturesTs(names) },
     { action: 'create', path: join(folder, 'migrations/.gitkeep'), content: '' },
     { action: 'create', path: at('src/auth.ts'), content: SRC_AUTH_TS, kept: AUTH_KEPT },
     { action: 'complete-env', path: at('.env'), variables },

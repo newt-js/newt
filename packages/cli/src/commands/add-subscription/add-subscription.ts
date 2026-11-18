@@ -14,12 +14,12 @@ import type { FileChange }  from '../command'
 import { defineCommand }    from '../command'
 import { CommandError }     from '../command-error/command-error'
 
-const USAGE = 'newt add subscription takes the module, its use case and --on the event, as in newt add subscription sales/order mark-paid --on created'
+const USAGE = 'newt add subscription takes the module, its use case and --on the event, as in newt add subscription sales/orders/order mark-paid --on created'
 
 export const ADD_SUBSCRIPTION = defineCommand({
   name: 'add subscription',
   summary: 'Runs a use case of a module on one of its events, in its workers',
-  args: '<context>/<module> <use-case>',
+  args: '<context>/<feature>/<module> <use-case>',
   options: {
     on: { type: 'string', value: 'event', description: 'The event of the module it runs on' },
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },

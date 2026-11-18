@@ -20,6 +20,8 @@ ${lines.created}
     return module
   }
 
+  /** What the other features see of it: names of its use cases and events. */
+  readonly exposes = { useCases: [], events: [] } as const
   readonly events
   readonly routes
 

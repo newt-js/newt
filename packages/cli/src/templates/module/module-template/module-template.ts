@@ -18,15 +18,16 @@ import { moduleMigration }   from '../migrations'
 
 export type ModuleTemplateOptions = { backend: string, context: ContextNames, names: ModuleNames, database: DatabaseKind, migration: string }
 
-/** The line of <ctx>-modules.ts that initializes a module. */
+/** The line of <feature>.feature.ts that initializes a module. */
 function initializedLine({ module, type }: ModuleNames, deps = ''): string {
   return `  const ${module} = ${type}_Module.initialize(base, router${deps})`
 }
 
-/** A module of a context: its files, its table's migration, and its place in <ctx>-modules.ts. */
+/** A module of a feature: its files, its table's migration in its context's, and its place in <feature>.feature.ts. */
 export function moduleTemplate({ backend, context, names, database, migration }: ModuleTemplateOptions): FileChange[] {
   const contextFolder = join(backend, CONTEXTS_FOLDER, context.folder)
-  const folder = join(contextFolder, 'modules', names.folder)
+  const featureFolder = join(contextFolder, 'features', names.feature.folder)
+  const folder = join(featureFolder, 'modules', names.folder)
   const files: Record<string, string> = {
     [`value-objects/${names.folder}-id.ts`]: idTs(names),
     [`${names.folder}.schema.ts`]: schemaTs(names),
@@ -39,17 +40,17 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     [`${names.folder}.module.test.ts`]: moduleTestTs(names, context, database),
   }
   const sql = moduleMigration(names, database)
-  const modules = join(contextFolder, `${context.folder}-modules.ts`)
+  const entry = join(featureFolder, `${names.feature.folder}.feature.ts`)
   return [
     ...Object.entries(files).map(([path, content]): FileChange => ({ action: 'create', path: join(folder, path), content })),
     ...sql ? [
-      { action: 'create', path: join(contextFolder, 'migrations', `${migration}_${names.table}_up.sql`), content: sql.up } as const,
-      { action: 'create', path: join(contextFolder, 'migrations', `${migration}_${names.table}_down.sql`), content: sql.down } as const,
+      { action: 'create', path: join(contextFolder, 'migrations', `${migration}_${names.migration}_up.sql`), content: sql.up } as const,
+      { action: 'create', path: join(contextFolder, 'migrations', `${migration}_${names.migration}_down.sql`), content: sql.down } as const,
     ] : [],
     {
       action: 'wire-module',
-      path: modules,
-      functionName: `${context.camel}Modules`,
+      path: entry,
+      functionName: `${names.feature.camel}Feature`,
       module: names.module,
       declaration: initializedLine(names),
       imports: [`import { ${names.type}_Module } from './modules/${names.folder}/${names.folder}.module'`],

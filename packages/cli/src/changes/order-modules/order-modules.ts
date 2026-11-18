@@ -42,7 +42,7 @@ function sorted(modules: Initialized[]): Initialized[] {
   return result
 }
 
-/** Puts the modules <ctx>-modules.ts initializes in an order where each comes after the ones it uses. */
+/** Puts the modules <feature>.feature.ts initializes in an order where each comes after the ones it uses. */
 export async function orderModules(path: string, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)

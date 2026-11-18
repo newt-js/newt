@@ -11,7 +11,7 @@ import type { FileChange } from '../command'
 import { defineCommand }   from '../command'
 import { CommandError }    from '../command-error/command-error'
 
-const USAGE = 'newt add route takes the module and the use case it calls, as in newt add route sales/order mark-paid'
+const USAGE = 'newt add route takes the module and the use case it calls, as in newt add route sales/orders/order mark-paid'
 
 const METHODS = ['get', 'post', 'put', 'patch', 'delete']
 
@@ -20,7 +20,7 @@ const PATH = /^\/[A-Za-z0-9/:_-]*$/
 export const ADD_ROUTE = defineCommand({
   name: 'add route',
   summary: 'Adds a route to a module that calls one of its use cases',
-  args: '<context>/<module> <use-case>',
+  args: '<context>/<feature>/<module> <use-case>',
   options: {
     method: { type: 'string', value: 'method', description: `${METHODS.join(', ')}; post by default` },
     path: { type: 'string', value: 'path', description: "Its path under /<context>/api; /<module's plural>/:id/<use-case> by default" },
