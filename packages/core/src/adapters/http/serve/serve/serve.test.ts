@@ -168,7 +168,7 @@ describe('serve', () => {
 
   test('the server reads the longest body any route takes, and the routes beside them the server\'s', async () => {
     const router = new HttpRouter({ public: true, maxBodyBytes: 100 })
-    router.group('/uploads', (_request, next) => next(), { maxBodyBytes: 2 * MAX_BODY_BYTES }).post('/file', async request => new Response(String((await request.text()).length)))
+    router.group('/uploads', { maxBodyBytes: 2 * MAX_BODY_BYTES }).post('/file', async request => new Response(String((await request.text()).length)))
     const at = started({ routers: [router], maxBodyBytes: 1000, routes: { '/webhook': { POST: async request => new Response(String((await request.text()).length)) } } })
 
     expect((await at('/api/uploads/file', { method: 'POST', body: 'x'.repeat(MAX_BODY_BYTES + 10) })).status).toBe(200)

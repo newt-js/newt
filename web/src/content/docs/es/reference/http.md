@@ -95,13 +95,16 @@ Cualquier error lanzado por el camino se convierte en respuesta con el `onError`
 
 ### HttpGroup
 
-`router.group(prefix, middleware, options?)` devuelve un `HttpGroup` con `get`, `post`, `put`, `patch` y `delete`, con las mismas firmas que el router. Cada camino es el prefijo del grupo más el suyo. El middleware se ejecuta después de identificar al usuario y antes de la ruta:
+`router.group(prefix, options?)` devuelve un `HttpGroup` con `get`, `post`, `put`, `patch` y `delete`, con las mismas firmas que el router. Cada camino es el prefijo del grupo más el suyo. Sus opciones son las [de sus rutas](#opciones-de-ruta) más `middleware`, que se ejecuta después de identificar al usuario y antes de la ruta:
 
 ```ts
-const reports = router.group('/reports', async (request, next) => {
-  const response = await next()
-  return response
-}, { maxBodyBytes: 64 * 1024 })
+const reports = router.group('/reports', {
+  middleware: async (request, next) => {
+    const response = await next()
+    return response
+  },
+  maxBodyBytes: 64 * 1024,
+})
 reports.get('/overdue', async () => Response.json({ items: [] }))
 ```
 

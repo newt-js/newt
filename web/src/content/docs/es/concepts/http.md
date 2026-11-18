@@ -154,14 +154,16 @@ Las opciones de una ruta mandan sobre las de su grupo y su router. Los límites 
 
 ## Grupos y middleware
 
-Un grupo comparte un prefijo, un middleware y opciones. El middleware es opcional: sin él, el grupo solo pone su prefijo delante de sus rutas.
+Un grupo comparte un prefijo y opciones, y sus opciones pueden llevar un `middleware`. Sin opciones, el grupo solo pone su prefijo delante de sus rutas.
 
 ```ts
-const reports = router.group('/reports', async (request, next) => {
-  const started = performance.now()
-  const response = await next()
-  console.log(request.method, request.url, performance.now() - started)
-  return response
+const reports = router.group('/reports', {
+  middleware: async (request, next) => {
+    const started = performance.now()
+    const response = await next()
+    console.log(request.method, request.url, performance.now() - started)
+    return response
+  },
 })
 
 reports.get('/overdue', async () => Response.json(await tasks.find({})))

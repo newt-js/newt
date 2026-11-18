@@ -95,13 +95,16 @@ Any error thrown along the way becomes a response through the route's `onError`.
 
 ### HttpGroup
 
-`router.group(prefix, middleware, options?)` returns an `HttpGroup` with `get`, `post`, `put`, `patch` and `delete`, same signatures as the router. Each path is the group's prefix plus its own. The middleware runs after sign-in and before the route:
+`router.group(prefix, options?)` returns an `HttpGroup` with `get`, `post`, `put`, `patch` and `delete`, same signatures as the router. Each path is the group's prefix plus its own. Its options are its routes' [options](#route-options) plus `middleware`, which runs after sign-in and before the route:
 
 ```ts
-const reports = router.group('/reports', async (request, next) => {
-  const response = await next()
-  return response
-}, { maxBodyBytes: 64 * 1024 })
+const reports = router.group('/reports', {
+  middleware: async (request, next) => {
+    const response = await next()
+    return response
+  },
+  maxBodyBytes: 64 * 1024,
+})
 reports.get('/overdue', async () => Response.json({ items: [] }))
 ```
 

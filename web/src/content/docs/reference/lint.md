@@ -280,7 +280,7 @@ No route a context registers, on its router or a group of it, starts with the co
 // src/contexts/tasks/modules/task/task.routes.ts
 router.get('/tasks/tasks/:id', handle) // wrong: answers at /tasks/api/tasks/tasks/:id
 router.get('/tasks/:id', handle)       // right: answers at /tasks/api/tasks/:id
-router.group('/reports', middleware).get('/overdue', handle) // right
+router.group('/reports', { middleware }).get('/overdue', handle) // right
 ```
 
 Paths are read through consts, templates and a group's prefix. A path the rule cannot read is let be. Test files are skipped.

@@ -79,7 +79,7 @@ router.post('/sign-in', signIn, { public: true })
 | Where | Applies to |
 |---|---|
 | `router.get(path, route, { public: true })` | one route |
-| `router.group(prefix, middleware, { public: true })` | every route of the group |
+| `router.group(prefix, { public: true })` | every route of the group |
 | `new HttpRouter({ public: true })` | every route of the router |
 
 - A public route has no actor. `currentActor()` throws there; `findCurrentActor()` returns `undefined`.

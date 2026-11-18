@@ -154,14 +154,16 @@ A route's options override its group's and router's. Rate limits add up instead 
 
 ## Groups and middleware
 
-A group shares a path prefix, a middleware and options. The middleware is optional: without one, the group only puts its prefix before its routes.
+A group shares a path prefix and options, and its options can take a `middleware`. Without options, the group only puts its prefix before its routes.
 
 ```ts
-const reports = router.group('/reports', async (request, next) => {
-  const started = performance.now()
-  const response = await next()
-  console.log(request.method, request.url, performance.now() - started)
-  return response
+const reports = router.group('/reports', {
+  middleware: async (request, next) => {
+    const started = performance.now()
+    const response = await next()
+    console.log(request.method, request.url, performance.now() - started)
+    return response
+  },
 })
 
 reports.get('/overdue', async () => Response.json(await tasks.find({})))

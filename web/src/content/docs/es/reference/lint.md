@@ -280,7 +280,7 @@ Ninguna ruta que registra un contexto, en su router o en un grupo de él, empiez
 // src/contexts/tasks/modules/task/task.routes.ts
 router.get('/tasks/tasks/:id', handle) // mal: responde en /tasks/api/tasks/tasks/:id
 router.get('/tasks/:id', handle)       // bien: responde en /tasks/api/tasks/:id
-router.group('/reports', middleware).get('/overdue', handle) // bien
+router.group('/reports', { middleware }).get('/overdue', handle) // bien
 ```
 
 Las rutas se leen a través de constantes, plantillas y el prefijo de un grupo. Una ruta que la regla no puede leer se deja pasar. Los ficheros de test no se revisan.

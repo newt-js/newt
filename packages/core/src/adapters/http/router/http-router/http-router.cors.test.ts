@@ -30,7 +30,7 @@ describe('cors on a router\'s routes', () => {
     const router = new HttpRouter({ public: true })
     router.post('/token', () => Response.redirect('https://elsewhere.test', 302), { cors: ANY, crossOrigin: true })
     router.get('/authorize', () => new Response('page'))
-    router.group('/open', (_request, next) => next(), { cors: ANY }).get('/one', () => new Response('one'))
+    router.group('/open', { cors: ANY }).get('/one', () => new Response('one'))
 
     expect((await call(router, '/api/token', PREFLIGHT)).status).toBe(204)
     const redirect = await call(router, '/api/token', { method: 'POST' })

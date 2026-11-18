@@ -26,10 +26,13 @@ describe('route layers', () => {
       seen.push('signedIn')
       return request.headers.has('x-user') ? { userId: 'ana' } : null
     })
-    const group = router.group('/things', async (_, next) => {
-      seen.push('middleware')
-      return next()
-    }, { cors: { origin: ['https://a.example'] } })
+    const group = router.group('/things', {
+      middleware: async (_, next) => {
+        seen.push('middleware')
+        return next()
+      },
+      cors: { origin: ['https://a.example'] },
+    })
     group.post('', async () => {
       seen.push('route')
       return Response.json({ made: true }, { status: 201 })
