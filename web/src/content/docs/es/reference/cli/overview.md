@@ -41,7 +41,7 @@ Estas páginas escriben `newt <comando>` para abreviar.
 | [`newt add value-object`](/es/reference/cli/add-value-object/) | Añade un value object, su error y su test |
 | [`newt add service`](/es/reference/cli/add-service/) | Añade una función que comparten los casos de uso |
 | [`newt add deps`](/es/reference/cli/add-deps/) | Deja que un módulo use otro módulo de su contexto |
-| [`newt add frontend`](/es/reference/cli/add-frontend/) | Añade un frontend React servido en `/<contexto>` |
+| [`newt add app`](/es/reference/cli/add-app/) | Añade una app React servida en `/<contexto>` |
 
 ### Qué necesita cada comando antes
 
@@ -50,7 +50,7 @@ Cada flecha va de lo que un comando necesita a ese comando. Un módulo nuevo ya 
 ```mermaid
 flowchart TD
   backend["Backend: init o add backend"] --> context["Contexto: add context"]
-  context --> frontend["add frontend"]
+  context --> app["add app"]
   context --> module["Módulo: add module"]
   module --> pieces["add error, value-object, service, schedule"]
   module --> deps["add deps, con un segundo módulo"]

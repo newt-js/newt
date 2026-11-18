@@ -414,7 +414,7 @@ La `app` de un contexto (mira [runContexts](#runcontexts)) se sirve como un `Fro
 | `Bun.HTMLBundle` (un `import x from './index.html'`) | Bun lo empaqueta. Todo camino bajo `path` recibe la página; los ficheros de `publicFolder` se sirven en su propio camino. |
 | `string` (una carpeta compilada) | Los ficheros de la carpeta. Un camino sin fichero recibe `index.html`. Los ficheros que empiezan por punto nunca se sirven. Sin `index.html` → 503. |
 
-Los caminos empiezan por `/`; dos frontends en el mismo camino lanzan un error. Las rutas de los routers ganan a los frontends, y un camino bajo el prefijo de un router que no coge ninguna ruta da 404. Mira [Añadir un frontend](/es/guides/frontend/).
+Los caminos empiezan por `/`; dos frontends en el mismo camino lanzan un error. Las rutas de los routers ganan a los frontends, y un camino bajo el prefijo de un router que no coge ninguna ruta da 404. Mira [Añadir una app](/es/guides/app/).
 
 Las páginas HTML de una carpeta compilada llevan `x-frame-options: DENY` y una Content-Security-Policy. Esta es la de por defecto (`CONTENT_SECURITY_POLICY`); `csp` añade o reemplaza directivas (`null` quita una), y los hashes de los scripts en línea se añaden a `script-src`:
 

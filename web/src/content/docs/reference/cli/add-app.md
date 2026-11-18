@@ -1,16 +1,16 @@
 ---
-title: newt add frontend
+title: newt add app
 description: Adds a React app to a context, served by the backend at /<context>.
 sidebar:
   order: 14
 ---
 
-`newt add frontend` gives a context its app, served by the same backend at `/<context>`, such as `/tasks`. It writes a small React app that Bun bundles, or serves one you build elsewhere.
+`newt add app` gives a context its app, served by the same backend at `/<context>`, such as `/tasks`. It writes a small React app that Bun bundles, or serves one you build elsewhere.
 
 ## Usage
 
 ```sh
-newt add frontend <context> [options]
+newt add app <context> [options]
 ```
 
 ## Arguments
@@ -34,7 +34,7 @@ It also takes the [global flags](/reference/cli/overview/#global-flags).
 ## What it writes
 
 ```sh
-newt add frontend tasks
+newt add app tasks
 ```
 
 ```text
@@ -81,7 +81,7 @@ With `--built`: build it into the folder for `/<context>/`, or its assets answer
 
 ## Errors
 
-- **Missing context**: `newt add frontend takes the context, as in newt add frontend sales`.
+- **Missing context**: `newt add app takes the context, as in newt add app sales`.
 - **A context the backend does not have**: refused; add it with [`newt add context`](/reference/cli/add-context/).
 - **The context hands an app already, in `<context>.context.ts`**: refused; take that one out first.
 - **A `--built` folder that holds the backend**: refused, since everything in it would be served, `.env` too.
@@ -90,4 +90,4 @@ With `--built`: build it into the folder for `/<context>/`, or its assets answer
 Point `--built` at the build output only, such as `web/dist`. Whatever is in that folder is public.
 :::
 
-See [Adding a frontend](/guides/frontend/).
+See [Adding an app](/guides/app/).

@@ -202,6 +202,6 @@ BACKOFFICE_HOST=backoffice.midominio.com
 
 The generated `<context>.context.ts` reads the variable once, `const host = Bun.env.BACKOFFICE_HOST`, and hands it to its files and to run, next to its router.
 
-## Frontends
+## Apps
 
-A backend serves its contexts' apps from the same process. How each one is built and served is in [Adding a frontend](/guides/frontend/).
+A backend serves its contexts' apps from the same process. How each one is built and served is in [Adding an app](/guides/app/).

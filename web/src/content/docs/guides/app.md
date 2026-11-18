@@ -1,16 +1,16 @@
 ---
-title: Adding a frontend
+title: Adding an app
 description: Give a context a React app, served by the same backend at the context's own path.
 sidebar:
   order: 5
 ---
 
-A context's app is a web app that the backend serves next to the context's API. `newt add frontend` gives a context a React app, bundled by Bun and served at `/<context>`, with no separate server or build step.
+A context's app is a web app that the backend serves next to the context's API. `newt add app` gives a context a React app, bundled by Bun and served at `/<context>`, with no separate server or build step.
 
 ## Add one
 
 ```sh
-newt add frontend tasks
+newt add app tasks
 ```
 
 ```txt
@@ -77,7 +77,7 @@ import app from './app/index.html'
 
 ## While you develop
 
-`bun run dev` restarts the backend when you change server code. The generated backend does not turn on Bun's development mode, so the page is bundled once: after you change the frontend, restart `bun run dev` to see it.
+`bun run dev` restarts the backend when you change server code. The generated backend does not turn on Bun's development mode, so the page is bundled once: after you change the app, restart `bun run dev` to see it.
 
 To get hot reloading in the browser, turn on `development` in `src/backend.ts`:
 
@@ -131,7 +131,7 @@ export function App() {
 Read the `code` of an error answer, such as `task.not_found`, to decide what the page shows. See [errors](/concepts/errors/).
 :::
 
-- The app imports its own files and, with `import type`, its context's schemas: never the server's code. The [`frontend-imports`](/reference/lint/#newtfrontend-imports) rule checks it.
+- The app imports its own files and, with `import type`, its context's schemas: never the server's code. The [`app-imports`](/reference/lint/#newtapp-imports) rule checks it.
 - Give a client-side router `BASE` as its base, such as React Router's `basename`.
 
 ## An app built elsewhere
@@ -139,7 +139,7 @@ Read the `code` of an error answer, such as `task.not_found`, to decide what the
 If you build your app with another tool, the context can serve the built folder instead:
 
 ```sh
-newt add frontend tasks --built web/dist
+newt add app tasks --built web/dist
 ```
 
 - `--built` takes the folder that holds the built `index.html`.
@@ -154,7 +154,7 @@ The folder cannot be one that holds the backend, since everything in it would be
 ## Options
 
 ```sh
-newt add frontend <context> [--built <folder>] [--backend <folder>]
+newt add app <context> [--built <folder>] [--backend <folder>]
 ```
 
 | Option | What it does |
@@ -162,4 +162,4 @@ newt add frontend <context> [--built <folder>] [--backend <folder>]
 | `--built` | serves a folder built elsewhere, instead of writing a React app |
 | `--backend` | which backend, in a monorepo with several |
 
-See the [`newt add frontend` reference](/reference/cli/add-frontend/).
+See the [`newt add app` reference](/reference/cli/add-app/).

@@ -334,7 +334,7 @@ The `serve` options you are most likely to touch:
 | `maxBodyBytes` | Default body limit for the server. |
 | `securityHeaders` | Headers added to every answer. By default `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`. `false` drops them; a `null` value drops one. |
 | `hsts` | `true` adds `Strict-Transport-Security` for a year. |
-| `csp`, `proxy` | The Content-Security-Policy of the contexts' built apps, and paths forwarded to another server. A context's app is served at `/<context>`: see [Adding a frontend](/guides/frontend/). |
+| `csp`, `proxy` | The Content-Security-Policy of the contexts' built apps, and paths forwarded to another server. A context's app is served at `/<context>`: see [Adding an app](/guides/app/). |
 
 :::danger
 Set `trustProxy` only to the number of proxies you really have. With a higher number, a client can fake its IP in `X-Forwarded-For` and slip past IP rate limits.

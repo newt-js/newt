@@ -59,13 +59,13 @@ Si pasas `uses`, lista todos los contextos, también los que no usan ninguno (`[
 | Todos los ficheros revisados | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable` y las reglas de otros plugins |
 | Los ficheros de un módulo (`**/modules/<módulo>/**`) | `module-entity`, `module-files`, `module-imports`, `entity-method-params`, `reaction-queue`, `schema-imports`, `use-case-files`, `module-transactions` |
 | Ficheros en la carpeta de contextos (con `contexts`) | `context-imports`, `route-context`; `module-imports` para los ficheros fuera de los módulos |
-| La app de un contexto (`<contexto>/app/**/*.{ts,tsx}`, con `contexts`) | `frontend-imports`, `no-disable` |
+| La app de un contexto (`<contexto>/app/**/*.{ts,tsx}`, con `contexts`) | `app-imports`, `no-disable` |
 
 Sin `contexts`, `route-context` se sigue aplicando a los ficheros de los módulos.
 
 ## Qué puede importar qué
 
-Esto es lo que permiten las reglas de imports (`context-imports`, `module-imports`, `schema-imports`, `frontend-imports`), con los contextos `tasks` y `chat` como ejemplo:
+Esto es lo que permiten las reglas de imports (`context-imports`, `module-imports`, `schema-imports`, `app-imports`), con los contextos `tasks` y `chat` como ejemplo:
 
 ```mermaid
 flowchart TD
@@ -73,7 +73,7 @@ flowchart TD
   task["módulo task"] -->|"cualquier fichero"| own["ficheros propios de task"]
   task -->|"import type: .module.ts, .schema.ts, events/; errors/"| project["módulo project"]
   schema["task.schema.ts"] -->|"solo"| deps["zod, @newt-js/core, value-objects/, import type de otros *.schema.ts"]
-  frontend["app de tasks"] -->|"solo import type"| schemas["*.schema.ts de tasks"]
+  app["app de tasks"] -->|"solo import type"| schemas["*.schema.ts de tasks"]
 ```
 
 Cada regla se describe en las secciones siguientes.
@@ -171,7 +171,7 @@ Que el schema de otro módulo llegue solo como tipos lo dice `newt/module-import
 
 Por qué: el schema es el contrato del módulo; dice qué son los datos, no cómo funciona el módulo.
 
-### newt/frontend-imports
+### newt/app-imports
 
 La app de un contexto importa sus propios ficheros y, solo como tipos, los schemas de su contexto. Nunca código del servidor: ni módulos, ni repositorios, ni otros contextos, y `@newt-js/*`, `bun`, `bun:*` y los módulos de Node solo como tipos.
 

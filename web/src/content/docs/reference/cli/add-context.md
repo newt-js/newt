@@ -30,7 +30,7 @@ It also takes the [global flags](/reference/cli/overview/#global-flags).
 ## Name rules
 
 - Lowercase letters and digits, words joined by `-`, starting with a letter: `tasks`, `web-session`.
-- Not `api`: its frontend would be served at `/api`, where the routes are.
+- Not `api`: its app would be served at `/api`, where the routes are.
 - With Postgres or MySQL, the database name is `<backend>__<context>`; with S3, the bucket is `<backend>--<context>`. Each must fit in 63 characters.
 
 From `web-session`, newt makes `WebSession` (class names), `webSession` (variables) and `WEB_SESSION` (environment variables).

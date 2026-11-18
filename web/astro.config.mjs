@@ -79,7 +79,7 @@ export default defineConfig({
             { slug: 'guides/authentication' },
             { slug: 'guides/testing' },
             { label: 'Databases', translations: { es: 'Bases de datos' }, items: [{ autogenerate: { directory: 'guides/databases' } }] },
-            { slug: 'guides/frontend' },
+            { slug: 'guides/app' },
             { slug: 'guides/monorepo' },
             { slug: 'guides/deploy' },
             { slug: 'guides/scaling' },

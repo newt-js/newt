@@ -22,7 +22,7 @@ This page lists everything you configure in a newt project: its files, its scrip
 | `src/env.ts` | `requiredEnv(name)`: reads a variable or stops with `<NAME> is not set: see .env.example`. Only written when a store needs one. |
 | `src/contexts.ts` | Which contexts the backend opens. |
 | `src/auth.ts` | Who calls the backend: see [Authentication](/guides/authentication/). |
-| `src/contexts/<context>/app/tsconfig.json` | TypeScript for a context's app (after `newt add frontend`). |
+| `src/contexts/<context>/app/tsconfig.json` | TypeScript for a context's app (after `newt add app`). |
 
 :::note
 When a command adds variables, it appends the missing ones to `.env` and `.env.example` and never changes a value you already have.
@@ -257,7 +257,7 @@ const base = new ContextBase({
 }
 ```
 
-`exclude` and `references` for the apps appear after `newt add frontend`. Each app has its own `tsconfig.json`, with `DOM` in `lib`, `"jsx": "react-jsx"` and `"composite": true`, so `bun check -b` checks it as a project of its own. Its `rootDir` is the context, and it includes the context's schemas with their value objects and errors, so the app type-checks the DTOs it imports.
+`exclude` and `references` for the apps appear after `newt add app`. Each app has its own `tsconfig.json`, with `DOM` in `lib`, `"jsx": "react-jsx"` and `"composite": true`, so `bun check -b` checks it as a project of its own. Its `rootDir` is the context, and it includes the context's schemas with their value objects and errors, so the app type-checks the DTOs it imports.
 
 ## ESLint
 

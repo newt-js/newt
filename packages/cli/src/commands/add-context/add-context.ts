@@ -28,7 +28,7 @@ export const ADD_CONTEXT = defineCommand({
     }
     const names = contextNames(name)
     if (name === 'api') {
-      throw new CommandError("'api' cannot name a context: its frontend would be served at /api, where the backend's routes are")
+      throw new CommandError("'api' cannot name a context: its app would be served at /api, where the backend's routes are")
     }
     const backend = await findBackend(cwd, options.backend)
     const { database, files } = await backendStores(backend)

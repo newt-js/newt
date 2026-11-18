@@ -334,7 +334,7 @@ Las opciones de `serve` que más vas a tocar:
 | `maxBodyBytes` | Límite del cuerpo por defecto del servidor. |
 | `securityHeaders` | Cabeceras que se añaden a toda respuesta. Por defecto `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` y `X-Frame-Options: DENY`. `false` las quita; un valor `null` quita una. |
 | `hsts` | `true` añade `Strict-Transport-Security` durante un año. |
-| `csp`, `proxy` | La Content-Security-Policy de las apps compiladas de los contextos, y los caminos que se reenvían a otro servidor. La app de un contexto se sirve en `/<contexto>`: mira [Añadir un frontend](/es/guides/frontend/). |
+| `csp`, `proxy` | La Content-Security-Policy de las apps compiladas de los contextos, y los caminos que se reenvían a otro servidor. La app de un contexto se sirve en `/<contexto>`: mira [Añadir una app](/es/guides/app/). |
 
 :::danger
 Pon en `trustProxy` solo el número de proxies que tienes de verdad. Con un número mayor, un cliente puede falsear su IP en `X-Forwarded-For` y saltarse los límites por IP.

@@ -6,17 +6,17 @@ import { CONTEXTS_FOLDER }       from '../../../project/backend-contexts/backend
 import { contextToRun }          from '../../context/files/context-ts'
 import { quoted }                from '../../quoted/quoted'
 import type { TemplateVersions } from '../../template-versions/template-versions'
+import { APP_TSCONFIG_JSON }     from '../files/app-files'
+import { MAIN_TSX }              from '../files/app-files'
+import { appTsx }                from '../files/app-files'
+import { baseTs }                from '../files/app-files'
+import { indexHtml }             from '../files/app-files'
 import { appTest }               from '../files/backend-files'
 import { contextToRunWithApp }   from '../files/backend-files'
-import { APP_TSCONFIG_JSON }     from '../files/frontend-files'
-import { MAIN_TSX }              from '../files/frontend-files'
-import { appTsx }                from '../files/frontend-files'
-import { baseTs }                from '../files/frontend-files'
-import { indexHtml }             from '../files/frontend-files'
 
-export type FrontendTemplateOptions = { backend: string, context: ContextNames, versions: TemplateVersions }
+export type AppTemplateOptions = { backend: string, context: ContextNames, versions: TemplateVersions }
 
-export type BuiltFrontendOptions = { backend: string, context: ContextNames, fromContext: string, fromSrc: string }
+export type BuiltAppOptions = { backend: string, context: ContextNames, fromContext: string, fromSrc: string }
 
 /** What makes the context serve its app at /<context>: the app given in <ctx>.context.ts, and a test that it answers. */
 function servedAt(backend: string, context: ContextNames, app: string, imports: string[], built?: string): FileChange[] {
@@ -28,12 +28,12 @@ function servedAt(backend: string, context: ContextNames, app: string, imports: 
 }
 
 /** An app built elsewhere, its folder `fromContext` (from the context's folder), served as it is at /<context>. */
-export function builtFrontendTemplate({ backend, context, fromContext, fromSrc }: BuiltFrontendOptions): FileChange[] {
+export function builtAppTemplate({ backend, context, fromContext, fromSrc }: BuiltAppOptions): FileChange[] {
   return servedAt(backend, context, `join(import.meta.dir, ${quoted(fromContext)})`, [], quoted(fromSrc))
 }
 
 /** A React app of a context, in its app/, with its own tsconfig, served at /<context>. */
-export function frontendTemplate({ backend, context, versions }: FrontendTemplateOptions): FileChange[] {
+export function appTemplate({ backend, context, versions }: AppTemplateOptions): FileChange[] {
   const at = (path: string) => join(backend, path)
   const inContext = `${CONTEXTS_FOLDER}/${context.folder}/app`
   const app = at(inContext)

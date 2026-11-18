@@ -30,7 +30,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 ## Reglas del nombre
 
 - Letras minúsculas y dígitos, palabras unidas por `-`, empezando por una letra: `tasks`, `web-session`.
-- No `api`: su frontend se serviría en `/api`, donde están las rutas.
+- No `api`: su app se serviría en `/api`, donde están las rutas.
 - Con Postgres o MySQL, la base de datos se llama `<backend>__<contexto>`; con S3, el bucket es `<backend>--<contexto>`. Cada uno debe caber en 63 caracteres.
 
 De `web-session`, newt saca `WebSession` (nombres de clases), `webSession` (variables) y `WEB_SESSION` (variables de entorno).

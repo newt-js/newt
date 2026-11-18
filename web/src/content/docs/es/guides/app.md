@@ -1,16 +1,16 @@
 ---
-title: Añadir un frontend
+title: Añadir una app
 description: Da a un contexto una aplicación React, servida por el mismo backend en la ruta del propio contexto.
 sidebar:
   order: 5
 ---
 
-La app de un contexto es una aplicación web que el backend sirve junto a la API del contexto. `newt add frontend` da a un contexto una aplicación React, empaquetada por Bun y servida en `/<contexto>`, sin un servidor aparte ni un paso de build.
+La app de un contexto es una aplicación web que el backend sirve junto a la API del contexto. `newt add app` da a un contexto una aplicación React, empaquetada por Bun y servida en `/<contexto>`, sin un servidor aparte ni un paso de build.
 
 ## Añade uno
 
 ```sh
-newt add frontend tasks
+newt add app tasks
 ```
 
 ```txt
@@ -77,7 +77,7 @@ import app from './app/index.html'
 
 ## Mientras desarrollas
 
-`bun run dev` reinicia el backend cuando cambias código del servidor. El backend generado no activa el modo de desarrollo de Bun, así que la página se empaqueta una vez: después de cambiar el frontend, reinicia `bun run dev` para verlo.
+`bun run dev` reinicia el backend cuando cambias código del servidor. El backend generado no activa el modo de desarrollo de Bun, así que la página se empaqueta una vez: después de cambiar la app, reinicia `bun run dev` para verlo.
 
 Para tener recarga en caliente en el navegador, activa `development` en `src/backend.ts`:
 
@@ -131,7 +131,7 @@ export function App() {
 Lee el `code` de una respuesta de error, como `task.not_found`, para decidir qué muestra la página. Consulta [errores](/es/concepts/errors/).
 :::
 
-- La app importa sus propios ficheros y, con `import type`, los schemas de su contexto: nunca el código del servidor. Lo comprueba la regla [`frontend-imports`](/es/reference/lint/#newtfrontend-imports).
+- La app importa sus propios ficheros y, con `import type`, los schemas de su contexto: nunca el código del servidor. Lo comprueba la regla [`app-imports`](/es/reference/lint/#newtapp-imports).
 - Dale `BASE` como base a un router de cliente, como el `basename` de React Router.
 
 ## Una app compilada aparte
@@ -139,7 +139,7 @@ Lee el `code` de una respuesta de error, como `task.not_found`, para decidir qu�
 Si compilas tu app con otra herramienta, el contexto puede servir la carpeta compilada:
 
 ```sh
-newt add frontend tasks --built web/dist
+newt add app tasks --built web/dist
 ```
 
 - `--built` recibe la carpeta que contiene el `index.html` compilado.
@@ -154,7 +154,7 @@ La carpeta no puede contener el backend, porque se serviría todo lo que hay den
 ## Opciones
 
 ```sh
-newt add frontend <context> [--built <folder>] [--backend <folder>]
+newt add app <context> [--built <folder>] [--backend <folder>]
 ```
 
 | Opción | Qué hace |
@@ -162,4 +162,4 @@ newt add frontend <context> [--built <folder>] [--backend <folder>]
 | `--built` | sirve una carpeta compilada aparte, en vez de escribir una aplicación React |
 | `--backend` | qué backend, en un monorepo con varios |
 
-Consulta la [referencia de `newt add frontend`](/es/reference/cli/add-frontend/).
+Consulta la [referencia de `newt add app`](/es/reference/cli/add-app/).

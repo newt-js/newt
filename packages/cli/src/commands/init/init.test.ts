@@ -11,8 +11,8 @@ import { writeBunInitProject } from '../../testing/bun-init-project/bun-init-pro
 import { checkGenerated }      from '../../testing/check-generated/check-generated'
 import { generate }            from '../../testing/generate/generate'
 import { monorepoProject }     from '../../testing/monorepo-project/monorepo-project'
+import { ADD_APP }             from '../add-app/add-app'
 import { ADD_CONTEXT }         from '../add-context/add-context'
-import { ADD_FRONTEND }        from '../add-frontend/add-frontend'
 import { ADD_MODULE }          from '../add-module/add-module'
 import { INIT }                from './init'
 
@@ -204,12 +204,12 @@ describe('newt init', () => {
     ])
   })
 
-  test("over bun init, a frontend completes bun init's tsconfig, comments and all, and passes its checks", async () => {
+  test("over bun init, an app completes bun init's tsconfig, comments and all, and passes its checks", async () => {
     const folder = join(await emptyFolder(), 'shop')
     await writeBunInitProject(folder)
     await runCommand(INIT, ['.'], { cwd: folder, ask: null })
     await runCommand(ADD_CONTEXT, ['sales'], { cwd: folder, ask: null })
-    const report = JSON.parse((await runCommand(ADD_FRONTEND, ['sales', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
+    const report = JSON.parse((await runCommand(ADD_APP, ['sales', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
     expect(report.warnings).toEqual([])
     expect(await Bun.file(join(folder, 'tsconfig.json')).text()).toContain('    // Bundler mode\n')
     expect(await checkGenerated(folder)).toEqual([])
