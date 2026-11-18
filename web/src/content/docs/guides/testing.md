@@ -12,7 +12,6 @@ newt tests are plain `bun test` files that run your real modules on a database i
 | File | What it tests |
 |---|---|
 | `src/backend.test.ts` | The whole backend starts and answers its health route |
-| `src/frontends.test.ts` | Each frontend's page is served (only with a frontend) |
 | `<module>.module.test.ts` | One module: its use cases and routes |
 | `<value-object>.test.ts` | One value object's rules |
 | `src/test-database.ts` | Not a test: the database the module tests open, on Postgres or MySQL only |

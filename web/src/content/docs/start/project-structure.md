@@ -32,8 +32,6 @@ newthub/
     ├── stores.ts
     ├── auth.ts
     ├── env.ts
-    ├── frontends.ts
-    ├── frontends.test.ts
     └── contexts/
         └── tasks/
             ├── tasks.context.ts
@@ -43,10 +41,11 @@ newthub/
             │   ├── 00001_task_down.sql
             │   ├── 00002_project_up.sql
             │   └── 00002_project_down.sql
-            ├── frontend/
+            ├── app/
             │   ├── index.html
             │   ├── main.tsx
             │   ├── app.tsx
+            │   ├── base.ts
             │   └── tsconfig.json
             └── modules/
                 ├── project/
@@ -147,13 +146,10 @@ Delete `data/` to start again from empty databases. Tests never use it: they run
 | `stores.ts` | opens each context's database and file storage |
 | `auth.ts` | `authenticate`: who is calling |
 | `env.ts` | `requiredEnv`, for variables the backend needs |
-| `frontends.ts` | the frontends the backend serves |
-| `frontends.test.ts` | checks that each frontend's page is served |
 
 - `backend.ts` also picks the cluster, which is what several instances of the backend share. See [running several instances](/guides/scaling/).
 - `stores.ts` has a `memory` mode for tests: an in-memory database with the migrations, and in-memory files.
 - `auth.ts` is explained in [authentication](/guides/authentication/).
-- `frontends.ts` and `frontends.test.ts` appear with your first `newt add frontend`. See [adding a frontend](/guides/frontend/).
 
 ## A context: `src/contexts/<context>/`
 
@@ -162,11 +158,11 @@ Delete `data/` to start again from empty databases. Tests never use it: they run
 | `<context>.context.ts` | opens the context: database, router, storage, modules |
 | `<context>-modules.ts` | creates the modules and hands each the ones it uses |
 | `migrations/` | SQL files that create and change the tables |
-| `frontend/` | the context's React app, if it has one |
+| `app/` | the context's React app, if it has one, served at `/<context>` |
 | `modules/` | one folder per module |
 
 - Migrations come in pairs: `<number>_<table>_up.sql` makes the change, `<number>_<table>_down.sql` undoes it. The backend runs the pending ones when it opens the database. See [database and migrations](/concepts/database/).
-- The context's routes live under `/<context>/api/`, and its frontend at `/<context>`.
+- The context's routes live under `/<context>/api/`, and its app at `/<context>`.
 
 ## A module: `modules/<module>/`
 

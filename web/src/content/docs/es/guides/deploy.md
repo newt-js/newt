@@ -177,4 +177,4 @@ Pon en `trustProxy` solo el número de proxies que tienes de verdad. Si es mayor
 
 ## Frontends
 
-Un backend sirve sus frontends desde el mismo proceso. Cómo se construye y se sirve cada uno está en [Añadir un frontend](/es/guides/frontend/).
+Un backend sirve las apps de sus contextos desde el mismo proceso. Cómo se construye y se sirve cada uno está en [Añadir un frontend](/es/guides/frontend/).

@@ -1,11 +1,11 @@
 ---
 title: Añadir un frontend
-description: Sirve una aplicación React de un contexto desde el mismo backend, en la ruta del propio contexto.
+description: Da a un contexto una aplicación React, servida por el mismo backend en la ruta del propio contexto.
 sidebar:
   order: 5
 ---
 
-Un frontend es una aplicación web que el backend sirve junto a su API. `newt add frontend` da a un contexto una aplicación React, empaquetada por Bun y servida en `/<contexto>`, sin un servidor aparte ni un paso de build.
+La app de un contexto es una aplicación web que el backend sirve junto a la API del contexto. `newt add frontend` da a un contexto una aplicación React, empaquetada por Bun y servida en `/<contexto>`, sin un servidor aparte ni un paso de build.
 
 ## Añade uno
 
@@ -14,15 +14,15 @@ newt add frontend tasks
 ```
 
 ```txt
-  created  src/contexts/tasks/frontend/index.html
-  created  src/contexts/tasks/frontend/main.tsx
-  created  src/contexts/tasks/frontend/app.tsx
-  created  src/contexts/tasks/frontend/tsconfig.json
+  created  src/contexts/tasks/app/index.html
+  created  src/contexts/tasks/app/main.tsx
+  created  src/contexts/tasks/app/app.tsx
+  created  src/contexts/tasks/app/base.ts
+  created  src/contexts/tasks/app/tsconfig.json
   updated  package.json
   updated  tsconfig.json
-  created  src/frontends.ts
-  created  src/frontends.test.ts
-  updated  src/backend.ts
+  updated  src/contexts/tasks/tasks.context.ts
+  updated  src/backend.test.ts
 
 Next steps:
   bun install
@@ -31,26 +31,26 @@ Next steps:
 
 Ejecuta `bun install` para instalar React, luego `bun run dev`, y abre http://localhost:3000/tasks.
 
-El contexto tiene que existir antes. Cada contexto tiene como mucho un frontend, en `/<contexto>`.
+El contexto tiene que existir antes. Cada contexto tiene como mucho una app, en `/<contexto>`.
 
 ## Lo que escribe
 
 | Fichero | Para qué sirve |
 |---|---|
-| `frontend/index.html` | la página; carga `main.tsx` |
-| `frontend/main.tsx` | monta la aplicación React en `#root` |
-| `frontend/app.tsx` | tu aplicación |
-| `frontend/tsconfig.json` | TypeScript para el navegador, con JSX y el DOM |
-| `src/frontends.ts` | los frontends que sirve el backend |
-| `src/frontends.test.ts` | comprueba que se sirve la página de cada uno |
+| `app/index.html` | la página; carga `main.tsx` |
+| `app/main.tsx` | monta la aplicación React en `#root` |
+| `app/app.tsx` | tu aplicación |
+| `app/base.ts` | dónde se sirve la app, `/tasks`, y su API, `/tasks/api` |
+| `app/tsconfig.json` | TypeScript para el navegador, con JSX, el DOM y los schemas del contexto |
 
-También cambia tres ficheros:
+También cambia cuatro ficheros:
 
 - `package.json`: añade `react`, `react-dom` y sus tipos.
-- `tsconfig.json`: deja fuera `src/contexts/*/frontend` y referencia el `tsconfig.json` propio del frontend, para que `bun run typecheck` compruebe los dos.
-- `src/backend.ts`: pasa `frontend: frontends` al servidor.
+- `tsconfig.json`: deja fuera `src/contexts/*/app` y referencia el `tsconfig.json` propio de la app, para que `bun run typecheck` compruebe los dos.
+- `src/contexts/tasks/tasks.context.ts`: entrega su app para ejecutarla, junto a su router.
+- `src/backend.test.ts`: comprueba que se sirve la página de la app.
 
-```ts title="src/contexts/tasks/frontend/app.tsx"
+```ts title="src/contexts/tasks/app/app.tsx"
 export function App() {
   return <h1>Tasks</h1>
 }
@@ -58,27 +58,22 @@ export function App() {
 
 ## Cómo se sirve
 
-```ts title="src/frontends.ts"
-import type { FrontendMount } from '@newt-js/core/http'
-import tasksFrontend from './contexts/tasks/frontend/index.html'
+El contexto entrega su app para ejecutarla, junto a su router:
 
-export const frontends: FrontendMount[] = [
-  { path: '/tasks', app: tasksFrontend },
-]
+```ts title="src/contexts/tasks/tasks.context.ts"
+import app from './app/index.html'
+
+  static async open(platform: Platform, stores: Stores): Promise<ContextToRun> {
+    // …
+    return { context: new Tasks_Context(base, tasksModules(base, router)), router, app }
+  }
 ```
 
-Al importar un fichero `.html`, Bun obtiene un HTML bundle: empaqueta la página con sus scripts y estilos y sirve el resultado.
+`app` es un import de HTML o la carpeta de una aplicación ya compilada. Al importar un fichero `.html`, Bun obtiene un HTML bundle: empaqueta la página con sus scripts y estilos y sirve el resultado.
 
 - `/tasks` y cualquier ruta por debajo, como `/tasks/board/12`, responden con la página, así que tu aplicación puede tener sus propias rutas en el cliente.
-- La API sigue bajo `/<contexto>/api/`, a su lado.
-
-Un `FrontendMount` recibe:
-
-| Campo | Qué es |
-|---|---|
-| `path` | dónde se sirve, como `/tasks` |
-| `app` | un import de HTML, o la carpeta de una aplicación ya compilada |
-| `publicFolder` | opcional: una carpeta cuyos ficheros se sirven tal cual bajo `path` |
+- `/tasks/api/…` sigue siendo la API del contexto, y `/tasks/health-check` su salud: una ruta ahí que no coge ninguna ruta da 404, nunca la página.
+- Las apps de dos contextos nunca se pisan: cada una está bajo su contexto.
 
 ## Mientras desarrollas
 
@@ -92,7 +87,6 @@ return runContexts(contexts, {
   serve: {
     port,
     health: true,
-    frontend: frontends,
     development: Bun.env.NODE_ENV !== 'production',
   },
 })
@@ -106,18 +100,18 @@ Deja `development` desactivado en producción. En modo de desarrollo, Bun sirve 
 
 ## Llama a la API
 
-La página y la API comparten origen, así que llama a la API con una URL relativa:
+La página y la API comparten origen, así que llama a la API por su ruta. `base.ts` la guarda, y la app importa los tipos de los schemas de su contexto, así nunca copia un DTO a mano:
 
-```tsx title="src/contexts/tasks/frontend/app.tsx"
+```tsx title="src/contexts/tasks/app/app.tsx"
 import { useEffect, useState } from 'react'
-
-type Task = { id: string, name: string }
+import type { TaskDTO } from '../modules/task/task.schema'
+import { API } from './base'
 
 export function App() {
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [tasks, setTasks] = useState<TaskDTO[]>([])
 
   useEffect(() => {
-    fetch('/tasks/api/tasks')
+    fetch(`${API}/tasks`)
       .then(response => response.json())
       .then(page => setTasks(page.items))
   }, [])
@@ -138,9 +132,12 @@ export function App() {
 Lee el `code` de una respuesta de error, como `task.not_found`, para decidir qué muestra la página. Consulta [errores](/es/concepts/errors/).
 :::
 
-## Un frontend compilado aparte
+- La app importa sus propios ficheros y, con `import type`, los schemas de su contexto: nunca el código del servidor. Lo comprueba la regla [`frontend-imports`](/es/reference/lint/#newtfrontend-imports).
+- Dale `BASE` como base a un router de cliente, como el `basename` de React Router.
 
-Si compilas tu frontend con otra herramienta, el backend puede servir la carpeta compilada:
+## Una app compilada aparte
+
+Si compilas tu app con otra herramienta, el contexto puede servir la carpeta compilada:
 
 ```sh
 newt add frontend tasks --built web/dist
@@ -150,6 +147,7 @@ newt add frontend tasks --built web/dist
 - Compílalo para `/<contexto>/`, como `vite build --base=/tasks/`, o sus recursos responderán 404.
 - Mientras esa carpeta no tenga `index.html`, `/tasks` responde 503.
 - Los ficheros que existen se sirven tal cual. Cualquier otra ruta bajo `/tasks` recibe `index.html`.
+- El contexto la entrega como `app: join(import.meta.dir, '../../../web/dist')`, desde su propia carpeta.
 - Sus páginas HTML llevan una Content-Security-Policy y `X-Frame-Options: DENY`. Cambia la política con la opción `csp` del servidor.
 
 La carpeta no puede contener el backend, porque se serviría todo lo que hay dentro, `.env` incluido.

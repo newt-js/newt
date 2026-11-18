@@ -1,11 +1,11 @@
 ---
 title: newt add frontend
-description: Añade un frontend React a un contexto, servido por el backend en /<context>.
+description: Añade una app React a un contexto, servida por el backend en /<context>.
 sidebar:
   order: 14
 ---
 
-`newt add frontend` añade una web a un contexto, servida por el mismo backend en `/<context>`, como `/tasks`. Escribe una pequeña app React que empaqueta Bun, o sirve una que construyes en otro sitio.
+`newt add frontend` da a un contexto su app, servida por el mismo backend en `/<context>`, como `/tasks`. Escribe una pequeña app React que empaqueta Bun, o sirve una que construyes en otro sitio.
 
 ## Uso
 
@@ -23,12 +23,12 @@ newt add frontend <context> [options]
 
 | Opción | Por defecto | Significado |
 |---|---|---|
-| `--built <folder>` | ninguna | Sirve un frontend construido en otro sitio, desde la carpeta de su `index.html` |
+| `--built <folder>` | ninguna | Sirve una app construida en otro sitio, desde la carpeta de su `index.html` |
 | `--backend <folder>` | en el que estás | El backend, en un monorepo con varios |
 
 También acepta los [flags globales](/es/reference/cli/overview/#flags-globales).
 
-- Sin `--built`, newt escribe una app React en `src/contexts/<context>/frontend/`.
+- Sin `--built`, newt escribe una app React en `src/contexts/<context>/app/`.
 - Con `--built`, la carpeta tiene que estar construida para `/<context>/`, como con `vite build --base=/<context>/`. Su ruta es relativa a donde ejecutas el comando.
 
 ## Qué escribe
@@ -38,34 +38,33 @@ newt add frontend tasks
 ```
 
 ```text
-  created  src/contexts/tasks/frontend/index.html
-  created  src/contexts/tasks/frontend/main.tsx
-  created  src/contexts/tasks/frontend/app.tsx
-  created  src/contexts/tasks/frontend/tsconfig.json
+  created  src/contexts/tasks/app/index.html
+  created  src/contexts/tasks/app/main.tsx
+  created  src/contexts/tasks/app/app.tsx
+  created  src/contexts/tasks/app/base.ts
+  created  src/contexts/tasks/app/tsconfig.json
   updated  package.json
   updated  tsconfig.json
-  created  src/frontends.ts
-  created  src/frontends.test.ts
-  updated  src/backend.ts
+  updated  src/contexts/tasks/tasks.context.ts
+  updated  src/backend.test.ts
 
 Next steps:
   bun install
   bun run dev, and open /tasks
 ```
 
-```ts title="src/frontends.ts"
-import type { FrontendMount } from '@newt-js/core/http'
-import tasksFrontend from './contexts/tasks/frontend/index.html'
-
-export const frontends: FrontendMount[] = [
-  { path: '/tasks', app: tasksFrontend },
-]
+```ts title="src/contexts/tasks/tasks.context.ts"
+import app from './app/index.html'
+// …
+    return { context: new Tasks_Context(base, tasksModules(base, router)), router, app }
 ```
 
+- `app/base.ts` guarda dónde se sirve la app, `BASE`, y su API, `API`.
+- `app/tsconfig.json` recoge también los schemas del contexto, sus value objects y sus errores, para que la app compruebe los tipos de los DTOs que importa.
 - `package.json` recibe `react` y `react-dom`, con `@types/react` y `@types/react-dom` como devDependencies.
-- `tsconfig.json` deja fuera las carpetas de los frontends y referencia el `tsconfig.json` propio del frontend.
-- `src/backend.ts` pasa `frontend: frontends` a `serve`.
-- Con `--built web/dist`, solo cambian `src/frontends.ts`, `src/frontends.test.ts` y `src/backend.ts`, y el montaje es `{ path: '/tasks', app: join(import.meta.dir, '../web/dist') }`.
+- `tsconfig.json` deja fuera las carpetas de las apps y referencia el `tsconfig.json` propio de la app.
+- `src/backend.test.ts` recibe un test de que se sirve la página de la app.
+- Con `--built web/dist`, solo cambian `tasks.context.ts` y `src/backend.test.ts`: el contexto entrega `app: join(import.meta.dir, '../../../web/dist')`, y el test se ejecuta cuando la carpeta tiene un `index.html`.
 
 ## Avisos
 
@@ -84,7 +83,7 @@ Con `--built`: constrúyelo en la carpeta para `/<context>/`, o sus assets respo
 
 - **Falta el contexto**: `newt add frontend takes the context, as in newt add frontend sales`.
 - **Un contexto que el backend no tiene**: rechazado; añádelo con [`newt add context`](/es/reference/cli/add-context/).
-- **`/<context>` ya sirve otro frontend en `src/frontends.ts`**: rechazado; quita ese primero.
+- **El contexto ya entrega una app, en `<context>.context.ts`**: rechazado; quita esa primero.
 - **Una carpeta `--built` que contiene el backend**: rechazado, porque se serviría todo lo que hay dentro, `.env` incluido.
 
 :::danger

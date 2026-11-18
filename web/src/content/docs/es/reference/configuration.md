@@ -22,8 +22,7 @@ Esta página recoge todo lo que configuras en un proyecto newt: sus ficheros, su
 | `src/env.ts` | `requiredEnv(name)`: lee una variable o se detiene con `<NAME> is not set: see .env.example`. Solo existe si algún almacén la necesita. |
 | `src/contexts.ts` | Qué contextos abre el backend. |
 | `src/auth.ts` | Quién llama al backend: mira [Autenticación](/es/guides/authentication/). |
-| `src/frontends.ts` | Los frontends que monta el servidor (tras `newt add frontend`). |
-| `src/contexts/<contexto>/frontend/tsconfig.json` | TypeScript de un frontend (tras `newt add frontend`). |
+| `src/contexts/<contexto>/app/tsconfig.json` | TypeScript de la app de un contexto (tras `newt add frontend`). |
 
 :::note
 Cuando un comando añade variables, agrega las que faltan a `.env` y `.env.example` y nunca cambia un valor que ya tengas.
@@ -38,7 +37,7 @@ El `package.json` de un backend:
 | `dev` | `bun --watch src/index.ts` | Arranca el backend y lo reinicia con cada cambio. |
 | `start` | `bun src/index.ts` | Arranca el backend. |
 | `test` | `bun test` | Ejecuta los tests. |
-| `typecheck` | `bun check -b` | Comprueba los tipos del backend y de los proyectos a los que hace referencia (sus frontends). |
+| `typecheck` | `bun check -b` | Comprueba los tipos del backend y de los proyectos a los que hace referencia (las apps de sus contextos). |
 | `lint` | `bun --bun eslint` | Ejecuta el lint con Bun. |
 
 En un [monorepo](/es/guides/monorepo/), el `package.json` raíz tiene `dev`, `test`, `typecheck` y `lint`, y cada uno ejecuta `bun run --filter '*' <script>` en todos los workspaces.
@@ -157,7 +156,7 @@ export async function startBackend(
   const contexts = await openContexts(platform, stores)
   return runContexts(contexts, {
     platformWithoutContexts: platform,
-    serve: { port, health: true, frontend: frontends },
+    serve: { port, health: true },
   })
 }
 ```
@@ -198,7 +197,6 @@ Las opciones de `serve` que usa el proyecto generado:
 |---|---|---|
 | `port` | El puerto. Obligatoria. | ninguno |
 | `health` | `true` responde a `GET /health-check` con `{ "status": "ok" }` (`503` y `"stopping"` mientras se detiene), y `GET /<contexto>/health-check` para cada contexto que sirve rutas. | desactivado |
-| `frontend` | Los frontends que sirve, de `src/frontends.ts`. | ninguno |
 
 `serve` tiene más opciones (`maxBodyBytes`, `trustProxy`, `securityHeaders`, `hsts`, `csp`, `proxy`, `drainMs`, `idleTimeoutSeconds`, `development`, `publicFolder`, `routes`). Mira [API HTTP](/es/reference/http/).
 
@@ -248,12 +246,12 @@ const base = new ContextBase({
     "noImplicitOverride": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "src/contexts/*/frontend"],
-  "references": [{ "path": "./src/contexts/tasks/frontend" }]
+  "exclude": ["node_modules", "src/contexts/*/app"],
+  "references": [{ "path": "./src/contexts/tasks/app" }]
 }
 ```
 
-El `exclude` y las `references` de los frontends aparecen tras `newt add frontend`. Cada frontend tiene su propio `tsconfig.json`, con `DOM` en `lib`, `"jsx": "react-jsx"` y `"composite": true`, así `bun check -b` lo comprueba como un proyecto aparte.
+El `exclude` y las `references` de las apps aparecen tras `newt add frontend`. Cada app tiene su propio `tsconfig.json`, con `DOM` en `lib`, `"jsx": "react-jsx"` y `"composite": true`, así que `bun check -b` la comprueba como un proyecto aparte. Su `rootDir` es el contexto, e incluye los schemas del contexto con sus value objects y sus errores, para que la app compruebe los tipos de los DTOs que importa.
 
 ## ESLint
 
