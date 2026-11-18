@@ -7,6 +7,7 @@ import { importsOf }   from '../../paths/paths'
 import { modulePlace } from '../../paths/paths'
 import { resolved }    from '../../paths/paths'
 import { rootOf }      from '../../paths/paths'
+import { sameModule }  from '../../paths/paths'
 
 /** What a module offers the others as types alone: its module (the type of the dependency it is given), its DTOs and what it tells. */
 const TYPES = /^(?:[^/]+\.module|[^/]+\.schema|events\/.+)$/
@@ -47,7 +48,7 @@ export const moduleImports: TSESLint.RuleModule<'private' | 'type' | 'barrel'> =
       if (!path) return null
       const imported = modulePlace(path, root) ?? modulePlace(`${path}/index`, root)
       if (!imported) return null
-      if (place && imported.context === place.context && imported.module === place.module) return null
+      if (place && sameModule(imported, place)) return null
       if (VALUES.test(imported.inside)) return null
       if (!TYPES.test(imported.inside)) return { imported, messageId: 'private' as const }
       return isTypeOnly(node) ? null : { imported, messageId: 'type' as const }

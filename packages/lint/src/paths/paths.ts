@@ -11,8 +11,13 @@ import { resolve }      from 'node:path'
 /** What a rule of newt is given: its options, the file and the source it reads. */
 export type Context = Readonly<TSESLint.RuleContext<string, readonly unknown[]>>
 
-/** Where a file of a module is: its context's folder, its module, and its path inside the module. */
-export type Place = { context: string, module: string, inside: string }
+/** Where a file of a module is: its context's folder, its feature's (`null` for a module of none), its module, and its path inside the module. */
+export type Place = { context: string, feature: string | null, module: string, inside: string }
+
+/** That two places are in one module: of one context, one feature and one name. */
+export function sameModule(one: Place, other: Place): boolean {
+  return one.context === other.context && one.feature === other.feature && one.module === other.module
+}
 
 /** A file's path with forward slashes, whatever the system. */
 export function slashed(path: string): string {
@@ -69,19 +74,24 @@ function inProject(file: string, root: string): string {
 }
 
 /**
- * Where a file of a module is: its context (the folder that holds `modules/`), its
- * module, and its path inside the module. `null` for a file of no module. The path is
- * read from the project's root, so a project that lives inside a folder named `modules`
- * is not mistaken for one; a `modules/` at the project's root has the project itself as
- * its context (`.`).
+ * Where a file of a module is: its context (the folder that holds `features/`, or
+ * `modules/` for a module of no feature), its feature, its module, and its path inside
+ * the module. `null` for a file of no module. The path is read from the project's root,
+ * so a project that lives inside a folder named `modules` is not mistaken for one; a
+ * `features/` or `modules/` at the project's root has the project itself as its context (`.`).
  */
 export function modulePlace(file: string, root = ''): Place | null {
   const whole = real(slashed(file))
   const path = inProject(whole, root)
-  const top = path !== whole ? /^\/modules\/([^/]+)\/(.+)$/.exec(path) : null
-  if (top) return { context: '.', module: top[1]!, inside: top[2]! }
+  const inRoot = path !== whole
+  const topFeature = inRoot ? /^\/features\/([^/]+)\/modules\/([^/]+)\/(.+)$/.exec(path) : null
+  if (topFeature) return { context: '.', feature: topFeature[1]!, module: topFeature[2]!, inside: topFeature[3]! }
+  const ofFeature = /\/([^/]+)\/features\/([^/]+)\/modules\/([^/]+)\/(.+)$/.exec(path)
+  if (ofFeature) return { context: ofFeature[1]!, feature: ofFeature[2]!, module: ofFeature[3]!, inside: ofFeature[4]! }
+  const top = inRoot ? /^\/modules\/([^/]+)\/(.+)$/.exec(path) : null
+  if (top) return { context: '.', feature: null, module: top[1]!, inside: top[2]! }
   const match = /\/([^/]+)\/modules\/([^/]+)\/(.+)$/.exec(path)
-  return match ? { context: match[1]!, module: match[2]!, inside: match[3]! } : null
+  return match ? { context: match[1]!, feature: null, module: match[2]!, inside: match[3]! } : null
 }
 
 /** Where a file directly in the folder of the contexts is: in no context, and one no context may import. */

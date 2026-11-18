@@ -5,6 +5,7 @@ import { importsOf }   from '../../paths/paths'
 import { modulePlace } from '../../paths/paths'
 import { resolved }    from '../../paths/paths'
 import { rootOf }      from '../../paths/paths'
+import { sameModule }  from '../../paths/paths'
 
 /** The packages a schema may import: zod, to write it, and newt's core, for its value objects, filters and pages. */
 const PACKAGES = new Set(['zod', CORE])
@@ -40,7 +41,7 @@ export const schemaImports: TSESLint.RuleModule<'package' | 'file'> = {
         return
       }
       const imported = modulePlace(path, root)
-      const own = imported?.context === place.context && imported.module === place.module
+      const own = imported !== null && sameModule(imported, place)
       const contract = imported && (own ? imported.inside.startsWith('value-objects/') : /^[^/]+\.schema$/.test(imported.inside))
       if (!contract) context.report({ node, messageId: 'file', data: { path: specifier, file: place.inside } })
     })
