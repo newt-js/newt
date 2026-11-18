@@ -29,11 +29,12 @@ ${opened.imports}
 import { modulesOf, testContext, type TestContext } from '@newt-js/core/application/testing'
 import { MemoryCluster } from '@newt-js/core/cluster/memory'
 import { HttpRouter } from '@newt-js/core/http'
-import { ${context.camel}Features } from '../../../../${context.folder}-features'
+import { ${context.camel}Features, type ${context.type}Features } from '../../../../${context.folder}-features'
 import type { ${type}_Module } from './${folder}.module'
 
 let context: TestContext
 let router: HttpRouter
+let features: ${context.type}Features
 let ${plural}: ${type}_Module
 let signedIn: boolean
 ${opened.drop ? 'let dropDatabase: () => Promise<void>\n' : ''}
@@ -43,7 +44,8 @@ beforeEach(async () => {
   router = new HttpRouter({ prefix: '/${context.folder}/api', database })
   signedIn = true
   router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
-  ${plural} = modulesOf(${context.camel}Features(context.base, router).${names.feature.camel}).${names.module}
+  features = ${context.camel}Features(context.base, router)
+  ${plural} = modulesOf(features.${names.feature.camel}).${names.module}
 })
 
 ${opened.drop ? 'afterEach(async () => {\n  await context.close()\n  await dropDatabase()\n})' : 'afterEach(() => context.close())'}
