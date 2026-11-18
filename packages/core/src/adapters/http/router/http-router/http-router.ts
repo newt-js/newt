@@ -41,7 +41,7 @@ export class HttpRouter {
   readonly prefix: string
   private readonly defaults: RouteOptions
   private authenticator: Authenticator | null = null
-  private readonly database: Pick<Database, 'records'> | undefined
+  private database: Pick<Database, 'records'> | undefined
   private readonly clock: Clock
 
   constructor({ prefix, database, clock, ...defaults }: HttpRouterOptions = {}) {
@@ -53,6 +53,11 @@ export class HttpRouter {
 
   authenticateWith(authenticator: Authenticator): void {
     this.authenticator = authenticator
+  }
+
+  /** The database that keeps the first answers of its idempotent routes, when it opens after the router. */
+  keepAnswersIn(database: Pick<Database, 'records'>): void {
+    this.database = database
   }
 
   get<Path extends string>(path: Path, route: HttpRoute<Path>, options?: RouteOptions): void {
@@ -135,7 +140,7 @@ export class HttpRouter {
       throw new Error(`${method} ${path} is public and idempotent: a key is kept per person signed in, and a public route's callers are no one, so they would share each other's answers. Leave idempotency out (\`idempotency: false\` under a group's or a router's)`)
     }
     if (!this.database) {
-      throw new Error(`${method} ${path} is idempotent: its router needs a database (HttpRouterOptions.database), which keeps the first answers`)
+      throw new Error(`${method} ${path} is idempotent: its router needs a database (HttpRouterOptions.database, or keepAnswersIn), which keeps the first answers`)
     }
     return { keys: this.database.records<KeptAnswer>('newt_idempotency_key'), clock: this.clock, ...(idempotency === true ? {} : idempotency) }
   }

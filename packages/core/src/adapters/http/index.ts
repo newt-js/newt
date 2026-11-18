@@ -1,5 +1,6 @@
 export * from './body/handle/handle'
 export * from './cors/cors'
+export * from './data/open-data/open-data'
 export * from './errors/cross-origin-refused/cross-origin-refused'
 export * from './errors/malformed-body/malformed-body'
 export * from './errors/method-not-allowed/method-not-allowed'

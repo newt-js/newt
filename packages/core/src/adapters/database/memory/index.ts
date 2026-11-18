@@ -1,3 +1,4 @@
+export * from './memory-adapter/memory-adapter'
 export * from './memory-database/memory-database'
 export * from './memory-outbox/memory-outbox'
 export * from './memory-records/memory-records'
