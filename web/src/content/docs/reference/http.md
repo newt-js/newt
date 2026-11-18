@@ -331,7 +331,7 @@ type ErrorBody = {
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true, frontend: frontends },
+  serve: { port, health: true },
 })
 ```
 
@@ -342,6 +342,7 @@ return runContexts(contexts, {
 | `context` | `BoundedContext` | The context. |
 | `router` | `HttpRouter` | Its routes, served by the shared server (`options.serve`). |
 | `serve` | `ServeOptions` | Gives this context a server of its own. |
+| `app` | `string \| Bun.HTMLBundle` | Its app, served by the shared server at `/<context>`: a built folder or an HTML import. |
 
 `RunContextsOptions`:
 
@@ -404,18 +405,14 @@ type FrontendMount = {
 }
 ```
 
-```ts title="src/frontends.ts"
-export const frontends: FrontendMount[] = [
-  { path: '/tasks', app: tasksFrontend },
-]
-```
+A context's `app` (see [runContexts](#runcontexts)) is served as a `FrontendMount` at `/<context>`; `serve`'s `frontend` mounts others.
 
 | `app` | Served as |
 |---|---|
 | `Bun.HTMLBundle` (an `import x from './index.html'`) | Bun bundles it. Every path under `path` gets the page; `publicFolder` files are served at their own paths. |
 | `string` (a built folder) | Files of the folder. A path with no file gets `index.html`. Dotfiles are never served. No `index.html` → 503. |
 
-Paths start with `/`; two frontends at the same path throw. Routes of the routers win over frontends. See [Adding a frontend](/guides/frontend/).
+Paths start with `/`; two frontends at the same path throw. Routes of the routers win over frontends, and a path under a router's prefix that no route takes is a 404. See [Adding a frontend](/guides/frontend/).
 
 HTML pages of a built folder get `x-frame-options: DENY` and a Content-Security-Policy. Its default (`CONTENT_SECURITY_POLICY`), to which `csp` adds or replaces directives (`null` removes one); hashes of inline scripts are added to `script-src`:
 

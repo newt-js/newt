@@ -6,6 +6,7 @@ import { sep }                   from 'node:path'
 import { codeTokens }            from '../../changes/code-tokens/code-tokens'
 import { indexOfTokens }         from '../../changes/index-of-tokens/index-of-tokens'
 import { contextNames }          from '../../names/context-names/context-names'
+import { CONTEXTS_FOLDER }       from '../../project/backend-contexts/backend-contexts'
 import { backendContexts }       from '../../project/backend-contexts/backend-contexts'
 import { findBackend }           from '../../project/find-backend/find-backend'
 import { builtFrontendTemplate } from '../../templates/frontend/frontend-template/frontend-template'
@@ -17,7 +18,7 @@ import { CommandError }          from '../command-error/command-error'
 
 export const ADD_FRONTEND = defineCommand({
   name: 'add frontend',
-  summary: 'Adds a React frontend to a context, served by the backend at /<context>',
+  summary: 'Adds a React app to a context, served by the backend at /<context>',
   args: '<context>',
   options: {
     built: { type: 'string', value: 'folder', description: 'A frontend built elsewhere, served as it is: the folder of its index.html, built for /<context>/ (vite build --base=/<context>/)' },
@@ -33,13 +34,14 @@ export const ADD_FRONTEND = defineCommand({
     if (!(await backendContexts(backend)).some(each => each.name === context)) {
       throw new CommandError(`The backend has no context ${context}: add it with newt add context ${context}`)
     }
-    const frontends = codeTokens(await Bun.file(join(backend, 'src/frontends.ts')).text().catch(() => ''))
-    const holds = (code: string) => indexOfTokens(frontends, codeTokens(code)) !== -1
+    const contextFile = join(CONTEXTS_FOLDER, context, `${context}.context.ts`)
+    const code = codeTokens(await Bun.file(join(backend, contextFile)).text().catch(() => ''))
+    const holds = (text: string) => indexOfTokens(code, codeTokens(text)) !== -1
     const mounted = (changes: FileChange[]) => {
-      const line = changes.find(change => change.action === 'insert-lines' && change.path.endsWith('frontends.ts'))
-      const again = line?.action === 'insert-lines' && holds(line.lines.join('\n'))
-      if (!again && holds(`path: '/${context}'`)) {
-        throw new CommandError(`src/frontends.ts serves a frontend at /${context} already: take it out of it first to serve another`)
+      const line = changes.find(change => change.action === 'replace-line')
+      const again = line?.action === 'replace-line' && holds(line.with)
+      if (!again && holds('router, app')) {
+        throw new CommandError(`${contextFile} serves an app at /${context} already: take it out of it first to serve another`)
       }
       return changes
     }
@@ -49,9 +51,10 @@ export const ADD_FRONTEND = defineCommand({
         throw new CommandError(`${options.built} holds the backend, and everything in it would be served, .env too: give the folder the frontend is built into, as in web/dist`)
       }
       const fromSrc = relative(join(backend, 'src'), built).split(sep).join('/')
+      const fromContext = relative(join(backend, CONTEXTS_FOLDER, context), built).split(sep).join('/')
       const unbuilt = await Bun.file(join(built, 'index.html')).exists() ? [] : [`${options.built} has no index.html yet: the backend answers 503 at /${context} until it is built`]
       return {
-        changes: mounted(builtFrontendTemplate({ backend: relative(cwd, backend), context: names, fromSrc })),
+        changes: mounted(builtFrontendTemplate({ backend: relative(cwd, backend), context: names, fromContext, fromSrc })),
         warnings: unbuilt,
         nextSteps: [`build it into ${options.built} for /${context}/, as in vite build --base=/${context}/, or its assets answer 404; then bun run dev, and open /${context}/`],
       }

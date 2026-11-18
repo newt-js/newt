@@ -331,7 +331,7 @@ type ErrorBody = {
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true, frontend: frontends },
+  serve: { port, health: true },
 })
 ```
 
@@ -342,6 +342,7 @@ return runContexts(contexts, {
 | `context` | `BoundedContext` | El contexto. |
 | `router` | `HttpRouter` | Sus rutas, servidas por el servidor compartido (`options.serve`). |
 | `serve` | `ServeOptions` | Da a este contexto un servidor propio. |
+| `app` | `string \| Bun.HTMLBundle` | Su app, servida por el servidor compartido en `/<contexto>`: una carpeta compilada o un import de HTML. |
 
 `RunContextsOptions`:
 
@@ -404,18 +405,14 @@ type FrontendMount = {
 }
 ```
 
-```ts title="src/frontends.ts"
-export const frontends: FrontendMount[] = [
-  { path: '/tasks', app: tasksFrontend },
-]
-```
+La `app` de un contexto (mira [runContexts](#runcontexts)) se sirve como un `FrontendMount` en `/<contexto>`; el `frontend` de `serve` monta otros.
 
 | `app` | Se sirve como |
 |---|---|
 | `Bun.HTMLBundle` (un `import x from './index.html'`) | Bun lo empaqueta. Todo camino bajo `path` recibe la página; los ficheros de `publicFolder` se sirven en su propio camino. |
 | `string` (una carpeta compilada) | Los ficheros de la carpeta. Un camino sin fichero recibe `index.html`. Los ficheros que empiezan por punto nunca se sirven. Sin `index.html` → 503. |
 
-Los caminos empiezan por `/`; dos frontends en el mismo camino lanzan un error. Las rutas de los routers ganan a los frontends. Mira [Añadir un frontend](/es/guides/frontend/).
+Los caminos empiezan por `/`; dos frontends en el mismo camino lanzan un error. Las rutas de los routers ganan a los frontends, y un camino bajo el prefijo de un router que no coge ninguna ruta da 404. Mira [Añadir un frontend](/es/guides/frontend/).
 
 Las páginas HTML de una carpeta compilada llevan `x-frame-options: DENY` y una Content-Security-Policy. Esta es la de por defecto (`CONTENT_SECURITY_POLICY`); `csp` añade o reemplaza directivas (`null` quita una), y los hashes de los scripts en línea se añaden a `script-src`:
 

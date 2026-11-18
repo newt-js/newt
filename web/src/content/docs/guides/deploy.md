@@ -177,4 +177,4 @@ Set `trustProxy` only to the number of proxies you really have. Too high, and a 
 
 ## Frontends
 
-A backend serves its frontends from the same process. How each one is built and served is in [Adding a frontend](/guides/frontend/).
+A backend serves its contexts' apps from the same process. How each one is built and served is in [Adding a frontend](/guides/frontend/).

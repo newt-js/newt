@@ -1,28 +1,17 @@
-export const FRONTENDS_START = 'export const frontends: FrontendMount[] = ['
+import type { ContextNames } from '../../../names/context-names/context-names'
+import { contextToRun }      from '../../context/files/context-ts'
 
-export const SRC_FRONTENDS_TS = `import type { FrontendMount } from '@newt-js/core/http'
+/** The line of <ctx>.context.ts that hands the context to run, its app given too. */
+export const contextToRunWithApp = (context: ContextNames, app: string) => contextToRun(context).replace(/ \}$/, `, app${app === 'app' ? '' : `: ${app}`} }`)
 
-${FRONTENDS_START}
-]
-`
-
-export const SRC_FRONTENDS_TEST_TS = `import { expect, test } from 'bun:test'
-import { join } from 'node:path'
-import { startBackend } from './backend'
-import { frontends } from './frontends'
-
-test('the backend serves the page of every frontend, of those built elsewhere the ones built already', async () => {
+/** The test, in src/backend.test.ts, that the backend serves a context's app; a built one, once it is built. */
+export function appTest({ folder }: ContextNames, built?: string): string {
+  const name = built === undefined ? `the backend serves the app of ${folder}` : `the backend serves the app of ${folder}, once built`
+  const head = built === undefined ? `test('${name}'` : `test.skipIf(!(await Bun.file(join(import.meta.dir, ${built}, 'index.html')).exists()))('${name}'`
+  return `${head}, async () => {
   const backend = await startBackend(0, { stores: 'memory' })
-  for (const { path, app } of frontends) {
-    if (typeof app !== 'string' || await Bun.file(join(app, 'index.html')).exists()) {
-      const response = await fetch(new URL(path, backend.server!.url))
-      expect(response.headers.get('content-type')).toContain('text/html')
-    }
-  }
+  const response = await fetch(new URL('/${folder}/any/page', backend.server!.url))
+  expect(response.headers.get('content-type')).toContain('text/html')
   await backend.stop()
-})
-`
-
-export const SERVED = '  return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true } })'
-
-export const SERVED_WITH_FRONTENDS = '  return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true, frontend: frontends } })'
+})`
+}

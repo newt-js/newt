@@ -59,7 +59,7 @@ If you pass `uses`, list every context, even those that use none (`[]`). A missi
 | Every linted file | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable`, and the rules from other plugins |
 | A module's files (`**/modules/<module>/**`) | `module-entity`, `module-files`, `module-imports`, `entity-method-params`, `reaction-queue`, `schema-imports`, `use-case-files`, `module-transactions` |
 | Files in the contexts folder (with `contexts`) | `context-imports`, `route-context`; `module-imports` for files outside the modules |
-| A context's frontend (`<context>/frontend/**/*.{ts,tsx}`, with `contexts`) | `frontend-imports`, `no-disable` |
+| A context's app (`<context>/app/**/*.{ts,tsx}`, with `contexts`) | `frontend-imports`, `no-disable` |
 
 Without `contexts`, `route-context` still runs on module files.
 
@@ -73,7 +73,7 @@ flowchart TD
   task["task module"] -->|"any file"| own["task's own files"]
   task -->|".module.ts, .schema.ts, events/, errors/"| project["project module"]
   schema["task.schema.ts"] -->|"only"| deps["zod, @newt-js/core, value-objects/, other *.schema.ts"]
-  frontend["tasks frontend"] -->|"import type only"| schemas["tasks *.schema.ts"]
+  frontend["tasks app"] -->|"import type only"| schemas["tasks *.schema.ts"]
 ```
 
 Each rule is described in the sections that follow.
@@ -159,10 +159,10 @@ Why: the schema is the module's contract; it says what the data is, not how the 
 
 ### newt/frontend-imports
 
-A context's frontend imports its own files and, as types only, its context's schemas. Never server code: no module, repository or other context, and `@newt-js/*`, `bun`, `bun:*` and Node's modules only as types.
+A context's app imports its own files and, as types only, its context's schemas. Never server code: no module, repository or other context, and `@newt-js/*`, `bun`, `bun:*` and Node's modules only as types.
 
 ```tsx
-// src/contexts/tasks/frontend/app.tsx
+// src/contexts/tasks/app/app.tsx
 import { TaskSchema } from '../modules/task/task.schema'          // wrong
 import type { TaskDTO } from '../modules/task/task.schema'        // right
 ```

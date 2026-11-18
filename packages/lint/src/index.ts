@@ -118,9 +118,9 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     ignores: [MODULES],
     rules: { 'newt/module-imports': 'error' },
   }] : []
-  const frontendRules: Linter.Config[] = contexts ? [{
-    // Frontends are .ts and .tsx, each its own project, whose aliases resolve as in the rest.
-    files: [`${inside ? `${inside}/` : ''}*/frontend/**/*.{ts,tsx}`],
+  const appRules: Linter.Config[] = contexts ? [{
+    // A context's app is .ts and .tsx, each its own project, whose aliases resolve as in the rest.
+    files: [`${inside ? `${inside}/` : ''}*/app/**/*.{ts,tsx}`],
     languageOptions: { parser: tseslint.parser, parserOptions: { projectService: true } },
     processor: keepNoDisable,
     linterOptions: { reportUnusedDisableDirectives: 'error' },
@@ -154,7 +154,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       },
     },
     ...contextRules,
-    ...frontendRules,
+    ...appRules,
     {
       // A module's file among those it lints: an inner list is every pattern of it at once.
       files: files.map(pattern => [pattern, MODULES]),

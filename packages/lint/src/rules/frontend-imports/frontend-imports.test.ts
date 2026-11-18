@@ -4,7 +4,7 @@ import { frontendImports } from './frontend-imports'
 
 const FOLDER = '/repo/src/contexts'
 
-const FRONTEND = `${FOLDER}/sales/frontend`
+const FRONTEND = `${FOLDER}/sales/app`
 
 const options = [{ folder: FOLDER }]
 

@@ -12,7 +12,6 @@ Los tests de newt son ficheros normales de `bun test` que ejecutan tus módulos 
 | Fichero | Qué prueba |
 |---|---|
 | `src/backend.test.ts` | El backend entero arranca y responde a su ruta de salud |
-| `src/frontends.test.ts` | Se sirve la página de cada frontend (solo si hay frontend) |
 | `<module>.module.test.ts` | Un módulo: sus casos de uso y sus rutas |
 | `<value-object>.test.ts` | Las reglas de un value object |
 | `src/test-database.ts` | No es un test: la base de datos que abren los tests de módulo, solo en Postgres o MySQL |

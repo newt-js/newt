@@ -314,7 +314,7 @@ clearSessionCookie(request, 'session', { secure: true })
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true, frontend: frontends },
+  serve: { port, health: true },
 })
 ```
 
@@ -329,7 +329,7 @@ The `serve` options you are most likely to touch:
 | `maxBodyBytes` | Default body limit for the server. |
 | `securityHeaders` | Headers added to every answer. By default `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`. `false` drops them; a `null` value drops one. |
 | `hsts` | `true` adds `Strict-Transport-Security` for a year. |
-| `frontend`, `publicFolder`, `csp`, `proxy` | Serve a frontend next to the API. See [Adding a frontend](/guides/frontend/). |
+| `csp`, `proxy` | The Content-Security-Policy of the contexts' built apps, and paths forwarded to another server. A context's app is served at `/<context>`: see [Adding a frontend](/guides/frontend/). |
 
 :::danger
 Set `trustProxy` only to the number of proxies you really have. With a higher number, a client can fake its IP in `X-Forwarded-For` and slip past IP rate limits.
