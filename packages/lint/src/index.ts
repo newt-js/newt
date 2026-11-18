@@ -18,6 +18,7 @@ import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
 import { moduleNames }             from './rules/module-names/module-names'
+import { modulePlace }             from './rules/module-place/module-place'
 import { moduleTransactions }      from './rules/module-transactions/module-transactions'
 import { keepNoDisable }           from './rules/no-disable/keep-no-disable'
 import { noDisable }               from './rules/no-disable/no-disable'
@@ -38,6 +39,7 @@ export const plugin = {
     'context-imports': contextImports,
     'entity-method-params': entityMethodParams,
     'feature-imports': featureImports,
+    'module-place': modulePlace,
     'framework-tables': frameworkTables,
     'app-imports': appImports,
     'module-entity': moduleEntity,
@@ -115,6 +117,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     rules: {
       'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }],
       'newt/feature-imports': ['error', { folder: given }],
+      'newt/module-place': ['error', { folder: given }],
       'newt/route-context': ['error', { folder: given }],
     },
   }, {
