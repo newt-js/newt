@@ -246,6 +246,17 @@ describe('newt init', () => {
     expect(report.warnings).toEqual(['shop/src/backend.ts runs on the valkey cluster, and newt kept it: change it by hand to run on memory'])
   })
 
+  test('again on a memory backend whose Platform has options, keeps its memory cluster', async () => {
+    const folder = await emptyFolder()
+    await runCommand(INIT, ['shop'], { cwd: folder, ask: null })
+    const backendTs = Bun.file(join(folder, 'shop/src/backend.ts'))
+    await Bun.write(backendTs, (await backendTs.text()).replace('new Platform()', 'new Platform({ logger: new ConsoleLogger() })'))
+    const env = await Bun.file(join(folder, 'shop/.env')).text()
+    const report = JSON.parse((await runCommand(INIT, ['shop', '--cluster', 'valkey', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
+    expect(report.warnings).toEqual(['shop/src/backend.ts runs on the memory cluster, and newt kept it: change it by hand to run on valkey'])
+    expect(await Bun.file(join(folder, 'shop/.env')).text()).toBe(env)
+  })
+
   test('inside a backend is refused', async () => {
     const folder = await emptyFolder()
     await runCommand(INIT, ['shop'], { cwd: folder, ask: null })

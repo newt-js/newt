@@ -2,7 +2,6 @@ import { join }             from 'node:path'
 // --------------------------------------------------------
 import { backendStores }    from '../../../project/backend-stores/backend-stores'
 import { envValues }        from '../../../project/env-values/env-values'
-import { CLUSTERS }         from '../../../templates/backend/clusters'
 import type { ClusterName } from '../../../templates/backend/clusters'
 import type { Stores }      from '../../../templates/stores/stores'
 
@@ -11,9 +10,9 @@ export type AskedChoices = { db?: string | undefined, files?: string | undefined
 export type KeptChoices = { stores: Stores, warnings: string[] }
 
 async function clusterOf(backend: string): Promise<ClusterName | undefined> {
-  const code = await Bun.file(join(backend, 'src/backend.ts')).text().catch(() => '')
-  // the last first: a Valkey backend has a MemoryCluster too, for its tests
-  return (Object.keys(CLUSTERS) as ClusterName[]).toReversed().find(name => CLUSTERS[name].marks.some(mark => code.includes(mark)))
+  const code = await Bun.file(join(backend, 'src/backend.ts')).text().catch(() => null)
+  if (code === null) return undefined
+  return code.includes('new ValkeyCluster(') ? 'valkey' : 'memory'
 }
 
 /** The stores of a backend that is there already, which newt keeps over the ones asked, with a warning for each asked otherwise. */
