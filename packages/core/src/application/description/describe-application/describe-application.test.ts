@@ -25,7 +25,7 @@ class Order_Placed implements DomainEvent<{ id: string }> {
 
 class Product_Module extends Module {
   constructor(base: ContextBase) {
-    super('product', base.useCaseRunner)
+    super('catalog[product]', base.useCaseRunner)
   }
 
   @UseCase()
@@ -39,9 +39,9 @@ class Order_Module extends Module {
   readonly nightly
 
   constructor(base: ContextBase, private readonly deps: Order_Deps) {
-    super('order', base.useCaseRunner, deps)
+    super('sales[order]', base.useCaseRunner, deps)
     this.events = eventsOf(base.bus, { placed: Order_Placed })
-    this.nightly = base.schedules.define('order.nightly', '0 3 * * *')
+    this.nightly = base.schedules.define('sales[order].nightly', '0 3 * * *')
   }
 
   @UseCase()
@@ -55,7 +55,7 @@ class Invoice_Module extends Module {
   readonly orders: EventSource<{ id: string }>
 
   constructor(base: ContextBase, deps: { orders: Order_Module['events'] }) {
-    super('invoice', base.useCaseRunner, deps)
+    super('invoicing[invoice]', base.useCaseRunner, deps)
     this.orders = deps.orders.placed
   }
 
@@ -70,7 +70,7 @@ function contexts() {
   const deps: Order_Deps = { product, payments: { charge: async () => {} }, billing: { invoice: undefined as never } }
   const order = new Order_Module(shop, deps)
   deps.billing.invoice = new Invoice_Module(billing, { orders: order.events })
-  order.events.placed.subscribe(() => {}, { strategy: 'handler', queue: 'invoice.open.on.order.placed', attempts: 3, when: () => true })
+  order.events.placed.subscribe(() => {}, { strategy: 'handler', queue: 'invoicing[invoice].open_on_order.placed', attempts: 3, when: () => true })
   order.events.placed.subscribe(() => {}, { strategy: 'fire-and-forget' })
   return { shop, billing }
 }
@@ -80,16 +80,16 @@ describe('describeApplication', () => {
     const [shop] = describeApplication(Object.values(contexts())).contexts
 
     expect(shop!.name).toBe('shop')
-    expect(shop!.modules.map(module => module.id)).toEqual(['shop/product', 'shop/order'])
+    expect(shop!.modules.map(module => module.id)).toEqual(['shop/catalog[product]', 'shop/sales[order]'])
     const order = shop!.modules[1]!
     expect(order.className).toBe('Order_Module')
     expect(order.useCases).toEqual([
-      { id: 'shop/order.place', name: 'order.place', retryOnConflict: true },
-      { id: 'shop/order.cancel', name: 'order.cancel', retryOnConflict: false },
+      { id: 'shop/sales[order].place', name: 'sales[order].place', retryOnConflict: true },
+      { id: 'shop/sales[order].cancel', name: 'sales[order].cancel', retryOnConflict: false },
     ])
     expect(order.events).toEqual([
       { id: 'shop/order.placed', name: 'order.placed', schedule: null },
-      { id: 'shop/order.nightly', name: 'order.nightly', schedule: { cron: '0 3 * * *' } },
+      { id: 'shop/sales[order].nightly', name: 'sales[order].nightly', schedule: { cron: '0 3 * * *' } },
     ])
   })
 
@@ -97,12 +97,12 @@ describe('describeApplication', () => {
     const [shop, billing] = describeApplication(Object.values(contexts())).contexts
 
     expect(shop!.modules[1]!.deps).toEqual([
-      { name: 'product', kind: 'module', target: 'shop/product' },
+      { name: 'product', kind: 'module', target: 'shop/catalog[product]' },
       { name: 'payments', kind: 'port', target: null },
-      { name: 'billing.invoice', kind: 'module', target: 'billing/invoice' },
+      { name: 'billing.invoice', kind: 'module', target: 'billing/invoicing[invoice]' },
     ])
     const invoice = billing!.modules[0]!
-    expect(invoice.deps).toEqual([{ name: 'orders', kind: 'events', target: 'shop/order', events: ['order.placed'] }])
+    expect(invoice.deps).toEqual([{ name: 'orders', kind: 'events', target: 'shop/sales[order]', events: ['order.placed'] }])
     expect(invoice.events).toEqual([])
     expect(shop!.uses).toEqual(['billing'])
     expect(billing!.uses).toEqual(['shop'])
@@ -111,7 +111,7 @@ describe('describeApplication', () => {
   test('says it in the same bytes as before: a monitor takes a new version of a structure whose hash changed', () => {
     const json = JSON.stringify(describeApplication(Object.values(contexts())))
 
-    expect(new Bun.CryptoHasher('sha256').update(json).digest('hex')).toBe('c8a574c89edaf301b824bbb6534e9274724d4f387ae5ce9362d14fd8fd92b6ea')
+    expect(new Bun.CryptoHasher('sha256').update(json).digest('hex')).toBe('638e1c0b6c008b588389b8f6dab572d0175bcea428b3bce6ff9253fc424dff07')
   })
 
   test('finds modules and events however deep its deps hold them, and keeps a port of plain objects one port', () => {
@@ -120,7 +120,7 @@ describe('describeApplication', () => {
     const order = new Order_Module(shop, { product, payments: { charge: async () => {} }, billing: { invoice: undefined as never } })
     class Deep_Module extends Module {
       constructor(base: ContextBase, deps: object) {
-        super('deep', base.useCaseRunner, deps)
+        super('sales[deep]', base.useCaseRunner, deps)
       }
     }
     const loop: Record<string, unknown> = { product }
@@ -133,12 +133,12 @@ describe('describeApplication', () => {
       byName: new Map([['product', product]]),
     })
 
-    const deep = describeApplication([shop]).contexts[0]!.modules.find(module => module.name === 'deep')!
+    const deep = describeApplication([shop]).contexts[0]!.modules.find(module => module.name === 'sales[deep]')!
     expect(deep.deps).toEqual([
-      { name: 'far.away.product', kind: 'module', target: 'shop/product' },
-      { name: 'far.away.placed', kind: 'events', target: 'shop/order', events: ['order.placed'] },
+      { name: 'far.away.product', kind: 'module', target: 'shop/catalog[product]' },
+      { name: 'far.away.placed', kind: 'events', target: 'shop/sales[order]', events: ['order.placed'] },
       { name: 'mailer', kind: 'port', target: null },
-      { name: 'loop.product', kind: 'module', target: 'shop/product' },
+      { name: 'loop.product', kind: 'module', target: 'shop/catalog[product]' },
       { name: 'list', kind: 'port', target: null },
       { name: 'byName', kind: 'port', target: null },
     ])
@@ -147,18 +147,18 @@ describe('describeApplication', () => {
 
   test('knows a module and an emitter of another installed copy of newt by their brand, which instanceof does not see', () => {
     const shop = new ContextBase({ name: 'shop', platform, database: new MemoryDatabase() })
-    const elsewhere = { name: 'tax', useCaseRunner: { registry: { context: 'billing' } }, [Symbol.for('@newt-js/core/module')]: true }
+    const elsewhere = { name: 'invoicing[tax]', useCaseRunner: { registry: { context: 'billing' } }, [Symbol.for('@newt-js/core/module')]: true }
     const told = { name: 'tax.changed', [Symbol.for('@newt-js/core/event-emitter')]: true }
     expect(elsewhere instanceof Module).toBe(false)
     class Copy_Module extends Module {
       constructor(base: ContextBase, deps: object) {
-        super('copy', base.useCaseRunner, deps)
+        super('sales[copy]', base.useCaseRunner, deps)
       }
     }
     new Copy_Module(shop, { billing: { tax: elsewhere }, changed: told })
 
     expect(describeApplication([shop]).contexts[0]!.modules[0]!.deps).toEqual([
-      { name: 'billing.tax', kind: 'module', target: 'billing/tax' },
+      { name: 'billing.tax', kind: 'module', target: 'billing/invoicing[tax]' },
       { name: 'changed', kind: 'events', target: null, events: ['tax.changed'] },
     ])
   })
@@ -167,7 +167,7 @@ describe('describeApplication', () => {
     const { shop, billing } = contexts()
 
     expect(describeApplication([shop, billing]).contexts[0]!.subscriptions).toEqual([
-      { event: 'shop/order.placed', strategy: 'handler', queue: 'invoice.open.on.order.placed', handler: 'invoice.open', attempts: 3, filtered: true },
+      { event: 'shop/order.placed', strategy: 'handler', queue: 'invoicing[invoice].open_on_order.placed', handler: 'invoicing[invoice].open', attempts: 3, filtered: true },
       { event: 'shop/order.placed', strategy: 'fire-and-forget', queue: null, handler: null, attempts: null, filtered: null },
     ])
     shop.bus.subscribe('order.placed', () => {})()
@@ -180,7 +180,7 @@ describe('describeApplication', () => {
     const again = new Product_Module(shop)
 
     const [product] = describeApplication([shop]).contexts[0]!.modules
-    expect(product!.useCases.map(useCase => useCase.name)).toEqual(['product.get'])
+    expect(product!.useCases.map(useCase => useCase.name)).toEqual(['catalog[product].get'])
     expect(product!.deps).toEqual([])
     expect(shop.useCaseRunner.registry.registeredModules[0]!.instance).toBe(again)
   })

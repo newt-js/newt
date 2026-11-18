@@ -81,7 +81,7 @@ describe('testContext', () => {
       order.push('schedules stopped')
     }
     shop = testContext({ name: 'other', database: new MemoryDatabase(), cluster: new MemoryCluster() })
-    schedules.define('report.daily', '* * * * *')
+    schedules.define('reports[report].daily', '* * * * *')
     worker.start()
     schedules.start()
 

@@ -16,8 +16,8 @@ class Report_Module extends Module {
   readonly nightly
 
   constructor(base: ContextBase, deps: object) {
-    super('report', base.useCaseRunner, deps)
-    this.nightly = base.schedules.define('report.nightly', '0 3 * * *')
+    super('reports[report]', base.useCaseRunner, deps)
+    this.nightly = base.schedules.define('reports[report].nightly', '0 3 * * *')
   }
 
   @UseCase()
@@ -34,17 +34,17 @@ describe('describeModule', () => {
     const { registry } = shop.useCaseRunner
 
     expect(describeModule(registry, registry.registeredModules[0]!, new Map())).toEqual({
-      id: 'shop/report',
+      id: 'shop/reports[report]',
       context: 'shop',
-      name: 'report',
-      feature: null,
+      name: 'reports[report]',
+      feature: 'reports',
       className: 'Report_Module',
       exposes: { useCases: [], events: [] },
       useCases: [
-        { id: 'shop/report.build', name: 'report.build', retryOnConflict: true },
-        { id: 'shop/report.send', name: 'report.send', retryOnConflict: false },
+        { id: 'shop/reports[report].build', name: 'reports[report].build', retryOnConflict: true },
+        { id: 'shop/reports[report].send', name: 'reports[report].send', retryOnConflict: false },
       ],
-      events: [{ id: 'shop/report.nightly', name: 'report.nightly', schedule: { cron: '0 3 * * *' } }],
+      events: [{ id: 'shop/reports[report].nightly', name: 'reports[report].nightly', schedule: { cron: '0 3 * * *' } }],
       deps: [{ name: 'mailer', kind: 'port', target: null }],
     })
   })

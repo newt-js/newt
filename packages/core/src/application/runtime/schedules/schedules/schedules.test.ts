@@ -43,54 +43,55 @@ async function setup() {
 
 describe('Schedules.define', () => {
   test('gives an event named after the schedule, to subscribe to', async () => {
-    expect((await setup()).schedules.define('report.nightly', '0 3 * * *').name).toBe('report.nightly')
+    expect((await setup()).schedules.define('reports[report].nightly', '0 3 * * *').name).toBe('reports[report].nightly')
   })
 
   test('refuses a name not made as an event is, one taken, and a cron expression that is wrong or never due', async () => {
     const { schedules } = await setup()
-    schedules.define('report.nightly', '0 3 * * *')
+    schedules.define('reports[report].nightly', '0 3 * * *')
 
     expect(() => schedules.define('nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
-    expect(() => schedules.define('Report.nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
+    expect(() => schedules.define('report.nightly', '0 3 * * *')).toThrow("A schedule is named as an event, '<feature>[<module>].<name>': 'report.nightly' is not")
+    expect(() => schedules.define('Reports[report].nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
     expect(() => schedules.define('reports[Report].nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
-    expect(schedules.define('reports[report].nightly', '0 3 * * *').name).toBe('reports[report].nightly')
-    expect(() => schedules.define('report.nightly', '0 4 * * *')).toThrow('defined already')
-    expect(() => schedules.define('report.weekly', '0 3 * *')).toThrow('five fields')
-    expect(() => schedules.define('report.never', '0 0 31 2 *')).toThrow('never due')
+    expect(schedules.define('reports[report].daily', '0 3 * * *').name).toBe('reports[report].daily')
+    expect(() => schedules.define('reports[report].nightly', '0 4 * * *')).toThrow('defined already')
+    expect(() => schedules.define('reports[report].weekly', '0 3 * *')).toThrow('five fields')
+    expect(() => schedules.define('reports[report].never', '0 0 31 2 *')).toThrow('never due')
   })
 })
 
 describe('Schedules.start', () => {
   test('looks at once, then waits for the next tick; stopped, it looks no more', async () => {
     const { schedules, log } = await setup()
-    schedules.define('report.nightly', '0 3 * * *')
+    schedules.define('reports[report].nightly', '0 3 * * *')
 
     schedules.start()
     await Bun.sleep(5)
     await schedules.stop()
 
-    expect(log).toEqual(['insert report.nightly'])
+    expect(log).toEqual(['insert reports[report].nightly'])
   })
 })
 
 describe('Schedules.tick', () => {
   test('a schedule that fails keeps none after it from being told, and is tried again at the next tick', async () => {
     const { schedules, log, failing } = await setup()
-    schedules.define('report.broken', '0 3 * * *')
-    schedules.define('report.nightly', '0 3 * * *')
-    failing.add('report.broken')
+    schedules.define('reports[report].broken', '0 3 * * *')
+    schedules.define('reports[report].nightly', '0 3 * * *')
+    failing.add('reports[report].broken')
 
-    await expect(schedules.tick()).rejects.toThrow('report.broken could not be written')
-    expect(log).toEqual(['insert report.nightly'])
+    await expect(schedules.tick()).rejects.toThrow('reports[report].broken could not be written')
+    expect(log).toEqual(['insert reports[report].nightly'])
 
     failing.clear()
     await schedules.tick()
-    expect(log).toEqual(['insert report.nightly', 'insert report.broken'])
+    expect(log).toEqual(['insert reports[report].nightly', 'insert reports[report].broken'])
   })
 
   test('says every schedule that failed, all at once', async () => {
     const { schedules, failing } = await setup()
-    for (const name of ['report.nightly', 'report.weekly']) {
+    for (const name of ['reports[report].nightly', 'reports[report].weekly']) {
       schedules.define(name, '0 3 * * *')
       failing.add(name)
     }
@@ -103,7 +104,7 @@ describe('Schedules.tick', () => {
 
   test('a tick another process wrote at the same time is tried again as any invocation is, no more', async () => {
     const { schedules, conflicts } = await setup()
-    schedules.define('report.nightly', '0 3 * * *')
+    schedules.define('reports[report].nightly', '0 3 * * *')
     conflicts.always = true
 
     await expect(schedules.tick()).rejects.toBeInstanceOf(StaleVersion)
@@ -123,7 +124,7 @@ function told(database: MemoryDatabase, clock: TestClock, failing = { publish: f
     subscribe: () => () => {},
   }
   const schedules = new Schedules(database, bus, new UseCaseRunner(), new Platform({ cluster: new MemoryCluster() }), clock)
-  schedules.define('report.minutely', '* * * * *')
+  schedules.define('reports[report].minutely', '* * * * *')
   return { schedules, dueAts }
 }
 
@@ -146,7 +147,7 @@ describe('Schedules.tick, told on its bus', () => {
     await schedules.tick()
     await schedules.tick()
 
-    expect(dueAts).toEqual(['report.minutely 2026-01-01T03:00:00.000Z'])
+    expect(dueAts).toEqual(['reports[report].minutely 2026-01-01T03:00:00.000Z'])
   })
 
   test('two instances on one database tell each tick once between them', async () => {
@@ -161,9 +162,9 @@ describe('Schedules.tick, told on its bus', () => {
     }
 
     expect([...one.dueAts, ...other.dueAts].sort()).toEqual([
-      'report.minutely 2026-01-01T03:00:00.000Z',
-      'report.minutely 2026-01-01T03:01:00.000Z',
-      'report.minutely 2026-01-01T03:02:00.000Z',
+      'reports[report].minutely 2026-01-01T03:00:00.000Z',
+      'reports[report].minutely 2026-01-01T03:01:00.000Z',
+      'reports[report].minutely 2026-01-01T03:02:00.000Z',
     ])
   })
 
@@ -179,6 +180,6 @@ describe('Schedules.tick, told on its bus', () => {
     failing.publish = false
     await schedules.tick()
 
-    expect(dueAts).toEqual(['report.minutely 2026-01-01T03:00:00.000Z'])
+    expect(dueAts).toEqual(['reports[report].minutely 2026-01-01T03:00:00.000Z'])
   })
 })
