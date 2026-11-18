@@ -112,8 +112,8 @@ export const authenticate = bearerAuthenticator(async token => {
 Una cookie de sesión encaja con un frontend servido por el mismo backend. Dos funciones la escriben:
 
 ```ts
-setSessionCookie(request, name, value, { secure, maxAgeSeconds, path })
-clearSessionCookie(request, name, { secure, path })
+setSessionCookie(request, name, value, { secure, maxAgeSeconds, path, domain })
+clearSessionCookie(request, name, { secure, path, domain })
 ```
 
 | Opción | Significado | Por defecto |
@@ -121,6 +121,7 @@ clearSessionCookie(request, name, { secure, path })
 | `secure` | enviarla solo por HTTPS | obligatoria |
 | `maxAgeSeconds` | cuánto dura | obligatoria |
 | `path` | dónde la envía el navegador | `/` |
+| `domain` | un dominio cuyos subdominios también la reciben, como `midominio.com` | solo el host que la puso |
 
 - La cookie siempre es `HttpOnly` y `SameSite=Lax`.
 - `clearSessionCookie` escribe una cookie vacía con una duración de 0.
@@ -159,6 +160,22 @@ router.post(
 ```
 
 `userOfSession` y `signIn` representan tu propio código: cómo compruebas una contraseña o una sesión lo decides tú.
+
+### Una sesión para los hosts de todos los contextos
+
+Cuando los contextos responden en [sus propios hosts](/es/guides/deploy/#un-contexto-en-su-propio-host), como `backoffice.midominio.com` y `hr.midominio.com`, una cookie puesta sin `domain` solo va al host que la puso: pasar de uno a otro cierra la sesión. Dale a la cookie el dominio compartido, y todos los subdominios la reciben:
+
+```ts
+setSessionCookie(request, SESSION_COOKIE, session, {
+  secure: true,
+  maxAgeSeconds: 60 * 60 * 24 * 30,
+  domain: Bun.env.SESSION_DOMAIN,
+})
+```
+
+- Bórrala con el mismo `domain`, o el navegador la conserva.
+- La cookie dice quién es el usuario, en todas partes. Lo que puede hacer cada uno lo sigue decidiendo cada contexto, en sus casos de uso: tener sesión en `backoffice` no abre `hr`.
+- Todos los subdominios de ese dominio reciben la cookie, así que dale solo un dominio cuyos subdominios sean todos tuyos.
 
 :::caution
 Una petición que no sea `GET` desde una página de otro origen se rechaza con un 403 (`cross_origin_refused`), salvo que el `cors` de la ruta permita ese origen y la petición no lleve cookies. Las páginas servidas por el mismo backend no se ven afectadas. Una ruta con `crossOrigin: true` se salta esta comprobación.
