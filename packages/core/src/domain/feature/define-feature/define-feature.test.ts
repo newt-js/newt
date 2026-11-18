@@ -59,7 +59,7 @@ function campaignsFeature(runner = new UseCaseRunner({ context: 'engagement' }))
   const template = new Template_Module(runner)
   const campaign = new Campaign_Module(runner, { template })
   new Log_Module(runner)
-  return defineFeature('campaigns', { campaign, template })
+  return defineFeature('campaigns', { useCaseRunner: runner }, { campaign, template })
 }
 
 describe('defineFeature', () => {
@@ -96,6 +96,16 @@ describe('defineFeature', () => {
     expect(runner.registry.registeredFeatures).toEqual([{ name: 'campaigns', exposed: ['campaign', 'template'] }])
   })
 
+  test('that shows no module is still a feature of its context, and registered', () => {
+    const runner = new UseCaseRunner({ context: 'engagement' })
+    new Log_Module(runner)
+
+    const audit = defineFeature('audit', { useCaseRunner: runner }, {})
+
+    expect(featureOf(audit)).toEqual({ name: 'audit', context: 'engagement' })
+    expect(runner.registry.registeredFeatures).toEqual([{ name: 'audit', exposed: [] }])
+  })
+
   test('cannot be changed', () => {
     const campaigns = campaignsFeature() as unknown as Record<string, unknown>
 
@@ -106,9 +116,12 @@ describe('defineFeature', () => {
     const runner = new UseCaseRunner()
     const template = new Template_Module(runner)
 
-    expect(() => defineFeature('Campaigns', {})).toThrow("'Campaigns' cannot name a feature")
-    expect(() => defineFeature('sales-orders', {})).toThrow("'sales-orders' cannot name a feature")
-    expect(() => defineFeature('emails', { template })).toThrow('The feature emails shows campaigns[template] as template')
-    expect(() => defineFeature('campaigns', { model: template })).toThrow('The feature campaigns shows campaigns[template] as model')
+    const base = { useCaseRunner: runner }
+
+    expect(() => defineFeature('Campaigns', base, {})).toThrow("'Campaigns' cannot name a feature")
+    expect(() => defineFeature('sales-orders', base, {})).toThrow("'sales-orders' cannot name a feature")
+    expect(() => defineFeature('emails', base, { template })).toThrow('The feature emails shows campaigns[template] as template')
+    expect(() => defineFeature('campaigns', base, { model: template })).toThrow('The feature campaigns shows campaigns[template] as model')
+    expect(() => defineFeature('campaigns', { useCaseRunner: new UseCaseRunner({ context: 'billing' }) }, { template })).toThrow("campaigns[template] is a module of another context than billing's")
   })
 })

@@ -68,7 +68,7 @@ describe('describeContext', () => {
     const template = new Template_Module(engagement)
     new Template_Module(engagement, 'campaigns[log]')
     new Template_Module(engagement, 'contacts[contact]')
-    defineFeature('campaigns', { template })
+    defineFeature('campaigns', engagement, { template })
 
     const described = describeContext(engagement.useCaseRunner.registry, new Map())
 
