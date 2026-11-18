@@ -1,0 +1,41 @@
+import type { Module }          from '../../module/module/module'
+import type { UseCaseRunner }   from '../../use-case/use-case-runner/use-case-runner'
+import { FEATURE_BRAND }        from '../is-feature/is-feature'
+import type { FeatureIdentity } from '../is-feature/is-feature'
+
+const NAME = /^[a-z][A-Za-z0-9]*$/
+
+/**
+ * A feature of a context: a class that builds its modules in its `static initialize` and
+ * takes each one as a `readonly` parameter of its constructor, so the other features reach
+ * it as `contacts.contact`. Every module it is given must be its own, `<feature>[<module>]`,
+ * in the context of `base`.
+ */
+export abstract class Feature {
+
+  readonly #identity: FeatureIdentity
+
+  constructor(name: string, base: { readonly useCaseRunner: UseCaseRunner }, modules: readonly Module[]) {
+    if (!NAME.test(name)) {
+      throw new Error(`'${name}' cannot name a feature: a word in camelCase, as in campaigns or salesOrders`)
+    }
+    const { registry } = base.useCaseRunner
+    const own: string[] = []
+    for (const module of modules) {
+      if (module.useCaseRunner.registry !== registry) {
+        throw new Error(`The feature ${name}: ${module.name} is a module of another context than ${registry.context}'s`)
+      }
+      const [, feature, ownName] = /^(.*)\[(.*)\]$/.exec(module.name) ?? []
+      if (feature !== name) {
+        throw new Error(`The feature ${name}: ${module.name} is a module of the feature ${feature}: a feature holds only its own modules, ${name}[<module>]`)
+      }
+      own.push(ownName!)
+    }
+    registry.feature(name, own)
+    this.#identity = Object.freeze({ name, context: registry.context })
+  }
+
+  get [FEATURE_BRAND](): FeatureIdentity {
+    return this.#identity
+  }
+}
