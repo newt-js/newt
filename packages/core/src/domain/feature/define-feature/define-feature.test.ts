@@ -162,7 +162,7 @@ describe('defineFeature', () => {
 
     expect(() => defineFeature('Campaigns', base, {})).toThrow("'Campaigns' cannot name a feature")
     expect(() => defineFeature('sales-orders', base, {})).toThrow("'sales-orders' cannot name a feature")
-    expect(() => defineFeature('emails', base, { template })).toThrow("defineFeature('emails'): template is campaigns[template], a module of the feature campaigns: a feature shows only its own modules, emails[<module>]")
+    expect(() => defineFeature('emails', base, { template })).toThrow("defineFeature('emails'): template is campaigns[template], a module of the feature campaigns: a feature shows only its own modules, emails[<module>]; or is this feature named campaigns? defineFeature('campaigns', …)")
     expect(() => defineFeature('campaigns', base, { model: template })).toThrow("defineFeature('campaigns'): campaigns[template] is shown as model: show it as template")
     expect(() => defineFeature('campaigns', { useCaseRunner: new UseCaseRunner({ context: 'billing' }) }, { template })).toThrow("campaigns[template] is a module of another context than billing's")
   })
