@@ -5,6 +5,7 @@ import { tmpdir }        from 'node:os'
 import { join }          from 'node:path'
 // --------------------------------------------------------
 import { MODULE }        from '../../testing/testing'
+import { TEMPLATE }      from '../../testing/testing'
 import { asRule }        from '../../testing/testing'
 import { tester }        from '../../testing/testing'
 import { moduleFiles }   from './module-files'
@@ -20,10 +21,15 @@ tester.run('module-files', asRule(moduleFiles), {
   valid: [
     ...FILES.map(file => ({ code: '', filename: `${MODULE}/${file}` })),
     { code: '', filename: '/repo/src/contexts/ws/ws.context.ts' },
+    // A module of a feature is made of the same files.
+    ...['template.module.ts', 'template.ts', 'events/template-created.ts', 'value-objects/template-id.ts'].map(file => ({ code: '', filename: `${TEMPLATE}/${file}` })),
+    { code: '', filename: '/repo/src/contexts/engagement/features/campaigns/campaigns.feature.ts' },
     { code: '', filename: '/repo/examples/shop/modules/order/order.workers.ts' },
   ],
   invalid: [
     { code: '', filename: `${MODULE}/helpers.ts`, errors: [{ messageId: 'file' }] },
+    { code: '', filename: `${TEMPLATE}/helpers.ts`, errors: [{ messageId: 'file', data: { file: 'helpers.ts', module: 'template' } }] },
+    { code: '', filename: `${TEMPLATE}/events/created.ts`, errors: [{ messageId: 'event' }] },
     // A second entity of the module, with or without its repository: a module keeps one.
     { code: '', filename: join(CARD, 'card-counter.ts'), errors: [{ messageId: 'file' }] },
     { code: '', filename: join(CARD, 'card-counter.repository.ts'), errors: [{ messageId: 'file' }] },

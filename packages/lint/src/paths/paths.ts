@@ -11,8 +11,13 @@ import { resolve }      from 'node:path'
 /** What a rule of newt is given: its options, the file and the source it reads. */
 export type Context = Readonly<TSESLint.RuleContext<string, readonly unknown[]>>
 
-/** Where a file of a module is: its context's folder, its module, and its path inside the module. */
-export type Place = { context: string, module: string, inside: string }
+/** Where a file of a module is: its context's folder, its feature's (`null` for a module of none), its module, and its path inside the module. */
+export type Place = { context: string, feature: string | null, module: string, inside: string }
+
+/** That two places are in one module: of one context, one feature and one name. */
+export function sameModule(one: Place, other: Place): boolean {
+  return one.context === other.context && one.feature === other.feature && one.module === other.module
+}
 
 /** A file's path with forward slashes, whatever the system. */
 export function slashed(path: string): string {
@@ -69,19 +74,30 @@ function inProject(file: string, root: string): string {
 }
 
 /**
- * Where a file of a module is: its context (the folder that holds `modules/`), its
- * module, and its path inside the module. `null` for a file of no module. The path is
- * read from the project's root, so a project that lives inside a folder named `modules`
- * is not mistaken for one; a `modules/` at the project's root has the project itself as
- * its context (`.`).
+ * Where a file of a module is: its context (the folder that holds `features/`, or
+ * `modules/` for a module of no feature), its feature, its module, and its path inside
+ * the module. `null` for a file of no module. The path is read from the project's root,
+ * so a project that lives inside a folder named `modules` is not mistaken for one; a
+ * `features/` or `modules/` at the project's root has the project itself as its context (`.`).
  */
 export function modulePlace(file: string, root = ''): Place | null {
   const whole = real(slashed(file))
   const path = inProject(whole, root)
-  const top = path !== whole ? /^\/modules\/([^/]+)\/(.+)$/.exec(path) : null
-  if (top) return { context: '.', module: top[1]!, inside: top[2]! }
+  const inRoot = path !== whole
+  const topFeature = inRoot ? /^\/features\/([^/]+)\/modules\/([^/]+)\/(.+)$/.exec(path) : null
+  if (topFeature) return { context: '.', feature: topFeature[1]!, module: topFeature[2]!, inside: topFeature[3]! }
+  const ofFeature = /\/([^/]+)\/features\/([^/]+)\/modules\/([^/]+)\/(.+)$/.exec(path)
+  if (ofFeature) return { context: ofFeature[1]!, feature: ofFeature[2]!, module: ofFeature[3]!, inside: ofFeature[4]! }
+  const top = inRoot ? /^\/modules\/([^/]+)\/(.+)$/.exec(path) : null
+  if (top) return { context: '.', feature: null, module: top[1]!, inside: top[2]! }
   const match = /\/([^/]+)\/modules\/([^/]+)\/(.+)$/.exec(path)
-  return match ? { context: match[1]!, module: match[2]!, inside: match[3]! } : null
+  return match ? { context: match[1]!, feature: null, module: match[2]!, inside: match[3]! } : null
+}
+
+/** The feature a file is in, by its path from the project's root (`…/features/<feature>/…`): `null` for a file of none. */
+export function featureFolderOf(file: string, root = ''): string | null {
+  const path = inProject(real(slashed(file)), root)
+  return /\/features\/([^/]+)\//.exec(path)?.[1] ?? null
 }
 
 /** Where a file directly in the folder of the contexts is: in no context, and one no context may import. */
@@ -108,6 +124,23 @@ function isFolder(path: string): boolean {
 /** That a file is there, with one of the extensions an import may leave out. */
 function isFile(path: string): boolean {
   return ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'].some(extension => statSync(`${path}${extension}`, { throwIfNoEntry: false })?.isFile())
+}
+
+/** Where a path of a feature is: its context, its feature, and its path inside the feature. */
+export type FeaturePlace = { context: string, feature: string, inside: string }
+
+/**
+ * The feature a path is in, when contexts are the folders of `contexts` (absolute):
+ * `…/contexts/engagement/features/campaigns/…` is in `campaigns` of `engagement`, and so
+ * is the folder itself (`inside` is `''`). `null` for a path in no feature.
+ */
+export function featurePlace(file: string, contexts: string): FeaturePlace | null {
+  const path = real(slashed(file))
+  const folder = real(contexts)
+  if (!path.startsWith(`${folder}/`)) return null
+  const [context, features, feature, ...rest] = path.slice(folder.length + 1).split('/')
+  if (context === undefined || features !== 'features' || !feature) return null
+  return { context, feature, inside: rest.join('/') }
 }
 
 /** The file a relative import points at. */

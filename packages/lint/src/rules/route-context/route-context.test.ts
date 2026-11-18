@@ -3,6 +3,7 @@ import { expect }        from 'bun:test'
 import { it }            from 'bun:test'
 // --------------------------------------------------------
 import { MODULE }        from '../../testing/testing'
+import { TEMPLATE }      from '../../testing/testing'
 import { asRule }        from '../../testing/testing'
 import { diagnosticsOf } from '../../testing/testing'
 import { programOf }     from '../../testing/testing'
@@ -25,6 +26,8 @@ tester.run('route-context', asRule(routeContext), {
     { code: "router.get('/ws/price-changes', handle)", filename: '/repo/src/stores.ts' },
   ],
   invalid: [
+    // A module of a feature is in its context, not in its feature.
+    { code: "router.get('/engagement/templates', handle)", filename: `${TEMPLATE}/template.routes.ts`, errors: [{ messageId: 'context', data: { path: '/engagement/templates', context: 'engagement', without: '/templates' } }] },
     { code: "router.get('/ws/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/ws/price-changes', context: 'ws', without: '/price-changes' } }] },
     { code: "router.get('/ws/price-changes', handle)", filename: `${MODULE}/price-change.module.ts`, errors: [{ messageId: 'context' }] },
     { code: 'router.get(`/ws`, handle)', filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/ws', context: 'ws', without: '/' } }] },

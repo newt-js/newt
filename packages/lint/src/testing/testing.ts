@@ -45,3 +45,6 @@ export const MODULE = '/repo/src/contexts/ws/modules/price-change'
 
 /** Where the tests put an order's module, in the context shop. */
 export const ORDER = '/repo/src/contexts/shop/modules/order'
+
+/** Where the tests put a module of a feature: template, in the feature campaigns of the context engagement. */
+export const TEMPLATE = '/repo/src/contexts/engagement/features/campaigns/modules/template'

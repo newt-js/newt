@@ -12,10 +12,12 @@ import type { Uses }               from './rules/context-imports/context-imports
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
+import { featureImports }          from './rules/feature-imports/feature-imports'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
+import { moduleNames }             from './rules/module-names/module-names'
 import { moduleTransactions }      from './rules/module-transactions/module-transactions'
 import { keepNoDisable }           from './rules/no-disable/keep-no-disable'
 import { noDisable }               from './rules/no-disable/no-disable'
@@ -35,11 +37,13 @@ export const plugin = {
   rules: {
     'context-imports': contextImports,
     'entity-method-params': entityMethodParams,
+    'feature-imports': featureImports,
     'framework-tables': frameworkTables,
     'app-imports': appImports,
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
+    'module-names': moduleNames,
     'module-transactions': moduleTransactions,
     'no-disable': noDisable,
     'reaction-queue': reactionQueue,
@@ -110,6 +114,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     files: inContexts,
     rules: {
       'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }],
+      'newt/feature-imports': ['error', { folder: given }],
       'newt/route-context': ['error', { folder: given }],
     },
   }, {
@@ -162,6 +167,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/module-entity': 'error',
         'newt/module-files': 'error',
         'newt/module-imports': 'error',
+        'newt/module-names': 'error',
         'newt/entity-method-params': 'error',
         'newt/reaction-queue': 'error',
         'newt/schema-imports': 'error',

@@ -20,6 +20,9 @@ import { rootOf }                                 from '../../paths/paths'
  */
 export const QUEUE = /^([a-z][A-Za-z0-9]*)\.([a-z][A-Za-z0-9]*)\.on\.([^.\s]+\.([^.\s]+))$/
 
+/** `<feature>[<module>].<use case>_on_<module>.<event>`: the queue of a module of a feature, as strict as `QUEUE`. */
+export const FEATURE_QUEUE = /^([a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\])\.([a-z][A-Za-z0-9]*)_on_([^.\s]+\.([^.\s]+))$/
+
 /** The property of an object written with a name, `queue: …` or `'queue': …`. */
 function property(object: TSESTree.ObjectExpression, name: string): TSESTree.Property | undefined {
   return object.properties.find((each): each is TSESTree.Property => each.type === 'Property' && !each.computed
@@ -89,7 +92,8 @@ function typesOf(checker: ts.TypeChecker, map: ParserServicesWithTypeInformation
 
 /**
  * A handler's queue says who reacts with what to which event:
- * `<module>.<use case>.on.<module>.<event>`. Written by hand, it could say another
+ * `<feature>[<module>].<use case>_on_<event>` in a module of a feature, the event by its whole name,
+ * `<module>.<use case>.on.<module>.<event>` in one of none. Written by hand, it could say another
  * module's or another use case's: in every file of a module, this checks it has that
  * shape, that it is the module's, that its callback calls that use case on the module
  * itself, and that it ends with the event it subscribes to. A reaction written with
@@ -102,10 +106,10 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
     type: 'problem',
     docs: { description: "A reaction's queue names the module that reacts, the use case it calls and the event." },
     messages: {
-      shape: "'{{queue}}' is not a handler's queue: it is '<module>.<use case>.on.<module>.<event>', as 'order.fulfil.on.order.placed'. Better yet, write the reaction with `<module>.on(event, '<use case>', args)`, which names it.",
+      shape: "'{{queue}}' is not a handler's queue: it is '{{shape}}', the event by its whole name, as '{{example}}'. Better yet, write the reaction with `<module>.on(event, '<use case>', args)`, which names it.",
       module: "This queue is '{{module}}.…': the reactions in {{file}} are {{module}}'s, so their queues start with '{{module}}.', not '{{found}}.'.",
       useCase: "This queue says the handler calls {{module}}'s '{{useCase}}', but its callback calls no '{{useCase}}' of {{module}}: name the use case it calls.",
-      event: "This queue ends with '.on.{{event}}', the event it subscribes to.",
+      event: "This queue ends with '{{on}}{{event}}', the event it subscribes to.",
       on: "In {{file}}, `on` is called on {{module}}'s module: a reaction calls a use case of the module whose files it is in. Move it to the files of the module it calls.",
     },
     schema: [],
@@ -113,14 +117,18 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
   create(context) {
     const place = modulePlace(context.filename, rootOf(context))
     if (!place) return {}
-    const module = camelCase(place.module)
+    const own = camelCase(place.module)
+    const module = place.feature === null ? own : `${camelCase(place.feature)}[${own}]`
+    const shapes = place.feature === null
+      ? { queue: QUEUE, on: '.on.', shape: '<module>.<use case>.on.<module>.<event>', example: 'order.fulfil.on.order.placed' }
+      : { queue: FEATURE_QUEUE, on: '_on_', shape: '<feature>[<module>].<use case>_on_<event>', example: 'shipping[delivery].prepare_on_sales[order].placed' }
     const type = `${pascalCase(place.module)}_Module`
     const file = posix.basename(place.inside)
 
     /** The names a module goes by without a program to tell its type: its own, and its English plurals. */
-    const names = new Set([module, `${module}s`])
-    if (/[^aeiou]y$/.test(module)) names.add(`${module.slice(0, -1)}ies`)
-    if (/(s|x|z|ch|sh)$/.test(module)) names.add(`${module}es`)
+    const names = new Set([own, `${own}s`])
+    if (/[^aeiou]y$/.test(own)) names.add(`${own.slice(0, -1)}ies`)
+    if (/(s|x|z|ch|sh)$/.test(own)) names.add(`${own}es`)
 
     const services = context.sourceCode.parserServices as Partial<ParserServicesWithTypeInformation> | undefined
     const checker = services?.program?.getTypeChecker()
@@ -196,9 +204,9 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
         const queue = unwrap(property(options, 'queue')?.value)
         const name = textOf(queue)
         if (textOf(property(options, 'strategy')?.value) !== 'handler' || queue === undefined || name === undefined) return
-        const shape = QUEUE.exec(name)
+        const shape = shapes.queue.exec(name)
         if (!shape) {
-          context.report({ node: queue, messageId: 'shape', data: { queue: name } })
+          context.report({ node: queue, messageId: 'shape', data: { queue: name, shape: shapes.shape, example: shapes.example } })
           return
         }
         const [, found = '', useCase = '', event = '', last = ''] = shape
@@ -209,7 +217,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
         if (runs && !calls) context.report({ node: queue, messageId: 'useCase', data: { useCase, module } })
         if (types) {
           const told = types.eventName(callee.object)
-          if (told && event !== told) context.report({ node: queue, messageId: 'event', data: { event: told } })
+          if (told && event !== told) context.report({ node: queue, messageId: 'event', data: { on: shapes.on, event: told } })
           return
         }
         // Without a program, only the key it is read from in `events` (`eventsOf`'s) says the event.
@@ -217,7 +225,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
         const key = emitter.type === 'MemberExpression' && !emitter.computed && emitter.property.type === 'Identifier'
           && emitter.object.type === 'MemberExpression' && !emitter.object.computed && emitter.object.property.type === 'Identifier'
           && emitter.object.property.name === 'events' ? emitter.property.name : null
-        if (key && last !== key) context.report({ node: queue, messageId: 'event', data: { event: `….${key}` } })
+        if (key && last !== key) context.report({ node: queue, messageId: 'event', data: { on: shapes.on, event: `….${key}` } })
       },
     }
   },
