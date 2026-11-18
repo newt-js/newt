@@ -1,9 +1,7 @@
 import { join }            from 'node:path'
 // --------------------------------------------------------
 import { moduleNames }     from '../../names/module-names/module-names'
-import { backendContexts } from '../../project/backend-contexts/backend-contexts'
 import { dependencyPath }  from '../../project/dependency-path/dependency-path'
-import { findBackend }     from '../../project/find-backend/find-backend'
 import { findModule }      from '../../project/find-module/find-module'
 import { moduleDepsGraph } from '../../project/module-deps-graph/module-deps-graph'
 import { routesHead }      from '../../templates/module/files/routes-ts'
@@ -14,12 +12,12 @@ import type { FileChange } from '../command'
 import { defineCommand }   from '../command'
 import { CommandError }    from '../command-error/command-error'
 
-const USAGE = 'newt add deps takes the module and the module of its context it uses, as in newt add deps sales/order invoice'
+const USAGE = 'newt add deps takes the module and the module of its feature it uses, as in newt add deps sales/orders/order invoice'
 
 export const ADD_DEPS = defineCommand({
   name: 'add deps',
-  summary: 'Lets a module use another module of its context, given to it by <ctx>-modules.ts',
-  args: '<context>/<module> <module-it-uses>',
+  summary: 'Lets a module use another module of its feature, given to it by <feature>.feature.ts',
+  args: '<context>/<feature>/<module> <module-it-uses>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },
@@ -29,20 +27,19 @@ export const ADD_DEPS = defineCommand({
     if (other.includes('/')) {
       throw new CommandError("A module uses another context's modules once its context is opened with that context: newt does not write that yet")
     }
-    const { folder, module, context } = await findModule(given, cwd, options.backend, USAGE)
-    const used = moduleNames(other)
+    const { folder, featureFolder, module, context, feature, modules: siblings } = await findModule(given, cwd, options.backend, USAGE)
+    const used = moduleNames(feature, other)
     if (used.folder === module.folder) throw new CommandError(`${module.folder} cannot use itself`)
-    const found = (await backendContexts(await findBackend(cwd, options.backend))).find(each => each.name === context.folder)
-    if (!found?.modules.includes(used.folder)) {
-      throw new CommandError(`The context ${context.folder} has no module ${used.folder}: add it with newt add module ${context.folder}/${used.folder}`)
+    if (!siblings.includes(used.folder)) {
+      throw new CommandError(`The feature ${context.folder}/${feature.folder} has no module ${used.folder}: add it with newt add module ${context.folder}/${feature.folder}/${used.folder}`)
     }
-    const graph = await moduleDepsGraph(join(cwd, folder, '../..'), found.modules)
+    const graph = await moduleDepsGraph(join(cwd, featureFolder), feature, siblings)
     const cycle = dependencyPath(graph, used.module, module.module)
     if (cycle) {
       throw new CommandError(`${[module.module, ...cycle].join(' → ')} would be a cycle: modules never use each other, even through others`)
     }
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
-    const modules = join(folder, '../..', `${context.folder}-modules.ts`)
+    const modules = join(featureFolder, `${feature.folder}.feature.ts`)
     const before = moduleLines(module, false)
     const after = moduleLines(module, true)
     const initialize = `${module.type}_Module.initialize`

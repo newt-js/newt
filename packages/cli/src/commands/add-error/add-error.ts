@@ -9,12 +9,12 @@ import { errorTs }       from '../../templates/pieces/error-ts'
 import { defineCommand } from '../command'
 import { CommandError }  from '../command-error/command-error'
 
-const USAGE = 'newt add error takes the module and the error, as in newt add error sales/order order-already-paid --kind conflict'
+const USAGE = 'newt add error takes the module and the error, as in newt add error sales/orders/order order-already-paid --kind conflict'
 
 export const ADD_ERROR = defineCommand({
   name: 'add error',
   summary: 'Adds an error to a module, of a kind HTTP answers with its status',
-  args: '<context>/<module> <error>',
+  args: '<context>/<feature>/<module> <error>',
   options: {
     kind: { type: 'string', value: 'kind', description: `What HTTP answers it with: ${Object.keys(ERROR_KINDS).join(', ')}` },
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },

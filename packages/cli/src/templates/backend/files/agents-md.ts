@@ -28,7 +28,8 @@ A backend built with newt (@newt-js/core), on Bun.
 - \`src/auth.ts\`: \`authenticate\`, who calls the backend, for every context's router.
 - \`src/env.ts\`: \`requiredEnv\`, for the variables the backend cannot start without.
 - \`src/contexts.ts\`: the list of contexts the backend opens.
-${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/<context>/api/\`.
+${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its features in \`features/<feature>/\`,
+  each with its entry point \`<feature>.feature.ts\` and its modules in \`modules/<module>/\`; their routes under \`/<context>/api/<feature>/\`.
 
 ## Sign-in
 

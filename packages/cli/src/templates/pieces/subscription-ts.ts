@@ -19,9 +19,9 @@ export function reactionLine({ plural }: ModuleNames, useCase: PieceNames, event
   return `  ${plural}.on(${plural}.events.${event.camel}, '${useCase.camel}'${args})`
 }
 
-export function subscriptionTest({ module, plural }: ModuleNames, useCase: PieceNames, event: PieceNames): string {
-  const queue = `${module}.${useCase.camel}.on.${module}.${event.camel}`
-  return `test('${useCase.camel} runs on ${module}.${event.camel}', async () => {
+export function subscriptionTest({ name, plural }: ModuleNames, useCase: PieceNames, event: PieceNames): string {
+  const queue = `${name}.${useCase.camel}_on_${name}.${event.camel}`
+  return `test('${useCase.camel} runs on ${name}.${event.camel}', async () => {
   await ${plural}.create({ name: 'First' })
   await context.settle()
 

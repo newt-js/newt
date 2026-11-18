@@ -16,7 +16,7 @@ export function invalidValueTs(module: ModuleNames, value: PieceNames): string {
   return `import { ValidationError } from '@newt-js/core'
 
 export class Invalid${value.type} extends ValidationError<{ value: string }> {
-  readonly code = '${module.module}.invalid_${value.folder.replaceAll('-', '_')}'
+  readonly code = '${module.name}.invalid_${value.folder.replaceAll('-', '_')}'
 
   constructor(value: string) {
     super(\`'\${value}' is not a valid ${value.words}\`, { value })

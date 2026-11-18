@@ -8,7 +8,7 @@ with `--dry-run`. Run again, it never overwrites what is there.
 bun create newt my-app        # or: bunx @newt-js/cli init my-app
 cd my-app && bun install
 bunx newt add context sales
-bunx newt add module sales/order
+bunx newt add module sales/orders/order
 bunx newt --help
 ```
 

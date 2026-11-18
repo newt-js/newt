@@ -12,12 +12,12 @@ import { ADD_VALUE_OBJECT } from './add-value-object/add-value-object'
 import type { Command }     from './command'
 
 const AGAIN: [Command, string[]][] = [
-  [ADD_EVENT, ['sales/order', 'shipped']],
-  [ADD_ERROR, ['sales/order', 'not-paid', '--kind', 'conflict']],
-  [ADD_SERVICE, ['sales/order', 'exchange-rates']],
-  [ADD_VALUE_OBJECT, ['sales/order', 'postal-code']],
-  [ADD_USE_CASE, ['sales/order', 'mark-paid']],
-  [ADD_SUBSCRIPTION, ['sales/order', 'mark-paid', '--on', 'created']],
+  [ADD_EVENT, ['sales/orders/order', 'shipped']],
+  [ADD_ERROR, ['sales/orders/order', 'not-paid', '--kind', 'conflict']],
+  [ADD_SERVICE, ['sales/orders/order', 'exchange-rates']],
+  [ADD_VALUE_OBJECT, ['sales/orders/order', 'postal-code']],
+  [ADD_USE_CASE, ['sales/orders/order', 'mark-paid']],
+  [ADD_SUBSCRIPTION, ['sales/orders/order', 'mark-paid', '--on', 'created']],
 ]
 
 test('each command run again changes nothing, and says so', async () => {

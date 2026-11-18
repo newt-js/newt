@@ -9,14 +9,14 @@ import { useCaseTest }   from '../../templates/pieces/use-case-ts'
 import { defineCommand } from '../command'
 import { CommandError }  from '../command-error/command-error'
 
-const USAGE = 'newt add use-case takes the module and the use case, as in newt add use-case sales/order mark-paid'
+const USAGE = 'newt add use-case takes the module and the use case, as in newt add use-case sales/orders/order mark-paid'
 
 const READS = ['find', 'get', 'paginate', 'search']
 
 export const ADD_USE_CASE = defineCommand({
   name: 'add use-case',
   summary: 'Adds a use case to a module: the method, its schema and its test',
-  args: '<context>/<module> <use-case>',
+  args: '<context>/<feature>/<module> <use-case>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },

@@ -8,6 +8,6 @@ export function eventTs(module: ModuleNames, event: PieceNames, hasSchema: boole
   return `import { defineEvent } from '@newt-js/core'
 ${imports}
 
-export const ${module.type}_${event.type} = defineEvent('${module.module}.${event.camel}', ${payload})
+export const ${module.type}_${event.type} = defineEvent('${module.name}.${event.camel}', ${payload})
 `
 }

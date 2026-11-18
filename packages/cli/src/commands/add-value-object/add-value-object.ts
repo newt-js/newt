@@ -8,12 +8,12 @@ import { valueObjectTs }     from '../../templates/pieces/value-object-ts'
 import { defineCommand }     from '../command'
 import { CommandError }      from '../command-error/command-error'
 
-const USAGE = 'newt add value-object takes the module and the value object, as in newt add value-object sales/order sku'
+const USAGE = 'newt add value-object takes the module and the value object, as in newt add value-object sales/orders/order sku'
 
 export const ADD_VALUE_OBJECT = defineCommand({
   name: 'add value-object',
   summary: 'Adds a value object to a module, with the error it throws and its test',
-  args: '<context>/<module> <value-object>',
+  args: '<context>/<feature>/<module> <value-object>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },

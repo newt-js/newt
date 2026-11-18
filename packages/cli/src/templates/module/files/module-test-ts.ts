@@ -3,7 +3,7 @@ import type { ModuleNames }  from '../../../names/module-names/module-names'
 import { withArticle }       from '../../../names/with-article/with-article'
 import type { DatabaseKind } from '../../stores/store-databases'
 
-const MIGRATIONS = "join(import.meta.dir, '../../migrations')"
+const MIGRATIONS = "join(import.meta.dir, '../../../../migrations')"
 
 /** On sqlite, the context's own migrations on a database in memory; on a server, src/test-database.ts's, real when TEST_DATABASE_URL is set. */
 function databaseOf(database: DatabaseKind): { imports: string, open: string, drop: boolean } {
@@ -15,7 +15,7 @@ function databaseOf(database: DatabaseKind): { imports: string, open: string, dr
     }
   }
   if (database === 'postgres' || database === 'mysql') {
-    return { imports: "import { join } from 'node:path'\nimport { testDatabase } from '../../../../test-database'", open: `await testDatabase(${MIGRATIONS})`, drop: true }
+    return { imports: "import { join } from 'node:path'\nimport { testDatabase } from '../../../../../../test-database'", open: `await testDatabase(${MIGRATIONS})`, drop: true }
   }
   return { imports: "import { MemoryDatabase } from '@newt-js/core/database/memory'", open: 'new MemoryDatabase()', drop: false }
 }
@@ -26,10 +26,10 @@ export function moduleTestTs(names: ModuleNames, context: ContextNames, database
   const opened = databaseOf(database)
   return `import { afterEach, beforeEach, expect, test } from 'bun:test'
 ${opened.imports}
-import { testContext, type TestContext } from '@newt-js/core/application/testing'
+import { modulesOf, testContext, type TestContext } from '@newt-js/core/application/testing'
 import { MemoryCluster } from '@newt-js/core/cluster/memory'
 import { HttpRouter } from '@newt-js/core/http'
-import { ${context.camel}Modules } from '../../${context.folder}-modules'
+import { ${context.camel}Features } from '../../../../${context.folder}-features'
 import type { ${type}_Module } from './${folder}.module'
 
 let context: TestContext
@@ -43,7 +43,7 @@ beforeEach(async () => {
   router = new HttpRouter({ prefix: '/${context.folder}/api', database })
   signedIn = true
   router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
-  ${plural} = ${context.camel}Modules(context.base, router).${names.module}
+  ${plural} = modulesOf(${context.camel}Features(context.base, router).${names.feature.camel}).${names.module}
 })
 
 ${opened.drop ? 'afterEach(async () => {\n  await context.close()\n  await dropDatabase()\n})' : 'afterEach(() => context.close())'}
