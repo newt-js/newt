@@ -93,7 +93,7 @@ describe('defineFeature', () => {
     const runner = new UseCaseRunner({ context: 'engagement' })
     campaignsFeature(runner)
 
-    expect(runner.registry.registeredFeatures).toEqual([{ name: 'campaigns', exposed: ['campaign', 'template'] }])
+    expect(runner.registry.registeredFeatures).toEqual([{ name: 'campaigns', modules: ['campaign', 'template'] }])
   })
 
   test('that shows no module is still a feature of its context, and registered', () => {
@@ -103,7 +103,7 @@ describe('defineFeature', () => {
     const audit = defineFeature('audit', { useCaseRunner: runner }, {})
 
     expect(featureOf(audit)).toEqual({ name: 'audit', context: 'engagement' })
-    expect(runner.registry.registeredFeatures).toEqual([{ name: 'audit', exposed: [] }])
+    expect(runner.registry.registeredFeatures).toEqual([{ name: 'audit', modules: [] }])
   })
 
   test('refuses in its types a module that exposes a name it has not, or names not written as const', () => {
@@ -143,7 +143,7 @@ describe('defineFeature', () => {
     expect(Object.keys(campaigns)).toEqual(['template'])
     // @ts-expect-error log is internal
     expect(campaigns.log).toBeUndefined()
-    expect(runner.registry.registeredFeatures).toEqual([{ name: 'campaigns', exposed: ['template'] }])
+    expect(runner.registry.registeredFeatures).toEqual([{ name: 'campaigns', modules: ['template'] }])
     // @ts-expect-error tag is none of its modules
     expect(() => defineFeature('campaigns', { useCaseRunner: runner }, { template }, { internal: ['tag'] })).toThrow("defineFeature('campaigns'): it keeps tag internal, which are none of its modules: template")
   })

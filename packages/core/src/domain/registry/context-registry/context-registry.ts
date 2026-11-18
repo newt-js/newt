@@ -14,9 +14,9 @@ export class ContextRegistry {
     this.modules.set(instance.name, { instance, className: instance.constructor.name, deps, useCases: new Map() })
   }
 
-  /** A feature, by its name, with the modules its contract shows: defined again, it takes the place of the one before. */
-  feature(name: string, exposed: string[]): void {
-    this.features.set(name, exposed)
+  /** A feature, by its name, with its modules' own names: defined again, it takes the place of the one before. */
+  feature(name: string, modules: string[]): void {
+    this.features.set(name, modules)
   }
 
   useCase(instance: { readonly name: string }, name: string, options: object = {}): void {
@@ -46,9 +46,9 @@ export class ContextRegistry {
     return [...this.modules.values()]
   }
 
-  /** Each feature defined, with the modules its contract shows. */
-  get registeredFeatures(): { name: string, exposed: string[] }[] {
-    return [...this.features].map(([name, exposed]) => ({ name, exposed }))
+  /** Each feature defined, with its modules' own names. */
+  get registeredFeatures(): { name: string, modules: string[] }[] {
+    return [...this.features].map(([name, modules]) => ({ name, modules }))
   }
 
   cron(event: string): string | undefined {
