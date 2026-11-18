@@ -11,7 +11,7 @@ import { resolve }      from 'node:path'
 /** What a rule of newt is given: its options, the file and the source it reads. */
 export type Context = Readonly<TSESLint.RuleContext<string, readonly unknown[]>>
 
-/** Where a file of a module is: its context's folder, its feature's (`null` for a module of none), its module, and its path inside the module. */
+/** Where a file of a module is: its context's folder, its feature's, its module, and its path inside the module. */
 export type Place = { context: string, feature: string, module: string, inside: string }
 
 /** That two places are in one module: of one context, one feature and one name. */

@@ -54,7 +54,7 @@ tester.run('reaction-queue', asRule(reactionQueue), {
     ...['orders[order]', 'orders[order].fulfil', 'orders[order].fulfil.now_on_orders[order].placed', 'orders[order].fulfil_on_placed', 'order.fulfil.on.order.placed']
       .map(queue => ({ code: subscribe('orders.fulfil(o.id)', queue), filename: ORDER_WORKERS, errors: [{ messageId: 'shape' }] })),
     { code: subscribe('products.fulfil(o.id)', 'orders[order].fulfil_on_orders[order].placed'), filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
-    // A module of a feature: the queue of a module of none, another module's, another feature's, another event's.
+    // The old queue of a module of no feature, another module's, another feature's, another event's.
     {
       code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'template.welcome.on.contacts[contact].created' })",
       filename: TEMPLATE_WORKERS,
