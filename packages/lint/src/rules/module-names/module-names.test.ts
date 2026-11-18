@@ -30,6 +30,7 @@ tester.run('module-names', asRule(moduleNames), {
     { code: CLASS("constructor(base) { super('emails[template]', base.useCaseRunner) }"), filename: MODULE_TS, errors: [{ messageId: 'module' }] },
     { code: CLASS("readonly exposes = { useCases: ['get'] }"), filename: MODULE_TS, errors: [{ messageId: 'exposes' }] },
     { code: CLASS("readonly expose = { useCases: ['get'] } as const"), filename: MODULE_TS, errors: [{ messageId: 'expose' }] },
+    { code: CLASS("readonly exposes = { usecases: ['get'], event: [] } as const"), filename: MODULE_TS, errors: [{ messageId: 'key', data: { key: 'usecases' } }, { messageId: 'key', data: { key: 'event' } }] },
     { code: "import { defineEvent } from '@newt-js/core'\nexport const Template_Created = defineEvent('template.created', schema)", filename: `${TEMPLATE}/events/template-created.ts`, errors: [{ messageId: 'name', data: { found: 'template.created', expected: 'campaigns[template]' } }] },
     { code: "this.nightly = base.schedules.define('campaigns[tag].nightly', '0 3 * * *')", filename: MODULE_TS, errors: [{ messageId: 'name' }] },
     { code: "const limit = base.rateLimits.define('send', rule)", filename: MODULE_TS, errors: [{ messageId: 'name' }] },
