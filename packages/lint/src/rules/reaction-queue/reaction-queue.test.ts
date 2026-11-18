@@ -43,7 +43,7 @@ tester.run('reaction-queue', asRule(reactionQueue), {
     { code: "orders.purgeSchedule.subscribe(() => orders.purge(), { strategy: 'handler', queue: 'orders[order].purge_on_orders[order].nightly' })", filename: ORDER_WORKERS },
     ...[['category', 'categories'], ['address', 'addresses'], ['box', 'boxes'], ['batch', 'batches']].map(([module, plural]) => ({
       code: `deps.brand.events.deleted.subscribe(b => ${plural}.forget(b.id), { strategy: 'handler', queue: 'catalog[${module}].forget_on_catalog[brand].deleted' })`,
-      filename: `/repo/src/contexts/shop/features/catalog/modules/${module}/${module}.workers.ts`,
+      filename: `/repo/src/contexts/shop/features/catalog/${module}/${module}.workers.ts`,
     })),
   ],
   invalid: [

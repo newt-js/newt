@@ -41,10 +41,10 @@ export function diagnosticsOf(program: ts.Program): string[] {
 }
 
 /** Where the tests put a module of their own: price-change, in the feature prices of the context ws. */
-export const MODULE = '/repo/src/contexts/ws/features/prices/modules/price-change'
+export const MODULE = '/repo/src/contexts/ws/features/prices/price-change'
 
 /** Where the tests put an order's module, in the feature orders of the context shop. */
-export const ORDER = '/repo/src/contexts/shop/features/orders/modules/order'
+export const ORDER = '/repo/src/contexts/shop/features/orders/order'
 
 /** Where the tests put a module of a feature: template, in the feature campaigns of the context engagement. */
-export const TEMPLATE = '/repo/src/contexts/engagement/features/campaigns/modules/template'
+export const TEMPLATE = '/repo/src/contexts/engagement/features/campaigns/template'

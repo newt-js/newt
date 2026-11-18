@@ -19,6 +19,6 @@ tester.run('entity-method-params', asRule(entityMethodParams), {
     { code: entityClass("static place(input: Pick<OrderDTO, 'total'>) {}"), filename: ENTITY, errors: [{ messageId: 'dto' }] },
     { code: entityClass('static place(input: { total: number }) {}'), filename: ENTITY, errors: [{ messageId: 'inline' }] },
     { code: entityClass('cancel(change: OrderCancelDTO) {}'), filename: ENTITY, errors: [{ messageId: 'dto' }] },
-    { code: 'export class PriceChange extends Entity<typeof PriceChangeSchema> {\nrecord(input: PriceChangeRecordDTO) {}\n}', filename: '/repo/src/contexts/ws/features/prices/modules/price-change/price-change.ts', errors: [{ messageId: 'dto', data: { method: 'record', entity: 'PriceChange', name: 'PriceChangeRecordDTO', props: 'PriceChangeRecordProps' } }] },
+    { code: 'export class PriceChange extends Entity<typeof PriceChangeSchema> {\nrecord(input: PriceChangeRecordDTO) {}\n}', filename: '/repo/src/contexts/ws/features/prices/price-change/price-change.ts', errors: [{ messageId: 'dto', data: { method: 'record', entity: 'PriceChange', name: 'PriceChangeRecordDTO', props: 'PriceChangeRecordProps' } }] },
   ],
 })
