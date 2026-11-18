@@ -12,7 +12,6 @@ import { programOf }     from '../../testing/testing'
 import { tester }        from '../../testing/testing'
 import { typedTester }   from '../../testing/testing'
 import { FEATURE_QUEUE } from './reaction-queue'
-import { QUEUE }         from './reaction-queue'
 import { reactionQueue } from './reaction-queue'
 
 const WORKERS = `${MODULE}/price-change.workers.ts`
@@ -22,16 +21,16 @@ const subscribe = (calls: string, queue: string) => `orders.events.placed.subscr
 
 tester.run('reaction-queue', asRule(reactionQueue), {
   valid: [
-    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(({ dto }) => changes.record(dto), { strategy: 'handler', queue: 'priceChange.record.on.product.updated' })", filename: WORKERS },
-    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(async ({ changes: changed, dto }) => { if (changed.priceCents) await changes.record(dto) }, { strategy: 'handler', queue: 'priceChange.record.on.product.updated' })", filename: WORKERS },
+    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(({ dto }) => changes.record(dto), { strategy: 'handler', queue: 'prices[priceChange].record_on_prices[product].updated' })", filename: WORKERS },
+    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(async ({ changes: changed, dto }) => { if (changed.priceCents) await changes.record(dto) }, { strategy: 'handler', queue: 'prices[priceChange].record_on_prices[product].updated' })", filename: WORKERS },
     { code: "deps.product.events.updated.subscribe(() => cache.clear(), { strategy: 'fire-and-forget' })", filename: WORKERS },
-    { code: subscribe('orders.fulfil(o.id)', 'order.fulfil.on.order.placed'), filename: ORDER_WORKERS },
-    { code: "async function onPlaced(o) { await orders.fulfil(o.id) }\norders.events.placed.subscribe(onPlaced, { strategy: 'handler', queue: 'order.fulfil.on.order.placed' })", filename: ORDER_WORKERS },
-    { code: "orders.events.placed.subscribe(orders.fulfilPlaced.bind(orders), { strategy: 'handler', queue: 'order.fulfilPlaced.on.order.placed' })", filename: ORDER_WORKERS },
-    { code: "this.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' })", filename: `${ORDER}/order.module.ts` },
-    { code: "(orders: m.Order_Module) => orders.events.placed.subscribe(o => orders.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' })", filename: ORDER_WORKERS },
-    { code: "class W { constructor(private readonly orders: Order_Module) {} register() { this.orders.events.placed.subscribe(o => this.orders.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' }) } }", filename: ORDER_WORKERS },
-    { code: "class Order_Module { register() { this.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' }) } }", filename: ORDER_WORKERS },
+    { code: subscribe('orders.fulfil(o.id)', 'orders[order].fulfil_on_orders[order].placed'), filename: ORDER_WORKERS },
+    { code: "async function onPlaced(o) { await orders.fulfil(o.id) }\norders.events.placed.subscribe(onPlaced, { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' })", filename: ORDER_WORKERS },
+    { code: "orders.events.placed.subscribe(orders.fulfilPlaced.bind(orders), { strategy: 'handler', queue: 'orders[order].fulfilPlaced_on_orders[order].placed' })", filename: ORDER_WORKERS },
+    { code: "this.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' })", filename: `${ORDER}/order.module.ts` },
+    { code: "(orders: m.Order_Module) => orders.events.placed.subscribe(o => orders.fulfil(o.id), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' })", filename: ORDER_WORKERS },
+    { code: "class W { constructor(private readonly orders: Order_Module) {} register() { this.orders.events.placed.subscribe(o => this.orders.fulfil(o.id), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' }) } }", filename: ORDER_WORKERS },
+    { code: "class Order_Module { register() { this.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' }) } }", filename: ORDER_WORKERS },
     // A module of a feature: its queue starts with <feature>[<module>] and says _on_.
     { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'campaigns[template].welcome_on_contacts[contact].created' })", filename: TEMPLATE_WORKERS },
     { code: "this.events.created.subscribe(t => this.index(t.id), { strategy: 'handler', queue: 'campaigns[template].index_on_campaigns[template].created' })", filename: `${TEMPLATE}/template.module.ts` },
@@ -41,19 +40,20 @@ tester.run('reaction-queue', asRule(reactionQueue), {
     { code: "this.on(this.nightly, 'purge')", filename: `${ORDER}/order.module.ts` },
     { code: "emitter.on('placed', () => {})", filename: ORDER_WORKERS },
     // Without a program, only a key of `events` says the event: a schedule's field is not its name.
-    { code: "orders.purgeSchedule.subscribe(() => orders.purge(), { strategy: 'handler', queue: 'order.purge.on.order.nightly' })", filename: ORDER_WORKERS },
+    { code: "orders.purgeSchedule.subscribe(() => orders.purge(), { strategy: 'handler', queue: 'orders[order].purge_on_orders[order].nightly' })", filename: ORDER_WORKERS },
     ...[['category', 'categories'], ['address', 'addresses'], ['box', 'boxes'], ['batch', 'batches']].map(([module, plural]) => ({
-      code: `deps.brand.events.deleted.subscribe(b => ${plural}.forget(b.id), { strategy: 'handler', queue: '${module}.forget.on.brand.deleted' })`,
-      filename: `/repo/src/contexts/shop/modules/${module}/${module}.workers.ts`,
+      code: `deps.brand.events.deleted.subscribe(b => ${plural}.forget(b.id), { strategy: 'handler', queue: 'catalog[${module}].forget_on_catalog[brand].deleted' })`,
+      filename: `/repo/src/contexts/shop/features/catalog/modules/${module}/${module}.workers.ts`,
     })),
   ],
   invalid: [
-    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(({ dto }) => changes.record(dto), { strategy: 'handler', queue: 'product.record.on.product.updated' })", filename: WORKERS, errors: [{ messageId: 'module' }] },
-    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(({ dto }) => changes.record(dto), { strategy: 'handler', queue: 'priceChange.remember.on.product.updated' })", filename: WORKERS, errors: [{ messageId: 'useCase' }] },
-    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(({ dto }) => changes.record(dto), { strategy: 'handler', queue: 'priceChange.record.on.product.created' })", filename: WORKERS, errors: [{ messageId: 'event' }] },
-    ...['order', 'order.fulfil', 'order.fulfil.now.on.order.placed', 'order.fulfil.on.placed']
+    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(({ dto }) => changes.record(dto), { strategy: 'handler', queue: 'prices[product].record_on_prices[product].updated' })", filename: WORKERS, errors: [{ messageId: 'module' }] },
+    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(({ dto }) => changes.record(dto), { strategy: 'handler', queue: 'prices[priceChange].remember_on_prices[product].updated' })", filename: WORKERS, errors: [{ messageId: 'useCase' }] },
+    { code: "(changes: PriceChange_Module) => deps.product.events.updated.subscribe(({ dto }) => changes.record(dto), { strategy: 'handler', queue: 'prices[priceChange].record_on_prices[product].created' })", filename: WORKERS, errors: [{ messageId: 'event' }] },
+    // The queue of a module of no feature, `.on.` between its parts, is no handler's queue.
+    ...['orders[order]', 'orders[order].fulfil', 'orders[order].fulfil.now_on_orders[order].placed', 'orders[order].fulfil_on_placed', 'order.fulfil.on.order.placed']
       .map(queue => ({ code: subscribe('orders.fulfil(o.id)', queue), filename: ORDER_WORKERS, errors: [{ messageId: 'shape' }] })),
-    { code: subscribe('products.fulfil(o.id)', 'order.fulfil.on.order.placed'), filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
+    { code: subscribe('products.fulfil(o.id)', 'orders[order].fulfil_on_orders[order].placed'), filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
     // A module of a feature: the queue of a module of none, another module's, another feature's, another event's.
     {
       code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'template.welcome.on.contacts[contact].created' })",
@@ -63,22 +63,22 @@ tester.run('reaction-queue', asRule(reactionQueue), {
     { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'emails[template].welcome_on_contacts[contact].created' })", filename: TEMPLATE_WORKERS, errors: [{ messageId: 'module', data: { module: 'campaigns[template]', found: 'emails[template]', file: 'template.workers.ts' } }] },
     { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'campaigns[tag].welcome_on_contacts[contact].created' })", filename: TEMPLATE_WORKERS, errors: [{ messageId: 'module' }] },
     { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'campaigns[template].welcome_on_contacts[contact].deleted' })", filename: TEMPLATE_WORKERS, errors: [{ messageId: 'event', data: { on: '_on_', event: '….created' } }] },
-    { code: `(orders: Order_Module, products: Product_Module) => ${subscribe('products.fulfil(o.id)', 'order.fulfil.on.order.placed')}`, filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
-    { code: `(orders: Order_Module, deps: Order_Deps) => ${subscribe('deps.product.fulfil(o.id)', 'order.fulfil.on.order.placed')}`, filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
-    { code: "this.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'mail.fulfil.on.order.placed' })", filename: `${ORDER}/order.module.ts`, errors: [{ messageId: 'module' }] },
-    { code: "orders.events.placed.subscribe(o => orders.fulfil(o.id), { strategy: 'handler' as const, queue: 'order.bad' })", filename: ORDER_WORKERS, errors: [{ messageId: 'shape' }] },
-    { code: "orders.events.placed.subscribe(o => orders.fulfil(o.id), { strategy: 'handler' satisfies string, queue: 'order.bad' })", filename: ORDER_WORKERS, errors: [{ messageId: 'shape' }] },
-    { code: `(orders: m.Product_Module) => ${subscribe('orders.fulfil(o.id)', 'order.fulfil.on.order.placed')}`, filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
-    { code: "class W { register() { this.orders.events.placed.subscribe(o => this.products.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' }) } }", filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
-    { code: "class W { constructor(private readonly orders: Product_Module) {} register() { this.orders.events.placed.subscribe(o => this.orders.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' }) } }", filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
+    { code: `(orders: Order_Module, products: Product_Module) => ${subscribe('products.fulfil(o.id)', 'orders[order].fulfil_on_orders[order].placed')}`, filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
+    { code: `(orders: Order_Module, deps: Order_Deps) => ${subscribe('deps.product.fulfil(o.id)', 'orders[order].fulfil_on_orders[order].placed')}`, filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
+    { code: "this.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'orders[mail].fulfil_on_orders[order].placed' })", filename: `${ORDER}/order.module.ts`, errors: [{ messageId: 'module' }] },
+    { code: "orders.events.placed.subscribe(o => orders.fulfil(o.id), { strategy: 'handler' as const, queue: 'orders[order].bad' })", filename: ORDER_WORKERS, errors: [{ messageId: 'shape' }] },
+    { code: "orders.events.placed.subscribe(o => orders.fulfil(o.id), { strategy: 'handler' satisfies string, queue: 'orders[order].bad' })", filename: ORDER_WORKERS, errors: [{ messageId: 'shape' }] },
+    { code: `(orders: m.Product_Module) => ${subscribe('orders.fulfil(o.id)', 'orders[order].fulfil_on_orders[order].placed')}`, filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
+    { code: "class W { register() { this.orders.events.placed.subscribe(o => this.products.fulfil(o.id), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' }) } }", filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
+    { code: "class W { constructor(private readonly orders: Product_Module) {} register() { this.orders.events.placed.subscribe(o => this.orders.fulfil(o.id), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' }) } }", filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
     // A queue written as a template, or with what only TypeScript sees around it.
-    ...['`mail.fulfil.on.order.placed`', "<const>'mail.fulfil.on.order.placed'", "'mail.fulfil.on.order.placed'!"]
+    ...['`orders[mail].fulfil_on_orders[order].placed`', "<const>'orders[mail].fulfil_on_orders[order].placed'", "'orders[mail].fulfil_on_orders[order].placed'!"]
       .map(queue => ({ code: `orders.events.placed.subscribe(o => orders.fulfil(o.id), { strategy: \`handler\`, queue: ${queue} })`, filename: ORDER_WORKERS, errors: [{ messageId: 'module' }] })),
     // `on` called on another module would put a reaction of it in this one's files.
     { code: "(orders: Order_Module, products: Product_Module) => products.on(orders.events.placed, 'fulfil', o => [o.id])", filename: ORDER_WORKERS, errors: [{ messageId: 'on' }] },
     { code: "(orders: Order_Module, deps: Order_Deps) => deps.product.on(orders.events.placed, 'fulfil', o => [o.id])", filename: ORDER_WORKERS, errors: [{ messageId: 'on' }] },
     // `this` in a class of the workers is that class, not the module.
-    { code: "class W { fulfil(id) {} register(orders) { orders.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' }) } }", filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
+    { code: "class W { fulfil(id) {} register(orders) { orders.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' }) } }", filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
   ],
 })
 
@@ -87,13 +87,13 @@ const typedModule = `
 declare class Emitter { subscribe(handler: (payload: unknown) => unknown, subscription: { strategy: string, queue: string }): () => void }
 declare function eventsOf<C>(bus: unknown, classes: C): { readonly [K in keyof C]: Emitter }
 declare const base: { bus: unknown, schedules: { define(name: string, cron: string): Emitter } }
-export class Order_Placed { static readonly eventName = 'order.placed' }
+export class Order_Placed { static readonly eventName = 'orders[order].placed' }
 export class Order_Module {
   readonly events = eventsOf(base.bus, { added: Order_Placed })
   readonly purgeSchedule
   constructor() {
-    this.purgeSchedule = base.schedules.define('order.nightly', '0 3 * * *')
-    this.events.added.subscribe(() => this.fulfil('x'), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' })
+    this.purgeSchedule = base.schedules.define('orders[order].nightly', '0 3 * * *')
+    this.events.added.subscribe(() => this.fulfil('x'), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' })
   }
   fulfil(id: string) {}
   purge() {}
@@ -101,11 +101,11 @@ export class Order_Module {
 `
 const typedCases: [string, string?][] = [
   // The event is its class's name, or its schedule's, whatever the key it is read from.
-  ["export const w = (orders: Order_Module) => orders.events.added.subscribe(() => orders.fulfil('x'), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' })"],
-  ["export const w = (orders: Order_Module) => orders.purgeSchedule.subscribe(() => orders.purge(), { strategy: 'handler', queue: 'order.purge.on.order.nightly' })"],
-  ["export const w = (orders: Order_Module) => orders.events.added.subscribe(() => orders.fulfil('x'), { strategy: 'handler', queue: 'order.fulfil.on.order.added' })", 'event'],
-  ["export const w = (orders: Order_Module) => orders.purgeSchedule.subscribe(() => orders.purge(), { strategy: 'handler', queue: 'order.purge.on.order.purgeSchedule' })", 'event'],
-  ["export class W { fulfil(id: string) {} register(orders: Order_Module) { orders.events.added.subscribe(() => this.fulfil('x'), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' }) } }", 'useCase'],
+  ["export const w = (orders: Order_Module) => orders.events.added.subscribe(() => orders.fulfil('x'), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' })"],
+  ["export const w = (orders: Order_Module) => orders.purgeSchedule.subscribe(() => orders.purge(), { strategy: 'handler', queue: 'orders[order].purge_on_orders[order].nightly' })"],
+  ["export const w = (orders: Order_Module) => orders.events.added.subscribe(() => orders.fulfil('x'), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].added' })", 'event'],
+  ["export const w = (orders: Order_Module) => orders.purgeSchedule.subscribe(() => orders.purge(), { strategy: 'handler', queue: 'orders[order].purge_on_orders[order].purgeSchedule' })", 'event'],
+  ["export class W { fulfil(id: string) {} register(orders: Order_Module) { orders.events.added.subscribe(() => this.fulfil('x'), { strategy: 'handler', queue: 'orders[order].fulfil_on_orders[order].placed' }) } }", 'useCase'],
 ]
 const cases = typedCases.map(([code, error], index) => ({ code: `import type { Order_Module } from './order.module'\n${code}`, filename: `${ORDER}/order${index}.workers.ts`, error }))
 const program = programOf({ [ORDER_TYPED]: typedModule, ...Object.fromEntries(cases.map(({ filename, code }) => [filename, code])) })
@@ -149,22 +149,15 @@ describe("the lint's queue and newt's", () => {
     expect(taken).toBeGreaterThan(100)
   })
 
-  it('newt takes every queue the lint takes, for the event the lint read', () => {
-    let taken = 0
-    for (const queue of queues(PARTS)) {
-      const shape = QUEUE.exec(queue)
-      if (!shape) continue
-      taken++
-      expect({ queue, event: eventOfQueue(queue) }).toEqual({ queue, event: shape[3] })
-    }
-    // The sample reaches the lint's shape often enough to say something.
-    expect(taken).toBeGreaterThan(500)
+  it('neither takes the queue of a module of no feature', () => {
+    expect(eventOfQueue('order.fulfil.on.order.placed')).toBeUndefined()
+    expect(FEATURE_QUEUE.test('order.fulfil.on.order.placed')).toBe(false)
   })
 
   it('the lint refuses what newt takes only for its event, which is a module and one of its events', () => {
-    for (const queue of ['order.fulfil.on.placed', 'order.fulfil.on.order.placed.again', 'order.fulfil.on.order.pla ced']) {
+    for (const queue of ['orders[order].fulfil_on_placed', 'orders[order].fulfil_on_orders[order].placed.again', 'orders[order].fulfil_on_orders[order].pla ced']) {
       expect(eventOfQueue(queue)).toBeDefined()
-      expect(QUEUE.test(queue)).toBe(false)
+      expect(FEATURE_QUEUE.test(queue)).toBe(false)
     }
   })
 })

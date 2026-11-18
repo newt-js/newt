@@ -1,4 +1,3 @@
-import { MODULE }      from '../../testing/testing'
 import { TEMPLATE }    from '../../testing/testing'
 import { asRule }      from '../../testing/testing'
 import { tester }      from '../../testing/testing'
@@ -21,8 +20,8 @@ tester.run('module-names', asRule(moduleNames), {
     { code: "class Other extends Base { constructor() { super('anything') } }", filename: MODULE_TS },
     // A test names throwaway events as it likes.
     { code: "import { defineEvent } from '@newt-js/core'\nconst Other = defineEvent('other.happened', schema)", filename: `${TEMPLATE}/template.module.test.ts` },
-    // A module of no feature is not named so.
-    { code: CLASS("constructor(base) { super('priceChange', base.useCaseRunner) }"), filename: `${MODULE}/price-change.module.ts` },
+    // A module of no feature, in the old layout, is no module: not judged.
+    { code: CLASS("constructor(base) { super('priceChange', base.useCaseRunner) }"), filename: '/repo/src/contexts/ws/modules/price-change/price-change.module.ts' },
     // A feature in kebab-case is named in camelCase.
     { code: CLASS("constructor(base) { super('salesOrders[orderLine]', base.useCaseRunner) }"), filename: '/repo/src/contexts/shop/features/sales-orders/modules/order-line/order-line.module.ts' },
   ],

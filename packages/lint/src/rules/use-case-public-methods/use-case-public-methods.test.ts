@@ -3,7 +3,7 @@ import { asRule }               from '../../testing/testing'
 import { tester }               from '../../testing/testing'
 import { useCasePublicMethods } from './use-case-public-methods'
 
-const ORDER_MODULE = '/repo/src/contexts/ws/modules/order/order.module.ts'
+const ORDER_MODULE = '/repo/src/contexts/ws/features/orders/modules/order/order.module.ts'
 const moduleClass = (body: string) => `class Order_Module extends Module {\n${body}\n}`
 
 tester.run('use-case-public-methods', asRule(useCasePublicMethods), {

@@ -65,8 +65,8 @@ export const parser = tseslint.parser
 /** The typescript-eslint this package carries: an app that wants its configs takes them from here, since ESLint refuses two plugins under one name. */
 export { tseslint }
 
-/** Where a module's files are: anything under a `modules/<module>/` folder. */
-const MODULES = '**/modules/*/**/*.ts'
+/** Where a module's files are: anything under a `features/<feature>/modules/<module>/` folder. */
+const MODULES = '**/features/*/modules/*/**/*.ts'
 
 /** newt's style, which no rule of its own says: every `if`, `else` and loop takes braces, and its body goes on lines of its own. Both fix themselves. */
 export const STYLE: Linter.RulesRecord = {

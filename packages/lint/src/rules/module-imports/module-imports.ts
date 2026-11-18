@@ -52,7 +52,7 @@ export const moduleImports: TSESLint.RuleModule<'private' | 'type' | 'barrel'> =
       if (!imported) return null
       if (place && sameModule(imported, place)) return null
       // Another feature's modules are reached through its entry point alone: newt/feature-imports says so.
-      if (imported.feature !== null && imported.feature !== ownFeature) return null
+      if (imported.feature !== ownFeature) return null
       if (VALUES.test(imported.inside)) return null
       if (!TYPES.test(imported.inside)) return { imported, messageId: 'private' as const }
       return isTypeOnly(node) ? null : { imported, messageId: 'type' as const }
