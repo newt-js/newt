@@ -57,7 +57,7 @@ Everything else is its own: its schemas as values (another module never parses, 
 | `newt/module-names` | A module is named `<feature>[<module>]` after its folders: in `super`, and at the start of its events', schedules' and rate limits' names. It writes its `exposes` `as const`. |
 | `newt/context-imports` | A context imports only the contexts it says it uses, never in a cycle. |
 | `newt/feature-imports` | Another feature is imported only through its entry point, `<feature>.feature.ts`, which re-exports the types and errors it makes public; never a module inside it. And only a feature its own entry point imports (its `uses`), never in a cycle. |
-| `newt/module-place` | A module lives in a feature, `<context>/features/<feature>/<module>/`: a file in a context's `modules/`, in a feature's `modules/` or in `feature/` says where to move it. Needs `contexts`. |
+| `newt/module-place` | A module lives in a feature, `<context>/features/<feature>/<module>/`: a file in a context's `modules/`, in a feature's `modules/` or in `feature/` says where to move it; a feature holds only its entry point and its modules' folders, so a folder of it with no `<folder>.module.ts` is none. Needs `contexts`. |
 | `newt/schema-imports` | A module's schema imports only zod, `@newt-js/core` (its root), the module's value objects and other modules' DTO types (`import type`, which `newt/module-imports` checks). |
 
 ### Use cases
