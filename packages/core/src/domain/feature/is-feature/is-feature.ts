@@ -1,5 +1,8 @@
 export const FEATURE_BRAND: unique symbol = Symbol.for('@newt-js/core/feature')
 
+/** Where a feature's contract keeps its modules whole, for its tests alone: `modulesOf`. */
+export const FEATURE_MODULES: unique symbol = Symbol.for('@newt-js/core/feature-modules')
+
 /** What a feature's contract tells of itself: its name and its context's. */
 export type FeatureIdentity = { readonly name: string, readonly context: string }
 
