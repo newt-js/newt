@@ -5,8 +5,9 @@ export function moduleLines({ module, type, plural }: ModuleNames, withDeps: boo
   const deps = (text: string) => withDeps ? text : ''
   return {
     initialize: `  static initialize(base: ContextBase, router: HttpRouter${deps(`, deps: ${type}_Deps`)}): ${type}_Module {`,
-    created: `    const module = new ${type}_Module(base, new ${type}_Repository(base)${deps(', deps')})`,
-    constructor: `  private constructor(base: ContextBase, private readonly ${plural}: ${type}_Repository${deps(`, private readonly deps: ${type}_Deps`)}) {`,
+    created: `    const module = new ${type}_Module(base, new ${type}_Repository(base), router${deps(', deps')})`,
+    constructor: `  private constructor(base: ContextBase, private readonly ${plural}: ${type}_Repository, router: HttpRouter${deps(`, private readonly deps: ${type}_Deps`)}) {`,
     super: `    super('${module}', base.useCaseRunner${deps(', deps')})`,
+    routes: `    this.routes = register${type}Routes(router, this${deps(', deps')})`,
   }
 }

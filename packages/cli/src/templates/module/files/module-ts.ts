@@ -17,15 +17,16 @@ import { ${type}CreateSchema, ${type}Filter, type ${type}CreateDTO, type ${type}
 export class ${type}_Module extends Module {
 ${lines.initialize}
 ${lines.created}
-    register${type}Routes(router, module)
     return module
   }
 
   readonly events
+  readonly routes
 
 ${lines.constructor}
 ${lines.super}
     this.events = eventsOf(base.bus, { created: ${type}_Created })
+${lines.routes}
   }
 
   @UseCase()
