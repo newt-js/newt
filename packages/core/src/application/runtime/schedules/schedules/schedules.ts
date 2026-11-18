@@ -14,7 +14,7 @@ import { tickOf }                from '../tick-of/tick-of'
 import type { TickRow }          from '../tick-row'
 
 /** `<feature>[<module>].<name>`, or `<module>.<name>` for a module of no feature. */
-const NAME = /^[a-z][A-Za-z0-9]*(?:\[[a-z][A-Za-z0-9]*\])?\.[a-z][A-Za-z0-9]*$/
+const NAME = /^[a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\]\.[a-z][A-Za-z0-9]*$/
 
 const LOOK_EVERY_MS = 60_000
 
@@ -36,7 +36,7 @@ export class Schedules {
 
   define(name: string, cron: string): DomainEventEmitter<ScheduleTick> {
     if (!NAME.test(name)) {
-      throw new Error(`A schedule is named as an event, '<feature>[<module>].<name>' ('<module>.<name>' for a module of no feature): '${name}' is not`)
+      throw new Error(`A schedule is named as an event, '<feature>[<module>].<name>': '${name}' is not`)
     }
     if (this.schedules.has(name)) {
       throw new Error(`A schedule named '${name}' is defined already`)

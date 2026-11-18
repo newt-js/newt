@@ -87,7 +87,7 @@ class Columns extends Repository<Column, ColumnRow> {
 
 class Board extends Module {
   constructor(base: ContextBase, readonly columns: Columns) {
-    super('column', base.useCaseRunner)
+    super('board[column]', base.useCaseRunner)
   }
   @UseCase()
   async add(boardId: string, name: string) {
@@ -128,7 +128,7 @@ describe('the guard rule', () => {
   test('names the use case whose save it is', async () => {
     const board = new Board(new ContextBase({ name: 'test', platform, database }), open())
 
-    await expect(board.add('b1', 'todo')).rejects.toThrow('[guard rule] column.add reads column')
+    await expect(board.add('b1', 'todo')).rejects.toThrow('[guard rule] board[column].add reads column')
   })
 
   test('refuses one that reads in before, and rows written with saveRows from what they read', async () => {

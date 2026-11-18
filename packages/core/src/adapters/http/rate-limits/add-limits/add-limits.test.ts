@@ -8,8 +8,8 @@ import { systemClock }   from '../../../../domain/clock/system-clock/system-cloc
 import { addLimits }     from './add-limits'
 
 const limits = new RateLimits(new MemoryCluster(), 'shop', systemClock)
-const api = { limit: limits.define('api.calls', { limit: 10, windowMs: 60_000 }) }
-const cards = { limit: limits.define('cards.create', { limit: 1, windowMs: 60_000 }) }
+const api = { limit: limits.define('shop[api].calls', { limit: 10, windowMs: 60_000 }) }
+const cards = { limit: limits.define('board[card].create', { limit: 1, windowMs: 60_000 }) }
 
 describe('addLimits', () => {
   test('the outer ones first, then its own, each limit once', () => {

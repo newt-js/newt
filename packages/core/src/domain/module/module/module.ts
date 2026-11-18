@@ -12,6 +12,9 @@ import type { Reaction }      from '../reaction/reaction'
 import type { Ref }           from '../ref/ref'
 import type { RefFinder }     from '../ref/ref-finder'
 
+/** `<feature>[<module>]`: a module is always of a feature, and named after both. */
+const MODULE_NAME = /^[a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\]$/
+
 export abstract class Module {
 
   get [MODULE_BRAND](): true {
@@ -23,6 +26,9 @@ export abstract class Module {
     public readonly useCaseRunner: UseCaseRunner,
     deps?: object,
   ) {
+    if (!MODULE_NAME.test(name)) {
+      throw new Error(`A module is named after its feature and itself, '<feature>[<module>]' in camelCase, as 'campaigns[template]': '${name}' is not`)
+    }
     useCaseRunner.registry?.module(this, deps)
   }
 

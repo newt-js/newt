@@ -15,7 +15,7 @@ const platform = new Platform({ cluster: new MemoryCluster() })
 
 class Tax_Module extends Module {
   constructor(base: ContextBase) {
-    super('tax', base.useCaseRunner)
+    super('billing[tax]', base.useCaseRunner)
   }
 
   @UseCase()
@@ -24,7 +24,7 @@ class Tax_Module extends Module {
 
 class Order_Module extends Module {
   constructor(base: ContextBase, deps: object) {
-    super('order', base.useCaseRunner, deps)
+    super('sales[order]', base.useCaseRunner, deps)
   }
 
   @UseCase()
@@ -37,15 +37,15 @@ describe('describeContext', () => {
     const billing = new ContextBase({ name: 'billing', platform, database: new MemoryDatabase() })
     const tax = new Tax_Module(billing)
     new Order_Module(shop, { tax, self: new Tax_Module(shop) })
-    shop.bus.subscribe('order.placed', () => {}, { strategy: 'handler', queue: 'invoice.open.on.order.placed', attempts: 3 })
+    shop.bus.subscribe('order.placed', () => {}, { strategy: 'handler', queue: 'billing[invoice].open_on_order.placed', attempts: 3 })
 
     const described = describeContext(shop.useCaseRunner.registry, new Map())
 
     expect(described.name).toBe('shop')
-    expect(described.modules.map(module => module.id)).toEqual(['shop/tax', 'shop/order'])
+    expect(described.modules.map(module => module.id)).toEqual(['shop/billing[tax]', 'shop/sales[order]'])
     expect(described.uses).toEqual(['billing'])
     expect(described.subscriptions).toEqual([
-      { event: 'shop/order.placed', strategy: 'handler', queue: 'invoice.open.on.order.placed', handler: 'invoice.open', attempts: 3, filtered: false },
+      { event: 'shop/order.placed', strategy: 'handler', queue: 'billing[invoice].open_on_order.placed', handler: 'billing[invoice].open', attempts: 3, filtered: false },
     ])
   })
 

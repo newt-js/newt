@@ -25,8 +25,8 @@ class Session_Module extends Module {
   readonly signIns
 
   constructor(base: ContextBase) {
-    super('session', base.useCaseRunner, {})
-    this.signIns = base.rateLimits.define('session.signIn', { limit: 2, windowMs: MINUTE })
+    super('auth[session]', base.useCaseRunner, {})
+    this.signIns = base.rateLimits.define('auth[session].signIn', { limit: 2, windowMs: MINUTE })
   }
 
   @UseCase()
@@ -59,7 +59,7 @@ describe('rate limits', () => {
 
     const refused = await sessions.signIn('ana@example.com', false).catch(error => error)
     expect(refused).toBeInstanceOf(TooManyRequests)
-    expect(refused).toMatchObject({ kind: 'too_many_requests', code: 'too_many_requests', params: { limit: 'session.signIn' } })
+    expect(refused).toMatchObject({ kind: 'too_many_requests', code: 'too_many_requests', params: { limit: 'auth[session].signIn' } })
     expect(refused.params.retryAfterSeconds).toBeGreaterThan(0)
     expect(await sessions.signIn('bea@example.com', true)).toBe('in')
     await auth.close()
@@ -93,20 +93,20 @@ describe('rate limits', () => {
     const one = await base('auth', shared)
     const two = await base('boards', shared)
     const limit = { limit: 1, windowMs: MINUTE }
-    await one.base.rateLimits.define('session.signIn', limit).take('ana')
+    await one.base.rateLimits.define('auth[session].signIn', limit).take('ana')
 
-    expect((await two.base.rateLimits.define('session.signIn', limit).take('ana')).allowed).toBe(true)
+    expect((await two.base.rateLimits.define('auth[session].signIn', limit).take('ana')).allowed).toBe(true)
   })
 
-  test('a limit is named <module>.<name>, once, with a rule that can count', async () => {
+  test('a limit is named <feature>[<module>].<name>, once, with a rule that can count', async () => {
     const { base: auth } = await base()
 
     expect(() => auth.rateLimits.define('signIn', { limit: 1, windowMs: MINUTE })).toThrow('<feature>[<module>].<name>')
+    expect(() => auth.rateLimits.define('session.signIn', { limit: 1, windowMs: MINUTE })).toThrow('A rate limit is named <feature>[<module>].<name>, as auth[session].signIn: session.signIn')
     expect(() => auth.rateLimits.define('auth[Session].signIn', { limit: 1, windowMs: MINUTE })).toThrow('<feature>[<module>].<name>')
     expect(() => auth.rateLimits.define('auth[session].signIn', { limit: 1, windowMs: MINUTE })).not.toThrow()
-    auth.rateLimits.define('session.signIn', { limit: 1, windowMs: MINUTE })
-    expect(() => auth.rateLimits.define('session.signIn', { limit: 1, windowMs: MINUTE })).toThrow('twice')
-    expect(() => auth.rateLimits.define('session.other', { limit: 0, windowMs: MINUTE })).toThrow('limit')
+    expect(() => auth.rateLimits.define('auth[session].signIn', { limit: 1, windowMs: MINUTE })).toThrow('twice')
+    expect(() => auth.rateLimits.define('auth[session].other', { limit: 0, windowMs: MINUTE })).toThrow('limit')
     await auth.close()
   })
 })
