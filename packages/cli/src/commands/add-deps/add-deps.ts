@@ -48,7 +48,7 @@ async function moduleOfItsFeature(found: FoundModule, other: string, cwd: string
     throw new CommandError(`${used.folder} is a module of ${elsewhere.name}: a module uses another feature whole, through what it exposes, as in newt add deps ${context.folder}/${feature.folder}/${module.folder} ${elsewhere.name}`)
   }
   if (!siblings.includes(used.folder)) {
-    throw new CommandError(`The feature ${context.folder}/${feature.folder} has no module ${used.folder}: add it with newt add module ${context.folder}/${feature.folder}/${used.folder}`)
+    throw new CommandError(`Neither ${context.folder}/${feature.folder} has a module ${used.folder} nor ${context.folder} a feature ${used.folder}: add the module with newt add module ${context.folder}/${feature.folder}/${used.folder}, or the feature with newt add feature ${context.folder}/${used.folder}`)
   }
   const cycle = dependencyPath(await moduleDepsGraph(join(cwd, featureFolder), feature, siblings), used.module, module.module)
   if (cycle) {
@@ -102,11 +102,15 @@ export const ADD_DEPS = defineCommand({
   run: async ({ args, cwd, options }) => {
     const [given, other, ...rest] = args
     if (other === undefined || rest.length > 0) throw new CommandError(USAGE)
-    if (other.includes('/')) {
-      throw new CommandError("A module uses another context's modules once its context is opened with that context: newt does not write that yet")
-    }
     const found = await findModule(given, cwd, options.backend, USAGE)
     const { module, feature, features } = found
+    if (other.includes('/')) {
+      const [first] = other.split('/')
+      if (features.some(each => each.name === first)) {
+        throw new CommandError(`A module uses another feature whole, through what it exposes, by the feature's name alone: newt add deps ${given} ${first}`)
+      }
+      throw new CommandError("A module uses another context's modules once its context is opened with that context: newt does not write that yet")
+    }
     if (other === module.folder) throw new CommandError(`${module.folder} cannot use itself`)
     if (other === feature.folder) {
       throw new CommandError(`${module.folder} is of ${feature.folder}: it uses the other modules of its feature by their name, as in newt add deps ${given} <module>`)

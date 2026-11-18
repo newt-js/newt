@@ -145,10 +145,12 @@ test('GET /orders/invoices/:invoiceId/orders answers from order, under invoice',
 
   test('refuses a module the context has not, itself, a cycle, or another context', async () => {
     const backend = await withInvoice()
-    expect((await run(ADD_DEPS, ['sales/orders/order', 'customer'], backend)).text).toBe('The feature sales/orders has no module customer: add it with newt add module sales/orders/customer')
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'customer'], backend)).text).toBe('Neither sales/orders has a module customer nor sales a feature customer: add the module with newt add module sales/orders/customer, or the feature with newt add feature sales/customer')
     expect((await run(ADD_DEPS, ['sales/orders/order', 'order'], backend)).text).toBe('order cannot use itself')
     await run(ADD_DEPS, ['sales/orders/order', 'invoice'], backend)
     expect((await run(ADD_DEPS, ['sales/orders/invoice', 'order'], backend)).text).toBe('invoice → order → invoice would be a cycle: modules never use each other, even through others')
     expect((await run(ADD_DEPS, ['sales/orders/order', 'billing/invoice'], backend)).text).toStartWith("A module uses another context's modules")
+    await run(ADD_MODULE, ['sales/customers/customer'], backend)
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'customers/customer'], backend)).text).toBe("A module uses another feature whole, through what it exposes, by the feature's name alone: newt add deps sales/orders/order customers")
   })
 })

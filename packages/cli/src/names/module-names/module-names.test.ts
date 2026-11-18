@@ -39,4 +39,5 @@ test("a module named file: its routes are its feature's", () => {
 test("refuses a name that is not lowercase words joined by -, and its feature's", () => {
   expect(() => of('Order')).toThrow("'Order' cannot name a module")
   expect(() => of('prices')).toThrow("'prices' cannot name a module: it is its feature's name")
+  expect(() => moduleNames(featureNames('order'), 'order')).toThrow('name the feature in plural, by what it groups, and the module by the one thing it holds, as orders/order')
 })
