@@ -38,6 +38,10 @@ tester.run('feature-imports', asRule(featureImports), {
     // Another feature it uses, through its entry point.
     { code: "import type { ContactsFeature } from '../contacts/contacts.feature'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
     { code: "import type { ContactDTO } from '../../contacts/contacts.feature'", filename: `${CAMPAIGNS}/campaign/campaign.module.ts`, options },
+    // Its entry point, index.ts: by its folder, or by its name.
+    { code: "import type { Contacts_Feature } from '../contacts'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
+    { code: "import type { ContactDTO } from '../../contacts/index'", filename: `${CAMPAIGNS}/campaign/campaign.module.ts`, options },
+    { code: "import { Contacts_Feature } from './features/contacts'", filename: `${CONTEXTS}/engagement/engagement.context.ts`, options },
     // The context's composition imports every feature's entry point.
     { code: "import { contactsFeature } from './features/contacts/contacts.feature.ts'", filename: `${CONTEXTS}/engagement/engagement-features.ts`, options },
     // An entry point's own import is what it uses, even one it is not read with, as through an alias.
@@ -54,7 +58,6 @@ tester.run('feature-imports', asRule(featureImports), {
       errors: [{ messageId: 'inside', data: { path: '../../contacts/contact/contact.module', feature: 'contacts' } }],
     },
     { code: "import type { ContactDTO } from '../../contacts/contact/contact.schema'", filename: `${CAMPAIGNS}/campaign/campaign.module.ts`, options, errors: [{ messageId: 'inside' }] },
-    { code: "export * from '../contacts/index'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options, errors: [{ messageId: 'inside' }] },
     { code: "import { Contact_Module } from './features/contacts/contact/contact.module'", filename: `${CONTEXTS}/engagement/engagement-features.ts`, options, errors: [{ messageId: 'inside' }] },
     // A feature its entry point does not import: it is not given it.
     {
