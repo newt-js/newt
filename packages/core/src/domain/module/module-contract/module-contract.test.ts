@@ -95,7 +95,7 @@ describe('contractOf', () => {
       }
     }
 
-    expect(() => contractOf(new Wrong_Module())).toThrow('campaigns[template] exposes purge, which is none of its use cases')
-    expect(() => contractOf(new WrongEvent_Module())).toThrow('campaigns[template] exposes the event deleted, which is none of its events')
+    expect(() => contractOf(new Wrong_Module())).toThrow('campaigns[template] exposes purge, which is none of its use cases (marked @UseCase()): none')
+    expect(() => contractOf(new WrongEvent_Module())).toThrow('campaigns[template] exposes the event deleted, which is none of its events: created')
   })
 })

@@ -10,10 +10,19 @@ type Listed<M, Kind extends keyof Exposes> = M extends { readonly exposes: { rea
 
 type EventsOf<M> = M extends { readonly events: infer Events extends object } ? Events : Record<never, never>
 
+/** The names of a module's use cases, as far as types tell: its own methods that give a promise. */
+type UseCasesOf<M> = { [K in Exclude<keyof M & string, keyof Module>]: M[K] extends (...args: never[]) => Promise<unknown> ? K : never }[Exclude<keyof M & string, keyof Module>]
+
+/** What a module may write as `exposes`: names of its use cases and of its events, as a literal (`as const`). */
+export type Exposing<M> = { readonly exposes?: { readonly useCases?: readonly UseCasesOf<M>[], readonly events?: readonly (keyof EventsOf<M> & string)[] } }
+
+/** A type written out, so an editor shows its members and not its name. */
+type Flat<T> = { [K in keyof T]: T[K] } & {}
+
 /** What another feature sees of a module: the use cases and the events it exposes, nothing else. */
-export type ModuleContract<M extends Module> = Pick<M, Extract<Listed<M, 'useCases'>, keyof M>> & {
-  readonly events: Pick<EventsOf<M>, Extract<Listed<M, 'events'>, keyof EventsOf<M>>>
-}
+export type ModuleContract<M extends Module> = Flat<Pick<M, Extract<Listed<M, 'useCases'>, keyof M>> & {
+  readonly events: Flat<Pick<EventsOf<M>, Extract<Listed<M, 'events'>, keyof EventsOf<M>>>>
+}>
 
 /**
  * A module's contract, built with what it exposes alone: its use cases, bound to it, and
@@ -24,10 +33,12 @@ export function contractOf<M extends Module>(module: M): ModuleContract<M> {
   const registry = module.useCaseRunner.registry
   const own = (module as { events?: Record<string, unknown> }).events ?? {}
   const contract: Record<string, unknown> = {}
+  const listed = (names: string[]) => names.length ? names.join(', ') : 'none'
   for (const name of useCases) {
     const method = (module as unknown as Record<string, unknown>)[name]
     if (typeof method !== 'function' || !registry.isUseCase(`${module.name}.${name}`)) {
-      throw new Error(`${module.name} exposes ${name}, which is none of its use cases: expose what it marks @UseCase()`)
+      const its = [...registry.registeredModules.find(each => each.instance === module)?.useCases.keys() ?? []]
+      throw new Error(`${module.name} exposes ${name}, which is none of its use cases (marked @UseCase()): ${listed(its)}`)
     }
     contract[name] = method.bind(module)
   }
@@ -35,7 +46,7 @@ export function contractOf<M extends Module>(module: M): ModuleContract<M> {
   for (const name of events) {
     const emitter = own[name]
     if (!isEventEmitter(emitter)) {
-      throw new Error(`${module.name} exposes the event ${name}, which is none of its events: expose a key of its events`)
+      throw new Error(`${module.name} exposes the event ${name}, which is none of its events: ${listed(Object.keys(own).filter(key => isEventEmitter(own[key])))}`)
     }
     emitters[name] = emitter as DomainEventEmitter<never>
   }

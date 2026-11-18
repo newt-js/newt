@@ -1,3 +1,4 @@
+import type { Exposing }        from '../../module/module-contract/module-contract'
 import type { ModuleContract }  from '../../module/module-contract/module-contract'
 import { contractOf }           from '../../module/module-contract/module-contract'
 import type { Module }          from '../../module/module/module'
@@ -12,13 +13,16 @@ export type FeatureContract<Modules extends Record<string, Module>> = {
   readonly [K in keyof Modules]: ModuleContract<Modules[K]>
 } & { readonly [FEATURE_BRAND]: FeatureIdentity }
 
+/** The modules a feature shows, each with what it exposes checked: names of its own use cases and events, `as const`. */
+type Shown<Modules> = { [K in keyof Modules]: Exposing<Modules[K]> }
+
 /**
  * A feature's contract, what its entry point returns: the modules it shows, each by its
  * name in the feature (`template`, for `campaigns[template]`), with only what it exposes.
  * A module it leaves out is the feature's own. Each one is a module of this feature, in
  * the context of `base`.
  */
-export function defineFeature<Modules extends Record<string, Module>>(name: string, base: { readonly useCaseRunner: UseCaseRunner }, modules: Modules): FeatureContract<Modules> {
+export function defineFeature<Modules extends Record<string, Module>>(name: string, base: { readonly useCaseRunner: UseCaseRunner }, modules: Modules & Shown<Modules>): FeatureContract<Modules> {
   if (!NAME.test(name)) {
     throw new Error(`'${name}' cannot name a feature: a word in camelCase, as in campaigns or salesOrders`)
   }
@@ -28,8 +32,12 @@ export function defineFeature<Modules extends Record<string, Module>>(name: stri
     if (module.useCaseRunner.registry !== registry) {
       throw new Error(`defineFeature('${name}'): ${module.name} is a module of another context than ${registry.context}'s`)
     }
-    if (module.name !== `${name}[${key}]`) {
-      throw new Error(`The feature ${name} shows ${module.name} as ${key}: it shows its own modules, each by its name in it, ${name}[${key}] as ${key}`)
+    const [, feature, own] = /^(.*)\[(.*)\]$/.exec(module.name) ?? []
+    if (feature !== name) {
+      throw new Error(`defineFeature('${name}'): ${key} is ${module.name}, ${feature === undefined ? 'a module of no feature' : `a module of the feature ${feature}`}: a feature shows only its own modules, ${name}[<module>]`)
+    }
+    if (own !== key) {
+      throw new Error(`defineFeature('${name}'): ${module.name} is shown as ${key}: show it as ${own}`)
     }
     contract[key] = contractOf(module)
   }
