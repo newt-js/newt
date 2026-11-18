@@ -24,7 +24,7 @@ export const modulePlace: TSESLint.RuleModule<'outside' | 'singular' | 'inFeatur
       outside: 'A module lives in its feature: move {{context}}/modules/{{module}} to {{context}}/features/<feature>/{{module}}, as newt add module {{context}}/<feature>/{{module}} writes it.',
       singular: "'{{found}}/' is '{{plural}}/': a module lives in {{context}}/features/<feature>/<module>/.",
       inFeature: "A feature's modules are its folders: move {{context}}/features/{{feature}}/{{found}}/{{module}} to {{context}}/features/{{feature}}/{{module}}.",
-      notModule: "{{context}}/features/{{feature}}/{{folder}}/ is no module, as it has no {{folder}}.module.ts: a feature holds its entry point, {{feature}}.feature.ts, and a folder for each of its modules. Put this file in a module's folder.",
+      notModule: "{{context}}/features/{{feature}}/{{folder}}/ is no module, as it has no {{folder}}.module.ts: a feature holds its class, {{feature}}.feature.ts, its entry point, index.ts, and a folder for each of its modules. Put this file in a module's folder.",
     },
     schema: [{
       type: 'object',

@@ -57,27 +57,29 @@ function pathOf(uses: Record<string, string[]>, from: string, to: string, seen =
   return null
 }
 
-/** That a path inside a feature is its entry point, `<feature>.feature.ts`, as an import names it: with or without its extension. */
-const isEntryPoint = (inside: string, feature: string) => inside.replace(/\.[cm]?[jt]sx?$/, '') === `${feature}.feature`
+/** That a path inside a feature, as an import names it, is its entry point: its folder, or its index.ts; or, as features used to be written, its <feature>.feature.ts. */
+const isEntryPoint = (inside: string, feature: string) => ['', 'index', `${feature}.feature`].includes(inside.replace(/\.[cm]?[jt]sx?$/, ''))
+
+/** That a path inside a feature is the file that says what it uses, its class: `<feature>.feature.ts`. */
+const declaresUses = (inside: string, feature: string) => inside.replace(/\.[cm]?[jt]sx?$/, '') === `${feature}.feature`
 
 /**
- * Features never use each other in a cycle, and a feature uses only those its entry point
- * imports: there it is given them (`uses`). A feature is reached from outside it only through its entry point,
- * `features/<feature>/<feature>.feature.ts`: what it returns is the feature's contract,
- * and what it re-exports (types, errors) is all another feature may name of it. Its
- * modules are its own, so they can be merged or split without breaking another feature.
- * The files of the context outside its features (its composition) import the entry
- * points alone too.
+ * Features never use each other in a cycle, and a feature uses only those its class,
+ * `<feature>.feature.ts`, imports: there it is given them (`uses`). A feature is reached
+ * from outside it only through its entry point, `features/<feature>/index.ts`: its class,
+ * and the types and errors another feature may name of it. Its modules are its own, so
+ * they can be merged or split without breaking another feature. The files of the context
+ * outside its features (its composition) import the entry points alone too.
  */
 export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'cycle', [FeatureImportsOptions]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
   meta: {
     type: 'problem',
-    docs: { description: 'Another feature is reached only through its entry point, <feature>.feature.ts, and features never use each other in a cycle.' },
+    docs: { description: 'Another feature is reached only through its entry point, its index.ts, and features never use each other in a cycle.' },
     messages: {
-      undeclared: "'{{path}}' is the entry point of {{feature}}, which {{own}} does not use: {{own}}.feature.ts imports {{uses}}. If {{own}} needs it, take it in `uses` in {{own}}.feature.ts and pass it to this module's deps (newt add deps does both).",
+      undeclared: "'{{path}}' is the entry point of {{feature}}, which {{own}} does not use: {{own}}.feature.ts imports {{uses}}. If {{own}} needs it, take it in the `uses` of its initialize in {{own}}.feature.ts and pass it to this module's deps (newt add deps does both).",
       cycle: "{{cycle}}: features never use each other in a cycle. Keep one direction and drop the import that closes it; where the feature that lost it called the other, it emits an event instead, and the other reacts to it.",
-      inside: "'{{path}}' is inside the feature {{feature}}: from outside it, import only its entry point, features/{{feature}}/{{feature}}.feature.ts, and reach its modules through the contract it returns ({{feature}}.<module>.<use case>). A type or an error another feature needs, its entry point re-exports.",
+      inside: "'{{path}}' is inside the feature {{feature}}: from outside it, import only its entry point, features/{{feature}}/index.ts, and reach its modules through its class ({{feature}}.<module>.<use case>). A type or an error another feature needs, its index.ts exports.",
     },
     schema: [{
       type: 'object',
@@ -101,13 +103,13 @@ export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'cycl
       const uses = declaredFeatureUses(posix.join(folder, own.context), folder)
       const allowed = uses[own.feature] ?? []
       // An entry point's own imports are what it uses: one through an alias it is not read with is not judged.
-      if (!allowed.includes(imported.feature) && !isEntryPoint(own.inside, own.feature)) {
+      if (!allowed.includes(imported.feature) && !declaresUses(own.inside, own.feature)) {
         const data = { path: specifier, feature: imported.feature, own: own.feature, uses: allowed.length ? allowed.join(', ') : 'no other feature' }
         context.report({ node, messageId: 'undeclared', data })
         return
       }
       const back = pathOf(uses, imported.feature, own.feature)
-      if (back && isEntryPoint(own.inside, own.feature)) {
+      if (back && declaresUses(own.inside, own.feature)) {
         context.report({ node, messageId: 'cycle', data: { cycle: [own.feature, ...back].join(' → ') } })
       }
     })
