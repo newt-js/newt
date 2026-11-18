@@ -7,6 +7,8 @@ import { runCommand }       from '../../run/run-command/run-command'
 import { checkGenerated }   from '../../testing/check-generated/check-generated'
 import { ORDER_MODULE }     from '../../testing/module-project/module-project'
 import { moduleProject }    from '../../testing/module-project/module-project'
+import { ADD_DEPS }         from '../add-deps/add-deps'
+import { ADD_MODULE }       from '../add-module/add-module'
 import { ADD_VALUE_OBJECT } from './add-value-object'
 
 const addValueObject = (args: string[], cwd: string) => runCommand(ADD_VALUE_OBJECT, args, { cwd, ask: null })
@@ -17,6 +19,27 @@ describe('newt add value-object', () => {
     expect((await addValueObject(['sales/orders/order', 'shipping-code'], backend)).code).toBe(0)
     expect(await Bun.file(join(backend, ORDER_MODULE, 'value-objects/shipping-code.ts')).text()).toContain("export const ShippingCode = defineValueObject(z.string().trim().min(1).max(100).brand<'ShippingCode'>(), text => new InvalidShippingCode(text))")
     expect(await Bun.file(join(backend, ORDER_MODULE, 'errors/invalid-shipping-code.ts')).text()).toContain("readonly code = 'orders[order].invalid_shipping_code'")
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
+  test("the id of another feature's entity, of its brand, which that feature's use cases take as it is", async () => {
+    const backend = await moduleProject()
+    await runCommand(ADD_MODULE, ['sales/customers/customer'], { cwd: backend, ask: null })
+    await runCommand(ADD_DEPS, ['sales/orders/order', 'customers'], { cwd: backend, ask: null })
+    const output = await addValueObject(['sales/orders/order', 'customer-id'], backend)
+    expect(output.text).toBe(`  created  ${ORDER_MODULE}/value-objects/customer-id.ts\n\nNext steps:\n  keep it in the module's schema, CustomerId.schema, and give it as it is to the use cases of customers`)
+    expect(await Bun.file(join(backend, ORDER_MODULE, 'value-objects/customer-id.ts')).text()).toContain("export const CustomerId = uuidFactory('CustomerId')")
+    const customer = join(backend, 'src/contexts/sales/features/customers/modules/customer/customer.module.ts')
+    await Bun.write(customer, (await Bun.file(customer).text()).replace('exposes = { useCases: [], events: [] } as const', "exposes = { useCases: ['get'], events: [] } as const"))
+    await Bun.write(join(backend, ORDER_MODULE, 'customer-id.test.ts'), `import { expect, test } from 'bun:test'
+import type { CustomersFeature } from '../../../customers/customers.feature'
+import { CustomerId } from './value-objects/customer-id'
+
+test("customers' use cases take the id order keeps", () => {
+  const read = (customers: CustomersFeature) => customers.customer.get({ id: CustomerId.from(Bun.randomUUIDv7()) })
+  expect(read).toBeFunction()
+})
+`)
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
