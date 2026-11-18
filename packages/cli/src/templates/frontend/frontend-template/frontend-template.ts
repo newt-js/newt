@@ -1,50 +1,48 @@
-import { join }                   from 'node:path'
+import { join }                  from 'node:path'
 // --------------------------------------------------------
-import type { FileChange }        from '../../../commands/command'
-import type { ContextNames }      from '../../../names/context-names/context-names'
-import { CONTEXTS_FOLDER }        from '../../../project/backend-contexts/backend-contexts'
-import { quoted }                 from '../../quoted/quoted'
-import type { TemplateVersions }  from '../../template-versions/template-versions'
-import { FRONTENDS_START }        from '../files/backend-files'
-import { SERVED }                 from '../files/backend-files'
-import { SERVED_WITH_FRONTENDS }  from '../files/backend-files'
-import { SRC_FRONTENDS_TEST_TS }  from '../files/backend-files'
-import { SRC_FRONTENDS_TS }       from '../files/backend-files'
-import { FRONTEND_TSCONFIG_JSON } from '../files/frontend-files'
-import { MAIN_TSX }               from '../files/frontend-files'
-import { appTsx }                 from '../files/frontend-files'
-import { indexHtml }              from '../files/frontend-files'
+import type { FileChange }       from '../../../commands/command'
+import type { ContextNames }     from '../../../names/context-names/context-names'
+import { CONTEXTS_FOLDER }       from '../../../project/backend-contexts/backend-contexts'
+import { contextToRun }          from '../../context/files/context-ts'
+import { quoted }                from '../../quoted/quoted'
+import type { TemplateVersions } from '../../template-versions/template-versions'
+import { appTest }               from '../files/backend-files'
+import { contextToRunWithApp }   from '../files/backend-files'
+import { APP_TSCONFIG_JSON }     from '../files/frontend-files'
+import { MAIN_TSX }              from '../files/frontend-files'
+import { appTsx }                from '../files/frontend-files'
+import { baseTs }                from '../files/frontend-files'
+import { indexHtml }             from '../files/frontend-files'
 
 export type FrontendTemplateOptions = { backend: string, context: ContextNames, versions: TemplateVersions }
 
-export type BuiltFrontendOptions = { backend: string, context: ContextNames, fromSrc: string }
+export type BuiltFrontendOptions = { backend: string, context: ContextNames, fromContext: string, fromSrc: string }
 
-/** What makes the backend serve a frontend at /<context>: its line in src/frontends.ts, and serve() given them. */
-function servedAt(backend: string, context: ContextNames, mount: string, imports: string[]): FileChange[] {
-  const at = (path: string) => join(backend, path)
+/** What makes the context serve its app at /<context>: the app given in <ctx>.context.ts, and a test that it answers. */
+function servedAt(backend: string, context: ContextNames, app: string, imports: string[], built?: string): FileChange[] {
+  const file = join(backend, CONTEXTS_FOLDER, context.folder, `${context.folder}.context.ts`)
   return [
-    { action: 'create', path: at('src/frontends.ts'), content: SRC_FRONTENDS_TS },
-    { action: 'create', path: at('src/frontends.test.ts'), content: SRC_FRONTENDS_TEST_TS },
-    { action: 'insert-lines', path: at('src/frontends.ts'), anchor: FRONTENDS_START, position: 'after', lines: [`  { path: '/${context.folder}', app: ${mount} },`], imports },
-    { action: 'replace-line', path: at('src/backend.ts'), line: SERVED, with: SERVED_WITH_FRONTENDS, imports: ["import { frontends } from './frontends'"] },
+    { action: 'replace-line', path: file, line: contextToRun(context), with: contextToRunWithApp(context, app), imports },
+    { action: 'append-block', path: join(backend, 'src/backend.test.ts'), block: appTest(context, built), imports: built === undefined ? [] : ["import { join } from 'node:path'"] },
   ]
 }
 
-/** A frontend built elsewhere, its folder `fromSrc` (from the backend's src/), served as it is at /<context>. */
-export function builtFrontendTemplate({ backend, context, fromSrc }: BuiltFrontendOptions): FileChange[] {
-  return servedAt(backend, context, `join(import.meta.dir, ${quoted(fromSrc)})`, ["import { join } from 'node:path'"])
+/** An app built elsewhere, its folder `fromContext` (from the context's folder), served as it is at /<context>. */
+export function builtFrontendTemplate({ backend, context, fromContext, fromSrc }: BuiltFrontendOptions): FileChange[] {
+  return servedAt(backend, context, `join(import.meta.dir, ${quoted(fromContext)})`, [], quoted(fromSrc))
 }
 
-/** A React frontend of a context, in its frontend/, with its own tsconfig, served by the backend at /<context>. */
+/** A React app of a context, in its app/, with its own tsconfig, served at /<context>. */
 export function frontendTemplate({ backend, context, versions }: FrontendTemplateOptions): FileChange[] {
   const at = (path: string) => join(backend, path)
-  const inContext = `${CONTEXTS_FOLDER}/${context.folder}/frontend`
-  const frontend = at(inContext)
+  const inContext = `${CONTEXTS_FOLDER}/${context.folder}/app`
+  const app = at(inContext)
   return [
-    { action: 'create', path: join(frontend, 'index.html'), content: indexHtml(context) },
-    { action: 'create', path: join(frontend, 'main.tsx'), content: MAIN_TSX },
-    { action: 'create', path: join(frontend, 'app.tsx'), content: appTsx(context) },
-    { action: 'create', path: join(frontend, 'tsconfig.json'), content: FRONTEND_TSCONFIG_JSON },
+    { action: 'create', path: join(app, 'index.html'), content: indexHtml(context) },
+    { action: 'create', path: join(app, 'main.tsx'), content: MAIN_TSX },
+    { action: 'create', path: join(app, 'app.tsx'), content: appTsx(context) },
+    { action: 'create', path: join(app, 'base.ts'), content: baseTs(context) },
+    { action: 'create', path: join(app, 'tsconfig.json'), content: APP_TSCONFIG_JSON },
     {
       action: 'complete-json',
       path: at('package.json'),
@@ -53,7 +51,7 @@ export function frontendTemplate({ backend, context, versions }: FrontendTemplat
         devDependencies: { '@types/react': versions.reactTypes, '@types/react-dom': versions.reactDomTypes },
       },
     },
-    { action: 'complete-json', path: at('tsconfig.json'), values: { exclude: [`${CONTEXTS_FOLDER}/*/frontend`], references: [{ path: `./${inContext}` }] } },
-    ...servedAt(backend, context, `${context.camel}Frontend`, [`import ${context.camel}Frontend from './contexts/${context.folder}/frontend/index.html'`]),
+    { action: 'complete-json', path: at('tsconfig.json'), values: { exclude: [`${CONTEXTS_FOLDER}/*/app`], references: [{ path: `./${inContext}` }] } },
+    ...servedAt(backend, context, 'app', ["import app from './app/index.html'"]),
   ]
 }

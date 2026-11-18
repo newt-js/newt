@@ -29,7 +29,14 @@ export function appTsx({ type }: ContextNames): string {
 `
 }
 
-export const FRONTEND_TSCONFIG_JSON = `${JSON.stringify({
+/** Where the backend serves the app, and its API: what its client router and its fetches start with. */
+export function baseTs({ folder }: ContextNames): string {
+  return `export const BASE = '/${folder}'
+export const API = \`\${BASE}/api\`
+`
+}
+
+export const APP_TSCONFIG_JSON = `${JSON.stringify({
   compilerOptions: {
     lib: ['ESNext', 'DOM', 'DOM.Iterable'],
     target: 'ESNext',
@@ -42,10 +49,11 @@ export const FRONTEND_TSCONFIG_JSON = `${JSON.stringify({
     verbatimModuleSyntax: true,
     composite: true,
     emitDeclarationOnly: true,
+    rootDir: '..',
     outDir: 'dist',
     strict: true,
     skipLibCheck: true,
     noUncheckedIndexedAccess: true,
   },
-  include: ['**/*.ts', '**/*.tsx'],
+  include: ['**/*.ts', '**/*.tsx', '../modules/*/*.schema.ts', '../modules/*/value-objects/*.ts', '../modules/*/errors/*.ts'],
 }, null, 2)}\n`
