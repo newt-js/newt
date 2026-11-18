@@ -192,7 +192,7 @@ describe('runContexts, one server for every context', () => {
     await rm(built, { recursive: true })
   })
 
-  test('a context with a host answers there at its own paths, and never by its name on another host', async () => {
+  test('a context with a host answers there at its own paths, and with its name too, and never by its name on another host', async () => {
     const log: string[] = []
     const { default: notes } = await import('../../frontend/fixtures/frontend/index.html')
     const app = runContexts([
@@ -209,14 +209,35 @@ describe('runContexts, one server for every context', () => {
     expect(await (await at('/folders/12', 'notes.test')).text()).toContain('A frontend for serve\'s test')
     expect((await at('/health-check', 'notes.test')).status).toBe(200)
     expect(await (await at('/api/session', 'auth.test')).json()).toBe('auth')
-    expect((await at('/auth/api/session', 'auth.test')).status).toBe(404)
+    expect(await (await at('/auth/api/session', 'auth.test')).json()).toBe('auth')
+    expect(await (await at('/notes/folders/12', 'notes.test')).text()).toContain('A frontend for serve\'s test')
     expect((await at('/api/boards', 'auth.test')).status).toBe(404)
     expect((await at('/notes/api/folders')).status).toBe(404)
+    expect((await at('/%6eotes/api/folders')).status).toBe(404)
+    expect((await at('/notes/folders/12')).status).toBe(404)
     expect((await at('/auth/health-check')).status).toBe(404)
     expect(await (await at('/boards/api/boards')).json()).toBe('boards')
     expect((await at('/health-check')).status).toBe(200)
 
     await app.stop()
+  })
+
+  test('a built app at its host answers the paths it was built for, under /<context>', async () => {
+    const log: string[] = []
+    const built = await mkdtemp(join(tmpdir(), 'newt-app-'))
+    await Bun.write(join(built, 'index.html'), '<p>the boards app</p>')
+    await Bun.write(join(built, 'assets', 'app.js'), 'console.log("boards")')
+    const app = runContexts([
+      { context: context('boards', log), router: routerOf('boards', '/boards', '/boards/api'), app: built, host: 'boards.test' },
+    ], { signals: false, serve: { port: 0 } })
+    const at = (path: string) => fetch(new URL(path, app.server!.url), { headers: { host: 'boards.test' } })
+
+    expect(await (await at('/boards/assets/app.js')).text()).toBe('console.log("boards")')
+    expect(await (await at('/assets/app.js')).text()).toBe('console.log("boards")')
+    expect(await (await at('/12')).text()).toBe('<p>the boards app</p>')
+
+    await app.stop()
+    await rm(built, { recursive: true })
   })
 
   test('two contexts at one host stop it before anything starts', () => {

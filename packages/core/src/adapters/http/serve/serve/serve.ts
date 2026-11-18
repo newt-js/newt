@@ -28,7 +28,11 @@ export function serve(options: ServeOptions): Bun.Server<undefined> {
   const trustProxy = options.trustProxy ?? 0
   const mounts = mountsOf(options.frontend, options.publicFolder)
   const frontend = builtFrontends(mounts, options.csp)
-  const hosts = byHost(options.hosts ?? {}, { health: { paths: healthPaths, answer: answerHealth }, routers, mounts, frontend })
+  // An HTML import is served by Bun's routes, before any handler: one with a host gets a path nobody can guess.
+  const hiddenApps = `/_apps/${crypto.randomUUID()}`
+  const withHost = new Set(Object.values(options.hosts ?? {}).map(context => `/${context}`))
+  const sourceMounts = mounts.map(mount => withHost.has(mount.prefix) ? { ...mount, prefix: `${hiddenApps}${mount.prefix}` } : mount)
+  const hosts = byHost(options.hosts ?? {}, { health: { paths: healthPaths, answer: answerHealth }, routers, mounts, frontend, hiddenApps })
   const around = (handler: Handler): Handler => {
     const answered = hosts(handler)
     return async (request, server) => {
@@ -43,7 +47,7 @@ export function serve(options: ServeOptions): Bun.Server<undefined> {
     development,
     maxRequestBodySize: Math.max(options.maxBodyBytes ?? MAX_BODY_BYTES, ...routers.map(router => router.largestBody())),
     ...(options.idleTimeoutSeconds === undefined ? {} : { idleTimeout: options.idleTimeoutSeconds }),
-    routes: wrapped({ ...health, ...routesOf(routers, answer), ...options.routes, ...proxied(options.proxy), ...sourceFrontends(mounts) }, around),
+    routes: wrapped({ ...health, ...routesOf(routers, answer), ...options.routes, ...proxied(options.proxy), ...sourceFrontends(sourceMounts) }, around),
     fetch: around(answer),
     ...(development ? {} : { error: (error: Error) => withHeaders(toErrorResponse(error), headers) }),
   })
