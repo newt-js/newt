@@ -28,6 +28,12 @@ describe('allowed', () => {
     expect(allowed('adapters/database/memory', 'adapters/database/sql', false)).toBe(false)
   })
 
+  it("lets an adapter of a port open that port's memory adapter, and no other port's", () => {
+    expect(allowed('adapters/database/postgres', 'adapters/database/memory', false)).toBe(true)
+    expect(allowed('adapters/files/s3', 'adapters/files/memory', false)).toBe(true)
+    expect(allowed('adapters/files/s3', 'adapters/database/memory', false)).toBe(false)
+  })
+
   it('lets tests of domain and application import any adapter', () => {
     expect(allowed('domain', 'adapters/database/memory', true)).toBe(true)
     expect(allowed('application', 'adapters/files/local', true)).toBe(true)
