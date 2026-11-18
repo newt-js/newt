@@ -27,7 +27,7 @@ function initializedLine({ module, type }: ModuleNames, deps = ''): string {
 export function moduleTemplate({ backend, context, names, database, migration }: ModuleTemplateOptions): FileChange[] {
   const contextFolder = join(backend, CONTEXTS_FOLDER, context.folder)
   const featureFolder = join(contextFolder, 'features', names.feature.folder)
-  const folder = join(featureFolder, 'modules', names.folder)
+  const folder = join(featureFolder, names.folder)
   const files: Record<string, string> = {
     [`value-objects/${names.folder}-id.ts`]: idTs(names),
     [`${names.folder}.schema.ts`]: schemaTs(names),
@@ -53,7 +53,7 @@ export function moduleTemplate({ backend, context, names, database, migration }:
       functionName: `${names.feature.camel}Feature`,
       module: names.module,
       declaration: initializedLine(names),
-      imports: [`import { ${names.type}_Module } from './modules/${names.folder}/${names.folder}.module'`],
+      imports: [`import { ${names.type}_Module } from './${names.folder}/${names.folder}.module'`],
     },
   ]
 }

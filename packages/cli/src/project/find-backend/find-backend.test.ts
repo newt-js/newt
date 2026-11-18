@@ -25,7 +25,7 @@ async function monorepoWithBackends(...folders: string[]): Promise<string> {
 describe('findBackend', () => {
   test('the backend, from its folder or any folder inside it', async () => {
     const backend = await backendProject()
-    const context = join(backend, 'src/contexts/sales/features/orders/modules/order')
+    const context = join(backend, 'src/contexts/sales/features/orders/order')
     await mkdir(context, { recursive: true })
     expect(await findBackend(backend)).toBe(backend)
     expect(await findBackend(context)).toBe(backend)

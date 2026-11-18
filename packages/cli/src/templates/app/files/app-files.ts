@@ -58,5 +58,5 @@ export const APP_TSCONFIG_JSON = `${JSON.stringify({
     skipLibCheck: true,
     noUncheckedIndexedAccess: true,
   },
-  include: ['**/*.ts', '**/*.tsx', '../features/*/modules/*/*.schema.ts', '../features/*/modules/*/value-objects/*.ts', '../features/*/modules/*/errors/*.ts'],
+  include: ['**/*.ts', '**/*.tsx', '../features/*/*/*.schema.ts', '../features/*/*/value-objects/*.ts', '../features/*/*/errors/*.ts'],
 }, null, 2)}\n`

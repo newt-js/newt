@@ -11,7 +11,7 @@ export async function moduleDepsGraph(featureFolder: string, feature: FeatureNam
   const byType = new Map(modules.map(folder => [names(folder).type, names(folder).module]))
   const graph = new Map<string, string[]>()
   for (const folder of modules) {
-    const file = Bun.file(join(featureFolder, 'modules', folder, `${folder}.deps.ts`))
+    const file = Bun.file(join(featureFolder, folder, `${folder}.deps.ts`))
     const text = await file.exists() ? await file.text() : ''
     graph.set(names(folder).module, [...text.matchAll(DEP)].flatMap(match => byType.get(match[1]!) ?? []))
   }

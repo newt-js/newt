@@ -6,7 +6,7 @@ import { INIT }        from '../../commands/init/init'
 import { runCommand }  from '../../run/run-command/run-command'
 import { generate }    from '../generate/generate'
 
-export const ORDER_MODULE = 'src/contexts/sales/features/orders/modules/order'
+export const ORDER_MODULE = 'src/contexts/sales/features/orders/order'
 
 /** A backend with a context, sales, and a module of it, order, as newt writes them. */
 export async function moduleProject(): Promise<string> {

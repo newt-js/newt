@@ -21,7 +21,7 @@ export async function backendContexts(backend: string): Promise<ContextFolder[]>
     if (await Bun.file(join(folder, `${name}.context.ts`)).exists()) {
       const features: FeatureFolder[] = []
       for (const feature of await foldersIn(join(folder, 'features'))) {
-        features.push({ name: feature, modules: await foldersIn(join(folder, 'features', feature, 'modules')) })
+        features.push({ name: feature, modules: await foldersIn(join(folder, 'features', feature)) })
       }
       contexts.push({ name, features })
     }
