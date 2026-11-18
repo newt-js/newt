@@ -95,7 +95,7 @@ export async function startBackend(
   const contexts = await openContexts(platform, stores)
   return runContexts(contexts, {
     platformWithoutContexts: platform,
-    serve: { port, health: true },
+    serve: { port },
   })
 }
 ```

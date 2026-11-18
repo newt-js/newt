@@ -22,7 +22,7 @@ This page lists everything you configure in a newt project: its files, its scrip
 | `src/env.ts` | `requiredEnv(name)`: reads a variable or stops with `<NAME> is not set: see .env.example`. Only written when a store needs one. |
 | `src/contexts.ts` | Which contexts the backend opens. |
 | `src/auth.ts` | Who calls the backend: see [Authentication](/guides/authentication/). |
-| `src/contexts/<context>/app/tsconfig.json` | TypeScript for a context's app (after `newt add frontend`). |
+| `src/contexts/<context>/app/tsconfig.json` | TypeScript for a context's app (after `newt add app`). |
 
 :::note
 When a command adds variables, it appends the missing ones to `.env` and `.env.example` and never changes a value you already have.
@@ -162,7 +162,7 @@ export async function startBackend(
   const contexts = await openContexts(platform, stores)
   return runContexts(contexts, {
     platformWithoutContexts: platform,
-    serve: { port, health: true },
+    serve: { port },
   })
 }
 ```
@@ -172,7 +172,7 @@ export async function startBackend(
 | `port` | The port to serve on. | none (`src/index.ts` passes `PORT`, or `3000`) |
 | `stores` | `'configured'` opens the stores from the environment; `'memory'` opens new ones in memory, as the tests want. | `'configured'` |
 
-It returns `RunningContexts`: `server`, `servers` and `stop()`. See [HTTP API](/reference/http/).
+It returns `RunningContexts`: `server` and `stop()`. See [HTTP API](/reference/http/).
 
 ## Platform
 
@@ -202,7 +202,7 @@ The `serve` options the generated project sets:
 | Option | Meaning | Default |
 |---|---|---|
 | `port` | The port. Required. | none |
-| `health` | `true` answers `GET /health-check` with `{ "status": "ok" }` (`503` and `"stopping"` while stopping), and `GET /<context>/health-check` for each context that serves routes. | off |
+| `health` | Answers `GET /health-check` with `{ "status": "ok" }` (`503` and `"stopping"` while stopping), and `GET /<context>/health-check` for each context that serves routes. `false` turns it off. | on |
 
 `serve` has more options (`maxBodyBytes`, `trustProxy`, `securityHeaders`, `hsts`, `csp`, `proxy`, `drainMs`, `idleTimeoutSeconds`, `development`, `publicFolder`, `routes`). See [HTTP API](/reference/http/).
 
@@ -215,7 +215,7 @@ const base = new ContextBase({
   name: 'tasks',
   platform,
   database,
-  storage: await openStorage('tasks', router, stores),
+  storage: await openStorage('tasks', router, stores, host),
 })
 ```
 
@@ -257,7 +257,7 @@ const base = new ContextBase({
 }
 ```
 
-`exclude` and `references` for the apps appear after `newt add frontend`. Each app has its own `tsconfig.json`, with `DOM` in `lib`, `"jsx": "react-jsx"` and `"composite": true`, so `bun check -b` checks it as a project of its own. Its `rootDir` is the context, and it includes the context's schemas with their value objects and errors, so the app type-checks the DTOs it imports.
+`exclude` and `references` for the apps appear after `newt add app`. Each app has its own `tsconfig.json`, with `DOM` in `lib`, `"jsx": "react-jsx"` and `"composite": true`, so `bun check -b` checks it as a project of its own. Its `rootDir` is the context, and it includes the context's schemas with their value objects and errors, so the app type-checks the DTOs it imports.
 
 ## ESLint
 

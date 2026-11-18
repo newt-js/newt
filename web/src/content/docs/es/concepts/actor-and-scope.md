@@ -151,9 +151,9 @@ Cada scope guarda su propio valor; dos scopes nunca se mezclan.
 Fíjalo en el middleware de un grupo de rutas. El middleware se ejecuta después del authenticator, así que ahí también conoces al actor:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-const teams = router.group('/teams/:teamId', (request, next) =>
-  team.run(request.params.teamId, next),
-)
+const teams = router.group('/teams/:teamId', {
+  middleware: (request, next) => team.run(request.params.teamId, next),
+})
 
 teams.get('/tasks', async request =>
   Response.json(await tasks.paginate({}, pageRequestFrom(request))),

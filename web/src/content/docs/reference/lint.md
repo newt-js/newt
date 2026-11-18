@@ -59,13 +59,13 @@ If you pass `uses`, list every context, even those that use none (`[]`). A missi
 | Every linted file | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable`, and the rules from other plugins |
 | A module's files (`**/modules/<module>/**`) | `module-entity`, `module-files`, `module-imports`, `entity-method-params`, `reaction-queue`, `schema-imports`, `use-case-files`, `module-transactions` |
 | Files in the contexts folder (with `contexts`) | `context-imports`, `route-context`; `module-imports` for files outside the modules |
-| A context's app (`<context>/app/**/*.{ts,tsx}`, with `contexts`) | `frontend-imports`, `no-disable` |
+| A context's app (`<context>/app/**/*.{ts,tsx}`, with `contexts`) | `app-imports`, `no-disable` |
 
 Without `contexts`, `route-context` still runs on module files.
 
 ## What may import what
 
-This is what the import rules (`context-imports`, `module-imports`, `schema-imports`, `frontend-imports`) allow, with the `tasks` and `chat` contexts as the example:
+This is what the import rules (`context-imports`, `module-imports`, `schema-imports`, `app-imports`) allow, with the `tasks` and `chat` contexts as the example:
 
 ```mermaid
 flowchart TD
@@ -73,7 +73,7 @@ flowchart TD
   task["task module"] -->|"any file"| own["task's own files"]
   task -->|"import type: .module.ts, .schema.ts, events/; errors/"| project["project module"]
   schema["task.schema.ts"] -->|"only"| deps["zod, @newt-js/core, value-objects/, import type from other *.schema.ts"]
-  frontend["tasks app"] -->|"import type only"| schemas["tasks *.schema.ts"]
+  app["tasks app"] -->|"import type only"| schemas["tasks *.schema.ts"]
 ```
 
 Each rule is described in the sections that follow.
@@ -171,7 +171,7 @@ That another module's schema comes as types only is `newt/module-imports`'s to s
 
 Why: the schema is the module's contract; it says what the data is, not how the module works.
 
-### newt/frontend-imports
+### newt/app-imports
 
 A context's app imports its own files and, as types only, its context's schemas. Never server code: no module, repository or other context, and `@newt-js/*`, `bun`, `bun:*` and Node's modules only as types.
 
@@ -280,7 +280,7 @@ No route a context registers, on its router or a group of it, starts with the co
 // src/contexts/tasks/modules/task/task.routes.ts
 router.get('/tasks/tasks/:id', handle) // wrong: answers at /tasks/api/tasks/tasks/:id
 router.get('/tasks/:id', handle)       // right: answers at /tasks/api/tasks/:id
-router.group('/reports', middleware).get('/overdue', handle) // right
+router.group('/reports', { middleware }).get('/overdue', handle) // right
 ```
 
 Paths are read through consts, templates and a group's prefix. A path the rule cannot read is let be. Test files are skipped.

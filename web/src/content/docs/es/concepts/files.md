@@ -27,15 +27,16 @@ export async function openStorage(
   context: string,
   router: HttpRouter,
   stores: Stores,
+  host: string | undefined,
 ): Promise<StorageOptions> {
   if (stores === 'memory') {
     return { private: new MemoryStorage() }
   }
-  const path = `/${context}/files`
+  const path = '/files'
   const storage = await LocalStorage.open({
     folder:
       Bun.env[`${envOf(context)}_FILES`] ?? `data/files/${context}`,
-    baseUrl: `${requiredEnv('PUBLIC_URL')}${router.prefix}${path}`,
+    baseUrl: `${publicUrlOf(router, host)}${path}`,
     secret: requiredEnv('FILES_SECRET'),
   })
   router.get(`${path}/*`, request => storage.handler(request), {
@@ -49,12 +50,14 @@ export async function openStorage(
 }
 ```
 
+`publicUrlOf(router, host)` es `PUBLIC_URL`, o el host del contexto cuando tiene uno, seguido del prefijo del router.
+
 ```ts title="src/contexts/tasks/tasks.context.ts"
 const base = new ContextBase({
   name: 'tasks',
   platform,
   database,
-  storage: await openStorage('tasks', router, stores),
+  storage: await openStorage('tasks', router, stores, host),
 })
 ```
 

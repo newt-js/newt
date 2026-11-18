@@ -95,13 +95,16 @@ Any error thrown along the way becomes a response through the route's `onError`.
 
 ### HttpGroup
 
-`router.group(prefix, middleware, options?)` returns an `HttpGroup` with `get`, `post`, `put`, `patch` and `delete`, same signatures as the router. Each path is the group's prefix plus its own. The middleware runs after sign-in and before the route:
+`router.group(prefix, options?)` returns an `HttpGroup` with `get`, `post`, `put`, `patch` and `delete`, same signatures as the router. Each path is the group's prefix plus its own. Its options are its routes' [options](#route-options) plus `middleware`, which runs after sign-in and before the route:
 
 ```ts
-const reports = router.group('/reports', async (request, next) => {
-  const response = await next()
-  return response
-}, { maxBodyBytes: 64 * 1024 })
+const reports = router.group('/reports', {
+  middleware: async (request, next) => {
+    const response = await next()
+    return response
+  },
+  maxBodyBytes: 64 * 1024,
+})
 reports.get('/overdue', async () => Response.json({ items: [] }))
 ```
 
@@ -326,12 +329,12 @@ type ErrorBody = {
 
 ### runContexts
 
-`runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` starts your contexts: their servers, workers and scheduled tasks.
+`runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` starts your contexts: their server, workers and scheduled tasks.
 
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true },
+  serve: { port },
 })
 ```
 
@@ -340,8 +343,7 @@ return runContexts(contexts, {
 | Field | Type | Meaning |
 |---|---|---|
 | `context` | `BoundedContext` | The context. |
-| `router` | `HttpRouter` | Its routes, served by the shared server (`options.serve`). |
-| `serve` | `ServeOptions` | Gives this context a server of its own. |
+| `router` | `HttpRouter` | Its routes, served by the shared server (`options.serve`). Its prefix must be `/<context>/api`, or `runContexts` throws before anything starts. |
 | `app` | `string \| Bun.HTMLBundle` | Its app, served by the shared server at `/<context>`: a built folder or an HTML import. |
 | `host` | `string \| undefined` | The host it answers at, at its own paths, instead of under `/<context>`. Two contexts at one host throw. |
 
@@ -349,9 +351,9 @@ return runContexts(contexts, {
 
 | Option | Type | Default | Meaning |
 |---|---|---|---|
-| `serve` | `Omit<ServeOptions, 'routers'>` | none | One server for every context's router. Two contexts with the same path throw. |
+| `serve` | `Omit<ServeOptions, 'routers'>` | none | One server for every context's router. |
 | `signals` | `boolean` | `true` | On `SIGINT` or `SIGTERM`, stop and end the process (exit code 1 if a step failed). |
-| `stopTimeoutMs` | `number` | `8000` | How long servers and workers get to finish before being forced. |
+| `stopTimeoutMs` | `number` | `8000` | How long the server and the workers get to finish before being forced. |
 | `platformWithoutContexts` | `Platform` | none | The platform to use when there are no contexts yet. When there are, it must be theirs. |
 
 `RunningContexts`:
@@ -359,8 +361,7 @@ return runContexts(contexts, {
 | Member | Type | Meaning |
 |---|---|---|
 | `server` | `Bun.Server` | The shared server, when `serve` was given. |
-| `servers` | `Record<string, Bun.Server>` | Each context's own server, by context name. |
-| `stop` | `() => Promise<void>` | Stops servers, then workers, then closes the contexts (last one first). Throws an `AggregateError` if a step failed; the others still run. |
+| `stop` | `() => Promise<void>` | Stops the server, then the workers, then closes the contexts (last one first). Throws an `AggregateError` if a step failed; the others still run. |
 
 ### Serve options
 
@@ -375,7 +376,7 @@ return runContexts(contexts, {
 | `publicFolder` | `string` | none | Files served as they are next to an HTML-import frontend. |
 | `proxy` | `Record<string, string>` | none | Path → URL to forward to (for example a dev server). |
 | `development` | `boolean` | `false` | Bun's development mode (HMR for HTML imports, detailed errors). |
-| `health` | `boolean` | off | `true` serves `GET /health-check` for the whole backend, and `GET /<context>/health-check` for each context that serves routes. Public. Answers `{"status":"ok"}`, or 503 `{"status":"stopping"}` while stopping. |
+| `health` | `boolean` | on in `runContexts`, off in `serve` | Serves `GET /health-check` for the whole backend, and `GET /<context>/health-check` for each context that serves routes. Public. Answers `{"status":"ok"}`, or 503 `{"status":"stopping"}` while stopping. |
 | `drainMs` | `number` | `0` | On stop, keep answering this long first (health already says `stopping`). |
 | `trustProxy` | `number` | `0` | How many proxies in front to trust for `X-Forwarded-For` and `X-Forwarded-Host`. |
 | `securityHeaders` | `Record<string, string \| null> \| false` | `SECURITY_HEADERS` | Headers added to every response that lacks them. `null` drops one; `false` drops all. |
@@ -413,7 +414,7 @@ A context's `app` (see [runContexts](#runcontexts)) is served as a `FrontendMoun
 | `Bun.HTMLBundle` (an `import x from './index.html'`) | Bun bundles it. Every path under `path` gets the page; `publicFolder` files are served at their own paths. |
 | `string` (a built folder) | Files of the folder. A path with no file gets `index.html`. Dotfiles are never served. No `index.html` → 503. |
 
-Paths start with `/`; two frontends at the same path throw. Routes of the routers win over frontends, and a path under a router's prefix that no route takes is a 404. See [Adding a frontend](/guides/frontend/).
+Paths start with `/`; two frontends at the same path throw. Routes of the routers win over frontends, and a path under a router's prefix that no route takes is a 404. See [Adding an app](/guides/app/).
 
 HTML pages of a built folder get `x-frame-options: DENY` and a Content-Security-Policy. Its default (`CONTENT_SECURITY_POLICY`), to which `csp` adds or replaces directives (`null` removes one); hashes of inline scripts are added to `script-src`:
 
@@ -443,4 +444,4 @@ HTML pages of a built folder get `x-frame-options: DENY` and a Content-Security-
 | `SECURITY_HEADERS`, `CONTENT_SECURITY_POLICY` | constants | The defaults of [Serve options](#serve-options) and [Frontends](#frontends). |
 | `KeptAnswer` | type | A row of `newt_idempotency_key`. |
 
-The package also exports the types of each section: `Cors`, `Idempotency`, `HttpRateLimit`, `HttpRouterOptions`, `RouteOptions`, `ParamsOf`, `Middleware`, `ErrorBody`, `Hsts`, `SecurityHeaders`, `ContentSecurityPolicy`, `FrontendMount`, `ServeOptions`, `RunContextsOptions`, `ContextToRun`, `RunningContexts`, `Unchecked`.
+The package also exports the types of each section: `Cors`, `Idempotency`, `HttpRateLimit`, `HttpRouterOptions`, `RouteOptions`, `ParamsOf`, `Middleware`, `GroupOptions`, `ErrorBody`, `Hsts`, `SecurityHeaders`, `ContentSecurityPolicy`, `FrontendMount`, `ServeOptions`, `RunContextsOptions`, `ContextToRun`, `RunningContexts`, `Unchecked`.

@@ -22,7 +22,7 @@ import { openStorage } from '../../stores'
 
 test('sales keeps a file uploaded to its signed address, and serves it at another', async () => {
   const router = new HttpRouter({ prefix: '/sales/api' })
-  const storage = (await openStorage('sales', router, 'configured')).private!
+  const storage = (await openStorage('sales', router, 'configured', undefined)).private!
   const upload = await storage.uploadUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain', size: 5 })
   const put = await router.answer(new Request(upload.url, { method: 'PUT', headers: upload.headers, body: 'hello' }))
   expect(put?.ok).toBe(true)
@@ -31,12 +31,10 @@ test('sales keeps a file uploaded to its signed address, and serves it at anothe
   expect(await (await router.answer(new Request(download)))?.text()).toBe('hello')
 })
 
-test('with SALES_HOST, its files are signed at that host', async () => {
-  Bun.env.SALES_HOST = 'sales.midominio.com'
+test('at a host, its files are signed at that host', async () => {
   const router = new HttpRouter({ prefix: '/sales/api' })
-  const storage = (await openStorage('sales', router, 'configured')).private!
+  const storage = (await openStorage('sales', router, 'configured', 'sales.midominio.com')).private!
   const download = new URL(await storage.signedUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain' }))
-  delete Bun.env.SALES_HOST
   expect(download.host).toBe('sales.midominio.com')
   expect(download.pathname).toStartWith('/sales/api/files/')
 })
@@ -49,7 +47,9 @@ describe('newt add context', () => {
     const context = await read(join(backend, 'src/contexts/sales/sales.context.ts'))
     expect(context).toContain("const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')\n")
     expect(context).toContain("const database = await openDatabase('sales', MIGRATIONS_FOLDER, stores)")
-    expect(context).toContain("storage: await openStorage('sales', router, stores)")
+    expect(context).toContain("    const host = Bun.env.SALES_HOST\n")
+    expect(context).toContain("storage: await openStorage('sales', router, stores, host)")
+    expect(context).toContain('router, host }')
     expect(context).toContain('    router.authenticateWith(authenticate)\n')
     expect(await read(join(backend, 'src/auth.ts'))).toContain('export const authenticate: Authenticator = async () => null')
     expect(await read(join(backend, 'src/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform, stores))\n  return contexts')

@@ -141,7 +141,7 @@ describe('HttpRouter', () => {
     router.get('/a', fails, { public: true })
     router.get('/b', fails, { public: true, onError: asText('route') })
     router.get('/c', own('GET'))
-    router.group('/g', (_request, next) => next(), { public: true, onError: asText('group') }).get('/d', fails)
+    router.group('/g', { public: true, onError: asText('group') }).get('/d', fails)
     const text = async (path: string, method = 'GET') => (await call(router, path, { method })!).text()
 
     expect(await text('/a')).toBe('router ThingNotFound /a')
@@ -188,7 +188,7 @@ describe('HttpRouter', () => {
   test('a route, a group or a router says how long its bodies may be: a megabyte unless told', async () => {
     const router = new HttpRouter({ public: true, maxBodyBytes: 100 })
     router.post('/small', async request => new Response(await request.text()))
-    router.group('/uploads', (_request, next) => next(), { maxBodyBytes: 4 * MAX_BODY_BYTES }).post('/file', async request => new Response(await request.text()))
+    router.group('/uploads', { maxBodyBytes: 4 * MAX_BODY_BYTES }).post('/file', async request => new Response(await request.text()))
     const post = (path: string, bytes: number) => call(router, path, { method: 'POST', body: new Blob(['x'.repeat(bytes)]).stream() })
 
     expect(await status(post('/api/small', 50))).toBe(200)

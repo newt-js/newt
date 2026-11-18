@@ -149,12 +149,12 @@ describe('the preset of newt', () => {
     expect(await complaints(file, '// eslint-disable-next-line no-console\nconsole.log(1)\n')).toEqual([expect.stringContaining('Unused eslint-disable directive')])
   })
 
-  test("keeps a frontend's imports, whatever a comment says or an alias hides", async () => {
-    const frontend = 'src/contexts/ws/app'
-    await mkdir(join(root, frontend), { recursive: true })
-    await writeFile(join(root, frontend, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'Preserve', moduleResolution: 'bundler', jsx: 'react-jsx', paths: { '@/*': ['../../../*'] } }, include: ['**/*.ts', '**/*.tsx'] }))
-    expect(await complaints(`${frontend}/a.tsx`, "// eslint-disable-next-line newt/frontend-imports\nimport { requiredEnv } from '../../../env'\nexport const a = requiredEnv\n")).toEqual(['newt/no-disable'])
-    expect(await complaints(`${frontend}/b.tsx`, "import { requiredEnv } from '@/env'\nexport const b = requiredEnv\n")).toEqual(['newt/frontend-imports'])
+  test("keeps an app's imports, whatever a comment says or an alias hides", async () => {
+    const app = 'src/contexts/ws/app'
+    await mkdir(join(root, app), { recursive: true })
+    await writeFile(join(root, app, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'Preserve', moduleResolution: 'bundler', jsx: 'react-jsx', paths: { '@/*': ['../../../*'] } }, include: ['**/*.ts', '**/*.tsx'] }))
+    expect(await complaints(`${app}/a.tsx`, "// eslint-disable-next-line newt/app-imports\nimport { requiredEnv } from '../../../env'\nexport const a = requiredEnv\n")).toEqual(['newt/no-disable'])
+    expect(await complaints(`${app}/b.tsx`, "import { requiredEnv } from '@/env'\nexport const b = requiredEnv\n")).toEqual(['newt/app-imports'])
   })
 
   test('says what a rule of newt found in a message an agent can follow', async () => {

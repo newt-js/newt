@@ -163,7 +163,7 @@ La mayoría de proveedores ponen un proxy o un balanceador delante de tu backend
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true, trustProxy: 1, drainMs: 5000 },
+  serve: { port, trustProxy: 1, drainMs: 5000 },
 })
 ```
 
@@ -200,8 +200,8 @@ BACKOFFICE_HOST=backoffice.midominio.com
 - Su app generada (`app/base.ts`) encuentra su base sola, y una app compilada aparte para `/<contexto>/` funciona tal cual.
 - Apunta la comprobación de salud del balanceador a una dirección que no sea el host de un contexto, como la del propio servidor.
 
-El `<contexto>.context.ts` generado lee la variable y la entrega para ejecutarse, junto a su router: `host: Bun.env.BACKOFFICE_HOST`.
+El `<contexto>.context.ts` generado lee la variable una vez, `const host = Bun.env.BACKOFFICE_HOST`, y se la da a sus ficheros y a la ejecución, junto a su router.
 
-## Frontends
+## Apps
 
-Un backend sirve las apps de sus contextos desde el mismo proceso. Cómo se construye y se sirve cada uno está en [Añadir un frontend](/es/guides/frontend/).
+Un backend sirve las apps de sus contextos desde el mismo proceso. Cómo se construye y se sirve cada uno está en [Añadir una app](/es/guides/app/).

@@ -101,7 +101,7 @@ Deja los valores por defecto en tu primer proyecto. SQLite, los ficheros locales
 
 Un proyecto no necesita ningún plugin del editor, pero dos ayudan:
 
-- **TypeScript**: tu editor lee `tsconfig.json`. Un frontend, si añades uno, tiene su propio `tsconfig.json` en su carpeta.
+- **TypeScript**: tu editor lee `tsconfig.json`. Una app, si añades una, tiene su propio `tsconfig.json` en su carpeta.
 - **ESLint**: el proyecto tiene un `eslint.config.ts` con las reglas de newt. Una extensión de ESLint te las muestra mientras escribes, las mismas que informa `bun run lint`.
 
 ## Siguientes pasos

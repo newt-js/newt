@@ -1,16 +1,16 @@
 ---
-title: newt add frontend
+title: newt add app
 description: Añade una app React a un contexto, servida por el backend en /<context>.
 sidebar:
   order: 14
 ---
 
-`newt add frontend` da a un contexto su app, servida por el mismo backend en `/<context>`, como `/tasks`. Escribe una pequeña app React que empaqueta Bun, o sirve una que construyes en otro sitio.
+`newt add app` da a un contexto su app, servida por el mismo backend en `/<context>`, como `/tasks`. Escribe una pequeña app React que empaqueta Bun, o sirve una que construyes en otro sitio.
 
 ## Uso
 
 ```sh
-newt add frontend <context> [options]
+newt add app <context> [options]
 ```
 
 ## Argumentos
@@ -34,7 +34,7 @@ También acepta los [flags globales](/es/reference/cli/overview/#flags-globales)
 ## Qué escribe
 
 ```sh
-newt add frontend tasks
+newt add app tasks
 ```
 
 ```text
@@ -56,7 +56,7 @@ Next steps:
 ```ts title="src/contexts/tasks/tasks.context.ts"
 import app from './app/index.html'
 // …
-    return { context: new Tasks_Context(base, tasksModules(base, router)), router, app }
+    return { context: new Tasks_Context(base, tasksModules(base, router)), router, host, app }
 ```
 
 - `app/base.ts` guarda dónde se sirve la app, `BASE`, y su API, `API`.
@@ -81,7 +81,7 @@ Con `--built`: constrúyelo en la carpeta para `/<context>/`, o sus assets respo
 
 ## Errores
 
-- **Falta el contexto**: `newt add frontend takes the context, as in newt add frontend sales`.
+- **Falta el contexto**: `newt add app takes the context, as in newt add app sales`.
 - **Un contexto que el backend no tiene**: rechazado; añádelo con [`newt add context`](/es/reference/cli/add-context/).
 - **El contexto ya entrega una app, en `<context>.context.ts`**: rechazado; quita esa primero.
 - **Una carpeta `--built` que contiene el backend**: rechazado, porque se serviría todo lo que hay dentro, `.env` incluido.
@@ -90,4 +90,4 @@ Con `--built`: constrúyelo en la carpeta para `/<context>/`, o sus assets respo
 Apunta `--built` solo a la salida de la build, como `web/dist`. Todo lo que hay en esa carpeta es público.
 :::
 
-Consulta [Añadir un frontend](/es/guides/frontend/).
+Consulta [Añadir una app](/es/guides/app/).

@@ -1,19 +1,19 @@
-import { asRule }          from '../../testing/testing'
-import { tester }          from '../../testing/testing'
-import { frontendImports } from './frontend-imports'
+import { asRule }     from '../../testing/testing'
+import { tester }     from '../../testing/testing'
+import { appImports } from './app-imports'
 
 const FOLDER = '/repo/src/contexts'
 
-const FRONTEND = `${FOLDER}/sales/app`
+const APP = `${FOLDER}/sales/app`
 
 const options = [{ folder: FOLDER }]
 
-const at = (code: string, filename = `${FRONTEND}/main.tsx`) => ({ code, filename, options })
+const at = (code: string, filename = `${APP}/main.tsx`) => ({ code, filename, options })
 
-tester.run('frontend-imports', asRule(frontendImports), {
+tester.run('app-imports', asRule(appImports), {
   valid: [
     at("import { App } from './app'"),
-    at("import { list } from '../pages/list'", `${FRONTEND}/components/table.tsx`),
+    at("import { list } from '../pages/list'", `${APP}/components/table.tsx`),
     at("import { createRoot } from 'react-dom/client'"),
     at("import type { OrderDTO } from '../modules/order/order.schema'"),
     at("import { type OrderDTO, type OrderSortDTO } from '../modules/order/order.schema'"),

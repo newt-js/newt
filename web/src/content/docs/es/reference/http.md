@@ -95,13 +95,16 @@ Cualquier error lanzado por el camino se convierte en respuesta con el `onError`
 
 ### HttpGroup
 
-`router.group(prefix, middleware, options?)` devuelve un `HttpGroup` con `get`, `post`, `put`, `patch` y `delete`, con las mismas firmas que el router. Cada camino es el prefijo del grupo más el suyo. El middleware se ejecuta después de identificar al usuario y antes de la ruta:
+`router.group(prefix, options?)` devuelve un `HttpGroup` con `get`, `post`, `put`, `patch` y `delete`, con las mismas firmas que el router. Cada camino es el prefijo del grupo más el suyo. Sus opciones son las [de sus rutas](#opciones-de-ruta) más `middleware`, que se ejecuta después de identificar al usuario y antes de la ruta:
 
 ```ts
-const reports = router.group('/reports', async (request, next) => {
-  const response = await next()
-  return response
-}, { maxBodyBytes: 64 * 1024 })
+const reports = router.group('/reports', {
+  middleware: async (request, next) => {
+    const response = await next()
+    return response
+  },
+  maxBodyBytes: 64 * 1024,
+})
 reports.get('/overdue', async () => Response.json({ items: [] }))
 ```
 
@@ -326,12 +329,12 @@ type ErrorBody = {
 
 ### runContexts
 
-`runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` arranca tus contextos: sus servidores, workers y tareas programadas.
+`runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` arranca tus contextos: su servidor, sus workers y sus tareas programadas.
 
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true },
+  serve: { port },
 })
 ```
 
@@ -340,8 +343,7 @@ return runContexts(contexts, {
 | Campo | Tipo | Qué es |
 |---|---|---|
 | `context` | `BoundedContext` | El contexto. |
-| `router` | `HttpRouter` | Sus rutas, servidas por el servidor compartido (`options.serve`). |
-| `serve` | `ServeOptions` | Da a este contexto un servidor propio. |
+| `router` | `HttpRouter` | Sus rutas, servidas por el servidor compartido (`options.serve`). Su prefijo tiene que ser `/<contexto>/api`, o `runContexts` lanza un error antes de arrancar nada. |
 | `app` | `string \| Bun.HTMLBundle` | Su app, servida por el servidor compartido en `/<contexto>`: una carpeta compilada o un import de HTML. |
 | `host` | `string \| undefined` | El host en el que responde, en sus propias rutas, en lugar de bajo `/<contexto>`. Dos contextos en el mismo host lanzan un error. |
 
@@ -349,9 +351,9 @@ return runContexts(contexts, {
 
 | Opción | Tipo | Por defecto | Qué hace |
 |---|---|---|---|
-| `serve` | `Omit<ServeOptions, 'routers'>` | ninguno | Un servidor para los routers de todos los contextos. Dos contextos con el mismo camino lanzan un error. |
+| `serve` | `Omit<ServeOptions, 'routers'>` | ninguno | Un servidor para los routers de todos los contextos. |
 | `signals` | `boolean` | `true` | Con `SIGINT` o `SIGTERM`, para y termina el proceso (código 1 si algún paso falló). |
-| `stopTimeoutMs` | `number` | `8000` | Tiempo que tienen servidores y workers para acabar antes de forzarlos. |
+| `stopTimeoutMs` | `number` | `8000` | Tiempo que tienen el servidor y los workers para acabar antes de forzarlos. |
 | `platformWithoutContexts` | `Platform` | ninguna | La plataforma a usar mientras no hay contextos. Si los hay, tiene que ser la suya. |
 
 `RunningContexts`:
@@ -359,8 +361,7 @@ return runContexts(contexts, {
 | Miembro | Tipo | Qué es |
 |---|---|---|
 | `server` | `Bun.Server` | El servidor compartido, si se dio `serve`. |
-| `servers` | `Record<string, Bun.Server>` | El servidor propio de cada contexto, por nombre. |
-| `stop` | `() => Promise<void>` | Para los servidores, luego los workers, y cierra los contextos (el último primero). Lanza un `AggregateError` si falló algún paso; los demás se ejecutan igual. |
+| `stop` | `() => Promise<void>` | Para el servidor, luego los workers, y cierra los contextos (el último primero). Lanza un `AggregateError` si falló algún paso; los demás se ejecutan igual. |
 
 ### Opciones de serve
 
@@ -375,7 +376,7 @@ return runContexts(contexts, {
 | `publicFolder` | `string` | ninguna | Ficheros servidos tal cual junto a un frontend de import de HTML. |
 | `proxy` | `Record<string, string>` | ninguno | Camino → URL a la que reenviar (por ejemplo, un servidor de desarrollo). |
 | `development` | `boolean` | `false` | Modo desarrollo de Bun (HMR para imports de HTML, errores detallados). |
-| `health` | `boolean` | apagado | `true` sirve `GET /health-check` para todo el backend, y `GET /<contexto>/health-check` para cada contexto que sirve rutas. Público. Responde `{"status":"ok"}`, o 503 `{"status":"stopping"}` mientras se para. |
+| `health` | `boolean` | encendido en `runContexts`, apagado en `serve` | Sirve `GET /health-check` para todo el backend, y `GET /<contexto>/health-check` para cada contexto que sirve rutas. Público. Responde `{"status":"ok"}`, o 503 `{"status":"stopping"}` mientras se para. |
 | `drainMs` | `number` | `0` | Al parar, sigue respondiendo este tiempo antes (health ya dice `stopping`). |
 | `trustProxy` | `number` | `0` | Cuántos proxies delante son de confianza para `X-Forwarded-For` y `X-Forwarded-Host`. |
 | `securityHeaders` | `Record<string, string \| null> \| false` | `SECURITY_HEADERS` | Cabeceras añadidas a cada respuesta que no las tenga. `null` quita una; `false` las quita todas. |
@@ -413,7 +414,7 @@ La `app` de un contexto (mira [runContexts](#runcontexts)) se sirve como un `Fro
 | `Bun.HTMLBundle` (un `import x from './index.html'`) | Bun lo empaqueta. Todo camino bajo `path` recibe la página; los ficheros de `publicFolder` se sirven en su propio camino. |
 | `string` (una carpeta compilada) | Los ficheros de la carpeta. Un camino sin fichero recibe `index.html`. Los ficheros que empiezan por punto nunca se sirven. Sin `index.html` → 503. |
 
-Los caminos empiezan por `/`; dos frontends en el mismo camino lanzan un error. Las rutas de los routers ganan a los frontends, y un camino bajo el prefijo de un router que no coge ninguna ruta da 404. Mira [Añadir un frontend](/es/guides/frontend/).
+Los caminos empiezan por `/`; dos frontends en el mismo camino lanzan un error. Las rutas de los routers ganan a los frontends, y un camino bajo el prefijo de un router que no coge ninguna ruta da 404. Mira [Añadir una app](/es/guides/app/).
 
 Las páginas HTML de una carpeta compilada llevan `x-frame-options: DENY` y una Content-Security-Policy. Esta es la de por defecto (`CONTENT_SECURITY_POLICY`); `csp` añade o reemplaza directivas (`null` quita una), y los hashes de los scripts en línea se añaden a `script-src`:
 
@@ -443,4 +444,4 @@ Las páginas HTML de una carpeta compilada llevan `x-frame-options: DENY` y una 
 | `SECURITY_HEADERS`, `CONTENT_SECURITY_POLICY` | constantes | Los valores por defecto de [Opciones de serve](#opciones-de-serve) y [Frontends](#frontends). |
 | `KeptAnswer` | tipo | Una fila de `newt_idempotency_key`. |
 
-El paquete exporta también los tipos de cada sección: `Cors`, `Idempotency`, `HttpRateLimit`, `HttpRouterOptions`, `RouteOptions`, `ParamsOf`, `Middleware`, `ErrorBody`, `Hsts`, `SecurityHeaders`, `ContentSecurityPolicy`, `FrontendMount`, `ServeOptions`, `RunContextsOptions`, `ContextToRun`, `RunningContexts`, `Unchecked`.
+El paquete exporta también los tipos de cada sección: `Cors`, `Idempotency`, `HttpRateLimit`, `HttpRouterOptions`, `RouteOptions`, `ParamsOf`, `Middleware`, `GroupOptions`, `ErrorBody`, `Hsts`, `SecurityHeaders`, `ContentSecurityPolicy`, `FrontendMount`, `ServeOptions`, `RunContextsOptions`, `ContextToRun`, `RunningContexts`, `Unchecked`.

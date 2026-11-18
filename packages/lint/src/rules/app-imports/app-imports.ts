@@ -13,7 +13,7 @@ import { rootOf }     from '../../paths/paths'
 import { slashed }    from '../../paths/paths'
 
 /** A context's app imports its own files, and only types from its context's schemas and from newt. */
-export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server' | 'runtime', [{ folder: string }]> = {
+export const appImports: TSESLint.RuleModule<'outside' | 'schema' | 'server' | 'runtime', [{ folder: string }]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
   meta: {
     type: 'problem',
