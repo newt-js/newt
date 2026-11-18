@@ -215,7 +215,7 @@ const base = new ContextBase({
   name: 'tasks',
   platform,
   database,
-  storage: await openStorage('tasks', router, stores),
+  storage: await openStorage('tasks', router, stores, host),
 })
 ```
 

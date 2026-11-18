@@ -200,7 +200,7 @@ BACKOFFICE_HOST=backoffice.midominio.com
 - Its generated app (`app/base.ts`) finds its base by itself, and an app built elsewhere for `/<context>/` works as it is.
 - Point the load balancer's health check at an address that is not a context's host, such as the server's own.
 
-The generated `<context>.context.ts` reads the variable and hands it to run, next to its router: `host: Bun.env.BACKOFFICE_HOST`.
+The generated `<context>.context.ts` reads the variable once, `const host = Bun.env.BACKOFFICE_HOST`, and hands it to its files and to run, next to its router.
 
 ## Frontends
 

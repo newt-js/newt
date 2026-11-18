@@ -65,7 +65,7 @@ import app from './app/index.html'
 
   static async open(platform: Platform, stores: Stores): Promise<ContextToRun> {
     // …
-    return { context: new Tasks_Context(base, tasksModules(base, router)), router, app }
+    return { context: new Tasks_Context(base, tasksModules(base, router)), router, host, app }
   }
 ```
 

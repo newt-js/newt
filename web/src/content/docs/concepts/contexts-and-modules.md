@@ -120,15 +120,17 @@ export class Tasks_Context extends BoundedContext {
     )
     const router = new HttpRouter({ prefix: '/tasks/api', database })
     router.authenticateWith(authenticate)
+    const host = Bun.env.TASKS_HOST
     const base = new ContextBase({
       name: 'tasks',
       platform,
       database,
-      storage: await openStorage('tasks', router, stores),
+      storage: await openStorage('tasks', router, stores, host),
     })
     return {
       context: new Tasks_Context(base, tasksModules(base, router)),
       router,
+      host,
     }
   }
 }

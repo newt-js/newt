@@ -107,7 +107,7 @@ const base = new ContextBase({
   platform,
   database,
   worker: { concurrency: 4 },
-  storage: await openStorage('tasks', router, stores),
+  storage: await openStorage('tasks', router, stores, host),
 })
 ```
 

@@ -161,7 +161,7 @@ describe('newt init', () => {
       const folder = join(await generate(INIT, ['shop', '--db', db, '--files', files]), 'shop')
       const stores = await Bun.file(join(folder, 'src/stores.ts')).text()
       expect(stores).toContain('export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {')
-      expect(stores).toContain('export async function openStorage(context: string, router: HttpRouter, stores: Stores): Promise<StorageOptions> {')
+      expect(stores).toContain('export async function openStorage(context: string, router: HttpRouter, stores: Stores, host: string | undefined): Promise<StorageOptions> {')
       await runCommand(ADD_CONTEXT, ['sales'], { cwd: folder, ask: null })
       await runCommand(ADD_MODULE, ['sales/order'], { cwd: folder, ask: null })
       expect(await checkGenerated(folder)).toEqual([])

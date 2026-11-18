@@ -200,7 +200,7 @@ BACKOFFICE_HOST=backoffice.midominio.com
 - Su app generada (`app/base.ts`) encuentra su base sola, y una app compilada aparte para `/<contexto>/` funciona tal cual.
 - Apunta la comprobación de salud del balanceador a una dirección que no sea el host de un contexto, como la del propio servidor.
 
-El `<contexto>.context.ts` generado lee la variable y la entrega para ejecutarse, junto a su router: `host: Bun.env.BACKOFFICE_HOST`.
+El `<contexto>.context.ts` generado lee la variable una vez, `const host = Bun.env.BACKOFFICE_HOST`, y se la da a sus ficheros y a la ejecución, junto a su router.
 
 ## Frontends
 
