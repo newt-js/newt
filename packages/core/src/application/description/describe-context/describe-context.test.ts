@@ -3,6 +3,7 @@ import { expect }          from 'bun:test'
 import { test }            from 'bun:test'
 // --------------------------------------------------------
 import { MemoryDatabase }  from '../../../adapters/database/memory/memory-database/memory-database'
+import { defineFeature }   from '../../../domain/feature/define-feature/define-feature'
 import { Module }          from '../../../domain/module/module/module'
 import { UseCase }         from '../../../domain/use-case/use-case/use-case'
 import { MemoryCluster }   from '../../cluster/memory-cluster/memory-cluster'
@@ -55,5 +56,25 @@ describe('describeContext', () => {
     const [subscription] = describeContext(shop.useCaseRunner.registry, new Map()).subscriptions
 
     expect(subscription?.handler).toBe('billing[invoice].open')
+  })
+
+  test('lists its features, the modules of each, and those its contract shows', () => {
+    class Template_Module extends Module {
+      constructor(base: ContextBase, name = 'campaigns[template]') {
+        super(name, base.useCaseRunner)
+      }
+    }
+    const engagement = new ContextBase({ name: 'engagement', platform, database: new MemoryDatabase() })
+    const template = new Template_Module(engagement)
+    new Template_Module(engagement, 'campaigns[log]')
+    new Template_Module(engagement, 'contacts[contact]')
+    defineFeature('campaigns', { template })
+
+    const described = describeContext(engagement.useCaseRunner.registry, new Map())
+
+    expect(described.features).toEqual([
+      { id: 'engagement/campaigns', name: 'campaigns', modules: ['engagement/campaigns[template]', 'engagement/campaigns[log]'], shows: ['engagement/campaigns[template]'] },
+      { id: 'engagement/contacts', name: 'contacts', modules: ['engagement/contacts[contact]'], shows: [] },
+    ])
   })
 })

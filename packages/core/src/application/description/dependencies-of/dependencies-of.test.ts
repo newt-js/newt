@@ -37,4 +37,10 @@ describe('dependenciesOf', () => {
       { name: 'loop.tax', kind: 'module', target: 'billing/tax' },
     ])
   })
+
+  test("tells a feature's contract by the feature's id, whatever it shows", () => {
+    const contacts = { contact: { get: async () => {}, events: {} }, [Symbol.for('@newt-js/core/feature')]: { name: 'contacts', context: 'engagement' } }
+
+    expect(dependenciesOf({ contacts }, new Map())).toEqual([{ name: 'contacts', kind: 'feature', target: 'engagement/contacts' }])
+  })
 })
