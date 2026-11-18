@@ -141,7 +141,7 @@ describe('the preset of newt', () => {
   })
 
   test("keeps a frontend's imports, whatever a comment says or an alias hides", async () => {
-    const frontend = 'src/contexts/ws/frontend'
+    const frontend = 'src/contexts/ws/app'
     await mkdir(join(root, frontend), { recursive: true })
     await writeFile(join(root, frontend, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'Preserve', moduleResolution: 'bundler', jsx: 'react-jsx', paths: { '@/*': ['../../../*'] } }, include: ['**/*.ts', '**/*.tsx'] }))
     expect(await complaints(`${frontend}/a.tsx`, "// eslint-disable-next-line newt/frontend-imports\nimport { requiredEnv } from '../../../env'\nexport const a = requiredEnv\n")).toEqual(['newt/no-disable'])

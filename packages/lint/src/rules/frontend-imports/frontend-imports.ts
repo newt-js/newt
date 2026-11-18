@@ -25,17 +25,17 @@ function isTypeOnly(source: TSESTree.Node): boolean {
   return parent.specifiers.length > 0 && parent.specifiers.every(each => each.type === 'ImportSpecifier' && each.importKind === 'type')
 }
 
-/** A frontend imports its own files, and only types from its context's schemas and from newt. */
+/** A context's app imports its own files, and only types from its context's schemas and from newt. */
 export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server' | 'runtime', [{ folder: string }]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
   meta: {
     type: 'problem',
-    docs: { description: "A frontend imports its own files and its context's schemas as types, never the server's code." },
+    docs: { description: "A context's app imports its own files and its context's schemas as types, never the server's code." },
     messages: {
-      outside: "'{{path}}' is outside {{context}}'s frontend: a frontend imports its own files and, as types, its context's schemas, never the server's code.",
+      outside: "'{{path}}' is outside {{context}}'s app: an app imports its own files and, as types, its context's schemas, never the server's code.",
       schema: "'{{path}}' is a schema of {{context}}: import its types alone, `import type`, so the server's code never reaches the browser.",
-      server: "'{{path}}' is newt's code, which runs in the server: a frontend imports only its types, `import type`.",
-      runtime: "'{{path}}' is Bun's or Node's, which a browser has not: a frontend imports only its types, `import type`.",
+      server: "'{{path}}' is newt's code, which runs in the server: an app imports only its types, `import type`.",
+      runtime: "'{{path}}' is Bun's or Node's, which a browser has not: an app imports only its types, `import type`.",
     },
     schema: [{ type: 'object', properties: { folder: { type: 'string' } }, required: ['folder'], additionalProperties: false }],
   },
@@ -44,8 +44,8 @@ export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server
     const folder = real(absolute(written, rootOf(context)))
     const own = contextOf(context.physicalFilename, folder)
     if (!own || own === ROOT) return {}
-    const frontend = `${folder}/${own}/frontend`
-    if (!real(slashed(context.physicalFilename)).startsWith(`${frontend}/`)) return {}
+    const app = `${folder}/${own}/app`
+    if (!real(slashed(context.physicalFilename)).startsWith(`${app}/`)) return {}
     const schema = new RegExp(`^${folder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/${own}/modules/([^/]+)/\\1\\.schema$`)
     return importsOf((node, specifier) => {
       const path = resolved(context, specifier)
@@ -59,7 +59,7 @@ export const frontendImports: TSESLint.RuleModule<'outside' | 'schema' | 'server
         return
       }
       const file = real(path)
-      if (file.startsWith(`${frontend}/`)) return
+      if (file.startsWith(`${app}/`)) return
       if (schema.test(file)) {
         if (!isTypeOnly(node)) context.report({ node, messageId: 'schema', data })
         return
