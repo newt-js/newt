@@ -25,7 +25,8 @@ export function runContexts(contexts: ContextToRun[], options: RunContextsOption
       }
     }
     if (options.serve) {
-      server = serve({ ...options.serve, routers: shared })
+      const served = contexts.filter(({ router }) => router).map(({ context }) => context.name)
+      server = serve({ ...options.serve, routers: shared, healthContexts: served })
     }
   } catch (error) {
     for (const each of Object.values(servers)) {

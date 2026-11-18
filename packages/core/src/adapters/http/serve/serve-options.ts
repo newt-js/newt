@@ -17,7 +17,8 @@ export type ServeOptions = {
   publicFolder?: string
   proxy?: Record<string, string>
   development?: boolean
-  health?: boolean | string
+  health?: boolean
+  healthContexts?: string[]
   drainMs?: number
   trustProxy?: number
   securityHeaders?: SecurityHeaders | false

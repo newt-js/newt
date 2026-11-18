@@ -134,11 +134,12 @@ describe('serve', () => {
     expect(output).not.toContain('application/json')
   })
 
-  test('health: GET /api/health, or the path given, a 200 without a session', async () => {
-    expect(await (await started({ routers: [api()], health: true })('/api/health')).json()).toEqual({ status: 'ok' })
-    const elsewhere = started({ routers: [api()], health: '/healthz' })
-    expect((await elsewhere('/healthz')).status).toBe(200)
-    expect((await elsewhere('/api/health')).status).toBe(404)
+  test('health: GET /health-check, and /<context>/health-check for each context given, a 200 without a session', async () => {
+    const at = started({ routers: [api()], health: true, healthContexts: ['notes'] })
+    expect(await (await at('/health-check')).json()).toEqual({ status: 'ok' })
+    expect(await (await at('/notes/health-check')).json()).toEqual({ status: 'ok' })
+    expect((await at('/chat/health-check')).status).toBe(404)
+    expect((await started({ routers: [api()], healthContexts: ['notes'] })('/notes/health-check')).status).toBe(404)
   })
 
   test('once told to stop, its health is a 503 while it drains, and it answers the rest', async () => {
@@ -146,11 +147,11 @@ describe('serve', () => {
     const url = server.url
     const stopped = server.stop()
 
-    const health = await fetch(new URL('/api/health', url))
+    const health = await fetch(new URL('/health-check', url))
     expect([health.status, await health.json()]).toEqual([503, { status: 'stopping' }])
     expect((await fetch(new URL('/api/things', url))).status).toBe(200)
     await stopped
-    await expect(fetch(new URL('/api/health', url))).rejects.toThrow()
+    await expect(fetch(new URL('/health-check', url))).rejects.toThrow()
   })
 
   test('a forced stop while it drains closes at once, without waiting the drain again', async () => {
@@ -199,7 +200,7 @@ describe('serve, its security headers', () => {
   test('every answer carries them: the API\'s, its errors, its health, the routes beside it and the frontend', async () => {
     const at = started({ routers: [api()], frontend: folder, health: true, routes: { '/webhook': { POST: () => new Response('ok') } } })
 
-    for (const answer of [await at('/api/things'), await at('/api/nothing'), await at('/api/health'), await at('/webhook', { method: 'POST' }), await at('/'), await at('/api/away')]) {
+    for (const answer of [await at('/api/things'), await at('/api/nothing'), await at('/health-check'), await at('/webhook', { method: 'POST' }), await at('/'), await at('/api/away')]) {
       expect(headersOf(answer, Object.keys(SECURITY))).toEqual(SECURITY)
     }
   })

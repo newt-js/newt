@@ -55,7 +55,7 @@ describe('runContexts', () => {
 
     expect(Object.keys(app.servers)).toEqual(['auth', 'shop'])
     expect(await (await fetch(new URL('/api/who', app.servers.shop!.url))).json()).toBe('shop')
-    expect((await fetch(new URL('/api/health', app.servers.auth!.url))).status).toBe(200)
+    expect((await fetch(new URL('/health-check', app.servers.auth!.url))).status).toBe(200)
     expect(log).toEqual(['auth started', 'shop started', 'reports started'])
 
     const url = app.servers.auth!.url
@@ -138,7 +138,7 @@ describe('runContexts', () => {
 })
 
 describe('runContexts, one server for every context', () => {
-  test('serves each context\'s routes side by side on one port, with its health, and stops it', async () => {
+  test('serves each context\'s routes side by side on one port, with its health and each context\'s, and stops it', async () => {
     const log: string[] = []
     const app = runContexts([
       { context: context('auth', log), router: routerOf('auth', '/session') },
@@ -149,19 +149,22 @@ describe('runContexts, one server for every context', () => {
 
     expect(await (await at('/api/session')).json()).toBe('auth')
     expect(await (await at('/api/boards')).json()).toBe('boards')
-    expect((await at('/api/health')).status).toBe(200)
+    expect((await at('/health-check')).status).toBe(200)
+    expect((await at('/auth/health-check')).status).toBe(200)
+    expect((await at('/boards/health-check')).status).toBe(200)
+    expect((await at('/quiet/health-check')).status).toBe(404)
     expect((await at('/api/nothing')).status).toBe(404)
     expect(app.servers).toEqual({})
 
     await app.stop()
-    expect(await at('/api/health').then(() => 'answered', () => 'closed')).toBe('closed')
+    expect(await at('/health-check').then(() => 'answered', () => 'closed')).toBe('closed')
     expect(log.slice(3)).toEqual(['auth worker stopped', 'boards worker stopped', 'quiet worker stopped', 'quiet closed', 'boards closed', 'auth closed'])
   })
 
   test('with no context yet, it serves the health on platformWithoutContexts', async () => {
     const app = runContexts([], { signals: false, platformWithoutContexts: platform, serve: { port: 0, health: true } })
 
-    expect((await fetch(new URL('/api/health', app.server!.url))).status).toBe(200)
+    expect((await fetch(new URL('/health-check', app.server!.url))).status).toBe(200)
     await app.stop()
   })
 
