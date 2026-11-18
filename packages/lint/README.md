@@ -55,6 +55,7 @@ Everything else is its own: its schemas as values (another module never parses, 
 | `newt/app-imports` | A context's app (`<context>/app/`, `.ts` and `.tsx`) imports its own files and, as types alone (`import type`), its context's schemas; never the server's code: no module, repository or other context, and newt, Bun and Node (`bun`, `bun:*`, `node:*`) only as types. |
 | `newt/module-imports` | A module reaches another of its context only through its API: its use cases, through the dependency `newt add deps` gives it, and, as imports, only the types (`import type`) of its module, its schema (the DTOs) and its events, and its errors. Never its schemas as values, entity, value objects, repository, routes, workers or services. A file outside the modules re-exports only that API. |
 | `newt/context-imports` | A context imports only the contexts it says it uses, never in a cycle. |
+| `newt/feature-imports` | Another feature of a context is reached only through its entry point, `features/<feature>/<feature>.feature.ts`, which returns its contract and re-exports the types and errors it makes public; never a module inside it. |
 | `newt/schema-imports` | A module's schema imports only zod, `@newt-js/core` (its root), the module's value objects and other modules' DTO types (`import type`, which `newt/module-imports` checks). |
 
 ### Use cases

@@ -16,6 +16,8 @@ tester.run('module-imports', asRule(moduleImports), {
     // A module of a feature: its own files, and another module of its feature through its API.
     { code: "import { Template } from './template'", filename: `${TEMPLATE}/template.repository.ts` },
     { code: "import type { Tag_Module } from '../tag/tag.module'", filename: `${TEMPLATE}/template.deps.ts` },
+    // Another feature's module, even of the same name, is newt/feature-imports' to judge.
+    { code: "import { Tag } from '../../../contacts/modules/tag/tag'", filename: '/repo/src/contexts/engagement/features/campaigns/modules/tag/tag.module.ts' },
     { code: "import type { Product_Module } from '../product/product.module'", filename: '/repo/examples/shop/modules/order/order.deps.ts' },
     { code: "import type { Product_Module } from '../product/product.module.js'", filename: IN('price-change.deps.ts') },
     { code: "import type { Product_Created } from '../product/events/product-created.js'", filename: IN('price-change.workers.ts') },
@@ -37,8 +39,6 @@ tester.run('module-imports', asRule(moduleImports), {
   invalid: [
     { code: "import { Product_Repository } from '../product/product.repository'", filename: IN('price-change.module.ts'), errors: [{ messageId: 'private' }] },
     { code: "import { Product } from '../product/product'", filename: IN('price-change.ts'), errors: [{ messageId: 'private' }] },
-    // Two modules of one name in two features are two modules.
-    { code: "import { Tag } from '../../../contacts/modules/tag/tag'", filename: '/repo/src/contexts/engagement/features/campaigns/modules/tag/tag.module.ts', errors: [{ messageId: 'private', data: { path: '../../../contacts/modules/tag/tag', module: 'tag', camel: 'tag' } }] },
     { code: "import { Tag_Repository } from '../tag/tag.repository'", filename: `${TEMPLATE}/template.module.ts`, errors: [{ messageId: 'private' }] },
     // Another module's value object is its own: an id kept of its entity is one of this module's.
     { code: "import { ProductId } from '../product/value-objects/product-id'", filename: IN('price-change.ts'), errors: [{ messageId: 'private' }] },

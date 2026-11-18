@@ -12,6 +12,7 @@ import type { Uses }               from './rules/context-imports/context-imports
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
+import { featureImports }          from './rules/feature-imports/feature-imports'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
@@ -35,6 +36,7 @@ export const plugin = {
   rules: {
     'context-imports': contextImports,
     'entity-method-params': entityMethodParams,
+    'feature-imports': featureImports,
     'framework-tables': frameworkTables,
     'app-imports': appImports,
     'module-entity': moduleEntity,
@@ -110,6 +112,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     files: inContexts,
     rules: {
       'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }],
+      'newt/feature-imports': ['error', { folder: given }],
       'newt/route-context': ['error', { folder: given }],
     },
   }, {

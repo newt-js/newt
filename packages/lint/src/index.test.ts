@@ -41,6 +41,15 @@ describe('the preset of newt', () => {
     expect(await complaints('src/contexts/ws/ws.context.ts', "import { x } from '../auth/auth.context'\nexport const y = x\n")).toEqual([])
   })
 
+  test('reaches another feature only through its entry point', async () => {
+    const campaign = 'src/contexts/ws/features/campaigns/modules/campaign/campaign.module.ts'
+    await complaints('src/contexts/ws/features/contacts/contacts.feature.ts', 'export type ContactDTO = { id: string }\n')
+    await complaints('src/contexts/ws/features/contacts/modules/contact/contact.schema.ts', 'export type ContactDTO = { id: string }\n')
+
+    expect(await complaints(campaign, "import type { ContactDTO } from '../../../contacts/modules/contact/contact.schema'\nexport type C = ContactDTO\n")).toEqual(['newt/feature-imports'])
+    expect(await complaints(campaign, "import type { ContactDTO } from '../../../contacts/contacts.feature'\nexport type C = ContactDTO\n")).toEqual([])
+  })
+
   test('refuses contexts that are no tree', () => {
     expect(() => newt({ contexts: { folder: 'src/contexts', uses: { auth: ['shop'], shop: ['auth'] } } })).toThrow('auth → shop → auth')
     expect(() => newt({ contexts: { folder: 'src/contexts', uses: { shop: ['auth'] } } })).toThrow("uses 'auth', which is not in `uses`")
