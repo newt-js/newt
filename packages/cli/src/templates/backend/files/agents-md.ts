@@ -5,7 +5,7 @@ const TEST_DATABASE = `- \`src/test-database.ts\`: the database of the modules' 
 `
 
 const MIGRATIONS_RULE = `A table changes only through a migration: a change to a module's schema needs the next pair in its context's
-\`migrations/\`, \`<number>_<table>_up.sql\` and \`<number>_<table>_down.sql\`, the number one above the highest there.
+\`migrations/\`, \`<number>_<feature>__<module>_up.sql\` and \`<number>_<feature>__<module>_down.sql\` (the table is \`<feature>$<module>\`), the number one above the highest there.
 `
 
 /** How a schema change reaches its table, and which tests see it. */

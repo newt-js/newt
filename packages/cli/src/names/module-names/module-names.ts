@@ -56,7 +56,7 @@ export function moduleNames(feature: FeatureNames, folder: string, given?: strin
     name: `${feature.camel}[${camel(words)}]`,
     type: capital(camel(words)),
     table,
-    migration: `${feature.table}_${words.join('_')}`,
+    migration: `${feature.table}__${words.join('_')}`,
     words: words.join(' '),
     plural: camel(plural),
     path: `${feature.folder}/${plural.join('-')}`,

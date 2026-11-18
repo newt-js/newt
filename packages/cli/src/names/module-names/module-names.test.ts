@@ -15,7 +15,7 @@ test("a module's names from its folder's and its feature's", () => {
     name: 'salesOrders[priceChange]',
     type: 'PriceChange',
     table: 'sales_orders$price_change',
-    migration: 'sales_orders_price_change',
+    migration: 'sales_orders__price_change',
     words: 'price change',
     plural: 'priceChanges',
     path: 'sales-orders/price-changes',

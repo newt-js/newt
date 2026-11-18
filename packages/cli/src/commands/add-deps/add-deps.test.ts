@@ -136,6 +136,7 @@ test('GET /orders/invoices/:invoiceId/orders answers from order, under invoice',
   test('refuses its own feature, and a cycle through other features', async () => {
     const backend = await moduleProject()
     for (const feature of ['customers/customer', 'carts/cart']) await run(ADD_MODULE, [`sales/${feature}`], backend)
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'customer'], backend)).text).toBe('customer is a module of customers: a module uses another feature whole, through what it exposes, as in newt add deps sales/orders/order customers')
     expect((await run(ADD_DEPS, ['sales/orders/order', 'orders'], backend)).text).toBe('order is of orders: it uses the other modules of its feature by their name, as in newt add deps sales/orders/order <module>')
     await run(ADD_DEPS, ['sales/orders/order', 'customers'], backend)
     await run(ADD_DEPS, ['sales/customers/customer', 'carts'], backend)
