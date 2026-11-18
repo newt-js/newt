@@ -5,7 +5,7 @@ import { RateLimitCounter }   from '../rate-limit-counter/rate-limit-counter'
 import type { RateLimitRule } from '../rate-limit-rule'
 import { RateLimit }          from '../rate-limit/rate-limit'
 
-/** `<feature>[<module>].<name>`, or `<module>.<name>` for a module of no feature. */
+/** `<feature>[<module>].<name>`. */
 const NAME = /^[a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\]\.[a-z][A-Za-z0-9]*$/
 
 export class RateLimits {

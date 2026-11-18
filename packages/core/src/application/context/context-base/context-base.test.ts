@@ -50,7 +50,7 @@ describe('the bus', () => {
     const log: string[] = []
     const base = new ContextBase({ name: 'shop', platform, database: await loggedDatabase(log) })
     base.bus.subscribe('user.created', () => void log.push('in memory'))
-    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail.sendWelcome.on.user.created' })
+    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
     base.worker.wake = () => void log.push('worker woken')
 
     await logged(base, log, async () => {
@@ -59,7 +59,7 @@ describe('the bus', () => {
     })
     await settle()
 
-    expect(log).toEqual(['begin', 'outbox mail.sendWelcome.on.user.created', 'save goes on', 'commit', 'worker woken', 'worker woken', 'in memory'])
+    expect(log).toEqual(['begin', 'outbox mail[mailer].sendWelcome_on_user.created', 'save goes on', 'commit', 'worker woken', 'worker woken', 'in memory'])
   })
 
   test('gives the event one id, the same for its jobs and its handlers in memory, and keeps one it came with', async () => {
@@ -73,8 +73,8 @@ describe('the bus', () => {
     const base = new ContextBase({ name: 'shop', platform, database })
     const heard: string[] = []
     base.bus.subscribe('user.created', event => void heard.push(event.id))
-    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail.sendWelcome.on.user.created' })
-    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'audit.record.on.user.created' })
+    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
+    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'audit[trail].record_on_user.created' })
 
     await database.run(() => base.bus.publish(created))
     await database.run(() => base.bus.publish({ ...created, id: 'given' }))
@@ -97,7 +97,7 @@ describe('the bus', () => {
     const base = new ContextBase({ name: 'shop', platform, database })
     const heard: (string | null | undefined)[] = []
     base.bus.subscribe('user.created', event => void heard.push(event.actor))
-    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail.sendWelcome.on.user.created' })
+    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
 
     await runAsActor({ userId: 'ana' }, () => database.run(() => base.bus.publish(created)))
     await database.run(() => base.bus.publish(created))
@@ -125,12 +125,12 @@ describe('the bus', () => {
   test('the bus publishes as a repository does', async () => {
     const log: string[] = []
     const base = new ContextBase({ name: 'shop', platform, database: await loggedDatabase(log) })
-    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail.sendWelcome.on.user.created' })
+    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
     base.worker.wake = () => {}
 
     await logged(base, log, async () => base.bus.publish(created))
 
-    expect(log).toEqual(['begin', 'outbox mail.sendWelcome.on.user.created', 'commit'])
+    expect(log).toEqual(['begin', 'outbox mail[mailer].sendWelcome_on_user.created', 'commit'])
   })
 })
 
@@ -175,7 +175,7 @@ describe('what reacts to its events', () => {
     const platform = new Platform({ cluster: new MemoryCluster(), logger: { write: line => void lines.push(line.message) } })
     const base = new ContextBase({ name: 'shop', database: new MemoryDatabase(), platform })
     base.bus.subscribe('user.created', () => log.info('in memory'))
-    base.bus.subscribe('user.created', () => log.info('as a job'), { strategy: 'handler', queue: 'mail.sendWelcome.on.user.created' })
+    base.bus.subscribe('user.created', () => log.info('as a job'), { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
 
     await base.bus.publish(created)
     await base.worker.idle()
@@ -194,7 +194,7 @@ describe('instances of one context', () => {
     const woken: string[] = []
     there.worker.wake = () => void woken.push('there')
     elsewhere.worker.wake = () => void woken.push('elsewhere')
-    here.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail.sendWelcome.on.user.created' })
+    here.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
 
     await here.bus.publish(created)
 
@@ -206,7 +206,7 @@ describe('instances of one context', () => {
     const base = new ContextBase({ name: 'shop', database: new MemoryDatabase(), platform: new Platform({ cluster: deaf }) })
     const woken: string[] = []
     base.worker.wake = () => void woken.push('here')
-    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail.sendWelcome.on.user.created' })
+    base.bus.subscribe('user.created', () => {}, { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
 
     await base.bus.publish(created)
     await settle()

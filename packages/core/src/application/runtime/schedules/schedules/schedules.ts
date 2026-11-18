@@ -13,7 +13,7 @@ import type { ScheduleTick }     from '../schedule-tick'
 import { tickOf }                from '../tick-of/tick-of'
 import type { TickRow }          from '../tick-row'
 
-/** `<feature>[<module>].<name>`, or `<module>.<name>` for a module of no feature. */
+/** `<feature>[<module>].<name>`. */
 const NAME = /^[a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\]\.[a-z][A-Za-z0-9]*$/
 
 const LOOK_EVERY_MS = 60_000
