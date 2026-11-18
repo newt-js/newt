@@ -1,18 +1,19 @@
-import { join }            from 'node:path'
-import { relative }        from 'node:path'
+import { join }                         from 'node:path'
+import { relative }                     from 'node:path'
 // --------------------------------------------------------
-import { contextNames }    from '../../names/context-names/context-names'
-import { featureNames }    from '../../names/feature-names/feature-names'
-import { moduleNames }     from '../../names/module-names/module-names'
-import { CONTEXTS_FOLDER } from '../../project/backend-contexts/backend-contexts'
-import { backendContexts } from '../../project/backend-contexts/backend-contexts'
-import { backendStores }   from '../../project/backend-stores/backend-stores'
-import { findBackend }     from '../../project/find-backend/find-backend'
-import { nextMigration }   from '../../project/next-migration/next-migration'
-import { featureTemplate } from '../../templates/feature/feature-template/feature-template'
-import { moduleTemplate }  from '../../templates/module/module-template/module-template'
-import { defineCommand }   from '../command'
-import { CommandError }    from '../command-error/command-error'
+import { contextNames }                 from '../../names/context-names/context-names'
+import { featureNames }                 from '../../names/feature-names/feature-names'
+import { moduleNames }                  from '../../names/module-names/module-names'
+import { CONTEXTS_FOLDER }              from '../../project/backend-contexts/backend-contexts'
+import { backendContexts }              from '../../project/backend-contexts/backend-contexts'
+import { backendStores }                from '../../project/backend-stores/backend-stores'
+import { findBackend }                  from '../../project/find-backend/find-backend'
+import { refuseFeatureNamedLikeModule } from '../../project/new-feature/new-feature'
+import { nextMigration }                from '../../project/next-migration/next-migration'
+import { featureTemplate }              from '../../templates/feature/feature-template/feature-template'
+import { moduleTemplate }               from '../../templates/module/module-template/module-template'
+import { defineCommand }                from '../command'
+import { CommandError }                 from '../command-error/command-error'
 
 const USAGE = 'newt add module takes the context, the feature and the module, as in newt add module sales/orders/order'
 
@@ -47,6 +48,7 @@ export const ADD_MODULE = defineCommand({
     }
     const migration = await nextMigration(join(backend, CONTEXTS_FOLDER, context, 'migrations'), names.migration)
     const newFeature = !found.features.some(each => each.name === feature)
+    if (newFeature) refuseFeatureNamedLikeModule(found, feature)
     return {
       changes: [
         ...newFeature ? featureTemplate({ backend: relative(cwd, backend), context: contextName, names: featureName }) : [],

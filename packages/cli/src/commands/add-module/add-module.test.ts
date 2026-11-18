@@ -30,7 +30,7 @@ describe('newt add module', () => {
     const backend = await backendWithContext()
     const output = await run(ADD_MODULE, ['sales/orders/order'], backend)
     expect(output.code).toBe(0)
-    expect(await read(join(backend, 'src/contexts/sales/migrations/00001_orders_order_up.sql'))).toStartWith('CREATE TABLE "orders$order" (')
+    expect(await read(join(backend, 'src/contexts/sales/migrations/00001_orders__order_up.sql'))).toStartWith('CREATE TABLE "orders$order" (')
     expect(await read(join(backend, 'src/contexts/sales/sales-features.ts'))).toContain('  const orders = ordersFeature(base, router)\n  return {\n    orders,\n  }')
     expect(await read(join(backend, 'src/contexts/sales/features/orders/orders.feature.ts'))).toContain("  const order = Order_Module.initialize(base, router)\n  return defineFeature('orders', base, {\n    order,\n  })")
     expect(await checkGenerated(backend)).toEqual([])
@@ -40,7 +40,7 @@ describe('newt add module', () => {
     const backend = await backendWithContext()
     await run(ADD_MODULE, ['sales/orders/order'], backend)
     await run(ADD_MODULE, ['sales/orders/price-change'], backend)
-    expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_orders_price_change_up.sql')).exists()).toBe(true)
+    expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_orders__price_change_up.sql')).exists()).toBe(true)
     const modules = await read(join(backend, 'src/contexts/sales/features/orders/orders.feature.ts'))
     expect(modules).toContain("  const order = Order_Module.initialize(base, router)\n  const priceChange = PriceChange_Module.initialize(base, router)\n  return defineFeature('orders', base, {\n    order,\n    priceChange,\n  })")
     expect(modules).toContain("import { PriceChange_Module } from './modules/price-change/price-change.module'")
@@ -58,12 +58,12 @@ describe('newt add module', () => {
   test('in postgres and mysql, the table in their SQL, quoted as each quotes', async () => {
     const postgres = await backendWithContext('postgres')
     await run(ADD_MODULE, ['sales/orders/order'], postgres)
-    expect(await read(join(postgres, 'src/contexts/sales/migrations/00001_orders_order_up.sql'))).toContain('CREATE TABLE "orders$order" (\n  id TEXT COLLATE "C" PRIMARY KEY,')
+    expect(await read(join(postgres, 'src/contexts/sales/migrations/00001_orders__order_up.sql'))).toContain('CREATE TABLE "orders$order" (\n  id TEXT COLLATE "C" PRIMARY KEY,')
     expect(await checkGenerated(postgres)).toEqual([])
     const mysql = await backendWithContext('mysql')
     await run(ADD_MODULE, ['sales/orders/order'], mysql)
-    expect(await read(join(mysql, 'src/contexts/sales/migrations/00001_orders_order_up.sql'))).toContain('CREATE TABLE `orders$order` (\n  id VARCHAR(64) COLLATE utf8mb4_0900_bin PRIMARY KEY,')
-    expect(await read(join(mysql, 'src/contexts/sales/migrations/00001_orders_order_down.sql'))).toBe('DROP TABLE `orders$order`;\n')
+    expect(await read(join(mysql, 'src/contexts/sales/migrations/00001_orders__order_up.sql'))).toContain('CREATE TABLE `orders$order` (\n  id VARCHAR(64) COLLATE utf8mb4_0900_bin PRIMARY KEY,')
+    expect(await read(join(mysql, 'src/contexts/sales/migrations/00001_orders__order_down.sql'))).toBe('DROP TABLE `orders$order`;\n')
   }, 30_000)
 
   const SERVERS = [{ db: 'postgres', url: Bun.env.POSTGRES_TEST_URL }, { db: 'mysql', url: Bun.env.MYSQL_TEST_URL }]
@@ -75,7 +75,7 @@ describe('newt add module', () => {
       await linkDependencies(backend)
       const moduleTests = () => Bun.spawn([process.execPath, 'test', 'src/contexts'], { cwd: backend, env: { ...Bun.env, TEST_DATABASE_URL: url }, stdout: 'pipe', stderr: 'pipe' }).exited
       expect(await moduleTests()).toBe(0)
-      const up = join(backend, 'src/contexts/sales/migrations/00001_orders_order_up.sql')
+      const up = join(backend, 'src/contexts/sales/migrations/00001_orders__order_up.sql')
       await Bun.write(up, (await read(up)).replace(/\n\s+name .*\n/, '\n'))
       expect(await moduleTests()).not.toBe(0)
     }, 60_000)
@@ -92,7 +92,7 @@ describe('newt add module', () => {
 
   test("AGENTS.md says a schema change needs a migration, and which tests run it", async () => {
     const postgres = await read(join(await backendWithContext('postgres'), 'AGENTS.md'))
-    expect(postgres).toContain('`<number>_<table>_up.sql` and `<number>_<table>_down.sql`')
+    expect(postgres).toContain('`<number>_<feature>__<module>_up.sql` and `<number>_<feature>__<module>_down.sql` (the table is `<feature>$<module>`)')
     expect(postgres).toContain('The tests run in memory and miss them, unless `TEST_DATABASE_URL` is set')
     expect(await read(join(await backendWithContext('sqlite'), 'AGENTS.md'))).toContain('The tests run them.')
   })
@@ -120,7 +120,7 @@ describe('newt add module', () => {
     await run(ADD_MODULE, ['sales/orders/order'], backend)
     const again = JSON.parse((await run(ADD_MODULE, ['sales/orders/order', '--json'], backend)).text) as { files: { status: string }[] }
     expect(again.files.filter(file => file.status !== 'skipped')).toEqual([])
-    expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_orders_order_up.sql')).exists()).toBe(false)
+    expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_orders__order_up.sql')).exists()).toBe(false)
   })
 
   test('run again after it took deps, it does not declare the module twice', async () => {
@@ -141,6 +141,20 @@ describe('newt add module', () => {
     const backend = await backendWithContext()
     const output = await run(ADD_MODULE, ['sales/orders/order', '--backend', 'shop', '--dry-run'], join(backend, '..'))
     expect(output.text).toContain('write authenticate in shop/src/auth.ts')
+  })
+
+  test('two modules whose feature and module words split alike take tables and migrations of their own', async () => {
+    const backend = await backendWithContext()
+    await run(ADD_MODULE, ['sales/price-lists/item'], backend)
+    await run(ADD_MODULE, ['sales/price/lists-item'], backend)
+    expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_price__lists_item_up.sql')).exists()).toBe(true)
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
+  test('refuses a new feature named like a module of the context', async () => {
+    const backend = await backendWithContext()
+    await run(ADD_MODULE, ['sales/orders/invoice'], backend)
+    expect((await run(ADD_MODULE, ['sales/invoice/thing'], backend)).text).toStartWith("'invoice' cannot name a feature of sales: orders has a module of that name")
   })
 
   test('refuses a context the backend has not, or names that are not', async () => {

@@ -43,6 +43,10 @@ function moduleChanges({ folder, module }: FoundModule, used: Used): FileChange[
 async function moduleOfItsFeature(found: FoundModule, other: string, cwd: string) {
   const { module, context, feature, modules: siblings, featureFolder } = found
   const used = moduleNames(feature, other)
+  const elsewhere = found.features.find(each => each.modules.includes(used.folder))
+  if (!siblings.includes(used.folder) && elsewhere) {
+    throw new CommandError(`${used.folder} is a module of ${elsewhere.name}: a module uses another feature whole, through what it exposes, as in newt add deps ${context.folder}/${feature.folder}/${module.folder} ${elsewhere.name}`)
+  }
   if (!siblings.includes(used.folder)) {
     throw new CommandError(`The feature ${context.folder}/${feature.folder} has no module ${used.folder}: add it with newt add module ${context.folder}/${feature.folder}/${used.folder}`)
   }

@@ -1,12 +1,13 @@
-import { relative }        from 'node:path'
+import { relative }                     from 'node:path'
 // --------------------------------------------------------
-import { contextNames }    from '../../names/context-names/context-names'
-import { featureNames }    from '../../names/feature-names/feature-names'
-import { backendContexts } from '../../project/backend-contexts/backend-contexts'
-import { findBackend }     from '../../project/find-backend/find-backend'
-import { featureTemplate } from '../../templates/feature/feature-template/feature-template'
-import { defineCommand }   from '../command'
-import { CommandError }    from '../command-error/command-error'
+import { contextNames }                 from '../../names/context-names/context-names'
+import { featureNames }                 from '../../names/feature-names/feature-names'
+import { backendContexts }              from '../../project/backend-contexts/backend-contexts'
+import { findBackend }                  from '../../project/find-backend/find-backend'
+import { refuseFeatureNamedLikeModule } from '../../project/new-feature/new-feature'
+import { featureTemplate }              from '../../templates/feature/feature-template/feature-template'
+import { defineCommand }                from '../command'
+import { CommandError }                 from '../command-error/command-error'
 
 const USAGE = 'newt add feature takes the context and the feature, as in newt add feature sales/orders'
 
@@ -30,10 +31,7 @@ export const ADD_FEATURE = defineCommand({
     if (!found) {
       throw new CommandError(`The backend has no context ${context}: add it with newt add context ${context}`)
     }
-    const owner = found.features.find(each => each.modules.includes(feature))
-    if (owner) {
-      throw new CommandError(`'${feature}' cannot name a feature of ${context}: ${owner.name} has a module of that name; name the feature in plural, by what it groups`)
-    }
+    refuseFeatureNamedLikeModule(found, feature)
     return {
       changes: featureTemplate({ backend: relative(cwd, backend), context: contextName, names }),
       nextSteps: [`add its modules with newt add module ${context}/${feature}/<module>`],

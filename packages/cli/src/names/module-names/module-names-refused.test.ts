@@ -16,6 +16,8 @@ const REFUSED: [string, string][] = [
   ['http-router', 'a name newt\'s generated code uses'],
   ['context-base', 'a name newt\'s generated code uses'],
   ['use-case', 'a name newt\'s generated code uses'],
+  ['uses', 'a name newt\'s generated code uses'],
+  ['define-feature', 'a name newt\'s generated code uses'],
   [`a${'-b'.repeat(40)}`, 'more than 63 characters'],
 ]
 
