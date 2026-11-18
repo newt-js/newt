@@ -57,7 +57,7 @@ class Written implements DomainEvent<{ text: string }> {
 class Diary extends Module {
   readonly events
   constructor(base: ContextBase, private readonly log: Log) {
-    super('diary', base.useCaseRunner)
+    super('notes[diary]', base.useCaseRunner)
     this.events = eventsOf(base.bus, { written: Written })
   }
   @UseCase()
@@ -72,7 +72,7 @@ class Diary extends Module {
 
 class Log extends Module {
   constructor(base: ContextBase, private readonly notes: Notes) {
-    super('log', base.useCaseRunner)
+    super('notes[log]', base.useCaseRunner)
   }
   @UseCase()
   async add(text: string) {
@@ -107,7 +107,7 @@ describe('the write rule', () => {
   test('refuses a use case writing to another module outside a worker', async () => {
     const { diary } = open('error')
 
-    await expect(diary.writeBoth('theirs')).rejects.toThrow('diary.writeBoth writes to test.log outside a worker')
+    await expect(diary.writeBoth('theirs')).rejects.toThrow('notes[diary].writeBoth writes to test.notes[log] outside a worker')
     expect(await database.records('note').count()).toBe(0)
   })
 
@@ -127,7 +127,7 @@ describe('the write rule', () => {
     const otherDiary = new Diary(other, new Log(other, new Notes(other, database.records<NoteRow>('note'), { scope: 'none' })))
     class Caller extends Module {
       constructor() {
-        super('caller', shop.useCaseRunner)
+        super('shop[caller]', shop.useCaseRunner)
       }
       @UseCase()
       async callTheirs() {
@@ -135,7 +135,7 @@ describe('the write rule', () => {
       }
     }
 
-    await expect(new Caller().callTheirs()).rejects.toThrow('diary.writeBoth writes to other.log outside a worker')
+    await expect(new Caller().callTheirs()).rejects.toThrow('notes[diary].writeBoth writes to other.notes[log] outside a worker')
   })
 
   test('is an error by default', async () => {
@@ -149,13 +149,13 @@ describe('the write rule', () => {
     const { diary, log } = open('error')
 
     await log.stamp('mine')
-    await expect(diary.stampBoth('theirs')).rejects.toThrow('diary.stampBoth writes to test.log outside a worker')
+    await expect(diary.stampBoth('theirs')).rejects.toThrow('notes[diary].stampBoth writes to test.notes[log] outside a worker')
     expect(await database.records('note').count()).toBe(1)
   })
 
   test('lets a worker write to any module', async () => {
     const { base, log, diary } = open('error')
-    diary.events.written.subscribe(written => log.add(written.text), { strategy: 'handler', queue: 'log.add.on.diary.written' })
+    diary.events.written.subscribe(written => log.add(written.text), { strategy: 'handler', queue: 'notes[log].add_on_diary.written' })
     base.worker.start()
 
     await database.run(() => base.bus.publish(new Written({ text: 'later' })))
@@ -183,7 +183,7 @@ describe('the write rule', () => {
 
 class Journal extends Module {
   constructor(base: ContextBase, private readonly notes: Notes, private readonly log: Log) {
-    super('journal', base.useCaseRunner)
+    super('notes[journal]', base.useCaseRunner)
   }
   @UseCase()
   async writeThenLog(text: string) {
@@ -223,14 +223,14 @@ describe('the write rule, for one transaction', () => {
     const { base, journal } = openJournal('error')
 
     await expect(base.worker.runAsWorker(() => journal.logInItsSave('both')))
-      .rejects.toThrow('[write rule] journal.logInItsSave saves test.log in the transaction that saved test.journal')
+      .rejects.toThrow('[write rule] notes[journal].logInItsSave saves test.notes[log] in the transaction that saved test.notes[journal]')
     expect(await database.records('note').count()).toBe(0)
   })
 
   test('refuses two modules saved in one database.transaction, in a worker too', async () => {
     const { base, journal } = openJournal('error')
 
-    await expect(base.worker.runAsWorker(() => journal.logInOneTransaction('both'))).rejects.toThrow('saves test.log in the transaction that saved test.journal')
+    await expect(base.worker.runAsWorker(() => journal.logInOneTransaction('both'))).rejects.toThrow('saves test.notes[log] in the transaction that saved test.notes[journal]')
     expect(await database.records('note').count()).toBe(0)
   })
 
@@ -246,7 +246,7 @@ describe('the write rule, for one transaction', () => {
       log.restore()
     }
 
-    expect(warnings).toEqual([expect.stringContaining('journal.logInItsSave saves test.log')])
+    expect(warnings).toEqual([expect.stringContaining('notes[journal].logInItsSave saves test.notes[log]')])
     expect(await database.records('note').count()).toBe(4)
   })
 })

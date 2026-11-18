@@ -15,7 +15,7 @@ describe('route layers', () => {
 
   test('a request goes through each in order: its origin, its session, its limit, its group\'s middleware, its route', async () => {
     const seen: string[] = []
-    const limit = new RateLimits(new MemoryCluster(), 'shop', systemClock).define('api.calls', { limit: 1, windowMs: 60_000 })
+    const limit = new RateLimits(new MemoryCluster(), 'shop', systemClock).define('shop[api].calls', { limit: 1, windowMs: 60_000 })
     const take = limit.take.bind(limit)
     limit.take = key => {
       seen.push('rateLimited')

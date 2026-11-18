@@ -23,7 +23,7 @@ export type ModuleDescription = {
   id: string
   context: string
   name: string
-  feature: string | null
+  feature: string
   className: string
   exposes: { useCases: string[], events: string[] }
   useCases: UseCaseDescription[]

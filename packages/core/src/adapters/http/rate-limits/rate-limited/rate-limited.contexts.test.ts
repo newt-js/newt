@@ -10,7 +10,7 @@ import { HttpRouter }    from '../../router/http-router/http-router'
 
 function context(name: string, cluster: Cluster) {
   const rateLimits = new RateLimits(cluster, name, systemClock)
-  const router = new HttpRouter({ rateLimit: { limit: rateLimits.define('api.calls', { limit: 1, windowMs: 60_000 }) } })
+  const router = new HttpRouter({ rateLimit: { limit: rateLimits.define('shop[api].calls', { limit: 1, windowMs: 60_000 }) } })
   router.authenticateWith(async request => ({ userId: request.headers.get('x-user')! }))
   router.get('/things', () => Response.json([]))
   return async () => (await router.answer(new Request('http://shop.test/api/things', { headers: { 'x-user': 'ana@example.com' } }))!).status

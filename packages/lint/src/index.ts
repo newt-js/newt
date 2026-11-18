@@ -18,6 +18,7 @@ import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
 import { moduleNames }             from './rules/module-names/module-names'
+import { modulePlace }             from './rules/module-place/module-place'
 import { moduleTransactions }      from './rules/module-transactions/module-transactions'
 import { keepNoDisable }           from './rules/no-disable/keep-no-disable'
 import { noDisable }               from './rules/no-disable/no-disable'
@@ -38,6 +39,7 @@ export const plugin = {
     'context-imports': contextImports,
     'entity-method-params': entityMethodParams,
     'feature-imports': featureImports,
+    'module-place': modulePlace,
     'framework-tables': frameworkTables,
     'app-imports': appImports,
     'module-entity': moduleEntity,
@@ -65,8 +67,8 @@ export const parser = tseslint.parser
 /** The typescript-eslint this package carries: an app that wants its configs takes them from here, since ESLint refuses two plugins under one name. */
 export { tseslint }
 
-/** Where a module's files are: anything under a `modules/<module>/` folder. */
-const MODULES = '**/modules/*/**/*.ts'
+/** Where a module's files are: anything under a `features/<feature>/modules/<module>/` folder. */
+const MODULES = '**/features/*/modules/*/**/*.ts'
 
 /** newt's style, which no rule of its own says: every `if`, `else` and loop takes braces, and its body goes on lines of its own. Both fix themselves. */
 export const STYLE: Linter.RulesRecord = {
@@ -92,8 +94,8 @@ export type NewtLintOptions = {
 }
 
 /**
- * The lint of an application built with newt. A module is a folder in a context's
- * `modules/`; the context is the folder that holds it. What it checks keeps every module
+ * The lint of an application built with newt. A module is a folder in a feature's
+ * `modules/`, `<context>/features/<feature>/modules/<module>/`. What it checks keeps every module
  * the same, whoever writes it, a person or an agent.
  *
  * ```ts
@@ -115,6 +117,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     rules: {
       'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }],
       'newt/feature-imports': ['error', { folder: given }],
+      'newt/module-place': ['error', { folder: given }],
       'newt/route-context': ['error', { folder: given }],
     },
   }, {

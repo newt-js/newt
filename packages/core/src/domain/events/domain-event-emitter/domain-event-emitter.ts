@@ -24,7 +24,7 @@ export class DomainEventEmitter<TPayload extends Json> {
 
   subscribe<TSeen extends TPayload = TPayload>(handler: (payload: TSeen, meta: EventMeta) => unknown, subscription: Subscription<TPayload, TSeen>): () => void {
     if (subscription.strategy === 'handler' && eventOfQueue(subscription.queue) !== this.name) {
-      throw new Error(`A handler's queue is '<feature>[<module>].<use case>_on_${this.name}' ('<module>.<use case>.on.${this.name}' for a module of no feature): '${subscription.queue}' is not`)
+      throw new Error(`A handler's queue is '<feature>[<module>].<use case>_on_${this.name}': '${subscription.queue}' is not`)
     }
     const run = async ({ id, name, payload, occurredAt, actor }: PublishedEvent, signal?: AbortSignal) => {
       await handler(payload as TSeen, { id, name, occurredAt, actor: actor ?? null, ...(signal ? { signal } : {}) })

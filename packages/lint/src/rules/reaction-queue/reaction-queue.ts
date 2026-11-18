@@ -13,15 +13,16 @@ import { pascalCase }                             from '../../paths/paths'
 import { rootOf }                                 from '../../paths/paths'
 
 /**
- * `<module>.<use case>.on.<module>.<event>`: newt refuses at startup a handler's queue
- * that does not start with two names and `.on.`; the event is the name of the one it
- * subscribes to, a module's and its own. Stricter than newt's own `eventOfQueue`:
- * reaction-queue.test.ts holds every queue this takes to be one newt takes.
+ * `<feature>[<module>].<use case>_on_<module>.<event>`: newt refuses at startup a handler's
+ * queue of any other shape; the event is the name of the one it subscribes to, a module's
+ * and its own. Stricter than newt's own `eventOfQueue`: reaction-queue.test.ts holds every
+ * queue this takes to be one newt takes.
  */
-export const QUEUE = /^([a-z][A-Za-z0-9]*)\.([a-z][A-Za-z0-9]*)\.on\.([^.\s]+\.([^.\s]+))$/
-
-/** `<feature>[<module>].<use case>_on_<module>.<event>`: the queue of a module of a feature, as strict as `QUEUE`. */
 export const FEATURE_QUEUE = /^([a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\])\.([a-z][A-Za-z0-9]*)_on_([^.\s]+\.([^.\s]+))$/
+
+/** How a queue is written, and one written so, for the message of one that is not. */
+const SHAPE = '<feature>[<module>].<use case>_on_<event>'
+const EXAMPLE = 'shipping[delivery].prepare_on_sales[order].placed'
 
 /** The property of an object written with a name, `queue: …` or `'queue': …`. */
 function property(object: TSESTree.ObjectExpression, name: string): TSESTree.Property | undefined {
@@ -92,8 +93,7 @@ function typesOf(checker: ts.TypeChecker, map: ParserServicesWithTypeInformation
 
 /**
  * A handler's queue says who reacts with what to which event:
- * `<feature>[<module>].<use case>_on_<event>` in a module of a feature, the event by its whole name,
- * `<module>.<use case>.on.<module>.<event>` in one of none. Written by hand, it could say another
+ * `<feature>[<module>].<use case>_on_<event>`, the event by its whole name. Written by hand, it could say another
  * module's or another use case's: in every file of a module, this checks it has that
  * shape, that it is the module's, that its callback calls that use case on the module
  * itself, and that it ends with the event it subscribes to. A reaction written with
@@ -118,10 +118,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
     const place = modulePlace(context.filename, rootOf(context))
     if (!place) return {}
     const own = camelCase(place.module)
-    const module = place.feature === null ? own : `${camelCase(place.feature)}[${own}]`
-    const shapes = place.feature === null
-      ? { queue: QUEUE, on: '.on.', shape: '<module>.<use case>.on.<module>.<event>', example: 'order.fulfil.on.order.placed' }
-      : { queue: FEATURE_QUEUE, on: '_on_', shape: '<feature>[<module>].<use case>_on_<event>', example: 'shipping[delivery].prepare_on_sales[order].placed' }
+    const module = `${camelCase(place.feature)}[${own}]`
     const type = `${pascalCase(place.module)}_Module`
     const file = posix.basename(place.inside)
 
@@ -204,9 +201,9 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
         const queue = unwrap(property(options, 'queue')?.value)
         const name = textOf(queue)
         if (textOf(property(options, 'strategy')?.value) !== 'handler' || queue === undefined || name === undefined) return
-        const shape = shapes.queue.exec(name)
+        const shape = FEATURE_QUEUE.exec(name)
         if (!shape) {
-          context.report({ node: queue, messageId: 'shape', data: { queue: name, shape: shapes.shape, example: shapes.example } })
+          context.report({ node: queue, messageId: 'shape', data: { queue: name, shape: SHAPE, example: EXAMPLE } })
           return
         }
         const [, found = '', useCase = '', event = '', last = ''] = shape
@@ -217,7 +214,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
         if (runs && !calls) context.report({ node: queue, messageId: 'useCase', data: { useCase, module } })
         if (types) {
           const told = types.eventName(callee.object)
-          if (told && event !== told) context.report({ node: queue, messageId: 'event', data: { on: shapes.on, event: told } })
+          if (told && event !== told) context.report({ node: queue, messageId: 'event', data: { on: '_on_', event: told } })
           return
         }
         // Without a program, only the key it is read from in `events` (`eventsOf`'s) says the event.
@@ -225,7 +222,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
         const key = emitter.type === 'MemberExpression' && !emitter.computed && emitter.property.type === 'Identifier'
           && emitter.object.type === 'MemberExpression' && !emitter.object.computed && emitter.object.property.type === 'Identifier'
           && emitter.object.property.name === 'events' ? emitter.property.name : null
-        if (key && last !== key) context.report({ node: queue, messageId: 'event', data: { on: shapes.on, event: `….${key}` } })
+        if (key && last !== key) context.report({ node: queue, messageId: 'event', data: { on: '_on_', event: `….${key}` } })
       },
     }
   },

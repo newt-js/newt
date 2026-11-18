@@ -34,9 +34,9 @@ describe("a context's bus", () => {
   test("makes a handler subscription a queue of its worker, told to its registry, and forgets both", async () => {
     const base = await busOf()
 
-    const forget = base.bus.subscribe('order.placed', () => {}, { strategy: 'handler', queue: 'mail.send.on.order.placed', attempts: 2 })
-    expect(base.useCaseRunner.registry.subscriptions).toEqual([{ event: 'order.placed', strategy: 'handler', queue: 'mail.send.on.order.placed', attempts: 2, filtered: false }])
-    expect(await base.worker.enqueue({ ...named('order.placed'), id: 'e1' as EventId, actor: null })).toEqual(['mail.send.on.order.placed'])
+    const forget = base.bus.subscribe('order.placed', () => {}, { strategy: 'handler', queue: 'mail[mailer].send_on_order.placed', attempts: 2 })
+    expect(base.useCaseRunner.registry.subscriptions).toEqual([{ event: 'order.placed', strategy: 'handler', queue: 'mail[mailer].send_on_order.placed', attempts: 2, filtered: false }])
+    expect(await base.worker.enqueue({ ...named('order.placed'), id: 'e1' as EventId, actor: null })).toEqual(['mail[mailer].send_on_order.placed'])
 
     forget()
     expect(base.useCaseRunner.registry.subscriptions).toEqual([])
