@@ -23,3 +23,10 @@ test('in order already, nothing changes', async () => {
   const text = 'export function shopModules(base, router) {\n  const invoice = Invoice_Module.initialize(base, router)\n  const order = Order_Module.initialize(base, router, { invoice })\n  return { order, invoice }\n}\n'
   expect(await ordered(text)).toBe(text)
 })
+
+test('each feature after the ones it uses, and a module given a used feature is not held by it', async () => {
+  const text = 'export function salesFeatures(base, router) {\n  const campaigns = campaignsFeature(base, router, { contacts })\n  const contacts = contactsFeature(base, router)\n  return { campaigns, contacts }\n}\n'
+  expect(await ordered(text)).toBe('export function salesFeatures(base, router) {\n  const contacts = contactsFeature(base, router)\n  const campaigns = campaignsFeature(base, router, { contacts })\n  return { campaigns, contacts }\n}\n')
+  const feature = 'export function campaignsFeature(base, router, uses) {\n  const campaign = Campaign_Module.initialize(base, router, { contacts: uses.contacts })\n  const template = Template_Module.initialize(base, router)\n  return defineFeature(\'campaigns\', base, { campaign, template })\n}\n'
+  expect(await ordered(feature)).toBe(feature)
+})
