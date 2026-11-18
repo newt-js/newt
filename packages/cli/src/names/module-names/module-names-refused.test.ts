@@ -18,6 +18,7 @@ const REFUSED: [string, string][] = [
   ['use-case', 'a name newt\'s generated code uses'],
   ['uses', 'a name newt\'s generated code uses'],
   ['define-feature', 'a name newt\'s generated code uses'],
+  ['modules', "a feature's modules are its folders"],
   [`a${'-b'.repeat(40)}`, 'more than 63 characters'],
 ]
 

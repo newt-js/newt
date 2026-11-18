@@ -62,7 +62,7 @@ async function givenEmitter(found: FoundModule, featureFolder: string, moduleFol
   return {
     from: ownFeature ? `deps.${key}` : `deps.${key}.${emitter.module}`,
     name: emitter.name,
-    folder: join(found.featureFolder, '..', featureFolder, 'modules', moduleFolder),
+    folder: join(found.featureFolder, '..', featureFolder, moduleFolder),
     module: moduleFolder,
     creator: null,
     feature: ownFeature ? null : featureFolder,

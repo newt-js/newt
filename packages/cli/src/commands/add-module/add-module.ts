@@ -55,7 +55,7 @@ export const ADD_MODULE = defineCommand({
         ...moduleTemplate({ backend: relative(cwd, backend), context: contextName, names, database, migration }),
       ],
       nextSteps: [
-        `bun test ${join(relative(cwd, backend), CONTEXTS_FOLDER, context, 'features', feature, 'modules', module)}`,
+        `bun test ${join(relative(cwd, backend), CONTEXTS_FOLDER, context, 'features', feature, module)}`,
         `let other features use it: list its use cases and events in exposes, in ${module}.module.ts`,
         `its routes ask for a session: write authenticate in ${join(relative(cwd, backend), 'src/auth.ts')} to call them from outside the tests`,
       ],

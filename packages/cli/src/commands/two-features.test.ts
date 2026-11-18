@@ -16,8 +16,8 @@ import type { Command }     from './command'
 import { INIT }             from './init/init'
 
 const ENGAGEMENT = 'src/contexts/engagement'
-const CAMPAIGN = `${ENGAGEMENT}/features/campaigns/modules/campaign`
-const CONTACT = `${ENGAGEMENT}/features/contacts/modules/contact`
+const CAMPAIGN = `${ENGAGEMENT}/features/campaigns/campaign`
+const CONTACT = `${ENGAGEMENT}/features/contacts/contact`
 
 /** Replaces `from` by `to` in a file of the backend, as a person would by hand: the edit must be there. */
 async function edit(backend: string, file: string, from: string | RegExp, to: string): Promise<void> {

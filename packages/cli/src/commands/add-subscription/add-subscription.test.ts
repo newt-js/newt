@@ -74,7 +74,7 @@ describe('newt add subscription', () => {
     expect(test).toContain("  await modulesOf(features.customers).customer.create({ name: 'First' })")
     expect(test).toContain("each.queue === 'orders[order].purge_on_customers[customer].created')?.status).toBe('done')")
     expect(test).toContain("each.queue === 'orders[order].purge_on_orders[invoice].created')?.status).toBe('done')")
-    const customer = join(backend, 'src/contexts/sales/features/customers/modules/customer/customer.module.ts')
+    const customer = join(backend, 'src/contexts/sales/features/customers/customer/customer.module.ts')
     await Bun.write(customer, (await Bun.file(customer).text()).replace('exposes = { useCases: [], events: [] } as const', "exposes = { useCases: [], events: ['created'] } as const"))
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)

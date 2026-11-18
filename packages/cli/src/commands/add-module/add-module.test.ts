@@ -43,8 +43,8 @@ describe('newt add module', () => {
     expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_orders__price_change_up.sql')).exists()).toBe(true)
     const modules = await read(join(backend, 'src/contexts/sales/features/orders/orders.feature.ts'))
     expect(modules).toContain("  const order = Order_Module.initialize(base, router)\n  const priceChange = PriceChange_Module.initialize(base, router)\n  return defineFeature('orders', base, {\n    order,\n    priceChange,\n  })")
-    expect(modules).toContain("import { PriceChange_Module } from './modules/price-change/price-change.module'")
-    expect(await read(join(backend, 'src/contexts/sales/features/orders/modules/price-change/price-change.routes.ts'))).toContain("router.post('/orders/price-changes'")
+    expect(modules).toContain("import { PriceChange_Module } from './price-change/price-change.module'")
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/price-change/price-change.routes.ts'))).toContain("router.post('/orders/price-changes'")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -85,7 +85,7 @@ describe('newt add module', () => {
     const backend = await backendWithContext('postgres')
     await run(ADD_MODULE, ['sales/orders/order'], backend)
     expect(await read(join(backend, 'src/test-database.ts'))).toContain('return { database: new MemoryDatabase(), drop: async () => {} }')
-    expect(await read(join(backend, 'src/contexts/sales/features/orders/modules/order/order.module.test.ts'))).toContain("await testDatabase(join(import.meta.dir, '../../../../migrations'))")
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/order/order.module.test.ts'))).toContain("await testDatabase(join(import.meta.dir, '../../../migrations'))")
     expect(await read(join(backend, 'AGENTS.md'))).toContain('with `TEST_DATABASE_URL`')
     expect(await Bun.file(join(await backendWithContext('sqlite'), 'src/test-database.ts')).exists()).toBe(false)
   })
@@ -100,12 +100,12 @@ describe('newt add module', () => {
   test('a module of an irregular plural, and one given with --plural, which later commands keep', async () => {
     const backend = await backendWithContext()
     await run(ADD_MODULE, ['sales/orders/person'], backend)
-    expect(await read(join(backend, 'src/contexts/sales/features/orders/modules/person/person.routes.ts'))).toContain("router.get('/orders/people'")
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/person/person.routes.ts'))).toContain("router.get('/orders/people'")
     expect((await run(ADD_MODULE, ['sales/orders/cactus', '--plural', 'cacti'], backend)).code).toBe(0)
-    expect(await read(join(backend, 'src/contexts/sales/features/orders/modules/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(router: HttpRouter, cacti: Cactus_Module) {')
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(router: HttpRouter, cacti: Cactus_Module) {')
     expect((await run(ADD_USE_CASE, ['sales/orders/cactus', 'water'], backend)).code).toBe(0)
     expect((await run(ADD_ROUTE, ['sales/orders/cactus', 'water'], backend)).code).toBe(0)
-    expect(await read(join(backend, 'src/contexts/sales/features/orders/modules/cactus/cactus.routes.ts'))).toContain("router.post('/orders/cacti/:id/water', async request => Response.json(await cacti.water(")
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/cactus/cactus.routes.ts'))).toContain("router.post('/orders/cacti/:id/water', async request => Response.json(await cacti.water(")
     expect(await checkGenerated(backend)).toEqual([])
   }, 60_000)
 
@@ -134,7 +134,7 @@ describe('newt add module', () => {
 
   test('says what to do next, and that its routes ask for a session', async () => {
     const output = await run(ADD_MODULE, ['sales/orders/order', '--dry-run'], await backendWithContext())
-    expect(output.text).toEndWith("Next steps:\n  bun test src/contexts/sales/features/orders/modules/order\n  let other features use it: list its use cases and events in exposes, in order.module.ts\n  its routes ask for a session: write authenticate in src/auth.ts to call them from outside the tests")
+    expect(output.text).toEndWith("Next steps:\n  bun test src/contexts/sales/features/orders/order\n  let other features use it: list its use cases and events in exposes, in order.module.ts\n  its routes ask for a session: write authenticate in src/auth.ts to call them from outside the tests")
   })
 
   test("from another folder, points at the backend's own src/auth.ts", async () => {

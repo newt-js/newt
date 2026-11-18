@@ -24,7 +24,7 @@ const PROJECT = {
 }
 
 const BREAKS = {
-  lint: { 'src/contexts/shop/features/orders/modules/order/helpers.ts': 'export const helper = 1\n' },
+  lint: { 'src/contexts/shop/features/orders/order/helpers.ts': 'export const helper = 1\n' },
   types: { 'src/wrong.ts': "export const count: number = 'one'\n" },
   tests: { 'src/wrong.test.ts': "import { expect, test } from 'bun:test'\n\ntest('wrong', () => {\n  expect(1).toBe(2)\n})\n" },
 }

@@ -39,7 +39,7 @@ describe('newt add app', () => {
   test('the app imports the types of its context\'s schemas, and they type-check', async () => {
     const backend = await moduleProject()
     await addApp(['sales'], backend)
-    await Bun.write(join(backend, 'src/contexts/sales/app/app.tsx'), "import type { OrderDTO } from '../features/orders/modules/order/order.schema'\n\nexport function App({ order }: { order?: OrderDTO }) {\n  return <h1>{order?.name}</h1>\n}\n")
+    await Bun.write(join(backend, 'src/contexts/sales/app/app.tsx'), "import type { OrderDTO } from '../features/orders/order/order.schema'\n\nexport function App({ order }: { order?: OrderDTO }) {\n  return <h1>{order?.name}</h1>\n}\n")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

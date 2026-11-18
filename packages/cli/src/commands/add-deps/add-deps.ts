@@ -76,7 +76,7 @@ async function anotherFeature(found: FoundModule, used: FeatureNames, cwd: strin
   const usedType = `${used.type}Feature`
   const usedFrom = `../${used.folder}/${used.folder}.feature`
   const changes: FileChange[] = [
-    ...moduleChanges(found, { key: used.camel, type: usedType, from: `../../${usedFrom}` }),
+    ...moduleChanges(found, { key: used.camel, type: usedType, from: `../${usedFrom}` }),
     { action: 'replace-line', path: entry, line: featureHead(feature, false), with: featureHead(feature, true), imports: [] },
     ...text.includes(usesHead(feature)) ? [] : [{ action: 'insert-lines' as const, path: entry, anchor: featureType(feature), position: 'before' as const, lines: usesTs(feature, context.folder), imports: [] }],
     { action: 'insert-lines', path: entry, anchor: usesHead(feature), position: 'after', lines: [`  ${used.camel}: ${usedType}`], imports: [`import type { ${usedType} } from '${usedFrom}'`] },

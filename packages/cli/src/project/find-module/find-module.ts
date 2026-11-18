@@ -51,7 +51,7 @@ export async function findModule(given: string | undefined, cwd: string, backend
   if (!found.modules.includes(module)) {
     throw new CommandError(`The feature ${context}/${feature} has no module ${module}: add it with newt add module ${context}/${feature}/${module}`)
   }
-  const folder = join(found.folder, 'modules', module)
+  const folder = join(found.folder, module)
   const plural = await writtenPlural(join(cwd, folder), names)
   return { ...found, featureFolder: found.folder, folder, module: plural === undefined ? names : moduleNames(found.feature, module, plural) }
 }
