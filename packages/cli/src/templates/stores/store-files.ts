@@ -29,10 +29,11 @@ export const STORE_FILES = {
     memoryImports: ["import { MemoryStorage } from '@newt-js/core/files/memory'"],
     constants: `const MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
-/** Where a context's routes answer from outside: at its host, or under the backend's URL. */
+/** Where a context's routes answer from outside: at its host, or at the backend's URL; under its prefix on both. */
 function publicUrlOf(context: string, router: HttpRouter): string {
   const host = Bun.env[\`\${envOf(context)}_HOST\`]
-  return host ? \`\${new URL(requiredEnv('PUBLIC_URL')).protocol}//\${host}/api\` : \`\${requiredEnv('PUBLIC_URL')}\${router.prefix}\`
+  const origin = host ? \`\${new URL(requiredEnv('PUBLIC_URL')).protocol}//\${host}\` : requiredEnv('PUBLIC_URL')
+  return \`\${origin}\${router.prefix}\`
 }
 `,
     body: `  const path = '/files'

@@ -38,7 +38,7 @@ test('with SALES_HOST, its files are signed at that host', async () => {
   const download = new URL(await storage.signedUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain' }))
   delete Bun.env.SALES_HOST
   expect(download.host).toBe('sales.midominio.com')
-  expect(download.pathname).toStartWith('/api/files/')
+  expect(download.pathname).toStartWith('/sales/api/files/')
 })
 `
 
