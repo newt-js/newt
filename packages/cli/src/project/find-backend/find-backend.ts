@@ -16,7 +16,7 @@ export async function findBackend(cwd: string, given?: string): Promise<string> 
       throw new CommandError(`${given} has no package.json: --backend takes the folder of a backend`)
     }
     if (!await isBackend(folder)) {
-      throw new CommandError(`${given} is not a newt backend: a backend's package.json depends on @newt-js/core, and it has src/backend.ts`)
+      throw new CommandError(`${given} is not a newt backend: a backend's package.json depends on @newt-js/core, and it has src/contexts/contexts.ts`)
     }
     return folder
   }

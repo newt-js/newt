@@ -87,7 +87,7 @@ describe('newt add backend', () => {
     const root = await monorepoProject()
     expect((await addBackend(['../../apps/api'], join(root, 'packages/utils'))).code).toBe(0)
     expect((await Bun.file(join(root, 'package.json')).json()).workspaces).toEqual(['packages/*', 'apps/*'])
-    expect(await Bun.file(join(root, 'apps/api/src/backend.ts')).exists()).toBe(true)
+    expect(await Bun.file(join(root, 'apps/api/src/index.ts')).exists()).toBe(true)
   })
 
   test('run again, it changes nothing', async () => {

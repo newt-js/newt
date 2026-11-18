@@ -32,11 +32,10 @@ describe('backendTemplate', () => {
       'create apps/shop/tsconfig.json',
       'create apps/shop/eslint.config.ts',
       'create apps/shop/AGENTS.md',
-      'create apps/shop/src/backend.ts',
       'create apps/shop/src/stores.ts',
       'create apps/shop/src/env.ts',
-      'create apps/shop/src/backend.test.ts',
-      'create apps/shop/src/contexts.ts',
+      'create apps/shop/src/index.test.ts',
+      'create apps/shop/src/contexts/contexts.ts',
       'create apps/shop/src/index.ts',
       'create apps/shop/src/auth.ts',
       'complete-env apps/shop/.env',
@@ -50,7 +49,7 @@ describe('backendTemplate', () => {
 
   test('on the memory cluster, leaves the platform its own; on Valkey, gives it one', () => {
     const backendTs = (cluster: 'memory' | 'valkey') => {
-      const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, stores: { ...STORES, cluster }, versions: VERSIONS }), 'src/backend.ts')
+      const change = changeTo(backendTemplate({ folder: '.', name: 'shop', port: 3000, stores: { ...STORES, cluster }, versions: VERSIONS }), 'src/index.ts')
       return change?.action === 'create' ? change.content : ''
     }
     expect(backendTs('memory')).toContain('const platform = new Platform()\n')

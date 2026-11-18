@@ -16,16 +16,15 @@ import { GITIGNORE }             from '../files/gitignore'
 import { packageJson }           from '../files/package-json'
 import { AUTH_KEPT }             from '../files/src-auth-ts'
 import { SRC_AUTH_TS }           from '../files/src-auth-ts'
-import { SRC_BACKEND_TEST_TS }   from '../files/src-backend-test-ts'
-import { srcBackendTs }          from '../files/src-backend-ts'
 import { SRC_CONTEXTS_TS }       from '../files/src-contexts-ts'
-import { SRC_INDEX_TS }          from '../files/src-index-ts'
+import { SRC_INDEX_TEST_TS }     from '../files/src-index-test-ts'
+import { srcIndexTs }            from '../files/src-index-ts'
 import { srcTestDatabaseTs }     from '../files/src-test-database-ts'
 import { TSCONFIG_JSON }         from '../files/tsconfig-json'
 
 const TSCONFIG_KEPT = { needs: ['"bun"', '"preserve"', '"bundler"'], warning: 'newt\'s code needs in its compilerOptions types: ["bun"], module: "Preserve" and moduleResolution: "bundler"' }
 
-const INDEX_KEPT = { needs: ['startBackend'], warning: 'it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT || 3000))' }
+const INDEX_KEPT = { needs: ['startBackend', 'import.meta.main'], warning: 'it should export startBackend, which its tests start, and start the backend when run: if (import.meta.main) await startBackend(Number(Bun.env.PORT || 3000))' }
 
 export type BackendTemplateOptions = { folder: string, name: string, port: number, stores: Stores, versions: TemplateVersions, inMonorepo?: boolean }
 
@@ -35,11 +34,10 @@ export function backendTemplate({ folder, name, port, stores, versions, inMonore
   const created: Record<string, string> = {
     'eslint.config.ts': ESLINT_CONFIG_TS,
     'AGENTS.md': agentsMd(stores.database),
-    'src/backend.ts': srcBackendTs(CLUSTERS[stores.cluster]),
     'src/stores.ts': storesTs(stores),
     ...storesNeedEnv(stores) ? { 'src/env.ts': ENV_TS } : {},
-    'src/backend.test.ts': SRC_BACKEND_TEST_TS,
-    'src/contexts.ts': SRC_CONTEXTS_TS,
+    'src/index.test.ts': SRC_INDEX_TEST_TS,
+    'src/contexts/contexts.ts': SRC_CONTEXTS_TS,
   }
   const testDatabase = srcTestDatabaseTs(stores.database)
   if (testDatabase) created['src/test-database.ts'] = testDatabase
@@ -47,7 +45,7 @@ export function backendTemplate({ folder, name, port, stores, versions, inMonore
     { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions, inMonorepo) },
     { action: 'create', path: at('tsconfig.json'), content: TSCONFIG_JSON, kept: TSCONFIG_KEPT },
     ...Object.entries(created).map(([path, content]): FileChange => ({ action: 'create', path: at(path), content })),
-    { action: 'create', path: at('src/index.ts'), content: SRC_INDEX_TS, kept: INDEX_KEPT },
+    { action: 'create', path: at('src/index.ts'), content: srcIndexTs(CLUSTERS[stores.cluster]), kept: INDEX_KEPT },
     { action: 'create', path: at('src/auth.ts'), content: SRC_AUTH_TS, kept: AUTH_KEPT },
     { action: 'complete-env', path: at('.env'), variables: variables(false) },
     { action: 'complete-env', path: at('.env.example'), variables: variables(true) },

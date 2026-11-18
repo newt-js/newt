@@ -10,7 +10,7 @@ export type AskedChoices = { db?: string | undefined, files?: string | undefined
 export type KeptChoices = { stores: Stores, warnings: string[] }
 
 async function clusterOf(backend: string): Promise<ClusterName | undefined> {
-  const code = await Bun.file(join(backend, 'src/backend.ts')).text().catch(() => null)
+  const code = await Bun.file(join(backend, 'src/index.ts')).text().catch(() => null)
   if (code === null) return undefined
   return code.includes('new ValkeyCluster(') ? 'valkey' : 'memory'
 }
@@ -28,7 +28,7 @@ export async function keptChoices(backend: string, folder: string, asked: AskedC
     warnings: [
       ...differs(asked.db, found.database) ? [`${at('src/stores.ts')} opens ${found.database}, and newt kept it: change it by hand to open ${asked.db}`] : [],
       ...differs(asked.files, found.files) ? [`${at('src/stores.ts')} keeps files in ${found.files}, and newt kept it: change it by hand to keep them in ${asked.files}`] : [],
-      ...differs(asked.cluster, cluster) ? [`${at('src/backend.ts')} runs on the ${cluster} cluster, and newt kept it: change it by hand to run on ${asked.cluster}`] : [],
+      ...differs(asked.cluster, cluster) ? [`${at('src/index.ts')} runs on the ${cluster} cluster, and newt kept it: change it by hand to run on ${asked.cluster}`] : [],
       ...port !== undefined && asked.port !== undefined && Number(asked.port) !== Number(port) ? [`${at('.env')} has PORT=${port}, and newt kept it: write PORT=${asked.port} in it`] : [],
     ],
   }

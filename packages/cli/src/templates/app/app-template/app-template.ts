@@ -23,7 +23,7 @@ function servedAt(backend: string, context: ContextNames, app: string, imports: 
   const file = join(backend, CONTEXTS_FOLDER, context.folder, `${context.folder}.context.ts`)
   return [
     { action: 'replace-line', path: file, line: contextToRun(context), with: contextToRunWithApp(context, app), imports },
-    { action: 'append-block', path: join(backend, 'src/backend.test.ts'), block: appTest(context, built), imports: built === undefined ? [] : ["import { join } from 'node:path'"] },
+    { action: 'append-block', path: join(backend, 'src/index.test.ts'), block: appTest(context, built), imports: built === undefined ? [] : ["import { join } from 'node:path'"] },
   ]
 }
 

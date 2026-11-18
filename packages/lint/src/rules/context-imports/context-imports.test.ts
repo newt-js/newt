@@ -51,10 +51,13 @@ const ON_DISK = { folder: FOLDER, uses: { auth: [], shop: ['auth'] } }
 tester.run('context-imports, of files beside the contexts', asRule(contextImports), {
   valid: [
     { code: "import { x } from './names'", filename: join(FOLDER, 'registry.ts'), options: [ON_DISK] },
+    { code: "import { Shop_Context } from './shop/shop.context'", filename: join(FOLDER, 'contexts.ts'), options: [ON_DISK] },
   ],
   invalid: [
     { code: "import { x } from '../registry'", filename: join(FOLDER, 'auth/auth.context.ts'), options: [ON_DISK], errors: [{ messageId: 'root' }] },
     { code: "import { x } from './shop/shop.context'", filename: join(FOLDER, 'registry.ts'), options: [ON_DISK], errors: [{ messageId: 'fromRoot' }] },
+    // The list of the contexts imports each one's entry point, and nothing else of it.
+    { code: "import { x } from './shop/shop.module'", filename: join(FOLDER, 'contexts.ts'), options: [ON_DISK], errors: [{ messageId: 'fromRoot' }] },
     { code: "import { x } from './shop'", filename: join(FOLDER, 'registry.ts'), options: [ON_DISK], errors: [{ messageId: 'fromRoot' }] },
     { code: "import { x } from '../billing'", filename: join(FOLDER, 'auth/auth.context.ts'), options: [ON_DISK], errors: [{ messageId: 'other', data: { path: '../billing', other: 'billing', context: 'auth', uses: 'no other context' } }] },
   ],

@@ -54,7 +54,7 @@ describe('findBackend', () => {
 
   test('--backend that is not a backend', async () => {
     const root = await monorepoWithBackends('apps/api')
-    await expect(findBackend(root, 'packages/utils')).rejects.toThrow("packages/utils is not a newt backend: a backend's package.json depends on @newt-js/core, and it has src/backend.ts")
+    await expect(findBackend(root, 'packages/utils')).rejects.toThrow("packages/utils is not a newt backend: a backend's package.json depends on @newt-js/core, and it has src/contexts/contexts.ts")
   })
 
   test('a monorepo without backends says how to add one', async () => {
