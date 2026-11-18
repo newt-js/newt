@@ -329,7 +329,7 @@ type ErrorBody = {
 
 ### runContexts
 
-`runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` arranca tus contextos: sus servidores, workers y tareas programadas.
+`runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` arranca tus contextos: su servidor, sus workers y sus tareas programadas.
 
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
@@ -353,7 +353,7 @@ return runContexts(contexts, {
 |---|---|---|---|
 | `serve` | `Omit<ServeOptions, 'routers'>` | ninguno | Un servidor para los routers de todos los contextos. |
 | `signals` | `boolean` | `true` | Con `SIGINT` o `SIGTERM`, para y termina el proceso (código 1 si algún paso falló). |
-| `stopTimeoutMs` | `number` | `8000` | Tiempo que tienen servidores y workers para acabar antes de forzarlos. |
+| `stopTimeoutMs` | `number` | `8000` | Tiempo que tienen el servidor y los workers para acabar antes de forzarlos. |
 | `platformWithoutContexts` | `Platform` | ninguna | La plataforma a usar mientras no hay contextos. Si los hay, tiene que ser la suya. |
 
 `RunningContexts`:
@@ -361,7 +361,7 @@ return runContexts(contexts, {
 | Miembro | Tipo | Qué es |
 |---|---|---|
 | `server` | `Bun.Server` | El servidor compartido, si se dio `serve`. |
-| `stop` | `() => Promise<void>` | Para los servidores, luego los workers, y cierra los contextos (el último primero). Lanza un `AggregateError` si falló algún paso; los demás se ejecutan igual. |
+| `stop` | `() => Promise<void>` | Para el servidor, luego los workers, y cierra los contextos (el último primero). Lanza un `AggregateError` si falló algún paso; los demás se ejecutan igual. |
 
 ### Opciones de serve
 
@@ -444,4 +444,4 @@ Las páginas HTML de una carpeta compilada llevan `x-frame-options: DENY` y una 
 | `SECURITY_HEADERS`, `CONTENT_SECURITY_POLICY` | constantes | Los valores por defecto de [Opciones de serve](#opciones-de-serve) y [Frontends](#frontends). |
 | `KeptAnswer` | tipo | Una fila de `newt_idempotency_key`. |
 
-El paquete exporta también los tipos de cada sección: `Cors`, `Idempotency`, `HttpRateLimit`, `HttpRouterOptions`, `RouteOptions`, `ParamsOf`, `Middleware`, `ErrorBody`, `Hsts`, `SecurityHeaders`, `ContentSecurityPolicy`, `FrontendMount`, `ServeOptions`, `RunContextsOptions`, `ContextToRun`, `RunningContexts`, `Unchecked`.
+El paquete exporta también los tipos de cada sección: `Cors`, `Idempotency`, `HttpRateLimit`, `HttpRouterOptions`, `RouteOptions`, `ParamsOf`, `Middleware`, `GroupOptions`, `ErrorBody`, `Hsts`, `SecurityHeaders`, `ContentSecurityPolicy`, `FrontendMount`, `ServeOptions`, `RunContextsOptions`, `ContextToRun`, `RunningContexts`, `Unchecked`.

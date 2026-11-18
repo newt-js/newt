@@ -172,7 +172,7 @@ export async function startBackend(
 | `port` | The port to serve on. | none (`src/index.ts` passes `PORT`, or `3000`) |
 | `stores` | `'configured'` opens the stores from the environment; `'memory'` opens new ones in memory, as the tests want. | `'configured'` |
 
-It returns `RunningContexts`: `server`, `servers` and `stop()`. See [HTTP API](/reference/http/).
+It returns `RunningContexts`: `server` and `stop()`. See [HTTP API](/reference/http/).
 
 ## Platform
 

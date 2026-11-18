@@ -61,7 +61,7 @@ const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
-- **Prefix.** A context's router puts `/<context>/api` before every path: the route `/tasks` answers at `/tasks/api/tasks`. Since each context has its own prefix, two contexts never take the same path. A route never repeats its context's name (the [`route-context`](/reference/lint/#newtroute-context) rule checks it). Without a `prefix`, `HttpRouter` uses `/api`.
+- **Prefix.** A context's router puts `/<context>/api` before every path: the route `/tasks` answers at `/tasks/api/tasks`. Since each context has its own prefix, two contexts never take the same path. A route never repeats its context's name (the [`route-context`](/reference/lint/#newtroute-context) rule checks it). Without a `prefix`, `HttpRouter` uses `/api`, which `runContexts` refuses for a context's router: it must be `/<context>/api`.
 - **Database.** The router needs the context's database only for [idempotency keys](#idempotency-keys).
 - **Defaults.** Any [route option](#route-options) given to the router applies to all its routes.
 
@@ -340,7 +340,7 @@ The `serve` options you are most likely to touch:
 Set `trustProxy` only to the number of proxies you really have. With a higher number, a client can fake its IP in `X-Forwarded-For` and slip past IP rate limits.
 :::
 
-`runContexts` returns `{ server, servers, stop() }`. The stop runs in order: servers finish their requests, workers finish their jobs, contexts close.
+`runContexts` returns `{ server, stop() }`. The stop runs in order: the server finishes their requests, workers finish their jobs, contexts close.
 
 The full list of `serve` and `runContexts` options is in the [HTTP API reference](/reference/http/).
 

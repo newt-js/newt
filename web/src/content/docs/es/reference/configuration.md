@@ -172,7 +172,7 @@ export async function startBackend(
 | `port` | El puerto en el que sirve. | ninguno (`src/index.ts` pasa `PORT`, o `3000`) |
 | `stores` | `'configured'` abre los almacenes según el entorno; `'memory'` abre otros nuevos en memoria, como quieren los tests. | `'configured'` |
 
-Devuelve `RunningContexts`: `server`, `servers` y `stop()`. Mira [API HTTP](/es/reference/http/).
+Devuelve `RunningContexts`: `server` y `stop()`. Mira [API HTTP](/es/reference/http/).
 
 ## Platform
 

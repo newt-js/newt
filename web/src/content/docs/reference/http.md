@@ -329,7 +329,7 @@ type ErrorBody = {
 
 ### runContexts
 
-`runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` starts your contexts: their servers, workers and scheduled tasks.
+`runContexts(contexts: ContextToRun[], options?: RunContextsOptions): RunningContexts` starts your contexts: their server, workers and scheduled tasks.
 
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
@@ -353,7 +353,7 @@ return runContexts(contexts, {
 |---|---|---|---|
 | `serve` | `Omit<ServeOptions, 'routers'>` | none | One server for every context's router. |
 | `signals` | `boolean` | `true` | On `SIGINT` or `SIGTERM`, stop and end the process (exit code 1 if a step failed). |
-| `stopTimeoutMs` | `number` | `8000` | How long servers and workers get to finish before being forced. |
+| `stopTimeoutMs` | `number` | `8000` | How long the server and the workers get to finish before being forced. |
 | `platformWithoutContexts` | `Platform` | none | The platform to use when there are no contexts yet. When there are, it must be theirs. |
 
 `RunningContexts`:
@@ -361,7 +361,7 @@ return runContexts(contexts, {
 | Member | Type | Meaning |
 |---|---|---|
 | `server` | `Bun.Server` | The shared server, when `serve` was given. |
-| `stop` | `() => Promise<void>` | Stops servers, then workers, then closes the contexts (last one first). Throws an `AggregateError` if a step failed; the others still run. |
+| `stop` | `() => Promise<void>` | Stops the server, then the workers, then closes the contexts (last one first). Throws an `AggregateError` if a step failed; the others still run. |
 
 ### Serve options
 
@@ -444,4 +444,4 @@ HTML pages of a built folder get `x-frame-options: DENY` and a Content-Security-
 | `SECURITY_HEADERS`, `CONTENT_SECURITY_POLICY` | constants | The defaults of [Serve options](#serve-options) and [Frontends](#frontends). |
 | `KeptAnswer` | type | A row of `newt_idempotency_key`. |
 
-The package also exports the types of each section: `Cors`, `Idempotency`, `HttpRateLimit`, `HttpRouterOptions`, `RouteOptions`, `ParamsOf`, `Middleware`, `ErrorBody`, `Hsts`, `SecurityHeaders`, `ContentSecurityPolicy`, `FrontendMount`, `ServeOptions`, `RunContextsOptions`, `ContextToRun`, `RunningContexts`, `Unchecked`.
+The package also exports the types of each section: `Cors`, `Idempotency`, `HttpRateLimit`, `HttpRouterOptions`, `RouteOptions`, `ParamsOf`, `Middleware`, `GroupOptions`, `ErrorBody`, `Hsts`, `SecurityHeaders`, `ContentSecurityPolicy`, `FrontendMount`, `ServeOptions`, `RunContextsOptions`, `ContextToRun`, `RunningContexts`, `Unchecked`.

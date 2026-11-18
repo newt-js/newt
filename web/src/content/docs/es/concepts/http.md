@@ -61,7 +61,7 @@ const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
-- **Prefijo.** El router de un contexto pone `/<contexto>/api` delante de cada ruta: la ruta `/tasks` responde en `/tasks/api/tasks`. Como cada contexto tiene su prefijo, dos contextos nunca cogen la misma ruta. Una ruta nunca repite el nombre de su contexto (lo comprueba la regla [`route-context`](/es/reference/lint/#newtroute-context)). Sin `prefix`, `HttpRouter` usa `/api`.
+- **Prefijo.** El router de un contexto pone `/<contexto>/api` delante de cada ruta: la ruta `/tasks` responde en `/tasks/api/tasks`. Como cada contexto tiene su prefijo, dos contextos nunca cogen la misma ruta. Una ruta nunca repite el nombre de su contexto (lo comprueba la regla [`route-context`](/es/reference/lint/#newtroute-context)). Sin `prefix`, `HttpRouter` usa `/api`, que `runContexts` rechaza para el router de un contexto: tiene que ser `/<contexto>/api`.
 - **Base de datos.** El router solo necesita la base de datos del contexto para las [claves de idempotencia](#claves-de-idempotencia).
 - **Valores por defecto.** Cualquier [opción de ruta](#opciones-de-ruta) que le des al router se aplica a todas sus rutas.
 
@@ -340,7 +340,7 @@ Las opciones de `serve` que más vas a tocar:
 Pon en `trustProxy` solo el número de proxies que tienes de verdad. Con un número mayor, un cliente puede falsear su IP en `X-Forwarded-For` y saltarse los límites por IP.
 :::
 
-`runContexts` devuelve `{ server, servers, stop() }`. La parada va en orden: los servidores terminan sus peticiones, los workers terminan sus jobs y los contextos se cierran.
+`runContexts` devuelve `{ server, stop() }`. La parada va en orden: el servidor termina sus peticiones, los workers terminan sus jobs y los contextos se cierran.
 
 La lista completa de opciones de `serve` y `runContexts` está en la [referencia de la API HTTP](/es/reference/http/).
 
