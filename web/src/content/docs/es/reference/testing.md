@@ -30,7 +30,7 @@ beforeEach(async () => {
     cluster: new MemoryCluster(),
     database,
   })
-  router = new HttpRouter({ database })
+  router = new HttpRouter({ prefix: '/tasks/api', database })
   router.authenticateWith(async () =>
     signedIn ? { userId: 'tester' } : null,
   )
@@ -135,7 +135,7 @@ No hay una ayuda especial: llama a `router.answer` con un `Request`. Ejecuta la 
 
 ```ts
 const response = await router.answer(
-  new Request('http://backend.test/api/tasks/tasks', {
+  new Request('http://backend.test/tasks/api/tasks', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name: 'Second' }),
@@ -148,7 +148,7 @@ Para probar el backend entero, arráncalo en el puerto `0` con almacenamiento en
 
 ```ts title="src/backend.test.ts"
 const backend = await startBackend(0, { stores: 'memory' })
-const response = await fetch(new URL('/api/health', backend.server!.url))
+const response = await fetch(new URL('/health-check', backend.server!.url))
 expect(response.status).toBe(200)
 await backend.stop()
 ```

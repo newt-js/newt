@@ -38,7 +38,7 @@ El que se genera devuelve `null`, así que todas las rutas privadas responden 40
 Cada contexto se lo da a su router, en su `<contexto>.context.ts`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
@@ -71,7 +71,7 @@ Todas las rutas son privadas por defecto. Antes de ejecutar una ruta privada, el
 Marca una ruta como pública para saltarte el autenticador:
 
 ```ts
-router.post('/tasks/sign-in', signIn, { public: true })
+router.post('/sign-in', signIn, { public: true })
 ```
 
 `public` funciona allí donde van las opciones de una ruta:
@@ -145,7 +145,7 @@ export const authenticate: Authenticator = async request => {
 import { bodyOf, setSessionCookie } from '@newt-js/core/http'
 
 router.post(
-  '/tasks/sign-in',
+  '/sign-in',
   async request => {
     const session = await signIn(await bodyOf(request))
     setSessionCookie(request, SESSION_COOKIE, session, {
@@ -195,7 +195,7 @@ Consulta [actor y scope](/es/concepts/actor-and-scope/).
 Los tests de módulo generados dan al router su propio autenticador, que apagan para comprobar el 401:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
-router = new HttpRouter({ database })
+router = new HttpRouter({ prefix: '/tasks/api', database })
 signedIn = true
 router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
 ```

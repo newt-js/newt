@@ -260,31 +260,31 @@ Why: decisions live in use cases and entities, not in the repository.
 
 ### newt/route-context
 
-Every route a context registers, on its router or a group of it, starts with the context's name.
+No route a context registers, on its router or a group of it, starts with the context's name: the router already puts `/<context>/api` before every route.
 
 ```ts
 // src/contexts/tasks/modules/task/task.routes.ts
-router.get('/items/:id', handle)           // wrong
-router.get('/tasks/tasks/:id', handle)     // right
-router.group('/tasks', middleware).get('/tasks', handle) // right
+router.get('/tasks/tasks/:id', handle) // wrong: answers at /tasks/api/tasks/tasks/:id
+router.get('/tasks/:id', handle)       // right: answers at /tasks/api/tasks/:id
+router.group('/reports', middleware).get('/overdue', handle) // right
 ```
 
-Paths are read through consts, templates and a group's prefix. A path the rule cannot read is reported too: write it as text or as a const that holds text. Test files are skipped.
+Paths are read through consts, templates and a group's prefix. A path the rule cannot read is let be. Test files are skipped.
 
-Why: one server serves every context, so two contexts never take the same path.
+Why: the context's prefix already keeps two contexts apart, so its name in the route would only repeat it.
 
 ### newt/route-body-unchecked
 
 In a `*.routes.ts`, the request body is never given a type before something parses it: no `await request.json() as X`, `<X>`, or `const body: X = await request.json()`.
 
 ```ts
-router.post('/tasks/tasks', async request =>
+router.post('/tasks', async request =>
   Response.json(
     await tasks.create((await request.json()) as TaskCreateDTO),
   ),
 ) // wrong
 
-router.post('/tasks/tasks', async request =>
+router.post('/tasks', async request =>
   Response.json(await tasks.create(await bodyOf(request)), {
     status: 201,
   }),

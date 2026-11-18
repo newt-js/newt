@@ -38,7 +38,7 @@ The generated one returns `null`, so every private route answers 401 until you w
 Each context gives it to its router, in its `<context>.context.ts`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
@@ -71,7 +71,7 @@ Every route is private by default. Before a private route runs, the router calls
 Mark a route public to skip the authenticator:
 
 ```ts
-router.post('/tasks/sign-in', signIn, { public: true })
+router.post('/sign-in', signIn, { public: true })
 ```
 
 `public` works wherever route options go:
@@ -145,7 +145,7 @@ export const authenticate: Authenticator = async request => {
 import { bodyOf, setSessionCookie } from '@newt-js/core/http'
 
 router.post(
-  '/tasks/sign-in',
+  '/sign-in',
   async request => {
     const session = await signIn(await bodyOf(request))
     setSessionCookie(request, SESSION_COOKIE, session, {
@@ -195,7 +195,7 @@ See [actor and scope](/concepts/actor-and-scope/).
 The generated module tests give the router an authenticator of their own, which they switch off to check the 401:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
-router = new HttpRouter({ database })
+router = new HttpRouter({ prefix: '/tasks/api', database })
 signedIn = true
 router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
 ```

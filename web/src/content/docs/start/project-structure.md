@@ -142,7 +142,7 @@ Delete `data/` to start again from empty databases. Tests never use it: they run
 |---|---|
 | `index.ts` | starts the backend on `PORT` |
 | `backend.ts` | `startBackend`: opens the contexts and serves them |
-| `backend.test.ts` | checks that `/api/health` answers |
+| `backend.test.ts` | checks that `/health-check` answers |
 | `contexts.ts` | the list of contexts the backend opens |
 | `stores.ts` | opens each context's database and file storage |
 | `auth.ts` | `authenticate`: who is calling |
@@ -166,7 +166,7 @@ Delete `data/` to start again from empty databases. Tests never use it: they run
 | `modules/` | one folder per module |
 
 - Migrations come in pairs: `<number>_<table>_up.sql` makes the change, `<number>_<table>_down.sql` undoes it. The backend runs the pending ones when it opens the database. See [database and migrations](/concepts/database/).
-- The context's routes live under `/api/<context>/`, and its frontend at `/<context>`.
+- The context's routes live under `/<context>/api/`, and its frontend at `/<context>`.
 
 ## A module: `modules/<module>/`
 

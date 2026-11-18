@@ -70,7 +70,7 @@ export const frontends: FrontendMount[] = [
 Importing an `.html` file gives Bun an HTML bundle: Bun bundles the page with its scripts and styles and serves the result.
 
 - `/tasks` and every path under it, such as `/tasks/board/12`, answer with the page, so your app can have its own client-side routes.
-- The API stays under `/api/`, next to it.
+- The API stays under `/<context>/api/`, next to it.
 
 A `FrontendMount` takes:
 
@@ -117,7 +117,7 @@ export function App() {
   const [tasks, setTasks] = useState<Task[]>([])
 
   useEffect(() => {
-    fetch('/api/tasks/tasks')
+    fetch('/tasks/api/tasks')
       .then(response => response.json())
       .then(page => setTasks(page.items))
   }, [])

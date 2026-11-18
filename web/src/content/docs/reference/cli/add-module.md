@@ -29,7 +29,7 @@ newt add module <context>/<module> [options]
 
 It also takes the [global flags](/reference/cli/overview/#global-flags).
 
-- The plural names the routes (`/tasks/tasks`) and the module's variable (`tasks`).
+- The plural names the routes (`/tasks`) and the module's variable (`tasks`).
 - The rules add `s`, `es` after `s x z ch sh`, `ies` for a consonant plus `y`, and `es` for `-sis` words. `child`, `person`, `man`, `woman`, `mouse`, `goose`, `foot`, `tooth`, `quiz`, `news`, `series` and `species` are known.
 
 ## Name rules
@@ -70,7 +70,7 @@ Next steps:
 
 - The migrations get the next number in the context's `migrations/` folder, and are written in the backend's SQL (SQLite, Postgres or MySQL).
 - `<context>-modules.ts` gets the line that starts the module.
-- The routes are `POST /<context>/<plural>`, `GET /<context>/<plural>` and `GET /<context>/<plural>/:id`, under `/api`.
+- The routes are `POST /<plural>`, `GET /<plural>` and `GET /<plural>/:id`, under `/<context>/api`.
 
 :::note
 The generated routes need a signed-in caller. Until `authenticate` in `src/auth.ts` says who calls, they answer 401 outside the tests. See [Authentication](/guides/authentication/).

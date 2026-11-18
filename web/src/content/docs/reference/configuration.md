@@ -197,7 +197,7 @@ The `serve` options the generated project sets:
 | Option | Meaning | Default |
 |---|---|---|
 | `port` | The port. Required. | none |
-| `health` | `true` answers `GET /api/health` with `{ "status": "ok" }` (`503` and `"stopping"` while stopping); a string sets another path. | off |
+| `health` | `true` answers `GET /health-check` with `{ "status": "ok" }` (`503` and `"stopping"` while stopping), and `GET /<context>/health-check` for each context that serves routes. | off |
 | `frontend` | The frontends to serve, from `src/frontends.ts`. | none |
 
 `serve` has more options (`maxBodyBytes`, `trustProxy`, `securityHeaders`, `hsts`, `csp`, `proxy`, `drainMs`, `idleTimeoutSeconds`, `development`, `publicFolder`, `routes`). See [HTTP API](/reference/http/).

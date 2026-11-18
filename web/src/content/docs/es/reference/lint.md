@@ -260,31 +260,31 @@ Por qué: las decisiones viven en los casos de uso y en las entidades, no en el 
 
 ### newt/route-context
 
-Cada ruta que registra un contexto, en su router o en un grupo de él, empieza por el nombre del contexto.
+Ninguna ruta que registra un contexto, en su router o en un grupo de él, empieza por el nombre del contexto: el router ya pone `/<contexto>/api` delante de cada ruta.
 
 ```ts
 // src/contexts/tasks/modules/task/task.routes.ts
-router.get('/items/:id', handle)             // mal
-router.get('/tasks/tasks/:id', handle)       // bien
-router.group('/tasks', middleware).get('/tasks', handle) // bien
+router.get('/tasks/tasks/:id', handle) // mal: responde en /tasks/api/tasks/tasks/:id
+router.get('/tasks/:id', handle)       // bien: responde en /tasks/api/tasks/:id
+router.group('/reports', middleware).get('/overdue', handle) // bien
 ```
 
-Las rutas se leen a través de constantes, plantillas y el prefijo de un grupo. También se avisa de una ruta que la regla no puede leer: escríbela como texto o como una constante que guarde texto. Los ficheros de test no se revisan.
+Las rutas se leen a través de constantes, plantillas y el prefijo de un grupo. Una ruta que la regla no puede leer se deja pasar. Los ficheros de test no se revisan.
 
-Por qué: un solo servidor sirve todos los contextos, así dos contextos nunca ocupan la misma ruta.
+Por qué: el prefijo del contexto ya separa dos contextos, así que su nombre en la ruta solo lo repetiría.
 
 ### newt/route-body-unchecked
 
 En un `*.routes.ts`, el cuerpo de la petición nunca recibe un tipo antes de que algo lo valide: nada de `await request.json() as X`, `<X>` o `const body: X = await request.json()`.
 
 ```ts
-router.post('/tasks/tasks', async request =>
+router.post('/tasks', async request =>
   Response.json(
     await tasks.create((await request.json()) as TaskCreateDTO),
   ),
 ) // mal
 
-router.post('/tasks/tasks', async request =>
+router.post('/tasks', async request =>
   Response.json(await tasks.create(await bodyOf(request)), {
     status: 201,
   }),

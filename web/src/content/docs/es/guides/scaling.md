@@ -148,4 +148,4 @@ Una tarea programada se ejecuta una sola vez solo si todas las instancias usan l
 2. Ficheros en S3, con las mismas variables del bucket en todas las instancias.
 3. `ValkeyCluster`, con el mismo `VALKEY_URL` en todas las instancias.
 4. Las mismas variables restantes y los mismos secretos en todas las instancias.
-5. Un balanceador que compruebe `/api/health`, y `trustProxy` definido en `src/backend.ts`. Consulta [Desplegar](/es/guides/deploy/#detrás-de-un-proxy-inverso).
+5. Un balanceador que compruebe `/health-check`, y `trustProxy` definido en `src/backend.ts`. Consulta [Desplegar](/es/guides/deploy/#detrás-de-un-proxy-inverso).

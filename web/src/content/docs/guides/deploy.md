@@ -96,7 +96,7 @@ Back the folder up: [SQLite](/guides/databases/sqlite/#back-up-a-live-database) 
 The generated backend serves a health route:
 
 ```sh
-curl https://newthub.example.com/api/health
+curl https://newthub.example.com/health-check
 ```
 
 | State | Status | Body |
@@ -104,7 +104,7 @@ curl https://newthub.example.com/api/health
 | Running | `200` | `{"status":"ok"}` |
 | Stopping | `503` | `{"status":"stopping"}` |
 
-Point your host's or load balancer's health check at `/api/health`. To serve it at another path, give `health` a path in `src/backend.ts`: `health: '/healthz'`.
+Point your host's or load balancer's health check at `/health-check`. Each context that serves routes also answers its own, as `/tasks/health-check`.
 
 ## 5. Stop gracefully
 
@@ -132,7 +132,7 @@ ENV PORT=3000
 EXPOSE 3000
 VOLUME /app/data
 
-HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/api/health') \
+HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/health-check') \
   .then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 CMD ["bun", "run", "start"]

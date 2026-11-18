@@ -21,7 +21,7 @@ import {
 The routes of one context. Each context gets its own router.
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
@@ -31,7 +31,7 @@ router.authenticateWith(authenticate)
 
 | Option | Type | Default | Meaning |
 |---|---|---|---|
-| `prefix` | `string` | `'/api'` | Put before every path. `''` for none. |
+| `prefix` | `string` | `'/api'` | Put before every path. A context's router takes `/<context>/api`. `''` for none. |
 | `database` | `Pick<Database, 'records'>` | none | Keeps the answers of idempotent routes (table `newt_idempotency_key`). Required if any route is idempotent. |
 | `clock` | `Clock` | system clock | The time idempotency keys expire by. |
 
@@ -52,7 +52,7 @@ router.authenticateWith(authenticate)
 
 ```ts
 const response = await router.answer(
-  new Request(`http://backend.test/api/tasks/tasks/${id}`),
+  new Request(`http://backend.test/tasks/api/tasks/${id}`),
 )
 ```
 
@@ -60,8 +60,8 @@ const response = await router.answer(
 
 | Piece | Example | Matches |
 |---|---|---|
-| Static | `/tasks/tasks` | That exact segment. |
-| Parameter | `/tasks/tasks/:id` | One non-empty segment, read as `request.params.id` (URL-decoded). |
+| Static | `/tasks` | That exact segment. |
+| Parameter | `/tasks/:id` | One non-empty segment, read as `request.params.id` (URL-decoded). |
 | Rest | `/files/*` | One or more segments. Only at the end. |
 
 A path starts with `/` (or is `''`). When several routes match, the static segment wins over a parameter, and a parameter over `*`.
@@ -98,7 +98,7 @@ Any error thrown along the way becomes a response through the route's `onError`.
 `router.group(prefix, middleware, options?)` returns an `HttpGroup` with `get`, `post`, `put`, `patch` and `delete`, same signatures as the router. Each path is the group's prefix plus its own. The middleware runs after sign-in and before the route:
 
 ```ts
-const reports = router.group('/tasks/reports', async (request, next) => {
+const reports = router.group('/reports', async (request, next) => {
   const response = await next()
   return response
 }, { maxBodyBytes: 64 * 1024 })
@@ -185,7 +185,7 @@ const create = base.rateLimits.define('task.create', {
   limit: 10,
   windowMs: 60_000,
 })
-router.post('/tasks/tasks', route, { rateLimit: { limit: create } })
+router.post('/tasks', route, { rateLimit: { limit: create } })
 ```
 
 ### Idempotency
@@ -235,12 +235,12 @@ Inside a route, `request.json()` throws 415 `unsupported_media_type` when the `c
 `Unchecked` is `any`.
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.post('/tasks/tasks', async request =>
+router.post('/tasks', async request =>
   Response.json(await tasks.create(await bodyOf(request)), {
     status: 201,
   }),
 )
-router.get('/tasks/tasks', async request =>
+router.get('/tasks', async request =>
   Response.json(await tasks.paginate({}, pageRequestFrom(request))),
 )
 ```
@@ -373,7 +373,7 @@ return runContexts(contexts, {
 | `publicFolder` | `string` | none | Files served as they are next to an HTML-import frontend. |
 | `proxy` | `Record<string, string>` | none | Path → URL to forward to (for example a dev server). |
 | `development` | `boolean` | `false` | Bun's development mode (HMR for HTML imports, detailed errors). |
-| `health` | `boolean \| string` | off | `true` serves `GET /api/health`; a string serves it at that path instead (`'/healthz'`). Public. Answers `{"status":"ok"}`, or 503 `{"status":"stopping"}` while stopping. |
+| `health` | `boolean` | off | `true` serves `GET /health-check` for the whole backend, and `GET /<context>/health-check` for each context that serves routes. Public. Answers `{"status":"ok"}`, or 503 `{"status":"stopping"}` while stopping. |
 | `drainMs` | `number` | `0` | On stop, keep answering this long first (health already says `stopping`). |
 | `trustProxy` | `number` | `0` | How many proxies in front to trust for `X-Forwarded-For` and `X-Forwarded-Host`. |
 | `securityHeaders` | `Record<string, string \| null> \| false` | `SECURITY_HEADERS` | Headers added to every response that lacks them. `null` drops one; `false` drops all. |

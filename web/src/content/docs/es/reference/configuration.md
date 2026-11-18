@@ -197,7 +197,7 @@ Las opciones de `serve` que usa el proyecto generado:
 | Opción | Significado | Por defecto |
 |---|---|---|
 | `port` | El puerto. Obligatoria. | ninguno |
-| `health` | `true` responde a `GET /api/health` con `{ "status": "ok" }` (`503` y `"stopping"` mientras se detiene); un texto pone otra ruta. | desactivado |
+| `health` | `true` responde a `GET /health-check` con `{ "status": "ok" }` (`503` y `"stopping"` mientras se detiene), y `GET /<contexto>/health-check` para cada contexto que sirve rutas. | desactivado |
 | `frontend` | Los frontends que sirve, de `src/frontends.ts`. | ninguno |
 
 `serve` tiene más opciones (`maxBodyBytes`, `trustProxy`, `securityHeaders`, `hsts`, `csp`, `proxy`, `drainMs`, `idleTimeoutSeconds`, `development`, `publicFolder`, `routes`). Mira [API HTTP](/es/reference/http/).
