@@ -5,16 +5,19 @@ import { it }            from 'bun:test'
 import { eventOfQueue }  from '../../../../core/src/domain/events/event-of-queue/event-of-queue'
 import { MODULE }        from '../../testing/testing'
 import { ORDER }         from '../../testing/testing'
+import { TEMPLATE }      from '../../testing/testing'
 import { asRule }        from '../../testing/testing'
 import { diagnosticsOf } from '../../testing/testing'
 import { programOf }     from '../../testing/testing'
 import { tester }        from '../../testing/testing'
 import { typedTester }   from '../../testing/testing'
+import { FEATURE_QUEUE } from './reaction-queue'
 import { QUEUE }         from './reaction-queue'
 import { reactionQueue } from './reaction-queue'
 
 const WORKERS = `${MODULE}/price-change.workers.ts`
 const ORDER_WORKERS = `${ORDER}/order.workers.ts`
+const TEMPLATE_WORKERS = `${TEMPLATE}/template.workers.ts`
 const subscribe = (calls: string, queue: string) => `orders.events.placed.subscribe(o => ${calls}, { strategy: 'handler', queue: '${queue}' })`
 
 tester.run('reaction-queue', asRule(reactionQueue), {
@@ -29,6 +32,9 @@ tester.run('reaction-queue', asRule(reactionQueue), {
     { code: "(orders: m.Order_Module) => orders.events.placed.subscribe(o => orders.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' })", filename: ORDER_WORKERS },
     { code: "class W { constructor(private readonly orders: Order_Module) {} register() { this.orders.events.placed.subscribe(o => this.orders.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' }) } }", filename: ORDER_WORKERS },
     { code: "class Order_Module { register() { this.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'order.fulfil.on.order.placed' }) } }", filename: ORDER_WORKERS },
+    // A module of a feature: its queue starts with <feature>[<module>] and says _on_.
+    { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'campaigns[template].welcome_on_contacts[contact].created' })", filename: TEMPLATE_WORKERS },
+    { code: "this.events.created.subscribe(t => this.index(t.id), { strategy: 'handler', queue: 'campaigns[template].index_on_campaigns[template].created' })", filename: `${TEMPLATE}/template.module.ts` },
     // `on` derives the queue from the module it is called on: its own.
     { code: "orders.on(orders.events.placed, 'fulfil', o => [o.id])", filename: ORDER_WORKERS },
     { code: "(orders: Order_Module, deps: Order_Deps) => orders.on(deps.product.events.deleted, 'forget', p => [p.id], { attempts: 10 })", filename: ORDER_WORKERS },
@@ -48,6 +54,15 @@ tester.run('reaction-queue', asRule(reactionQueue), {
     ...['order', 'order.fulfil', 'order.fulfil.now.on.order.placed', 'order.fulfil.on.placed']
       .map(queue => ({ code: subscribe('orders.fulfil(o.id)', queue), filename: ORDER_WORKERS, errors: [{ messageId: 'shape' }] })),
     { code: subscribe('products.fulfil(o.id)', 'order.fulfil.on.order.placed'), filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
+    // A module of a feature: the queue of a module of none, another module's, another feature's, another event's.
+    {
+      code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'template.welcome.on.contacts[contact].created' })",
+      filename: TEMPLATE_WORKERS,
+      errors: [{ messageId: 'shape', data: { queue: 'template.welcome.on.contacts[contact].created', shape: '<feature>[<module>].<use case>_on_<module>.<event>', example: 'sales[order].fulfil_on_sales[order].placed' } }],
+    },
+    { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'emails[template].welcome_on_contacts[contact].created' })", filename: TEMPLATE_WORKERS, errors: [{ messageId: 'module', data: { module: 'campaigns[template]', found: 'emails[template]', file: 'template.workers.ts' } }] },
+    { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'campaigns[tag].welcome_on_contacts[contact].created' })", filename: TEMPLATE_WORKERS, errors: [{ messageId: 'module' }] },
+    { code: "deps.contacts.contact.events.created.subscribe(c => templates.welcome(c.id), { strategy: 'handler', queue: 'campaigns[template].welcome_on_contacts[contact].deleted' })", filename: TEMPLATE_WORKERS, errors: [{ messageId: 'event', data: { on: '_on_', event: '….created' } }] },
     { code: `(orders: Order_Module, products: Product_Module) => ${subscribe('products.fulfil(o.id)', 'order.fulfil.on.order.placed')}`, filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
     { code: `(orders: Order_Module, deps: Order_Deps) => ${subscribe('deps.product.fulfil(o.id)', 'order.fulfil.on.order.placed')}`, filename: ORDER_WORKERS, errors: [{ messageId: 'useCase' }] },
     { code: "this.events.placed.subscribe(o => this.fulfil(o.id), { strategy: 'handler', queue: 'mail.fulfil.on.order.placed' })", filename: `${ORDER}/order.module.ts`, errors: [{ messageId: 'module' }] },
@@ -121,6 +136,19 @@ function* queues(parts: string[]): Generator<string> {
 const PARTS = ['order', 'priceChange', 'a1', 'Order', '1a', '', 'on', 'b c', 'a-b', 'a_b', 'x.y', 'ñu', 'a ', '$']
 
 describe("the lint's queue and newt's", () => {
+  it("newt takes every queue of a feature's module the lint takes, for the event the lint read", () => {
+    let taken = 0
+    for (const queue of queues(PARTS)) {
+      const [feature = '', module = '', ...rest] = queue.split('.')
+      const featured = `${feature}[${module}].${rest.join('.').replace('.on.', '_on_')}`
+      const shape = FEATURE_QUEUE.exec(featured)
+      if (!shape) continue
+      taken++
+      expect({ queue: featured, event: eventOfQueue(featured) }).toEqual({ queue: featured, event: shape[3] })
+    }
+    expect(taken).toBeGreaterThan(100)
+  })
+
   it('newt takes every queue the lint takes, for the event the lint read', () => {
     let taken = 0
     for (const queue of queues(PARTS)) {
