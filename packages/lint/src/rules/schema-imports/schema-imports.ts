@@ -15,16 +15,17 @@ const PACKAGES = new Set(['zod', CORE])
  * of zod, newt's core (value objects, `defineFilter`, `Page`, `PageRequest`), the
  * module's own value objects and other modules' schemas: never the entity, the
  * repository, the module or any other file, which would make the contract depend on how
- * the module works.
+ * the module works. Of another module's schema it takes only the DTO types
+ * (`import type`): `newt/module-imports` says so, for every file of a module, once.
  */
 export const schemaImports: TSESLint.RuleModule<'package' | 'file'> = {
   defaultOptions: [],
   meta: {
     type: 'problem',
-    docs: { description: "A module's schema imports only zod, @newt-js/core, its value objects and other schemas." },
+    docs: { description: "A module's schema imports only zod, @newt-js/core, its value objects and other modules' DTO types." },
     messages: {
       package: "'{{path}}' is not part of a contract: {{file}} imports only 'zod' and '@newt-js/core' (its root, not an adapter's entry). Move what needs it out of the schema.",
-      file: "'{{path}}' is not part of a contract: {{file}} imports only the module's value objects (value-objects/) and other modules' schemas (*.schema.ts). The DTO says what the data is; how the module works stays out of it.",
+      file: "'{{path}}' is not part of a contract: {{file}} imports only the module's value objects (value-objects/) and other modules' DTO types (import type from *.schema.ts). The DTO says what the data is; how the module works stays out of it.",
     },
     schema: [],
   },

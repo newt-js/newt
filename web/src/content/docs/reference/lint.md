@@ -71,8 +71,8 @@ This is what the import rules (`context-imports`, `module-imports`, `schema-impo
 flowchart TD
   chat["chat context"] -->|"only if chat.context.ts imports tasks"| tasks["tasks context"]
   task["task module"] -->|"any file"| own["task's own files"]
-  task -->|".module.ts, .schema.ts, events/, errors/"| project["project module"]
-  schema["task.schema.ts"] -->|"only"| deps["zod, @newt-js/core, value-objects/, other *.schema.ts"]
+  task -->|"import type: .module.ts, .schema.ts, events/; errors/"| project["project module"]
+  schema["task.schema.ts"] -->|"only"| deps["zod, @newt-js/core, value-objects/, import type from other *.schema.ts"]
   frontend["tasks app"] -->|"import type only"| schemas["tasks *.schema.ts"]
 ```
 
@@ -115,19 +115,29 @@ Why: each module guards one thing; another entity is another module, referenced 
 
 ### newt/module-imports
 
-A module imports from another module only its `.module.ts`, its `.schema.ts`, its `events/` and its `errors/`.
+A module reaches another module of its context only through its API:
+
+- its use cases, through the dependency [`newt add deps`](/reference/cli/add-deps/) wires (`this.deps.project.get(...)`), and its events through that same dependency (`tasks.on(project.events.created, ...)`);
+- as types only (`import type`): its `.module.ts` (the type of the dependency), its `.schema.ts` (the DTOs) and its `events/`;
+- its `errors/`, as they are, to tell a known error apart with `instanceof`.
+
+Everything else is the module's own: its schemas as values, its entity, value objects, repository, routes, workers and services.
 
 ```ts
 // modules/task/task.module.ts
-// wrong
-import { Project_Repository } from '../project/project.repository'
-// right
-import { ProjectNotFound } from '../project/errors/project-not-found'
+import { Project_Repository } from '../project/project.repository' // wrong
+import { ProjectSchema } from '../project/project.schema'          // wrong: a value
+import { Project_Module } from '../project/project.module'         // wrong: a value
+import type { ProjectDTO } from '../project/project.schema'        // right
+import type { Project_Module } from '../project/project.module'    // right
+import { ProjectNotFound } from '../project/errors/project-not-found' // right
 ```
 
-A file outside the modules (such as `tasks-modules.ts`) may import what it composes, but re-exports only what a module offers.
+An id a module keeps of another module's entity, such as a task's `projectId`, is a value object of its own: `value-objects/project-id.ts`, made with `uuidFactory('ProjectId')`. A `uuidFactory` brands the id with its name, so its type is the same as `project`'s own `ProjectId`, and a `ProjectDTO['id']` fits it.
 
-Why: through another module's entity or repository, a module would read or write its data behind its back.
+A file outside the modules (such as `tasks-modules.ts`) may import what it composes, but re-exports only that API: `export type` of a `.module.ts`, a `.schema.ts` or an event, and errors as they are.
+
+Why: through another module's entity, repository or schema, a module would read, write, build or parse its data behind its use cases, and a change inside that module would break it.
 
 ### newt/context-imports
 
@@ -146,14 +156,18 @@ Why: contexts depend on each other in one direction only, so each can be read, t
 
 ### newt/schema-imports
 
-A module's `<module>.schema.ts` imports only `zod`, `@newt-js/core` (its root), the module's own `value-objects/` and other modules' `*.schema.ts`.
+A module's `<module>.schema.ts` imports only `zod`, `@newt-js/core` (its root), the module's own `value-objects/` and other modules' DTO types (`import type` from their `*.schema.ts`).
 
 ```ts
 // modules/task/task.schema.ts
-import { Task } from './task'                          // wrong
-import { ProjectSchema } from '../project/project.schema' // right
-import { Priority } from './value-objects/priority'      // right
+import { Task } from './task'                                 // wrong
+import { ProjectSchema } from '../project/project.schema'     // wrong: newt/module-imports
+import type { ProjectDTO } from '../project/project.schema'   // right
+import { Priority } from './value-objects/priority'           // right
+import { ProjectId } from './value-objects/project-id'        // right: task's own
 ```
+
+That another module's schema comes as types only is `newt/module-imports`'s to say, so a value import of it is reported once.
 
 Why: the schema is the module's contract; it says what the data is, not how the module works.
 

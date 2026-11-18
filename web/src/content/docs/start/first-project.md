@@ -132,7 +132,7 @@ The module comes with four use cases (`create`, `get`, `find`, `paginate`), a ta
 export function registerTaskRoutes(
   router: HttpRouter,
   tasks: Task_Module,
-): void {
+) {
   router.post('/tasks', async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
@@ -146,6 +146,7 @@ export function registerTaskRoutes(
       await tasks.get({ id: TaskId.from(request.params.id) }),
     ),
   )
+  return { one: router.group('/tasks/:taskId') }
 }
 ```
 

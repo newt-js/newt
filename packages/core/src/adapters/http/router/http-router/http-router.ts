@@ -75,7 +75,7 @@ export class HttpRouter {
     this.add('DELETE', path, route, options)
   }
 
-  group<Prefix extends string>(prefix: Prefix, middleware: Middleware<Prefix>, options?: RouteOptions): HttpGroup<Prefix> {
+  group<Prefix extends string>(prefix: Prefix, middleware?: Middleware<Prefix>, options?: RouteOptions): HttpGroup<Prefix> {
     const register = (method: HttpMethod, path: string, route: HttpRoute<any>, own: LayeredOptions) => this.register(method, path, route, own)
     return new HttpGroup(register, prefix, middleware, { ...options, rateLimit: addLimits(this.defaults.rateLimit, options?.rateLimit) })
   }

@@ -50,7 +50,7 @@ export const TaskCompleteTaskSchema = TaskSchema.pick({ id: true })
 export type TaskCompleteTaskDTO = z.input<typeof TaskCompleteTaskSchema>
 ```
 
-The lint rule `schema-imports` keeps it a contract. A schema file imports only `zod`, `@newt-js/core`, the module's own `value-objects/` and other modules' `*.schema.ts`. Never the entity, the repository or the module.
+The lint rule `schema-imports` keeps it a contract. A schema file imports only `zod`, `@newt-js/core`, the module's own `value-objects/` and other modules' DTO types (`import type` from their `*.schema.ts`). Never the entity, the repository or the module, nor another module's schema as a value: a field that holds another module's id takes a value object of its own module (see [Value objects](/concepts/value-objects/)).
 
 This is how everything in the file comes from `TaskSchema` and the id's value object:
 

@@ -101,7 +101,7 @@ describe('newt add module', () => {
     await run(ADD_MODULE, ['sales/person'], backend)
     expect(await read(join(backend, 'src/contexts/sales/modules/person/person.routes.ts'))).toContain("router.get('/people'")
     expect((await run(ADD_MODULE, ['sales/cactus', '--plural', 'cacti'], backend)).code).toBe(0)
-    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(router: HttpRouter, cacti: Cactus_Module): void {')
+    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(router: HttpRouter, cacti: Cactus_Module) {')
     expect((await run(ADD_USE_CASE, ['sales/cactus', 'water'], backend)).code).toBe(0)
     expect((await run(ADD_ROUTE, ['sales/cactus', 'water'], backend)).code).toBe(0)
     expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain("router.post('/cacti/:id/water', async request => Response.json(await cacti.water(")

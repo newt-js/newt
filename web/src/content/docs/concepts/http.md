@@ -25,7 +25,7 @@ import { TaskId } from './value-objects/task-id'
 export function registerTaskRoutes(
   router: HttpRouter,
   tasks: Task_Module,
-): void {
+) {
   router.post('/tasks/:id/complete-task', async request =>
     Response.json(
       await tasks.completeTask({ id: TaskId.from(request.params.id) }),
@@ -44,10 +44,13 @@ export function registerTaskRoutes(
       await tasks.get({ id: TaskId.from(request.params.id) }),
     ),
   )
+  return { one: router.group('/tasks/:taskId') }
 }
 ```
 
 A route takes the request and returns a standard `Response`. It does not catch errors: newt turns them into JSON answers (see [Errors](#errors)).
+
+The function returns the module's groups: `one`, at `/tasks/:taskId`, is where the modules that use `task` hang their routes. See [Nested resources](/concepts/services-and-deps/#nested-resources).
 
 ## The router
 
@@ -151,7 +154,7 @@ A route's options override its group's and router's. Rate limits add up instead 
 
 ## Groups and middleware
 
-A group shares a path prefix, a middleware and options:
+A group shares a path prefix, a middleware and options. The middleware is optional: without one, the group only puts its prefix before its routes.
 
 ```ts
 const reports = router.group('/reports', async (request, next) => {

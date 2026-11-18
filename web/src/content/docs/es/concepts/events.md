@@ -229,6 +229,8 @@ tasks.on(project.events.created, 'addFirstTask', created => [
 
 Su cola es `task.addFirstTask.on.project.created`.
 
+`project` es el módulo que `task` recibe como dependencia (mira [Servicios y dependencias](/es/concepts/services-and-deps/)): un módulo alcanza los eventos de otro a través de él, sin importarlos. Para nombrar el tipo de un evento, impórtalo solo como tipo, `import type { Project_Created } from '../project/events/project-created'`; la regla del lint `module-imports` lo rechaza como valor, porque solo `project` publica sus eventos.
+
 Así es como un módulo cambia los datos de otro. Un caso de uso solo puede escribir en su propio módulo; para cambiar otro, emite un evento y deja que ese módulo reaccione. Consulta [la regla de escritura](/es/concepts/use-cases/#la-regla-de-escritura).
 
 :::note

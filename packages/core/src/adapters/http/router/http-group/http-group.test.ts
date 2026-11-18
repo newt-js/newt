@@ -34,6 +34,14 @@ describe('HttpGroup', () => {
     expect((await call(router, '/api/workspaces/mine/things/7')).status).toBe(401)
   })
 
+  test('without a middleware, it only puts its prefix before its routes, whose params it types', async () => {
+    const router = new HttpRouter({ public: true })
+    const folder = router.group('/folders/:folderId')
+    folder.get('/notes', request => Response.json({ folder: request.params.folderId }))
+
+    expect(await (await call(router, '/api/folders/7/notes')).json()).toEqual({ folder: '7' })
+  })
+
   test('a public route of it runs its middleware all the same; one that needs a session, never without it', async () => {
     const ran: string[] = []
     const router = new HttpRouter()

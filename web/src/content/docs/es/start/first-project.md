@@ -132,7 +132,7 @@ El módulo trae cuatro casos de uso (`create`, `get`, `find`, `paginate`), una t
 export function registerTaskRoutes(
   router: HttpRouter,
   tasks: Task_Module,
-): void {
+) {
   router.post('/tasks', async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
@@ -146,6 +146,7 @@ export function registerTaskRoutes(
       await tasks.get({ id: TaskId.from(request.params.id) }),
     ),
   )
+  return { one: router.group('/tasks/:taskId') }
 }
 ```
 

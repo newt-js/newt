@@ -6,6 +6,7 @@ import { dependencyPath }  from '../../project/dependency-path/dependency-path'
 import { findBackend }     from '../../project/find-backend/find-backend'
 import { findModule }      from '../../project/find-module/find-module'
 import { moduleDepsGraph } from '../../project/module-deps-graph/module-deps-graph'
+import { routesHead }      from '../../templates/module/files/routes-ts'
 import { moduleLines }     from '../../templates/module/module-lines/module-lines'
 import { depsHead }        from '../../templates/pieces/deps-ts'
 import { depsTs }          from '../../templates/pieces/deps-ts'
@@ -55,13 +56,20 @@ export const ADD_DEPS = defineCommand({
         lines: [`  ${used.module}: ${used.type}_Module`],
         imports: [`import type { ${used.type}_Module } from '../${used.folder}/${used.folder}.module'`],
       },
-      ...(['initialize', 'created', 'constructor', 'super'] as const).map((line): FileChange => ({
+      ...(['initialize', 'created', 'constructor', 'super', 'routes'] as const).map((line): FileChange => ({
         action: 'replace-line',
         path: file('.module.ts'),
         line: before[line],
         with: after[line],
         imports: [`import type { ${module.type}_Deps } from './${module.folder}.deps'`],
       })),
+      {
+        action: 'replace-line',
+        path: file('.routes.ts'),
+        line: routesHead(module, false),
+        with: routesHead(module, true),
+        imports: [`import type { ${module.type}_Deps } from './${module.folder}.deps'`],
+      },
       { action: 'add-object-property', path: modules, call: initialize, argument: 2, key: used.module, value: used.module, imports: [], createArgument: true },
       { action: 'order-modules', path: modules },
     ]
