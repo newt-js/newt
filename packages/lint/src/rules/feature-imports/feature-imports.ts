@@ -75,8 +75,8 @@ export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'cycl
     type: 'problem',
     docs: { description: 'Another feature is reached only through its entry point, <feature>.feature.ts, and features never use each other in a cycle.' },
     messages: {
-      undeclared: "'{{path}}' is the feature {{feature}}'s, and {{own}}.feature.ts imports {{uses}}: a feature uses only the features its entry point imports, where it is given them. Import it there first, if {{own}} must use it.",
-      cycle: "{{cycle}}: features never use each other in a cycle. Let one of them react to the other's events instead of calling it.",
+      undeclared: "'{{path}}' is the entry point of {{feature}}, which {{own}} does not use: {{own}}.feature.ts imports {{uses}}. If {{own}} needs it, take it in `uses` in {{own}}.feature.ts and pass it to this module's deps (newt add deps does both).",
+      cycle: "{{cycle}}: features never use each other in a cycle. Keep one direction and drop the import that closes it; where the feature that lost it called the other, it emits an event instead, and the other reacts to it.",
       inside: "'{{path}}' is inside the feature {{feature}}: from outside it, import only its entry point, features/{{feature}}/{{feature}}.feature.ts, and reach its modules through the contract it returns ({{feature}}.<module>.<use case>). A type or an error another feature needs, its entry point re-exports.",
     },
     schema: [{

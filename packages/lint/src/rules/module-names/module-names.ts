@@ -32,9 +32,9 @@ export const moduleNames: TSESLint.RuleModule<'module' | 'name' | 'exposes' | 'e
     docs: { description: 'A module of a feature is named <feature>[<module>], after its folders, and writes its exposes as const.' },
     messages: {
       module: "This module is {{expected}}, after its folders: super('{{expected}}', …), not '{{found}}'.",
-      name: "'{{found}}' is a name of {{expected}}'s, after its folders: '{{expected}}.<name>'.",
+      name: "Name it '{{expected}}.<name>', after its folders, not '{{found}}'.",
       exposes: 'Write what a module exposes `as const`: `{ useCases: [...], events: [...] } as const`. Without it its names are mere strings, and its feature\'s contract shows none of them.',
-      expose: 'A module shows the other features what it lists as `exposes`, not `expose`.',
+      expose: 'Rename `expose` to `exposes`: a module shows the other features what it lists there.',
     },
     schema: [],
   },
@@ -45,7 +45,10 @@ export const moduleNames: TSESLint.RuleModule<'module' | 'name' | 'exposes' | 'e
     const program = context.sourceCode.ast
     const modules = importedAs(program, 'Module')
     const events = importedAs(program, 'defineEvent')
+    // A test may name a throwaway event or schedule as it likes.
+    const inTest = place.inside.endsWith('.test.ts')
     const named = (node: TSESTree.Node | undefined) => {
+      if (inTest) return
       const found = textOf(node)
       if (node && found !== undefined && !found.startsWith(`${expected}.`)) context.report({ node, messageId: 'name', data: { found, expected } })
     }

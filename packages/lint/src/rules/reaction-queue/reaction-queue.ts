@@ -92,7 +92,7 @@ function typesOf(checker: ts.TypeChecker, map: ParserServicesWithTypeInformation
 
 /**
  * A handler's queue says who reacts with what to which event:
- * `<feature>[<module>].<use case>_on_<module>.<event>` in a module of a feature,
+ * `<feature>[<module>].<use case>_on_<event>` in a module of a feature, the event by its whole name,
  * `<module>.<use case>.on.<module>.<event>` in one of none. Written by hand, it could say another
  * module's or another use case's: in every file of a module, this checks it has that
  * shape, that it is the module's, that its callback calls that use case on the module
@@ -106,7 +106,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
     type: 'problem',
     docs: { description: "A reaction's queue names the module that reacts, the use case it calls and the event." },
     messages: {
-      shape: "'{{queue}}' is not a handler's queue: it is '{{shape}}', as '{{example}}'. Better yet, write the reaction with `<module>.on(event, '<use case>', args)`, which names it.",
+      shape: "'{{queue}}' is not a handler's queue: it is '{{shape}}', the event by its whole name, as '{{example}}'. Better yet, write the reaction with `<module>.on(event, '<use case>', args)`, which names it.",
       module: "This queue is '{{module}}.…': the reactions in {{file}} are {{module}}'s, so their queues start with '{{module}}.', not '{{found}}.'.",
       useCase: "This queue says the handler calls {{module}}'s '{{useCase}}', but its callback calls no '{{useCase}}' of {{module}}: name the use case it calls.",
       event: "This queue ends with '{{on}}{{event}}', the event it subscribes to.",
@@ -121,7 +121,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
     const module = place.feature === null ? own : `${camelCase(place.feature)}[${own}]`
     const shapes = place.feature === null
       ? { queue: QUEUE, on: '.on.', shape: '<module>.<use case>.on.<module>.<event>', example: 'order.fulfil.on.order.placed' }
-      : { queue: FEATURE_QUEUE, on: '_on_', shape: '<feature>[<module>].<use case>_on_<module>.<event>', example: 'sales[order].fulfil_on_sales[order].placed' }
+      : { queue: FEATURE_QUEUE, on: '_on_', shape: '<feature>[<module>].<use case>_on_<event>', example: 'shipping[delivery].prepare_on_sales[order].placed' }
     const type = `${pascalCase(place.module)}_Module`
     const file = posix.basename(place.inside)
 
