@@ -18,6 +18,9 @@ const FILES: Record<string, string> = {
   'engagement/features/reports/reports.feature.ts': '',
   'loop/features/a/a.feature.ts': "import type { B } from '../b/b.feature'\n",
   'loop/features/b/b.feature.ts': "import type { A } from '../a/a.feature'\n",
+  'ring/features/a/a.feature.ts': "import type { B } from '../b/b.feature'\n",
+  'ring/features/b/b.feature.ts': "import type { C } from '../c/c.feature'\n",
+  'ring/features/c/c.feature.ts': "import type { A } from '../a/a.feature'\n",
 }
 for (const [file, code] of Object.entries(FILES)) {
   mkdirSync(dirname(join(CONTEXTS, file)), { recursive: true })
@@ -37,6 +40,8 @@ tester.run('feature-imports', asRule(featureImports), {
     { code: "import type { ContactDTO } from '../../../contacts/contacts.feature'", filename: `${CAMPAIGNS}/modules/campaign/campaign.module.ts`, options },
     // The context's composition imports every feature's entry point.
     { code: "import { contactsFeature } from './features/contacts/contacts.feature.ts'", filename: `${CONTEXTS}/engagement/engagement-features.ts`, options },
+    // An entry point's own import is what it uses, even one it is not read with, as through an alias.
+    { code: `import type { ReportsFeature } from '${CONTEXTS}/engagement/features/reports/reports.feature'`, filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
     // Outside the contexts, and a package.
     { code: "import { x } from './features/a/modules/b/b.module'", filename: '/elsewhere/file.ts', options },
     { code: "import { z } from 'zod'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
@@ -61,5 +66,6 @@ tester.run('feature-imports', asRule(featureImports), {
     { code: "import type { CampaignsFeature } from '../../../campaigns/campaigns.feature'", filename: `${CONTEXTS}/engagement/features/contacts/modules/contact/contact.module.ts`, options, errors: [{ messageId: 'undeclared', data: { path: '../../../campaigns/campaigns.feature', feature: 'campaigns', own: 'contacts', uses: 'no other feature' } }] },
     // Two features whose entry points import each other.
     { code: "import type { B } from '../b/b.feature'", filename: `${CONTEXTS}/loop/features/a/a.feature.ts`, options, errors: [{ messageId: 'cycle', data: { cycle: 'a → b → a' } }] },
+    { code: "import type { B } from '../b/b.feature'", filename: `${CONTEXTS}/ring/features/a/a.feature.ts`, options, errors: [{ messageId: 'cycle', data: { cycle: 'a → b → c → a' } }] },
   ],
 })

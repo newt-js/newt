@@ -11,9 +11,12 @@ import { rootOf }        from '../../paths/paths'
 /** The calls that define a name of a module's: its schedules and its rate limits (`base.schedules.define('…', …)`). */
 const DEFINES = new Set(['schedules', 'rateLimits'])
 
-/** That a property is `as const`: `{ … } as const`. */
-const isConst = (value: TSESTree.Expression | null) =>
-  value?.type === 'TSAsExpression' && value.typeAnnotation.type === 'TSTypeReference' && value.typeAnnotation.typeName.type === 'Identifier' && value.typeAnnotation.typeName.name === 'const'
+/** That a property is `as const` (`{ … } as const`, also `satisfies` something), or a constant declared elsewhere. */
+function isConst(value: TSESTree.Expression | null): boolean {
+  const inner = value?.type === 'TSSatisfiesExpression' ? value.expression : value
+  if (inner?.type === 'Identifier' || inner?.type === 'MemberExpression') return true
+  return inner?.type === 'TSAsExpression' && inner.typeAnnotation.type === 'TSTypeReference' && inner.typeAnnotation.typeName.type === 'Identifier' && inner.typeAnnotation.typeName.name === 'const'
+}
 
 /**
  * A module of a feature goes by `<feature>[<module>]`, from its folders: the name it gives
