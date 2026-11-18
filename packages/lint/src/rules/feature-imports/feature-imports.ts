@@ -29,7 +29,8 @@ export function declaredFeatureUses(folder: string, contexts: string): Record<st
     ? readdirSync(features, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name).sort()
     : []
   const files = names.map(name => posix.join(features, name, `${name}.feature.ts`))
-  const stamp = files.map(file => statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? 0).join(' ')
+  // Each name with its time: a folder renamed keeps its file's time.
+  const stamp = files.map(file => `${file}:${statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? 0}`).join(' ')
   const known = declared.get(folder)
   if (known?.stamp === stamp) return known.uses
   const uses: Record<string, string[]> = {}
@@ -99,7 +100,8 @@ export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'cycl
       if (!own || own.context !== imported.context) return
       const uses = declaredFeatureUses(posix.join(folder, own.context), folder)
       const allowed = uses[own.feature] ?? []
-      if (!allowed.includes(imported.feature)) {
+      // An entry point's own imports are what it uses: one through an alias it is not read with is not judged.
+      if (!allowed.includes(imported.feature) && !isEntryPoint(own.inside, own.feature)) {
         const data = { path: specifier, feature: imported.feature, own: own.feature, uses: allowed.length ? allowed.join(', ') : 'no other feature' }
         context.report({ node, messageId: 'undeclared', data })
         return

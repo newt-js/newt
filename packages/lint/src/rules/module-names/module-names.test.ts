@@ -11,6 +11,8 @@ tester.run('module-names', asRule(moduleNames), {
   valid: [
     { code: CLASS("constructor(base) { super('campaigns[template]', base.useCaseRunner) }"), filename: MODULE_TS },
     { code: CLASS("readonly exposes = { useCases: ['get'], events: ['created'] } as const"), filename: MODULE_TS },
+    { code: CLASS("readonly exposes = { useCases: ['get'] } as const satisfies Exposes"), filename: MODULE_TS },
+    { code: CLASS('readonly exposes = EXPOSES'), filename: MODULE_TS },
     { code: "import { defineEvent } from '@newt-js/core'\nexport const Template_Created = defineEvent('campaigns[template].created', schema)", filename: `${TEMPLATE}/events/template-created.ts` },
     { code: "this.nightly = base.schedules.define('campaigns[template].nightly', '0 3 * * *')", filename: MODULE_TS },
     { code: "const limit = base.rateLimits.define('campaigns[template].send', rule)", filename: MODULE_TS },

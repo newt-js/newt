@@ -94,6 +94,12 @@ export function modulePlace(file: string, root = ''): Place | null {
   return match ? { context: match[1]!, feature: null, module: match[2]!, inside: match[3]! } : null
 }
 
+/** The feature a file is in, by its path from the project's root (`…/features/<feature>/…`): `null` for a file of none. */
+export function featureFolderOf(file: string, root = ''): string | null {
+  const path = inProject(real(slashed(file)), root)
+  return /\/features\/([^/]+)\//.exec(path)?.[1] ?? null
+}
+
 /** Where a file directly in the folder of the contexts is: in no context, and one no context may import. */
 export const ROOT = '(root)'
 

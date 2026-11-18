@@ -1,13 +1,14 @@
-import { TSESLint }    from '@typescript-eslint/utils'
-import { TSESTree }    from '@typescript-eslint/utils'
+import { TSESLint }        from '@typescript-eslint/utils'
+import { TSESTree }        from '@typescript-eslint/utils'
 // --------------------------------------------------------
-import { isTypeOnly }  from '../../ast/ast'
-import { camelCase }   from '../../paths/paths'
-import { importsOf }   from '../../paths/paths'
-import { modulePlace } from '../../paths/paths'
-import { resolved }    from '../../paths/paths'
-import { rootOf }      from '../../paths/paths'
-import { sameModule }  from '../../paths/paths'
+import { isTypeOnly }      from '../../ast/ast'
+import { camelCase }       from '../../paths/paths'
+import { featureFolderOf } from '../../paths/paths'
+import { importsOf }       from '../../paths/paths'
+import { modulePlace }     from '../../paths/paths'
+import { resolved }        from '../../paths/paths'
+import { rootOf }          from '../../paths/paths'
+import { sameModule }      from '../../paths/paths'
 
 /** What a module offers the others as types alone: its module (the type of the dependency it is given), its DTOs and what it tells. */
 const TYPES = /^(?:[^/]+\.module|[^/]+\.schema|events\/.+)$/
@@ -42,6 +43,7 @@ export const moduleImports: TSESLint.RuleModule<'private' | 'type' | 'barrel'> =
   create(context) {
     const root = rootOf(context)
     const place = modulePlace(context.filename, root)
+    const ownFeature = place ? place.feature : featureFolderOf(context.filename, root)
     /** What is wrong with naming `specifier` from `node`: nothing (`null`), or that it is the other module's own, or one of its types brought as a value. */
     const problemOf = (node: TSESTree.Node, specifier: string) => {
       const path = resolved(context, specifier)
@@ -50,7 +52,7 @@ export const moduleImports: TSESLint.RuleModule<'private' | 'type' | 'barrel'> =
       if (!imported) return null
       if (place && sameModule(imported, place)) return null
       // Another feature's modules are reached through its entry point alone: newt/feature-imports says so.
-      if (imported.feature !== null && imported.feature !== place?.feature) return null
+      if (imported.feature !== null && imported.feature !== ownFeature) return null
       if (VALUES.test(imported.inside)) return null
       if (!TYPES.test(imported.inside)) return { imported, messageId: 'private' as const }
       return isTypeOnly(node) ? null : { imported, messageId: 'type' as const }
