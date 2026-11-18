@@ -133,6 +133,21 @@ describe('defineFeature', () => {
     expect(defineFeature('campaigns', { useCaseRunner: runner }, { loose: new Loose_Module() })).toBeDefined()
   })
 
+  test('keeps out of its contract, in its type too, the modules it keeps internal', () => {
+    const runner = new UseCaseRunner({ context: 'engagement' })
+    const template = new Template_Module(runner)
+    const log = new Log_Module(runner)
+
+    const campaigns = defineFeature('campaigns', { useCaseRunner: runner }, { template, log }, { internal: ['log'] })
+
+    expect(Object.keys(campaigns)).toEqual(['template'])
+    // @ts-expect-error log is internal
+    expect(campaigns.log).toBeUndefined()
+    expect(runner.registry.registeredFeatures).toEqual([{ name: 'campaigns', exposed: ['template'] }])
+    // @ts-expect-error tag is none of its modules
+    expect(() => defineFeature('campaigns', { useCaseRunner: runner }, { template }, { internal: ['tag'] })).toThrow("defineFeature('campaigns'): it keeps tag internal, which are none of its modules: template")
+  })
+
   test('cannot be changed', () => {
     const campaigns = campaignsFeature() as unknown as Record<string, unknown>
 
