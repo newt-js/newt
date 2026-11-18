@@ -188,15 +188,16 @@ BACKOFFICE_HOST=backoffice.midominio.com
 | `https://backoffice.midominio.com/api/orders` | la API de `backoffice` |
 | `https://backoffice.midominio.com/orders/12` | la app de `backoffice` |
 | `https://backoffice.midominio.com/health-check` | la salud de `backoffice` |
+| `https://backoffice.midominio.com/backoffice/api/orders` | también la API de `backoffice` |
 | `https://midominio.com/shop/api/products` | `shop`, que no tiene host |
 | `https://midominio.com/backoffice/api/orders` | nadie: `404` |
 | `https://midominio.com/health-check` | la salud de todo el backend |
 
-- Un contexto responde en su host o bajo su nombre, nunca en los dos.
+- En su host, una ruta que empieza por su nombre sigue funcionando, así que un enlace hecho para `/backoffice` llega igual. En cualquier otro host, su nombre es un `404`, se escriba como se escriba la ruta.
 - Apunta el DNS del host al mismo servidor. Detrás de un proxy, define `trustProxy`: newt lee el host de `X-Forwarded-Host`.
 - Dos contextos en el mismo host paran el backend antes de arrancar.
 - Con ficheros locales, sus enlaces se firman en su host, con el protocolo de `PUBLIC_URL`.
-- Su app generada (`app/base.ts`) encuentra su base sola. Una app compilada aparte se compila para `/` en lugar de `/<contexto>/`.
+- Su app generada (`app/base.ts`) encuentra su base sola, y una app compilada aparte para `/<contexto>/` funciona tal cual.
 - Apunta la comprobación de salud del balanceador a una dirección que no sea el host de un contexto, como la del propio servidor.
 
 El `<contexto>.context.ts` generado lee la variable y la entrega para ejecutarse, junto a su router: `host: Bun.env.BACKOFFICE_HOST`.

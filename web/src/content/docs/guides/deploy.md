@@ -188,15 +188,16 @@ BACKOFFICE_HOST=backoffice.midominio.com
 | `https://backoffice.midominio.com/api/orders` | `backoffice`'s API |
 | `https://backoffice.midominio.com/orders/12` | `backoffice`'s app |
 | `https://backoffice.midominio.com/health-check` | `backoffice`'s health |
+| `https://backoffice.midominio.com/backoffice/api/orders` | `backoffice`'s API too |
 | `https://midominio.com/shop/api/products` | `shop`, which has no host |
 | `https://midominio.com/backoffice/api/orders` | nothing: `404` |
 | `https://midominio.com/health-check` | the whole backend's health |
 
-- A context answers at its host or under its name, never both.
+- At its host, a path that starts with its name keeps working, so a link built for `/backoffice` still lands. On any other host, its name is a `404`, however the path is written.
 - Point the host's DNS at the same server. Behind a proxy, set `trustProxy`: newt reads the host from `X-Forwarded-Host`.
 - Two contexts at one host stop the backend before it starts.
 - With local files, its file links are signed at its host, with the protocol of `PUBLIC_URL`.
-- Its generated app (`app/base.ts`) finds its base by itself. An app built elsewhere is built for `/` instead of `/<context>/`.
+- Its generated app (`app/base.ts`) finds its base by itself, and an app built elsewhere for `/<context>/` works as it is.
 - Point the load balancer's health check at an address that is not a context's host, such as the server's own.
 
 The generated `<context>.context.ts` reads the variable and hands it to run, next to its router: `host: Bun.env.BACKOFFICE_HOST`.
