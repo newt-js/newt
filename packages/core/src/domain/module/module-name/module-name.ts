@@ -7,7 +7,7 @@ const camel = (word: string) => word.replace(/[-_]+([a-zA-Z0-9])/g, (_, next: st
 /** What to write instead of a name that is not `<feature>[<module>]`, when newt can tell. */
 function suggestion(name: string): string {
   const parts = name.split(/[.[\]/]+/).filter(Boolean)
-  if (parts.length === 1) return `: name it after the feature it is in, '<feature>[${camel(parts[0]!)}]', as its folders say (features/<feature>/modules/<module>)`
+  if (parts.length === 1) return `: name it after the feature it is in, '<feature>[${camel(parts[0]!)}]', as its folders say (features/<feature>/<module>)`
   const fixed = parts.length === 2 ? `${camel(parts[0]!)}[${camel(parts[1]!)}]` : ''
   return MODULE_NAME.test(fixed) ? `: write '${fixed}'` : ''
 }
