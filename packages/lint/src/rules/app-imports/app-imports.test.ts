@@ -21,6 +21,7 @@ tester.run('app-imports', asRule(appImports), {
     at("export type * from '../modules/order/order.schema'"),
     at("export { type OrderDTO } from '../modules/order/order.schema'"),
     at("type Order = import('../modules/order/order.schema').OrderDTO"),
+    at("import type { OrderDTO } from '../features/orders/modules/order/order.schema'"),
     at("import type { Page } from '@newt-js/core'"),
     at("import type { BunFile } from 'bun'"),
     at("import { Order_Module } from './modules/order/order.module'", `${FOLDER}/sales/sales-modules.ts`),
@@ -28,6 +29,8 @@ tester.run('app-imports', asRule(appImports), {
   invalid: [
     { ...at("import { OrderSchema } from '../modules/order/order.schema'"), errors: [{ messageId: 'schema', data: { path: '../modules/order/order.schema', context: 'sales' } }] },
     { ...at("import { Order_Module } from '../modules/order/order.module'"), errors: [{ messageId: 'outside' }] },
+    { ...at("import { OrderSchema } from '../features/orders/modules/order/order.schema'"), errors: [{ messageId: 'schema' }] },
+    { ...at("import type { Orders } from '../features/orders/orders.feature'"), errors: [{ messageId: 'outside' }] },
     { ...at("import type { Order_Repository } from '../modules/order/order.repository'"), errors: [{ messageId: 'outside' }] },
     { ...at("import type { UserDTO } from '../../auth/modules/user/user.schema'"), errors: [{ messageId: 'outside' }] },
     { ...at("import { requiredEnv } from '../../../env'"), errors: [{ messageId: 'outside' }] },
