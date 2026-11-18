@@ -43,11 +43,10 @@ export async function openDatabase(
 The context passes its own `migrations` folder:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const database = await openDatabase(
-  'tasks',
-  join(import.meta.dir, 'migrations'),
-  stores,
-)
+const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
+
+// inside Tasks_Context.open()
+const database = await openDatabase('tasks', MIGRATIONS_FOLDER, stores)
 ```
 
 So the `tasks` context lives in `data/tasks.sqlite`, or wherever `TASKS_DATABASE` points. Tests open it with `stores: 'memory'`: a fresh SQLite database with the same migrations.
