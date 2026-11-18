@@ -251,9 +251,9 @@ router.get('/tasks', async request =>
 |---|---|---|
 | `Authenticator` | `(request: HttpRequest) => Promise<Actor \| null>` | Dice quién llama. `null` es nadie: las rutas privadas responden 401 `not_signed_in`. |
 | `bearerAuthenticator` | `(verify: (token: string) => Promise<Actor \| null>) => Authenticator` | Lee `Authorization: Bearer <token>` y pasa el token a `verify`. |
-| `setSessionCookie` | `(request, name, value, { secure, maxAgeSeconds, path? }) => void` | Pone una cookie `HttpOnly` y `SameSite=Lax`. `path` vale `/` por defecto. |
+| `setSessionCookie` | `(request, name, value, { secure, maxAgeSeconds, path?, domain? }) => void` | Pone una cookie `HttpOnly` y `SameSite=Lax`. `path` vale `/` por defecto. |
 | `clearSessionCookie` | `(request, name, { secure, path? }) => void` | Borra esa cookie. |
-| `SessionCookieOptions` | `{ secure: boolean, maxAgeSeconds: number, path?: string }` | |
+| `SessionCookieOptions` | `{ secure: boolean, maxAgeSeconds: number, path?: string, domain?: string | undefined }` | |
 
 ```ts title="src/auth.ts"
 export const authenticate: Authenticator = async () => null
