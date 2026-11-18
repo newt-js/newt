@@ -47,4 +47,13 @@ describe('describeContext', () => {
       { event: 'shop/order.placed', strategy: 'handler', queue: 'invoice.open.on.order.placed', handler: 'invoice.open', attempts: 3, filtered: false },
     ])
   })
+
+  test("a handler of a module of a feature is its queue's use case", () => {
+    const shop = new ContextBase({ name: 'shop', platform, database: new MemoryDatabase() })
+    shop.bus.subscribe('sales[order].placed', () => {}, { strategy: 'handler', queue: 'billing[invoice].open_on_sales[order].placed' })
+
+    const [subscription] = describeContext(shop.useCaseRunner.registry, new Map()).subscriptions
+
+    expect(subscription?.handler).toBe('billing[invoice].open')
+  })
 })

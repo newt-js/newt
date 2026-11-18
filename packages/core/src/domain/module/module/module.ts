@@ -1,8 +1,10 @@
 import { KnownError }         from '../../errors/known-error/known-error'
 import { ReferenceNotFound }  from '../../errors/reference-not-found/reference-not-found'
 import { DomainEventEmitter } from '../../events/domain-event-emitter/domain-event-emitter'
+import { queueOf }            from '../../events/event-of-queue/event-of-queue'
 import type { EventMeta }     from '../../events/event/event-meta'
 import type { Json }          from '../../events/event/json'
+import type { HandlerQueue }  from '../../events/subscription/subscription'
 import type { Subscription }  from '../../events/subscription/subscription'
 import { UseCaseRunner }      from '../../use-case/use-case-runner/use-case-runner'
 import { MODULE_BRAND }       from '../is-module/is-module'
@@ -29,11 +31,11 @@ export abstract class Module {
     useCase: K,
     ...[args, options]: Reaction<this[K], TPayload, TSeen>
   ): () => void {
-    const queue = options?.queue ?? `${this.name}.${useCase}.on.${event.name}` as const
+    const queue = options?.queue ?? queueOf(this.name, useCase, event.name) as HandlerQueue
     const run = this[useCase] as (...values: unknown[]) => unknown
     const subscription: Subscription<TPayload, TSeen> = {
       strategy: 'handler',
-      queue: queue as `${string}.${string}.on.${string}.${string}`,
+      queue,
       ...(options?.attempts === undefined ? {} : { attempts: options.attempts }),
       ...(options?.when === undefined ? {} : { when: options.when }),
     }

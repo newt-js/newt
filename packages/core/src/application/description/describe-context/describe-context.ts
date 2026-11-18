@@ -1,3 +1,4 @@
+import { useCaseOfQueue }           from '../../../domain/events/event-of-queue/event-of-queue'
 import type { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
 import { ContextRegistry }          from '../../../domain/registry/context-registry/context-registry'
 import type { ContextDescription }  from '../application-description'
@@ -16,7 +17,7 @@ export function describeContext(registry: ContextRegistry, owners: Map<BrandedEv
       event: eventId(context, event),
       strategy,
       queue,
-      handler: queue === null ? null : queue.slice(0, queue.indexOf('.on.')),
+      handler: queue === null ? null : useCaseOfQueue(queue) ?? null,
       attempts,
       filtered,
     })),
