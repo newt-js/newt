@@ -104,6 +104,44 @@ test('GET /orders/invoices/:invoiceId/orders answers from order, under invoice',
     expect((await run(ADD_DEPS, ['sales/orders/charlie', 'alpha'], backend)).text).toBe('charlie → alpha → bravo → charlie would be a cycle: modules never use each other, even through others')
   })
 
+  test("order uses what customers exposes, given by sales-features.ts, built first, and its lint, types and tests pass", async () => {
+    const backend = await moduleProject()
+    await run(ADD_MODULE, ['sales/customers/customer'], backend)
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'customers'], backend)).code).toBe(0)
+    expect(await read(backend, 'features/orders/modules/order/order.deps.ts')).toBe("import type { CustomersFeature } from '../../../customers/customers.feature'\n\nexport type Order_Deps = {\n  customers: CustomersFeature\n}\n")
+    const feature = await read(backend, 'features/orders/orders.feature.ts')
+    expect(feature).toContain('export function ordersFeature(base: ContextBase, router: HttpRouter, uses: OrdersUses) {\n  const order = Order_Module.initialize(base, router, { customers: uses.customers })')
+    expect(feature).toContain('export type OrdersUses = {\n  customers: CustomersFeature\n}')
+    expect(await read(backend, 'sales-features.ts')).toContain('  const customers = customersFeature(base, router)\n  const orders = ordersFeature(base, router, { customers })')
+    const customer = join(backend, SALES, 'features/customers/modules/customer/customer.module.ts')
+    await Bun.write(customer, (await Bun.file(customer).text()).replace("exposes = { useCases: [], events: [] } as const", "exposes = { useCases: ['find'], events: ['created'] } as const"))
+    const order = join(backend, SALES, 'features/orders/modules/order/order.module.ts')
+    const call = "\n  @UseCase()\n  async customerCount(): Promise<number> {\n    return (await this.deps.customers.customer.find({})).length\n  }\n}\n"
+    await Bun.write(order, (await Bun.file(order).text()).replace(/\n}\n$/, call))
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
+  test('a second module of the feature uses the same feature, which the feature takes once', async () => {
+    const backend = await moduleProject()
+    await run(ADD_MODULE, ['sales/orders/invoice'], backend)
+    await run(ADD_MODULE, ['sales/customers/customer'], backend)
+    await run(ADD_DEPS, ['sales/orders/order', 'customers'], backend)
+    await run(ADD_DEPS, ['sales/orders/invoice', 'customers'], backend)
+    const feature = await read(backend, 'features/orders/orders.feature.ts')
+    expect(feature.match(/customers: CustomersFeature/g)).toHaveLength(1)
+    expect(feature).toContain('Invoice_Module.initialize(base, router, { customers: uses.customers })')
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
+  test('refuses its own feature, and a cycle through other features', async () => {
+    const backend = await moduleProject()
+    for (const feature of ['customers/customer', 'carts/cart']) await run(ADD_MODULE, [`sales/${feature}`], backend)
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'orders'], backend)).text).toBe('order is of orders: it uses the other modules of its feature by their name, as in newt add deps sales/orders/order <module>')
+    await run(ADD_DEPS, ['sales/orders/order', 'customers'], backend)
+    await run(ADD_DEPS, ['sales/customers/customer', 'carts'], backend)
+    expect((await run(ADD_DEPS, ['sales/carts/cart', 'orders'], backend)).text).toBe('carts → orders → customers → carts would be a cycle: features never use each other, even through others')
+  })
+
   test('refuses a module the context has not, itself, a cycle, or another context', async () => {
     const backend = await withInvoice()
     expect((await run(ADD_DEPS, ['sales/orders/order', 'customer'], backend)).text).toBe('The feature sales/orders has no module customer: add it with newt add module sales/orders/customer')
