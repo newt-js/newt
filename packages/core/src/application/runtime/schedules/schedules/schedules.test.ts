@@ -50,8 +50,10 @@ describe('Schedules.define', () => {
     const { schedules } = await setup()
     schedules.define('report.nightly', '0 3 * * *')
 
-    expect(() => schedules.define('nightly', '0 3 * * *')).toThrow("'<module>.<name>'")
-    expect(() => schedules.define('Report.nightly', '0 3 * * *')).toThrow("'<module>.<name>'")
+    expect(() => schedules.define('nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
+    expect(() => schedules.define('Report.nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
+    expect(() => schedules.define('reports[Report].nightly', '0 3 * * *')).toThrow("'<feature>[<module>].<name>'")
+    expect(schedules.define('reports[report].nightly', '0 3 * * *').name).toBe('reports[report].nightly')
     expect(() => schedules.define('report.nightly', '0 4 * * *')).toThrow('defined already')
     expect(() => schedules.define('report.weekly', '0 3 * *')).toThrow('five fields')
     expect(() => schedules.define('report.never', '0 0 31 2 *')).toThrow('never due')

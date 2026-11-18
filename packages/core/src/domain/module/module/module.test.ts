@@ -57,6 +57,22 @@ describe('on', () => {
     expect(orders.calls).toEqual([['fulfil', 'o1', 'e1']])
   })
 
+  test('a module of a feature subscribes on the queue <feature>[<module>].<use case>_on_<event>', () => {
+    const { bus, subscriptions } = recordingBus()
+    const { placed } = eventsOf(bus, { placed: Placed })
+    class Invoices extends Module {
+      constructor() {
+        super('billing[invoice]', new UseCaseRunner())
+      }
+
+      async open(): Promise<void> {}
+    }
+
+    new Invoices().on(placed, 'open')
+
+    expect(subscriptions.map(({ options }) => options)).toEqual([{ strategy: 'handler', queue: 'billing[invoice].open_on_order.placed' }])
+  })
+
   test('a use case that takes nothing needs no args', async () => {
     const { bus, subscriptions } = recordingBus()
     const { placed } = eventsOf(bus, { placed: Placed })
@@ -82,7 +98,7 @@ describe('on', () => {
   test('a queue said by hand still ends with its event', () => {
     const { placed } = eventsOf(recordingBus().bus, { placed: Placed })
 
-    expect(() => new Orders().on(placed, 'purge', undefined, { queue: 'order.purge.on.order.shipped' })).toThrow("A handler's queue is '<module>.<use case>.on.order.placed'")
+    expect(() => new Orders().on(placed, 'purge', undefined, { queue: 'order.purge.on.order.shipped' })).toThrow("A handler's queue is '<feature>[<module>].<use case>_on_order.placed'")
   })
 })
 

@@ -26,3 +26,10 @@ CREATE TABLE pair (
 );
 
 CREATE UNIQUE INDEX pair_email_unique ON pair (email);
+
+CREATE TABLE "campaigns$template" (
+  id TEXT PRIMARY KEY,
+  version INTEGER NOT NULL,
+  name TEXT NOT NULL UNIQUE,
+  body TEXT
+);

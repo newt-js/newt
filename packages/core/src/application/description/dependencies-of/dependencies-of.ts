@@ -1,5 +1,7 @@
 import type { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
 import { isEventEmitter }           from '../../../domain/events/is-event-emitter/is-event-emitter'
+import { featureOf }                from '../../../domain/feature/is-feature/is-feature'
+import { isFeature }                from '../../../domain/feature/is-feature/is-feature'
 import { isModule }                 from '../../../domain/module/is-module/is-module'
 import type { ModuleDependency }    from '../application-description'
 import { holdsModulesOrEvents }     from '../holds-modules-or-events/holds-modules-or-events'
@@ -13,6 +15,11 @@ export function dependenciesOf(deps: object, owners: Map<BrandedEventEmitter, st
       return
     }
     if (within.has(value)) {
+      return
+    }
+    if (isFeature(value)) {
+      const { context, name: feature } = featureOf(value)
+      found.push({ name, kind: 'feature', target: moduleId(context, feature) })
       return
     }
     if (isModule(value)) {

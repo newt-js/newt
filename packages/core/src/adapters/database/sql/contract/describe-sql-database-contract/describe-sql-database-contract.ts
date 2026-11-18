@@ -121,6 +121,20 @@ export function describeSqlDatabaseContract(name: string, fixture: SqlDatabaseFi
       await expect(items.update('a', 1, { code: 'same' })).resolves.toBeUndefined()
     })
 
+    test('a table of a module of a feature, campaigns$template, keeps, finds, changes and deletes its rows, and names a taken field', async () => {
+      const templates = world.database.records<{ id: string, version: number, name: string, body: string | null }>('campaigns$template')
+
+      await templates.insert({ id: 'a', name: 'welcome', body: null })
+      await templates.insert({ id: 'b', name: 'reminder', body: 'soon' })
+      await templates.update('a', 1, { body: 'hello' })
+      const taken = await templates.insert({ id: 'c', name: 'welcome', body: null }).catch((error: unknown) => error)
+      await templates.delete('b', 1)
+
+      expect(await templates.find({ name: { eq: 'welcome' } })).toEqual([{ id: 'a', version: 2, name: 'welcome', body: 'hello' }])
+      expect(await templates.count()).toBe(1)
+      expect((taken as DuplicateValue).params.fields).toEqual(['name'])
+    })
+
     test('a taken id, a named unique index and one on two columns each name the fields they are on', async () => {
       const pairs = world.database.records<{ id: string, version: number, tenant: string, code: string, email: string }>('pair')
       await items.insert(item('a'))

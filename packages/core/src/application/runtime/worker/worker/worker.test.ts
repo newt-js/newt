@@ -144,7 +144,7 @@ describe('register', () => {
   test('a handler is named after who reacts with what to which event', async () => {
     const { queue } = await setup()
 
-    expect(() => queue.register('mail.sendWelcome.on.user.updated', 'user.created', () => {})).toThrow("'<handler's module>.<use case it calls>.on.user.created'")
+    expect(() => queue.register('mail.sendWelcome.on.user.updated', 'user.created', () => {})).toThrow("'<feature>[<module>].<use case it calls>_on_user.created'")
     expect(() => queue.register('Mail.sendWelcome.on.user.created', 'user.created', () => {})).toThrow()
     queue.register(QUEUE, 'user.created', () => {})
   })

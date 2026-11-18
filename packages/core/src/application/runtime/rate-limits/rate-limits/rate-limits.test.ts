@@ -101,7 +101,9 @@ describe('rate limits', () => {
   test('a limit is named <module>.<name>, once, with a rule that can count', async () => {
     const { base: auth } = await base()
 
-    expect(() => auth.rateLimits.define('signIn', { limit: 1, windowMs: MINUTE })).toThrow('<module>.<name>')
+    expect(() => auth.rateLimits.define('signIn', { limit: 1, windowMs: MINUTE })).toThrow('<feature>[<module>].<name>')
+    expect(() => auth.rateLimits.define('auth[Session].signIn', { limit: 1, windowMs: MINUTE })).toThrow('<feature>[<module>].<name>')
+    expect(() => auth.rateLimits.define('auth[session].signIn', { limit: 1, windowMs: MINUTE })).not.toThrow()
     auth.rateLimits.define('session.signIn', { limit: 1, windowMs: MINUTE })
     expect(() => auth.rateLimits.define('session.signIn', { limit: 1, windowMs: MINUTE })).toThrow('twice')
     expect(() => auth.rateLimits.define('session.other', { limit: 0, windowMs: MINUTE })).toThrow('limit')

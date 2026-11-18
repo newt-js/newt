@@ -85,7 +85,7 @@ export class Worker {
 
   register(name: string, pattern: string, handler: EventHandler, attempts = DEFAULT_ATTEMPTS, when?: (payload: Json) => boolean): () => void {
     if (eventOfQueue(name) !== pattern) {
-      throw new Error(`A handler of '${pattern}' is named '<handler's module>.<use case it calls>.on.${pattern}', not '${name}'`)
+      throw new Error(`A handler of '${pattern}' is named '<feature>[<module>].<use case it calls>_on_${pattern}' ('<module>.<use case>.on.${pattern}' for a module of no feature), not '${name}'`)
     }
     if (!Number.isInteger(attempts) || attempts < 1) {
       throw new Error(`The handler '${name}' runs at least once: its attempts are a whole number from 1, not ${attempts}`)

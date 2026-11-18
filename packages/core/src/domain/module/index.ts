@@ -1,3 +1,5 @@
+export * from './module-contract/exposes'
+export * from './module-contract/module-contract'
 export * from './module/module'
 export * from './reaction/reaction'
 export * from './reaction/reaction-options'
