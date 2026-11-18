@@ -46,7 +46,7 @@ export function moduleNames(feature: FeatureNames, folder: string, given?: strin
   if (TEMPLATE_VARIABLES.has(camel(words)) || TEMPLATE_VARIABLES.has(camel(plural)) || TEMPLATE_TYPES.has(capital(camel(words)))) {
     refuse("its code would take a name newt's generated code uses for something else; name it by what it holds")
   }
-  if (folder === feature.folder) refuse(`it is its feature's name; name it by the one thing it holds, as ${feature.folder.replace(/s$/, '')}`)
+  if (folder === feature.folder) refuse(`it is its feature's name: name the feature in plural, by what it groups, and the module by the one thing it holds, as ${feature.folder.replace(/s$/, '')}s/${feature.folder.replace(/s$/, '')}`)
   const table = `${feature.table}$${words.join('_')}`
   if (table.length > MAX_TABLE) refuse(`its table, ${table}, would have more than ${MAX_TABLE} characters, more than databases take`)
   return {
