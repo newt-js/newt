@@ -5,7 +5,7 @@ const TEST_DATABASE = `- \`src/test-database.ts\`: the database of the modules' 
 `
 
 const MIGRATIONS_RULE = `A table changes only through a migration: a change to a module's schema needs the next pair in its context's
-\`migrations/\`, \`<number>_<table>_up.sql\` and \`<number>_<table>_down.sql\`, the number one above the highest there.
+\`migrations/\`, \`<number>_<feature>__<module>_up.sql\` and \`<number>_<feature>__<module>_down.sql\` (the table is \`<feature>$<module>\`), the number one above the highest there.
 `
 
 /** How a schema change reaches its table, and which tests see it. */
@@ -28,7 +28,8 @@ A backend built with newt (@newt-js/core), on Bun.
 - \`src/auth.ts\`: \`authenticate\`, who calls the backend, for every context's router.
 - \`src/env.ts\`: \`requiredEnv\`, for the variables the backend cannot start without.
 - \`src/contexts.ts\`: the list of contexts the backend opens.
-${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its modules in \`modules/<module>/\`, their routes under \`/<context>/api/\`.
+${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its features in \`features/<feature>/\`,
+  each with its entry point \`<feature>.feature.ts\` and its modules in \`modules/<module>/\`; their routes under \`/<context>/api/<feature>/\`.
 
 ## Sign-in
 

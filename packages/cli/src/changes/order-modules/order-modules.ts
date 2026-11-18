@@ -5,13 +5,16 @@ import type { VirtualFiles }  from '../virtual-files/virtual-files'
 
 type Initialized = { statement: ts.VariableStatement, name: string, uses: string[] }
 
+/** A module's initialize, `Order_Module.initialize`, or a feature's entry point, `ordersFeature`. */
+const builds = (callee: string) => callee.endsWith('_Module.initialize') || /^[a-z]\w*Feature$/.test(callee)
+
 function initializedIn(source: ts.SourceFile): Initialized[] {
   const found: Initialized[] = []
   const visit = (node: ts.Node) => {
     if (ts.isVariableStatement(node)) {
       const [declaration] = node.declarationList.declarations
       const call = declaration?.initializer
-      if (declaration && ts.isIdentifier(declaration.name) && call && ts.isCallExpression(call) && call.expression.getText(source).endsWith('_Module.initialize')) {
+      if (declaration && ts.isIdentifier(declaration.name) && call && ts.isCallExpression(call) && builds(call.expression.getText(source))) {
         const deps = call.arguments[2]
         const uses = deps && ts.isObjectLiteralExpression(deps)
           ? deps.properties.flatMap(each => ts.isShorthandPropertyAssignment(each) ? [each.name.text] : ts.isPropertyAssignment(each) && ts.isIdentifier(each.initializer) ? [each.initializer.text] : [])
@@ -42,7 +45,7 @@ function sorted(modules: Initialized[]): Initialized[] {
   return result
 }
 
-/** Puts the modules <ctx>-modules.ts initializes in an order where each comes after the ones it uses. */
+/** Puts the modules <feature>.feature.ts initializes, or the features <ctx>-features.ts builds, in an order where each comes after the ones it uses. */
 export async function orderModules(path: string, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)

@@ -1,7 +1,8 @@
-import { expect }      from 'bun:test'
-import { test }        from 'bun:test'
+import { expect }       from 'bun:test'
+import { test }         from 'bun:test'
 // --------------------------------------------------------
-import { moduleNames } from './module-names'
+import { featureNames } from '../feature-names/feature-names'
+import { moduleNames }  from './module-names'
 
 const REFUSED: [string, string][] = [
   ['delete', 'a word JavaScript keeps'],
@@ -15,14 +16,15 @@ const REFUSED: [string, string][] = [
   ['http-router', 'a name newt\'s generated code uses'],
   ['context-base', 'a name newt\'s generated code uses'],
   ['use-case', 'a name newt\'s generated code uses'],
-  ['newt-job', 'those tables are newt\'s own'],
+  ['uses', 'a name newt\'s generated code uses'],
+  ['define-feature', 'a name newt\'s generated code uses'],
   [`a${'-b'.repeat(40)}`, 'more than 63 characters'],
 ]
 
 test.each(REFUSED)('refuses %s', (name, why) => {
-  expect(() => moduleNames(name)).toThrow(why)
+  expect(() => moduleNames(featureNames('shop'), name)).toThrow(why)
 })
 
 test('takes ordinary names', () => {
-  for (const name of ['order', 'price-change', 'invoice-line']) expect(moduleNames(name).folder).toBe(name)
+  for (const name of ['order', 'price-change', 'invoice-line']) expect(moduleNames(featureNames('shop'), name).folder).toBe(name)
 })

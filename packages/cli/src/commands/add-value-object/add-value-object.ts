@@ -2,28 +2,37 @@ import { join }              from 'node:path'
 // --------------------------------------------------------
 import { pieceNames }        from '../../names/piece-names/piece-names'
 import { findModule }        from '../../project/find-module/find-module'
+import { foreignIdTs }       from '../../templates/pieces/value-object-ts'
 import { invalidValueTs }    from '../../templates/pieces/value-object-ts'
 import { valueObjectTestTs } from '../../templates/pieces/value-object-ts'
 import { valueObjectTs }     from '../../templates/pieces/value-object-ts'
 import { defineCommand }     from '../command'
 import { CommandError }      from '../command-error/command-error'
 
-const USAGE = 'newt add value-object takes the module and the value object, as in newt add value-object sales/order sku'
+const USAGE = 'newt add value-object takes the module and the value object, as in newt add value-object sales/orders/order sku'
 
 export const ADD_VALUE_OBJECT = defineCommand({
   name: 'add value-object',
   summary: 'Adds a value object to a module, with the error it throws and its test',
-  args: '<context>/<module> <value-object>',
+  args: '<context>/<feature>/<module> <value-object>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },
   run: async ({ args, cwd, options }) => {
     const [given, name, ...rest] = args
     if (name === undefined || rest.length > 0) throw new CommandError(USAGE)
-    const { folder, module } = await findModule(given, cwd, options.backend, USAGE)
+    const { folder, module, features } = await findModule(given, cwd, options.backend, USAGE)
     const value = pieceNames(name, 'a value object')
     if (value.folder === `${module.folder}-id`) {
       throw new CommandError(`${module.type}Id is there already: every module has its id`)
+    }
+    const owner = features.find(each => each.modules.some(other => `${other}-id` === value.folder))
+    if (owner) {
+      const path = join(folder, 'value-objects', `${value.folder}.ts`)
+      return {
+        changes: [{ action: 'create' as const, path, content: foreignIdTs(value, owner.name) }],
+        nextSteps: [`keep it in the module's schema, ${value.type}.schema, and give it as it is to the use cases of ${owner.name}`],
+      }
     }
     const changes = [
       { action: 'create' as const, path: join(folder, 'value-objects', `${value.folder}.ts`), content: valueObjectTs(value) },

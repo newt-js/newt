@@ -12,11 +12,21 @@ export type ${value.type} = z.output<typeof ${value.type}.schema>
 `
 }
 
+/** The id of another feature's entity, which a module keeps: of the same brand, so that feature's use cases take it as it is. */
+export function foreignIdTs(value: PieceNames, feature: string): string {
+  return `import { uuidFactory, type Uuid } from '@newt-js/core'
+
+/** A ${value.words.replace(/ id$/, '')} of ${feature}, by its id, as this module keeps it: what ${feature}'s use cases take. */
+export const ${value.type} = uuidFactory('${value.type}')
+export type ${value.type} = Uuid<'${value.type}'>
+`
+}
+
 export function invalidValueTs(module: ModuleNames, value: PieceNames): string {
   return `import { ValidationError } from '@newt-js/core'
 
 export class Invalid${value.type} extends ValidationError<{ value: string }> {
-  readonly code = '${module.module}.invalid_${value.folder.replaceAll('-', '_')}'
+  readonly code = '${module.name}.invalid_${value.folder.replaceAll('-', '_')}'
 
   constructor(value: string) {
     super(\`'\${value}' is not a valid ${value.words}\`, { value })

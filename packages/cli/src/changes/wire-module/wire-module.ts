@@ -13,8 +13,10 @@ function modulesIn(source: ts.SourceFile, functionName: string): Modules | undef
   for (const statement of source.statements) {
     if (!ts.isFunctionDeclaration(statement) || !statement.body || statement.name?.text !== functionName) continue
     const returned = statement.body.statements.find(ts.isReturnStatement)
-    if (returned?.expression && ts.isObjectLiteralExpression(returned.expression)) {
-      return { statements: statement.body.statements, returned, object: returned.expression }
+    // What it returns, or what it hands the call it returns: `defineFeature('…', base, { … })`.
+    const object = returned?.expression && (ts.isCallExpression(returned.expression) ? returned.expression.arguments.find(ts.isObjectLiteralExpression) : returned.expression)
+    if (returned && object && ts.isObjectLiteralExpression(object)) {
+      return { statements: statement.body.statements, returned, object }
     }
   }
   return undefined
@@ -23,7 +25,7 @@ function modulesIn(source: ts.SourceFile, functionName: string): Modules | undef
 const declares = (statement: ts.Statement, name: string) =>
   ts.isVariableStatement(statement) && statement.declarationList.declarations.some(each => ts.isIdentifier(each.name) && each.name.text === name)
 
-/** Declares a module in <ctx>-modules.ts, in its function `<ctx>Modules` before what it returns, and adds it to what it returns: both, or nothing. */
+/** Declares a module in <feature>.feature.ts (a feature in <ctx>-features.ts), in its function before what it returns, and adds it to the object it returns: both, or nothing. */
 export async function wireModule({ path, functionName, module, declaration, imports }: WireModuleChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)

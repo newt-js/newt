@@ -1,7 +1,7 @@
 import type { ContextNames } from '../../../names/context-names/context-names'
 
 /** The line of <ctx>.context.ts that hands the context to run. */
-export const contextToRun = ({ type, camel }: ContextNames) => `return { context: new ${type}_Context(base, ${camel}Modules(base, router)), router, host }`
+export const contextToRun = ({ type, camel }: ContextNames) => `return { context: new ${type}_Context(base, ${camel}Features(base, router)), router, host }`
 
 export function contextTs(names: ContextNames): string {
   const { folder, type, camel, env } = names
@@ -10,12 +10,12 @@ import { BoundedContext, ContextBase, type Platform } from '@newt-js/core/applic
 import { HttpRouter, type ContextToRun } from '@newt-js/core/http'
 import { authenticate } from '../../auth'
 import { openDatabase, openStorage, type Stores } from '../../stores'
-import { ${camel}Modules, type ${type}Modules } from './${folder}-modules'
+import { ${camel}Features, type ${type}Features } from './${folder}-features'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
 export class ${type}_Context extends BoundedContext {
-  private constructor(base: ContextBase, readonly modules: ${type}Modules) {
+  private constructor(base: ContextBase, readonly features: ${type}Features) {
     super('${folder}', base)
   }
 
