@@ -120,6 +120,23 @@ function isFile(path: string): boolean {
   return ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'].some(extension => statSync(`${path}${extension}`, { throwIfNoEntry: false })?.isFile())
 }
 
+/** Where a path of a feature is: its context, its feature, and its path inside the feature. */
+export type FeaturePlace = { context: string, feature: string, inside: string }
+
+/**
+ * The feature a path is in, when contexts are the folders of `contexts` (absolute):
+ * `…/contexts/engagement/features/campaigns/…` is in `campaigns` of `engagement`, and so
+ * is the folder itself (`inside` is `''`). `null` for a path in no feature.
+ */
+export function featurePlace(file: string, contexts: string): FeaturePlace | null {
+  const path = real(slashed(file))
+  const folder = real(contexts)
+  if (!path.startsWith(`${folder}/`)) return null
+  const [context, features, feature, ...rest] = path.slice(folder.length + 1).split('/')
+  if (context === undefined || features !== 'features' || !feature) return null
+  return { context, feature, inside: rest.join('/') }
+}
+
 /** The file a relative import points at. */
 export function target(file: string, specifier: string): string {
   return posix.normalize(posix.join(posix.dirname(slashed(file)), specifier))
