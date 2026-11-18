@@ -5,10 +5,10 @@ import { mountsOf }                from '../../serve/mounts-of/mounts-of'
 import { serve }                   from '../../serve/serve/serve'
 import { hostsOf }                 from '../hosts-of/hosts-of'
 import { platformToRun }           from '../platform-to-run/platform-to-run'
+import { routersOf }               from '../routers-of/routers-of'
 import type { ContextToRun }       from '../run-contexts-options'
 import type { RunContextsOptions } from '../run-contexts-options'
 import type { RunningContexts }    from '../run-contexts-options'
-import { sharedRouters }           from '../shared-routers/shared-routers'
 import { stopServer }              from '../stop-server/stop-server'
 
 const SIGNALS = ['SIGINT', 'SIGTERM'] as const
@@ -17,7 +17,7 @@ const CLOSE_TIMEOUT_MS = 10_000
 
 export function runContexts(contexts: ContextToRun[], options: RunContextsOptions = {}): RunningContexts {
   const platform = platformToRun(contexts, options.platformWithoutContexts)
-  const shared = options.serve ? sharedRouters(contexts) : []
+  const routers = options.serve ? routersOf(contexts) : []
   const servers: Record<string, Bun.Server<undefined>> = {}
   let server: Bun.Server<undefined> | undefined
   try {
@@ -30,7 +30,7 @@ export function runContexts(contexts: ContextToRun[], options: RunContextsOption
       const served = contexts.filter(({ router }) => router).map(({ context }) => context.name)
       const apps = contexts.flatMap(({ context, app }) => app ? [{ path: `/${context.name}`, app }] : [])
       const frontend = [...mountsOf(options.serve.frontend, options.serve.publicFolder), ...apps]
-      server = serve({ ...options.serve, routers: shared, healthContexts: served, frontend, hosts: hostsOf(contexts) })
+      server = serve({ ...options.serve, routers, healthContexts: served, frontend, hosts: hostsOf(contexts) })
     }
   } catch (error) {
     for (const each of Object.values(servers)) {

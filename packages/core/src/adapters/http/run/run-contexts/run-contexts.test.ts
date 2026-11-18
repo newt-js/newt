@@ -41,8 +41,8 @@ function context(name: string, log: string[], of = platform): ContextToRun['cont
   }
 }
 
-function routerOf(answer: string, path = '/who', prefix?: string): HttpRouter {
-  const router = new HttpRouter(prefix === undefined ? {} : { prefix })
+function routerOf(answer: string, path = '/who', prefix = `/${answer}/api`): HttpRouter {
+  const router = new HttpRouter({ prefix })
   router.get(path, () => Response.json(answer), { public: true })
   return router
 }
@@ -57,7 +57,7 @@ describe('runContexts', () => {
     ], { signals: false })
 
     expect(Object.keys(app.servers)).toEqual(['auth', 'shop'])
-    expect(await (await fetch(new URL('/api/who', app.servers.shop!.url))).json()).toBe('shop')
+    expect(await (await fetch(new URL('/shop/api/who', app.servers.shop!.url))).json()).toBe('shop')
     expect((await fetch(new URL('/health-check', app.servers.auth!.url))).status).toBe(200)
     expect(log).toEqual(['auth started', 'shop started', 'reports started'])
 
@@ -150,13 +150,13 @@ describe('runContexts, one server for every context', () => {
     ], { signals: false, serve: { port: 0, health: true } })
     const at = (path: string) => fetch(new URL(path, app.server!.url))
 
-    expect(await (await at('/api/session')).json()).toBe('auth')
-    expect(await (await at('/api/boards')).json()).toBe('boards')
+    expect(await (await at('/auth/api/session')).json()).toBe('auth')
+    expect(await (await at('/boards/api/boards')).json()).toBe('boards')
     expect((await at('/health-check')).status).toBe(200)
     expect((await at('/auth/health-check')).status).toBe(200)
     expect((await at('/boards/health-check')).status).toBe(200)
     expect((await at('/quiet/health-check')).status).toBe(404)
-    expect((await at('/api/nothing')).status).toBe(404)
+    expect((await at('/auth/api/nothing')).status).toBe(404)
     expect(app.servers).toEqual({})
 
     await app.stop()
@@ -257,13 +257,12 @@ describe('runContexts, one server for every context', () => {
     await app.stop()
   })
 
-  test('two contexts that take one path stop it before anything starts', () => {
+  test('a router that is not under /<context>/api stops it before anything starts', () => {
     const log: string[] = []
 
     expect(() => runContexts([
-      { context: context('auth', log), router: routerOf('auth', '/things/:id') },
-      { context: context('boards', log), router: routerOf('boards', '/things/:thingId') },
-    ], { signals: false, serve: { port: 0 } })).toThrow('auth and boards both take /api/things/:thingId')
+      { context: context('sales', log), router: routerOf('sales', '/orders', '/api') },
+    ], { signals: false, serve: { port: 0 } })).toThrow('sales\'s router is at /api: a context\'s routes go under /sales/api')
     expect(log).toEqual([])
   })
 })

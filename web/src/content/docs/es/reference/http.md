@@ -343,7 +343,7 @@ return runContexts(contexts, {
 | Campo | Tipo | Qué es |
 |---|---|---|
 | `context` | `BoundedContext` | El contexto. |
-| `router` | `HttpRouter` | Sus rutas, servidas por el servidor compartido (`options.serve`). |
+| `router` | `HttpRouter` | Sus rutas, servidas por el servidor compartido (`options.serve`). Su prefijo tiene que ser `/<contexto>/api`, o `runContexts` lanza un error antes de arrancar nada. |
 | `serve` | `ServeOptions` | Da a este contexto un servidor propio. |
 | `app` | `string \| Bun.HTMLBundle` | Su app, servida por el servidor compartido en `/<contexto>`: una carpeta compilada o un import de HTML. |
 | `host` | `string \| undefined` | El host en el que responde, en sus propias rutas, en lugar de bajo `/<contexto>`. Dos contextos en el mismo host lanzan un error. |
@@ -352,7 +352,7 @@ return runContexts(contexts, {
 
 | Opción | Tipo | Por defecto | Qué hace |
 |---|---|---|---|
-| `serve` | `Omit<ServeOptions, 'routers'>` | ninguno | Un servidor para los routers de todos los contextos. Dos contextos con el mismo camino lanzan un error. |
+| `serve` | `Omit<ServeOptions, 'routers'>` | ninguno | Un servidor para los routers de todos los contextos. |
 | `signals` | `boolean` | `true` | Con `SIGINT` o `SIGTERM`, para y termina el proceso (código 1 si algún paso falló). |
 | `stopTimeoutMs` | `number` | `8000` | Tiempo que tienen servidores y workers para acabar antes de forzarlos. |
 | `platformWithoutContexts` | `Platform` | ninguna | La plataforma a usar mientras no hay contextos. Si los hay, tiene que ser la suya. |

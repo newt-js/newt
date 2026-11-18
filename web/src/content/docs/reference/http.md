@@ -343,7 +343,7 @@ return runContexts(contexts, {
 | Field | Type | Meaning |
 |---|---|---|
 | `context` | `BoundedContext` | The context. |
-| `router` | `HttpRouter` | Its routes, served by the shared server (`options.serve`). |
+| `router` | `HttpRouter` | Its routes, served by the shared server (`options.serve`). Its prefix must be `/<context>/api`, or `runContexts` throws before anything starts. |
 | `serve` | `ServeOptions` | Gives this context a server of its own. |
 | `app` | `string \| Bun.HTMLBundle` | Its app, served by the shared server at `/<context>`: a built folder or an HTML import. |
 | `host` | `string \| undefined` | The host it answers at, at its own paths, instead of under `/<context>`. Two contexts at one host throw. |
@@ -352,7 +352,7 @@ return runContexts(contexts, {
 
 | Option | Type | Default | Meaning |
 |---|---|---|---|
-| `serve` | `Omit<ServeOptions, 'routers'>` | none | One server for every context's router. Two contexts with the same path throw. |
+| `serve` | `Omit<ServeOptions, 'routers'>` | none | One server for every context's router. |
 | `signals` | `boolean` | `true` | On `SIGINT` or `SIGTERM`, stop and end the process (exit code 1 if a step failed). |
 | `stopTimeoutMs` | `number` | `8000` | How long servers and workers get to finish before being forced. |
 | `platformWithoutContexts` | `Platform` | none | The platform to use when there are no contexts yet. When there are, it must be theirs. |
