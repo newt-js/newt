@@ -43,9 +43,9 @@ export async function openDatabase(
 The context passes its own `migrations` folder:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-/** Where the tasks context keeps its migrations: next to this file. */
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
+// inside Tasks_Context.open()
 const database = await openDatabase('tasks', MIGRATIONS_FOLDER, stores)
 ```
 

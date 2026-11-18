@@ -37,7 +37,7 @@ describe('newt add context', () => {
     const backend = await backendProject()
     expect((await addContext(['sales'], backend)).code).toBe(0)
     const context = await read(join(backend, 'src/contexts/sales/sales.context.ts'))
-    expect(context).toContain("/** Where the sales context keeps its migrations: next to this file. */\nconst MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')\n")
+    expect(context).toContain("const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')\n")
     expect(context).toContain("const database = await openDatabase('sales', MIGRATIONS_FOLDER, stores)")
     expect(context).toContain("storage: await openStorage('sales', router, stores)")
     expect(context).toContain('    router.authenticateWith(authenticate)\n')

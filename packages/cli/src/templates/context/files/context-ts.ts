@@ -8,7 +8,6 @@ import { authenticate } from '../../auth'
 import { openDatabase, openStorage, type Stores } from '../../stores'
 import { ${camel}Modules, type ${type}Modules } from './${folder}-modules'
 
-/** Where the ${folder} context keeps its migrations: next to this file. */
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
 export class ${type}_Context extends BoundedContext {
