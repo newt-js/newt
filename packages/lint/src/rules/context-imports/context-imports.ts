@@ -12,6 +12,7 @@ import { importsOf }     from '../../paths/paths'
 import { real }          from '../../paths/paths'
 import { resolved }      from '../../paths/paths'
 import { rootOf }        from '../../paths/paths'
+import { slashed }       from '../../paths/paths'
 import { target }        from '../../paths/paths'
 
 /** Every context, each with the contexts it uses. */
@@ -66,11 +67,15 @@ export function declaredUses(folder: string): Uses {
   return uses
 }
 
+/** That a file is the list of the contexts the backend opens: contexts.ts, in the folder of the contexts. */
+const isContextsList = (file: string, folder: string) => real(slashed(file)) === posix.join(real(folder), 'contexts.ts')
+
 /**
  * Each context imports only the contexts it says it uses, so they never form a cycle:
  * those `uses` lists, or, with none, those its `<name>.context.ts` imports. A context is a
  * folder of `folder`; a file directly in `folder` is in none: it imports no context, and
- * no context imports it.
+ * no context imports it. But for the list of the contexts the backend opens, `contexts.ts`,
+ * which imports each one's `<name>.context.ts`.
  */
 export const contextImports: TSESLint.RuleModule<'other' | 'declared' | 'root' | 'fromRoot' | 'tree', [ContextImportsOptions]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
@@ -112,6 +117,8 @@ export const contextImports: TSESLint.RuleModule<'other' | 'declared' | 'root' |
       if (!other || other === own || allowed.includes(other)) return
       if (other === ROOT) {
         context.report({ node, messageId: 'root', data: { path: specifier } })
+      } else if (own === ROOT && isContextsList(context.physicalFilename, folder) && real(path) === posix.join(real(folder), other, `${other}.context`)) {
+        return
       } else if (own === ROOT) {
         context.report({ node, messageId: 'fromRoot', data: { path: specifier, other } })
       } else {

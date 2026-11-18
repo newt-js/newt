@@ -15,7 +15,7 @@ export type ContextTemplateOptions = { backend: string, packageName: string, nam
 
 const RETURN_CONTEXTS = '  return contexts'
 
-/** A context in `backend`, on the backend's stores: its folder, its variables, and its place in src/contexts.ts. */
+/** A context in `backend`, on the backend's stores: its folder, its variables, and its place in src/contexts/contexts.ts. */
 export function contextTemplate({ backend, packageName, names, stores }: ContextTemplateOptions): FileChange[] {
   const database = STORE_DATABASES[stores.database]
   const files = STORE_FILES[stores.files]
@@ -31,11 +31,11 @@ export function contextTemplate({ backend, packageName, names, stores }: Context
     { action: 'complete-env', path: at('.env.example'), variables },
     {
       action: 'insert-lines',
-      path: at('src/contexts.ts'),
+      path: at('src/contexts/contexts.ts'),
       anchor: RETURN_CONTEXTS,
       position: 'before',
       lines: [`  contexts.push(await ${names.type}_Context.open(platform, stores))`],
-      imports: [`import { ${names.type}_Context } from './contexts/${names.folder}/${names.folder}.context'`],
+      imports: [`import { ${names.type}_Context } from './${names.folder}/${names.folder}.context'`],
     },
   ]
 }

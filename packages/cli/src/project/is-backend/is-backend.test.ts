@@ -6,14 +6,14 @@ import { join }      from 'node:path'
 // --------------------------------------------------------
 import { isBackend } from './is-backend'
 
-async function folderWith(manifest: unknown, backendTs = true): Promise<string> {
+async function folderWith(manifest: unknown, contextsTs = true): Promise<string> {
   const folder = await mkdtemp(join(tmpdir(), 'newt-cli-is-backend-'))
   if (manifest !== undefined) await Bun.write(join(folder, 'package.json'), JSON.stringify(manifest))
-  if (backendTs) await Bun.write(join(folder, 'src/backend.ts'), '')
+  if (contextsTs) await Bun.write(join(folder, 'src/contexts/contexts.ts'), '')
   return folder
 }
 
-test('a folder whose package.json depends on @newt-js/core, with src/backend.ts', async () => {
+test('a folder whose package.json depends on @newt-js/core, with src/contexts/contexts.ts', async () => {
   expect(await isBackend(await folderWith({ dependencies: { '@newt-js/core': '1.0.0' } }))).toBe(true)
 })
 

@@ -1,5 +1,5 @@
-export const SRC_BACKEND_TEST_TS = `import { expect, test } from 'bun:test'
-import { startBackend } from './backend'
+export const SRC_INDEX_TEST_TS = `import { expect, test } from 'bun:test'
+import { startBackend } from './index'
 
 test('the backend answers its health', async () => {
   const backend = await startBackend(0, { stores: 'memory' })

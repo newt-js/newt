@@ -42,7 +42,7 @@ describe('newt init', () => {
 
   test('with --cluster valkey, a backend that shares through Valkey, whose lint, types and tests pass', async () => {
     const folder = join(await generate(INIT, ['shop', '--cluster', 'valkey']), 'shop')
-    expect(await Bun.file(join(folder, 'src/backend.ts')).text()).toContain('new ValkeyCluster(Bun.env.VALKEY_URL)')
+    expect(await Bun.file(join(folder, 'src/index.ts')).text()).toContain('new ValkeyCluster(Bun.env.VALKEY_URL)')
     expect(await Bun.file(join(folder, '.env.example')).text()).toStartWith('PORT=3000\nVALKEY_URL=redis://localhost:6379\n')
     expect(await checkGenerated(folder)).toEqual([])
   }, 30_000)
@@ -142,7 +142,7 @@ describe('newt init', () => {
       },
     })
     expect(questions).toEqual(['What is your project named?', 'A backend or a monorepo?'])
-    expect(output.text).toContain('will create  shop/apps/api/src/backend.ts')
+    expect(output.text).toContain('will create  shop/apps/api/src/index.ts')
   })
 
   test('given a name, it never asks whether a backend or a monorepo', async () => {
@@ -199,7 +199,7 @@ describe('newt init', () => {
     expect(await Bun.file(join(folder, '.env')).text()).toStartWith('API_KEY=x\nPORT=3000\nPUBLIC_URL=')
     expect(report.warnings).toEqual([
       'tsconfig.json was there already, so newt kept it: newt\'s code needs in its compilerOptions types: ["bun"], module: "Preserve" and moduleResolution: "bundler"',
-      'src/index.ts was there already, so newt kept it: it should start the backend: import { startBackend } from \'./backend\' and await startBackend(Number(Bun.env.PORT || 3000))',
+      'src/index.ts was there already, so newt kept it: it should export startBackend, which its tests start, and start the backend when run: if (import.meta.main) await startBackend(Number(Bun.env.PORT || 3000))',
       'eslint.config.js is there too, and ESLint reads it instead of eslint.config.ts: newt\'s lint does not run until it goes',
     ])
   })
@@ -233,7 +233,7 @@ describe('newt init', () => {
     expect(report.warnings).toEqual([
       'shop/src/stores.ts opens sqlite, and newt kept it: change it by hand to open postgres',
       'shop/src/stores.ts keeps files in local, and newt kept it: change it by hand to keep them in s3',
-      'shop/src/backend.ts runs on the memory cluster, and newt kept it: change it by hand to run on valkey',
+      'shop/src/index.ts runs on the memory cluster, and newt kept it: change it by hand to run on valkey',
       'shop/.env has PORT=3000, and newt kept it: write PORT=4000 in it',
     ])
     expect(await Bun.file(join(folder, 'shop/.env')).text()).toBe(env)
@@ -243,17 +243,17 @@ describe('newt init', () => {
     const folder = await emptyFolder()
     await runCommand(INIT, ['shop', '--cluster', 'valkey'], { cwd: folder, ask: null })
     const report = JSON.parse((await runCommand(INIT, ['shop', '--cluster', 'memory', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
-    expect(report.warnings).toEqual(['shop/src/backend.ts runs on the valkey cluster, and newt kept it: change it by hand to run on memory'])
+    expect(report.warnings).toEqual(['shop/src/index.ts runs on the valkey cluster, and newt kept it: change it by hand to run on memory'])
   })
 
   test('again on a memory backend whose Platform has options, keeps its memory cluster', async () => {
     const folder = await emptyFolder()
     await runCommand(INIT, ['shop'], { cwd: folder, ask: null })
-    const backendTs = Bun.file(join(folder, 'shop/src/backend.ts'))
+    const backendTs = Bun.file(join(folder, 'shop/src/index.ts'))
     await Bun.write(backendTs, (await backendTs.text()).replace('new Platform()', 'new Platform({ logger: new ConsoleLogger() })'))
     const env = await Bun.file(join(folder, 'shop/.env')).text()
     const report = JSON.parse((await runCommand(INIT, ['shop', '--cluster', 'valkey', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
-    expect(report.warnings).toEqual(['shop/src/backend.ts runs on the memory cluster, and newt kept it: change it by hand to run on valkey'])
+    expect(report.warnings).toEqual(['shop/src/index.ts runs on the memory cluster, and newt kept it: change it by hand to run on valkey'])
     expect(await Bun.file(join(folder, 'shop/.env')).text()).toBe(env)
   })
 
