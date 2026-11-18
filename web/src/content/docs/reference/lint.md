@@ -59,21 +59,21 @@ If you pass `uses`, list every context, even those that use none (`[]`). A missi
 | Every linted file | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable`, and the rules from other plugins |
 | A module's files (`**/modules/<module>/**`) | `module-entity`, `module-files`, `module-imports`, `entity-method-params`, `reaction-queue`, `schema-imports`, `use-case-files`, `module-transactions` |
 | Files in the contexts folder (with `contexts`) | `context-imports`, `route-context`; `module-imports` for files outside the modules |
-| A context's frontend (`<context>/frontend/**/*.{ts,tsx}`, with `contexts`) | `frontend-imports`, `no-disable` |
+| A context's app (`<context>/app/**/*.{ts,tsx}`, with `contexts`) | `app-imports`, `no-disable` |
 
 Without `contexts`, `route-context` still runs on module files.
 
 ## What may import what
 
-This is what the import rules (`context-imports`, `module-imports`, `schema-imports`, `frontend-imports`) allow, with the `tasks` and `chat` contexts as the example:
+This is what the import rules (`context-imports`, `module-imports`, `schema-imports`, `app-imports`) allow, with the `tasks` and `chat` contexts as the example:
 
 ```mermaid
 flowchart TD
   chat["chat context"] -->|"only if chat.context.ts imports tasks"| tasks["tasks context"]
   task["task module"] -->|"any file"| own["task's own files"]
-  task -->|".module.ts, .schema.ts, events/, errors/"| project["project module"]
-  schema["task.schema.ts"] -->|"only"| deps["zod, @newt-js/core, value-objects/, other *.schema.ts"]
-  frontend["tasks frontend"] -->|"import type only"| schemas["tasks *.schema.ts"]
+  task -->|"import type: .module.ts, .schema.ts, events/; errors/"| project["project module"]
+  schema["task.schema.ts"] -->|"only"| deps["zod, @newt-js/core, value-objects/, import type from other *.schema.ts"]
+  app["tasks app"] -->|"import type only"| schemas["tasks *.schema.ts"]
 ```
 
 Each rule is described in the sections that follow.
@@ -115,19 +115,29 @@ Why: each module guards one thing; another entity is another module, referenced 
 
 ### newt/module-imports
 
-A module imports from another module only its `.module.ts`, its `.schema.ts`, its `events/` and its `errors/`.
+A module reaches another module of its context only through its API:
+
+- its use cases, through the dependency [`newt add deps`](/reference/cli/add-deps/) wires (`this.deps.project.get(...)`), and its events through that same dependency (`tasks.on(project.events.created, ...)`);
+- as types only (`import type`): its `.module.ts` (the type of the dependency), its `.schema.ts` (the DTOs) and its `events/`;
+- its `errors/`, as they are, to tell a known error apart with `instanceof`.
+
+Everything else is the module's own: its schemas as values, its entity, value objects, repository, routes, workers and services.
 
 ```ts
 // modules/task/task.module.ts
-// wrong
-import { Project_Repository } from '../project/project.repository'
-// right
-import { ProjectNotFound } from '../project/errors/project-not-found'
+import { Project_Repository } from '../project/project.repository' // wrong
+import { ProjectSchema } from '../project/project.schema'          // wrong: a value
+import { Project_Module } from '../project/project.module'         // wrong: a value
+import type { ProjectDTO } from '../project/project.schema'        // right
+import type { Project_Module } from '../project/project.module'    // right
+import { ProjectNotFound } from '../project/errors/project-not-found' // right
 ```
 
-A file outside the modules (such as `tasks-modules.ts`) may import what it composes, but re-exports only what a module offers.
+An id a module keeps of another module's entity, such as a task's `projectId`, is a value object of its own: `value-objects/project-id.ts`, made with `uuidFactory('ProjectId')`. A `uuidFactory` brands the id with its name, so its type is the same as `project`'s own `ProjectId`, and a `ProjectDTO['id']` fits it.
 
-Why: through another module's entity or repository, a module would read or write its data behind its back.
+A file outside the modules (such as `tasks-modules.ts`) may import what it composes, but re-exports only that API: `export type` of a `.module.ts`, a `.schema.ts` or an event, and errors as they are.
+
+Why: through another module's entity, repository or schema, a module would read, write, build or parse its data behind its use cases, and a change inside that module would break it.
 
 ### newt/context-imports
 
@@ -146,23 +156,27 @@ Why: contexts depend on each other in one direction only, so each can be read, t
 
 ### newt/schema-imports
 
-A module's `<module>.schema.ts` imports only `zod`, `@newt-js/core` (its root), the module's own `value-objects/` and other modules' `*.schema.ts`.
+A module's `<module>.schema.ts` imports only `zod`, `@newt-js/core` (its root), the module's own `value-objects/` and other modules' DTO types (`import type` from their `*.schema.ts`).
 
 ```ts
 // modules/task/task.schema.ts
-import { Task } from './task'                          // wrong
-import { ProjectSchema } from '../project/project.schema' // right
-import { Priority } from './value-objects/priority'      // right
+import { Task } from './task'                                 // wrong
+import { ProjectSchema } from '../project/project.schema'     // wrong: newt/module-imports
+import type { ProjectDTO } from '../project/project.schema'   // right
+import { Priority } from './value-objects/priority'           // right
+import { ProjectId } from './value-objects/project-id'        // right: task's own
 ```
+
+That another module's schema comes as types only is `newt/module-imports`'s to say, so a value import of it is reported once.
 
 Why: the schema is the module's contract; it says what the data is, not how the module works.
 
-### newt/frontend-imports
+### newt/app-imports
 
-A context's frontend imports its own files and, as types only, its context's schemas. Never server code: no module, repository or other context, and `@newt-js/*`, `bun`, `bun:*` and Node's modules only as types.
+A context's app imports its own files and, as types only, its context's schemas. Never server code: no module, repository or other context, and `@newt-js/*`, `bun`, `bun:*` and Node's modules only as types.
 
 ```tsx
-// src/contexts/tasks/frontend/app.tsx
+// src/contexts/tasks/app/app.tsx
 import { TaskSchema } from '../modules/task/task.schema'          // wrong
 import type { TaskDTO } from '../modules/task/task.schema'        // right
 ```
@@ -260,31 +274,31 @@ Why: decisions live in use cases and entities, not in the repository.
 
 ### newt/route-context
 
-Every route a context registers, on its router or a group of it, starts with the context's name.
+No route a context registers, on its router or a group of it, starts with the context's name: the router already puts `/<context>/api` before every route.
 
 ```ts
 // src/contexts/tasks/modules/task/task.routes.ts
-router.get('/items/:id', handle)           // wrong
-router.get('/tasks/tasks/:id', handle)     // right
-router.group('/tasks', middleware).get('/tasks', handle) // right
+router.get('/tasks/tasks/:id', handle) // wrong: answers at /tasks/api/tasks/tasks/:id
+router.get('/tasks/:id', handle)       // right: answers at /tasks/api/tasks/:id
+router.group('/reports', { middleware }).get('/overdue', handle) // right
 ```
 
-Paths are read through consts, templates and a group's prefix. A path the rule cannot read is reported too: write it as text or as a const that holds text. Test files are skipped.
+Paths are read through consts, templates and a group's prefix. A path the rule cannot read is let be. Test files are skipped.
 
-Why: one server serves every context, so two contexts never take the same path.
+Why: the context's prefix already keeps two contexts apart, so its name in the route would only repeat it.
 
 ### newt/route-body-unchecked
 
 In a `*.routes.ts`, the request body is never given a type before something parses it: no `await request.json() as X`, `<X>`, or `const body: X = await request.json()`.
 
 ```ts
-router.post('/tasks/tasks', async request =>
+router.post('/tasks', async request =>
   Response.json(
     await tasks.create((await request.json()) as TaskCreateDTO),
   ),
 ) // wrong
 
-router.post('/tasks/tasks', async request =>
+router.post('/tasks', async request =>
   Response.json(await tasks.create(await bodyOf(request)), {
     status: 201,
   }),

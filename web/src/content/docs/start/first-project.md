@@ -57,10 +57,10 @@ Listening on http://localhost:3000/
 
 ## Check its health
 
-Every backend answers `GET /api/health`:
+Every backend answers `GET /health-check`:
 
 ```sh
-curl localhost:3000/api/health
+curl localhost:3000/health-check
 ```
 
 ```json
@@ -132,31 +132,32 @@ The module comes with four use cases (`create`, `get`, `find`, `paginate`), a ta
 export function registerTaskRoutes(
   router: HttpRouter,
   tasks: Task_Module,
-): void {
-  router.post('/tasks/tasks', async request =>
+) {
+  router.post('/tasks', async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
     }),
   )
-  router.get('/tasks/tasks', async request =>
+  router.get('/tasks', async request =>
     Response.json(await tasks.paginate({}, pageRequestFrom(request))),
   )
-  router.get('/tasks/tasks/:id', async request =>
+  router.get('/tasks/:id', async request =>
     Response.json(
       await tasks.get({ id: TaskId.from(request.params.id) }),
     ),
   )
+  return { one: router.group('/tasks/:taskId') }
 }
 ```
 
-A route's path is `/api`, then the context, then the module's plural: `POST /api/tasks/tasks`.
+A route's path is the context, then `/api`, then the module's plural: `POST /tasks/api/tasks`.
 
 ## Call a route: the 401
 
 Try to create a task:
 
 ```sh
-curl -i -X POST localhost:3000/api/tasks/tasks \
+curl -i -X POST localhost:3000/tasks/api/tasks \
   -H 'content-type: application/json' \
   -d '{"name":"Write the docs"}'
 ```
@@ -185,7 +186,7 @@ sequenceDiagram
   participant Auth as authenticate
   participant Route as task.routes.ts
   participant Task as Task_Module
-  Client->>Router: POST /api/tasks/tasks
+  Client->>Router: POST /tasks/api/tasks
   Router->>Auth: who is calling?
   alt nobody
     Auth-->>Router: null
@@ -222,7 +223,7 @@ This lets anyone who knows the token in. Use it only on your machine, and write 
 Restart `bun run dev` so it reads the new `.env`, then call the route with the token:
 
 ```sh
-curl -X POST localhost:3000/api/tasks/tasks \
+curl -X POST localhost:3000/tasks/api/tasks \
   -H 'authorization: Bearer let-me-in' \
   -H 'content-type: application/json' \
   -d '{"name":"Write the docs"}'
@@ -240,7 +241,7 @@ curl -X POST localhost:3000/api/tasks/tasks \
 List the tasks:
 
 ```sh
-curl localhost:3000/api/tasks/tasks -H 'authorization: Bearer let-me-in'
+curl localhost:3000/tasks/api/tasks -H 'authorization: Bearer let-me-in'
 ```
 
 ```json
@@ -265,7 +266,7 @@ Errors come back as JSON with a status, a message and a `code` your frontend can
 |---|---|---|
 | no session | 401 | `not_signed_in` |
 | `{"name":"  "}` | 400 | `validation` |
-| `GET /api/tasks/tasks/nope` | 400 | `invalid_uuid` |
+| `GET /tasks/api/tasks/nope` | 400 | `invalid_uuid` |
 | an id that does not exist | 404 | `task.not_found` |
 
 A `validation` error also lists what failed in `issues`. See [errors](/concepts/errors/).

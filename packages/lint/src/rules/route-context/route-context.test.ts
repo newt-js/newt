@@ -14,22 +14,22 @@ const ROUTES = `${MODULE}/price-change.routes.ts`
 
 tester.run('route-context', asRule(routeContext), {
   valid: [
-    { code: "router.get('/ws/price-changes', handle)", filename: ROUTES },
-    { code: "router.post('/ws/price-changes/:id/apply', handle)", filename: ROUTES },
-    { code: 'router.get(`/ws`, handle)', filename: ROUTES },
-    { code: "router.get('/ws/x', request => request.headers.get('if-none-match'))", filename: ROUTES },
-    { code: "router.group('/ws/mine').get('/price-changes', handle)", filename: ROUTES },
-    { code: "export function register(http: HttpRouter) { http.get('/ws/price-changes', handle) }", filename: ROUTES },
-    { code: "router.get('/price-changes', handle)", filename: `${MODULE}/price-change.module.test.ts` },
-    { code: "router.get('/price-changes', handle)", filename: '/repo/src/stores.ts' },
+    { code: "router.get('/price-changes', handle)", filename: ROUTES },
+    { code: "router.post('/price-changes/:id/apply', handle)", filename: ROUTES },
+    { code: 'router.put(`/price-changes/:id`, handle)', filename: ROUTES },
+    { code: "router.delete('/wss/price-changes', handle)", filename: ROUTES },
+    { code: "router.get('/x', request => request.headers.get('if-none-match'))", filename: ROUTES },
+    { code: "router.group('/mine').get('/price-changes', handle)", filename: ROUTES },
+    { code: "export function register(http: HttpRouter) { http.get('/price-changes', handle) }", filename: ROUTES },
+    { code: "router.get('/ws/price-changes', handle)", filename: `${MODULE}/price-change.module.test.ts` },
+    { code: "router.get('/ws/price-changes', handle)", filename: '/repo/src/stores.ts' },
   ],
   invalid: [
-    { code: "router.get('/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/price-changes', context: 'ws' } }] },
-    { code: "router.get('/price-changes', handle)", filename: `${MODULE}/price-change.module.ts`, errors: [{ messageId: 'context' }] },
-    { code: "router.delete('/wss/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context' }] },
-    { code: 'router.put(`/price-changes/:id`, handle)', filename: ROUTES, errors: [{ messageId: 'context' }] },
-    { code: "router.group('/elsewhere').get('/ws/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/elsewhere', context: 'ws' } }] },
-    { code: "export function register(http: HttpRouter) { http.get('/price-changes', handle) }", filename: ROUTES, errors: [{ messageId: 'context' }] },
+    { code: "router.get('/ws/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/ws/price-changes', context: 'ws', without: '/price-changes' } }] },
+    { code: "router.get('/ws/price-changes', handle)", filename: `${MODULE}/price-change.module.ts`, errors: [{ messageId: 'context' }] },
+    { code: 'router.get(`/ws`, handle)', filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/ws', context: 'ws', without: '/' } }] },
+    { code: "router.group('/ws').get('/price-changes', handle)", filename: ROUTES, errors: [{ messageId: 'context', data: { path: '/ws', context: 'ws', without: '/' } }] },
+    { code: "export function register(http: HttpRouter) { http.get('/ws/price-changes', handle) }", filename: ROUTES, errors: [{ messageId: 'context' }] },
   ],
 })
 
@@ -49,30 +49,30 @@ const typed = (files: Record<string, string>) => {
 describe('route-context, with types', () => {
   const good = typed({
     [`${CONTEXTS}/ws/modules/price-change/price-change.routes.ts`]: [
-      "const BASE = '/ws/price-changes'",
+      "const BASE = '/price-changes'",
       'const PATHS = { one: `${BASE}/:id` }',
-      'export function register(http: HttpRouter) {',
+      'export function register(http: HttpRouter, path: string) {',
       '  http.get(BASE, handle)',
       '  http.get(PATHS.one, handle)',
       "  http.post(BASE + '/apply', handle)",
-      "  const mine = http.group('/ws/mine')",
+      "  const mine = http.group('/mine')",
       "  mine.get('/orders', handle)",
-      "  http.group('/ws').post('/others', handle)",
-      '}',
-    ].join('\n'),
-    [`${CONTEXTS}/ws/ws-modules.ts`]: "export function more(http: HttpRouter) {\n  http.get('/ws/more', handle)\n}",
-  })
-  const bad = typed({
-    [`${CONTEXTS}/ws/modules/price-change/price-change.routes.ts`]: [
-      "const BASE = '/price-changes'",
-      'export function register(http: HttpRouter, path: string) {',
-      '  http.get(BASE, handle)',
-      '  http.get(`${BASE}/:id`, handle)',
-      "  http.group('/elsewhere').get('/ws/price-changes', handle)",
+      "  http.group('/wss').post('/others', handle)",
       '  http.get(path, handle)',
       '}',
     ].join('\n'),
     [`${CONTEXTS}/ws/ws-modules.ts`]: "export function more(http: HttpRouter) {\n  http.get('/more', handle)\n}",
+  })
+  const bad = typed({
+    [`${CONTEXTS}/ws/modules/price-change/price-change.routes.ts`]: [
+      "const BASE = '/ws/price-changes'",
+      'export function register(http: HttpRouter) {',
+      '  http.get(BASE, handle)',
+      '  http.get(`${BASE}/:id`, handle)',
+      "  http.group('/ws').get('/price-changes', handle)",
+      '}',
+    ].join('\n'),
+    [`${CONTEXTS}/ws/ws-modules.ts`]: "export function more(http: HttpRouter) {\n  http.get('/ws/more', handle)\n}",
   })
 
   it('types every file it is given', () => {
@@ -85,12 +85,11 @@ describe('route-context, with types', () => {
     valid: [],
     invalid: [
       { ...bad.cases[0]!, errors: [
-        { messageId: 'context', data: { path: '/price-changes', context: 'ws' } },
-        { messageId: 'context', data: { path: '/price-changes/:id', context: 'ws' } },
-        { messageId: 'context', data: { path: '/elsewhere/ws/price-changes', context: 'ws' } },
-        { messageId: 'unreadable', data: { context: 'ws' } },
+        { messageId: 'context', data: { path: '/ws/price-changes', context: 'ws', without: '/price-changes' } },
+        { messageId: 'context', data: { path: '/ws/price-changes/:id', context: 'ws', without: '/price-changes/:id' } },
+        { messageId: 'context', data: { path: '/ws/price-changes', context: 'ws', without: '/price-changes' } },
       ] },
-      { ...bad.cases[1]!, errors: [{ messageId: 'context', data: { path: '/more', context: 'ws' } }] },
+      { ...bad.cases[1]!, errors: [{ messageId: 'context', data: { path: '/ws/more', context: 'ws', without: '/more' } }] },
     ],
   })
 })

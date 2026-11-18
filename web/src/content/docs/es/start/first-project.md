@@ -57,10 +57,10 @@ Listening on http://localhost:3000/
 
 ## Comprueba su salud
 
-Todo backend responde a `GET /api/health`:
+Todo backend responde a `GET /health-check`:
 
 ```sh
-curl localhost:3000/api/health
+curl localhost:3000/health-check
 ```
 
 ```json
@@ -132,31 +132,32 @@ El módulo trae cuatro casos de uso (`create`, `get`, `find`, `paginate`), una t
 export function registerTaskRoutes(
   router: HttpRouter,
   tasks: Task_Module,
-): void {
-  router.post('/tasks/tasks', async request =>
+) {
+  router.post('/tasks', async request =>
     Response.json(await tasks.create(await bodyOf(request)), {
       status: 201,
     }),
   )
-  router.get('/tasks/tasks', async request =>
+  router.get('/tasks', async request =>
     Response.json(await tasks.paginate({}, pageRequestFrom(request))),
   )
-  router.get('/tasks/tasks/:id', async request =>
+  router.get('/tasks/:id', async request =>
     Response.json(
       await tasks.get({ id: TaskId.from(request.params.id) }),
     ),
   )
+  return { one: router.group('/tasks/:taskId') }
 }
 ```
 
-La dirección de una ruta es `/api`, luego el contexto y luego el plural del módulo: `POST /api/tasks/tasks`.
+La dirección de una ruta es el contexto, luego `/api` y luego el plural del módulo: `POST /tasks/api/tasks`.
 
 ## Llama a una ruta: el 401
 
 Intenta crear una tarea:
 
 ```sh
-curl -i -X POST localhost:3000/api/tasks/tasks \
+curl -i -X POST localhost:3000/tasks/api/tasks \
   -H 'content-type: application/json' \
   -d '{"name":"Write the docs"}'
 ```
@@ -185,7 +186,7 @@ sequenceDiagram
   participant Auth as authenticate
   participant Route as task.routes.ts
   participant Task as Task_Module
-  Client->>Router: POST /api/tasks/tasks
+  Client->>Router: POST /tasks/api/tasks
   Router->>Auth: ¿quién llama?
   alt nadie
     Auth-->>Router: null
@@ -222,7 +223,7 @@ Esto deja entrar a cualquiera que conozca el token. Úsalo solo en tu ordenador,
 Reinicia `bun run dev` para que lea el nuevo `.env` y llama a la ruta con el token:
 
 ```sh
-curl -X POST localhost:3000/api/tasks/tasks \
+curl -X POST localhost:3000/tasks/api/tasks \
   -H 'authorization: Bearer let-me-in' \
   -H 'content-type: application/json' \
   -d '{"name":"Write the docs"}'
@@ -240,7 +241,7 @@ curl -X POST localhost:3000/api/tasks/tasks \
 Lista las tareas:
 
 ```sh
-curl localhost:3000/api/tasks/tasks -H 'authorization: Bearer let-me-in'
+curl localhost:3000/tasks/api/tasks -H 'authorization: Bearer let-me-in'
 ```
 
 ```json
@@ -265,7 +266,7 @@ Los errores vuelven en JSON con un estado, un mensaje y un `code` que tu fronten
 |---|---|---|
 | sin sesión | 401 | `not_signed_in` |
 | `{"name":"  "}` | 400 | `validation` |
-| `GET /api/tasks/tasks/nope` | 400 | `invalid_uuid` |
+| `GET /tasks/api/tasks/nope` | 400 | `invalid_uuid` |
 | un id que no existe | 404 | `task.not_found` |
 
 Un error `validation` también lista en `issues` lo que ha fallado. Consulta [errores](/es/concepts/errors/).

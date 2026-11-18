@@ -12,7 +12,6 @@ Los tests de newt son ficheros normales de `bun test` que ejecutan tus módulos 
 | Fichero | Qué prueba |
 |---|---|
 | `src/backend.test.ts` | El backend entero arranca y responde a su ruta de salud |
-| `src/frontends.test.ts` | Se sirve la página de cada frontend (solo si hay frontend) |
 | `<module>.module.test.ts` | Un módulo: sus casos de uso y sus rutas |
 | `<value-object>.test.ts` | Las reglas de un value object |
 | `src/test-database.ts` | No es un test: la base de datos que abren los tests de módulo, solo en Postgres o MySQL |
@@ -77,7 +76,7 @@ beforeEach(async () => {
     cluster: new MemoryCluster(),
     database,
   })
-  router = new HttpRouter({ database })
+  router = new HttpRouter({ prefix: '/tasks/api', database })
   signedIn = true
   router.authenticateWith(async () =>
     signedIn ? { userId: 'tester' } : null,
@@ -116,7 +115,7 @@ Paso a paso:
 
 1. `SqliteDatabase.open({ path: ':memory:', migrations })` abre una base de datos SQLite nueva y vacía para cada test y ejecuta en ella las migraciones del contexto. Así también se prueba tu SQL.
 2. `testContext(...)` construye el contexto alrededor de esa base de datos, con un [reloj de test](#mover-el-reloj) y un worker que solo ejecuta jobs cuando se lo pides.
-3. `new HttpRouter({ database })` y `tasksModules(context.base, router)` construyen los módulos del contexto y registran sus rutas, igual que el backend real.
+3. `new HttpRouter({ prefix: '/tasks/api', database })` y `tasksModules(context.base, router)` construyen los módulos del contexto y registran sus rutas, igual que el backend real.
 4. `context.close()` cierra la base de datos después de cada test.
 
 :::note
@@ -163,7 +162,7 @@ Paso a paso:
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 test('creates one by its route and reads it by another', async () => {
   const posted = await router.answer(
-    new Request('http://backend.test/api/tasks/tasks', {
+    new Request('http://backend.test/tasks/api/tasks', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name: 'Second' }),
@@ -173,7 +172,7 @@ test('creates one by its route and reads it by another', async () => {
   const { id } = (await posted!.json()) as { id: string }
 
   const read = await router.answer(
-    new Request(`http://backend.test/api/tasks/tasks/${id}`),
+    new Request(`http://backend.test/tasks/api/tasks/${id}`),
   )
   expect(await read?.json()).toMatchObject({ id, name: 'Second' })
 })
@@ -186,13 +185,13 @@ Para comprobar que una ruta llama al caso de uso correcto, espíalo:
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 import { spyOn } from 'bun:test'
 
-test('POST /tasks/tasks/:id/complete-task calls completeTask', async () => {
+test('POST /tasks/:id/complete-task calls completeTask', async () => {
   const created = await tasks.create({ name: 'First' })
   const called = spyOn(tasks, 'completeTask')
 
   const response = await router.answer(
     new Request(
-      `http://backend.test/api/tasks/tasks/${created.id}/complete-task`,
+      `http://backend.test/tasks/api/tasks/${created.id}/complete-task`,
       { method: 'POST' },
     ),
   )
@@ -213,11 +212,11 @@ Para probar una petición de alguien sin sesión, pon `signedIn = false` antes d
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
 test(
-  'GET /api/tasks/tasks answers 401 to who has not signed in',
+  'GET /tasks/api/tasks answers 401 to who has not signed in',
   async () => {
     signedIn = false
     const response = await router.answer(
-      new Request('http://backend.test/api/tasks/tasks'),
+      new Request('http://backend.test/tasks/api/tasks'),
     )
     expect(response?.status).toBe(401)
   },
@@ -335,7 +334,7 @@ import { startBackend } from './backend'
 
 test('the backend answers its health', async () => {
   const backend = await startBackend(0, { stores: 'memory' })
-  const response = await fetch(new URL('/api/health', backend.server!.url))
+  const response = await fetch(new URL('/health-check', backend.server!.url))
   expect(response.status).toBe(200)
   await backend.stop()
 })

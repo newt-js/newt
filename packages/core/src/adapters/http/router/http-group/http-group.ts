@@ -13,7 +13,7 @@ export class HttpGroup<Prefix extends string> {
   constructor(
     private readonly register: Register,
     private readonly prefix: Prefix,
-    private readonly middleware: Middleware<Prefix>,
+    private readonly middleware: Middleware<Prefix> | undefined,
     private readonly options: RouteOptions = {},
   ) {}
 
@@ -42,6 +42,8 @@ export class HttpGroup<Prefix extends string> {
   }
 
   private around<Path extends string>(route: HttpRoute<`${Prefix}${Path}`>): HttpRoute<`${Prefix}${Path}`> {
-    return request => this.middleware(request as unknown as HttpRequest<Prefix>, async () => route(request))
+    const middleware = this.middleware
+    if (!middleware) return route
+    return request => middleware(request as unknown as HttpRequest<Prefix>, async () => route(request))
   }
 }

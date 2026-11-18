@@ -101,7 +101,7 @@ Keep the defaults for your first project. SQLite, local files and the memory clu
 
 A project needs no editor plugin, but two help:
 
-- **TypeScript**: your editor reads `tsconfig.json`. A frontend, if you add one, has its own `tsconfig.json` in its folder.
+- **TypeScript**: your editor reads `tsconfig.json`. An app, if you add one, has its own `tsconfig.json` in its folder.
 - **ESLint**: the project has an `eslint.config.ts` with newt's rules. An ESLint extension shows them as you type, the same ones `bun run lint` reports.
 
 ## Next steps

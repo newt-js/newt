@@ -83,19 +83,18 @@ function prefixOf(checker: ts.TypeChecker, node: ts.Expression, seen = new Set<t
 export type RouteContextOptions = [{ folder?: string }]
 
 /**
- * Every route of a context starts with it, `/shop/orders`: one server serves every
- * context, so paths never clash. Every route a context's files register, on a router or
- * on a group, whose prefix is followed; a path is read through its consts and
- * templates, and one that cannot be read is reported, since nothing says where it goes.
+ * A context's routes do not repeat its name: its router already serves them under
+ * `/shop/api`, so `/shop/orders` would answer at `/shop/api/shop/orders`. Every route a
+ * context's files register, on a router or on a group, whose prefix is followed; a path
+ * is read through its consts and templates, and one that cannot be read is let be.
  */
-export const routeContext: TSESLint.RuleModule<'context' | 'unreadable', RouteContextOptions> = {
+export const routeContext: TSESLint.RuleModule<'context', RouteContextOptions> = {
   defaultOptions: [{}],
   meta: {
     type: 'problem',
-    docs: { description: "A context's routes start with its name." },
+    docs: { description: "A context's routes do not repeat its name." },
     messages: {
-      context: "'{{path}}' does not start with /{{context}}/: a context's routes start with its name, as /{{context}}{{path}}, so two contexts never take the same path.",
-      unreadable: "newt cannot read this route's path, so it cannot tell that it starts with /{{context}}/: write it as text, or as a const that holds text.",
+      context: "'{{path}}' starts with /{{context}}: the router already serves a context's routes under /{{context}}/api, so write it as {{without}}.",
     },
     schema: [{ type: 'object', properties: { folder: { type: 'string' } }, additionalProperties: false }],
   },
@@ -132,12 +131,10 @@ export const routeContext: TSESLint.RuleModule<'context' | 'unreadable', RouteCo
         if (!METHODS.has(callee.property.name) && (checker || callee.property.name !== 'group')) return
         if (!node.arguments[0] || !isRouter(callee.object)) return
         const path = pathOf(node, callee.object)
-        if (path === undefined) {
-          if (checker) context.report({ node: node.arguments[0], messageId: 'unreadable', data: { context: own } })
-          return
-        }
-        if (path === `/${own}` || path.startsWith(`/${own}/`)) return
-        context.report({ node: node.arguments[0], messageId: 'context', data: { path, context: own } })
+        const repeatsContext = path === `/${own}` || path?.startsWith(`/${own}/`)
+        if (!path || !repeatsContext) return
+        const without = path.slice(own.length + 1) || '/'
+        context.report({ node: node.arguments[0], messageId: 'context', data: { path, context: own, without } })
       },
     }
   },

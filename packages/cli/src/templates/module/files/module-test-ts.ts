@@ -22,7 +22,7 @@ function databaseOf(database: DatabaseKind): { imports: string, open: string, dr
 
 export function moduleTestTs(names: ModuleNames, context: ContextNames, database: DatabaseKind): string {
   const { folder, type, plural, words } = names
-  const path = `${context.folder}/${names.path}`
+  const { path } = names
   const opened = databaseOf(database)
   return `import { afterEach, beforeEach, expect, test } from 'bun:test'
 ${opened.imports}
@@ -40,7 +40,7 @@ ${opened.drop ? 'let dropDatabase: () => Promise<void>\n' : ''}
 beforeEach(async () => {
   ${opened.drop ? `const { database, drop } = ${opened.open}\n  dropDatabase = drop` : `const database = ${opened.open}`}
   context = testContext({ name: '${context.folder}', cluster: new MemoryCluster(), database })
-  router = new HttpRouter({ database })
+  router = new HttpRouter({ prefix: '/${context.folder}/api', database })
   signedIn = true
   router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
   ${plural} = ${context.camel}Modules(context.base, router).${names.module}
@@ -72,14 +72,14 @@ test('refuses a name it cannot keep', async () => {
 })
 
 test('says there is no ${words} with an id it does not have', async () => {
-  const response = await router.answer(new Request(\`http://backend.test/api/${path}/\${Bun.randomUUIDv7()}\`))
+  const response = await router.answer(new Request(\`http://backend.test/${context.folder}/api/${path}/\${Bun.randomUUIDv7()}\`))
   expect(response?.status).toBe(404)
 })
 
 test.each([
-  ['POST', '/api/${path}'],
-  ['GET', '/api/${path}'],
-  ['GET', \`/api/${path}/\${Bun.randomUUIDv7()}\`],
+  ['POST', '/${context.folder}/api/${path}'],
+  ['GET', '/${context.folder}/api/${path}'],
+  ['GET', \`/${context.folder}/api/${path}/\${Bun.randomUUIDv7()}\`],
 ])('%s %s answers 401 to who has not signed in', async (method, path) => {
   signedIn = false
   const response = await router.answer(new Request(\`http://backend.test\${path}\`, { method }))
@@ -87,13 +87,13 @@ test.each([
 })
 
 test('creates one by its route and reads it by another', async () => {
-  const posted = await router.answer(new Request('http://backend.test/api/${path}', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Second' }) }))
+  const posted = await router.answer(new Request('http://backend.test/${context.folder}/api/${path}', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Second' }) }))
   expect(posted?.status).toBe(201)
   const { id } = await posted!.json() as { id: string }
 
-  const read = await router.answer(new Request(\`http://backend.test/api/${path}/\${id}\`))
+  const read = await router.answer(new Request(\`http://backend.test/${context.folder}/api/${path}/\${id}\`))
   expect(await read?.json()).toMatchObject({ id, name: 'Second' })
-  const listed = await router.answer(new Request('http://backend.test/api/${path}'))
+  const listed = await router.answer(new Request('http://backend.test/${context.folder}/api/${path}'))
   expect(await listed?.json()).toMatchObject({ items: [{ id }], total: 1 })
 })
 `

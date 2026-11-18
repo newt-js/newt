@@ -38,7 +38,7 @@ The generated one returns `null`, so every private route answers 401 until you w
 Each context gives it to its router, in its `<context>.context.ts`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
@@ -71,7 +71,7 @@ Every route is private by default. Before a private route runs, the router calls
 Mark a route public to skip the authenticator:
 
 ```ts
-router.post('/tasks/sign-in', signIn, { public: true })
+router.post('/sign-in', signIn, { public: true })
 ```
 
 `public` works wherever route options go:
@@ -79,7 +79,7 @@ router.post('/tasks/sign-in', signIn, { public: true })
 | Where | Applies to |
 |---|---|
 | `router.get(path, route, { public: true })` | one route |
-| `router.group(prefix, middleware, { public: true })` | every route of the group |
+| `router.group(prefix, { public: true })` | every route of the group |
 | `new HttpRouter({ public: true })` | every route of the router |
 
 - A public route has no actor. `currentActor()` throws there; `findCurrentActor()` returns `undefined`.
@@ -112,8 +112,8 @@ export const authenticate = bearerAuthenticator(async token => {
 A session cookie suits a frontend served by the same backend. Two helpers write it:
 
 ```ts
-setSessionCookie(request, name, value, { secure, maxAgeSeconds, path })
-clearSessionCookie(request, name, { secure, path })
+setSessionCookie(request, name, value, { secure, maxAgeSeconds, path, domain })
+clearSessionCookie(request, name, { secure, path, domain })
 ```
 
 | Option | Meaning | Default |
@@ -121,6 +121,7 @@ clearSessionCookie(request, name, { secure, path })
 | `secure` | send it over HTTPS only | required |
 | `maxAgeSeconds` | how long it lasts | required |
 | `path` | where the browser sends it | `/` |
+| `domain` | a domain whose subdomains get it too, such as `midominio.com` | only the host that set it |
 
 - The cookie is always `HttpOnly` and `SameSite=Lax`.
 - `clearSessionCookie` writes an empty cookie with a max age of 0.
@@ -145,7 +146,7 @@ export const authenticate: Authenticator = async request => {
 import { bodyOf, setSessionCookie } from '@newt-js/core/http'
 
 router.post(
-  '/tasks/sign-in',
+  '/sign-in',
   async request => {
     const session = await signIn(await bodyOf(request))
     setSessionCookie(request, SESSION_COOKIE, session, {
@@ -159,6 +160,22 @@ router.post(
 ```
 
 `userOfSession` and `signIn` stand for your own code: how you check a password or a session is up to you.
+
+### One sign-in for every context's host
+
+When contexts answer at [their own hosts](/guides/deploy/#a-context-on-its-own-host), such as `backoffice.midominio.com` and `hr.midominio.com`, a cookie set without `domain` goes only to the host that set it: moving from one to the other signs the user out. Give the cookie the shared domain, and every subdomain gets it:
+
+```ts
+setSessionCookie(request, SESSION_COOKIE, session, {
+  secure: true,
+  maxAgeSeconds: 60 * 60 * 24 * 30,
+  domain: Bun.env.SESSION_DOMAIN,
+})
+```
+
+- Clear it with the same `domain`, or the browser keeps it.
+- The cookie says who the user is, everywhere. What each one may do is still each context's to decide, in its use cases: being signed in to `backoffice` does not open `hr`.
+- Every subdomain of that domain gets the cookie, so give it only a domain whose subdomains are all yours.
 
 :::caution
 A request other than `GET` from a page of another origin is refused with a 403 (`cross_origin_refused`), unless the route's `cors` allows that origin and the request carries no cookie. Pages served by the same backend are not affected. A route with `crossOrigin: true` skips this check.
@@ -195,7 +212,7 @@ See [actor and scope](/concepts/actor-and-scope/).
 The generated module tests give the router an authenticator of their own, which they switch off to check the 401:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
-router = new HttpRouter({ database })
+router = new HttpRouter({ prefix: '/tasks/api', database })
 signedIn = true
 router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
 ```

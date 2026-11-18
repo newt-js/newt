@@ -38,7 +38,7 @@ El que se genera devuelve `null`, así que todas las rutas privadas responden 40
 Cada contexto se lo da a su router, en su `<contexto>.context.ts`:
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
@@ -71,7 +71,7 @@ Todas las rutas son privadas por defecto. Antes de ejecutar una ruta privada, el
 Marca una ruta como pública para saltarte el autenticador:
 
 ```ts
-router.post('/tasks/sign-in', signIn, { public: true })
+router.post('/sign-in', signIn, { public: true })
 ```
 
 `public` funciona allí donde van las opciones de una ruta:
@@ -79,7 +79,7 @@ router.post('/tasks/sign-in', signIn, { public: true })
 | Dónde | Se aplica a |
 |---|---|
 | `router.get(path, route, { public: true })` | una ruta |
-| `router.group(prefix, middleware, { public: true })` | todas las rutas del grupo |
+| `router.group(prefix, { public: true })` | todas las rutas del grupo |
 | `new HttpRouter({ public: true })` | todas las rutas del router |
 
 - Una ruta pública no tiene actor. `currentActor()` lanza un error ahí; `findCurrentActor()` devuelve `undefined`.
@@ -112,8 +112,8 @@ export const authenticate = bearerAuthenticator(async token => {
 Una cookie de sesión encaja con un frontend servido por el mismo backend. Dos funciones la escriben:
 
 ```ts
-setSessionCookie(request, name, value, { secure, maxAgeSeconds, path })
-clearSessionCookie(request, name, { secure, path })
+setSessionCookie(request, name, value, { secure, maxAgeSeconds, path, domain })
+clearSessionCookie(request, name, { secure, path, domain })
 ```
 
 | Opción | Significado | Por defecto |
@@ -121,6 +121,7 @@ clearSessionCookie(request, name, { secure, path })
 | `secure` | enviarla solo por HTTPS | obligatoria |
 | `maxAgeSeconds` | cuánto dura | obligatoria |
 | `path` | dónde la envía el navegador | `/` |
+| `domain` | un dominio cuyos subdominios también la reciben, como `midominio.com` | solo el host que la puso |
 
 - La cookie siempre es `HttpOnly` y `SameSite=Lax`.
 - `clearSessionCookie` escribe una cookie vacía con una duración de 0.
@@ -145,7 +146,7 @@ export const authenticate: Authenticator = async request => {
 import { bodyOf, setSessionCookie } from '@newt-js/core/http'
 
 router.post(
-  '/tasks/sign-in',
+  '/sign-in',
   async request => {
     const session = await signIn(await bodyOf(request))
     setSessionCookie(request, SESSION_COOKIE, session, {
@@ -159,6 +160,22 @@ router.post(
 ```
 
 `userOfSession` y `signIn` representan tu propio código: cómo compruebas una contraseña o una sesión lo decides tú.
+
+### Una sesión para los hosts de todos los contextos
+
+Cuando los contextos responden en [sus propios hosts](/es/guides/deploy/#un-contexto-en-su-propio-host), como `backoffice.midominio.com` y `hr.midominio.com`, una cookie puesta sin `domain` solo va al host que la puso: pasar de uno a otro cierra la sesión. Dale a la cookie el dominio compartido, y todos los subdominios la reciben:
+
+```ts
+setSessionCookie(request, SESSION_COOKIE, session, {
+  secure: true,
+  maxAgeSeconds: 60 * 60 * 24 * 30,
+  domain: Bun.env.SESSION_DOMAIN,
+})
+```
+
+- Bórrala con el mismo `domain`, o el navegador la conserva.
+- La cookie dice quién es el usuario, en todas partes. Lo que puede hacer cada uno lo sigue decidiendo cada contexto, en sus casos de uso: tener sesión en `backoffice` no abre `hr`.
+- Todos los subdominios de ese dominio reciben la cookie, así que dale solo un dominio cuyos subdominios sean todos tuyos.
 
 :::caution
 Una petición que no sea `GET` desde una página de otro origen se rechaza con un 403 (`cross_origin_refused`), salvo que el `cors` de la ruta permita ese origen y la petición no lleve cookies. Las páginas servidas por el mismo backend no se ven afectadas. Una ruta con `crossOrigin: true` se salta esta comprobación.
@@ -195,7 +212,7 @@ Consulta [actor y scope](/es/concepts/actor-and-scope/).
 Los tests de módulo generados dan al router su propio autenticador, que apagan para comprobar el 401:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
-router = new HttpRouter({ database })
+router = new HttpRouter({ prefix: '/tasks/api', database })
 signedIn = true
 router.authenticateWith(async () => signedIn ? { userId: 'tester' } : null)
 ```

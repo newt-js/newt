@@ -17,13 +17,13 @@ import { addLimits }              from '../../rate-limits/add-limits/add-limits'
 import { withParams }             from '../../request/with-params/with-params'
 import { withHeadersSet }         from '../../responses/with-headers-set/with-headers-set'
 import type { Authenticator }     from '../../session/authenticator'
+import type { GroupOptions }      from '../group-options'
 import { headOf }                 from '../head-of/head-of'
 import { HttpGroup }              from '../http-group/http-group'
 import type { HttpMethod }        from '../http-route'
 import type { HttpRoute }         from '../http-route'
 import type { HttpRouterOptions } from '../http-router-options'
 import { MAX_BODY_BYTES }         from '../max-body-bytes/max-body-bytes'
-import type { Middleware }        from '../middleware'
 import { paramsOf }               from '../params-of/params-of'
 import { PathPattern }            from '../path-pattern/path-pattern'
 import { partsOf }                from '../path-pattern/path-pattern'
@@ -75,9 +75,9 @@ export class HttpRouter {
     this.add('DELETE', path, route, options)
   }
 
-  group<Prefix extends string>(prefix: Prefix, middleware: Middleware<Prefix>, options?: RouteOptions): HttpGroup<Prefix> {
+  group<Prefix extends string>(prefix: Prefix, { middleware, ...options }: GroupOptions<Prefix> = {}): HttpGroup<Prefix> {
     const register = (method: HttpMethod, path: string, route: HttpRoute<any>, own: LayeredOptions) => this.register(method, path, route, own)
-    return new HttpGroup(register, prefix, middleware, { ...options, rateLimit: addLimits(this.defaults.rateLimit, options?.rateLimit) })
+    return new HttpGroup(register, prefix, middleware, { ...options, rateLimit: addLimits(this.defaults.rateLimit, options.rateLimit) })
   }
 
   answer(request: Request): Promise<Response> | null {

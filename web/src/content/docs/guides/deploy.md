@@ -96,7 +96,7 @@ Back the folder up: [SQLite](/guides/databases/sqlite/#back-up-a-live-database) 
 The generated backend serves a health route:
 
 ```sh
-curl https://newthub.example.com/api/health
+curl https://newthub.example.com/health-check
 ```
 
 | State | Status | Body |
@@ -104,7 +104,7 @@ curl https://newthub.example.com/api/health
 | Running | `200` | `{"status":"ok"}` |
 | Stopping | `503` | `{"status":"stopping"}` |
 
-Point your host's or load balancer's health check at `/api/health`. To serve it at another path, give `health` a path in `src/backend.ts`: `health: '/healthz'`.
+Point your host's or load balancer's health check at `/health-check`. Each context that serves routes also answers its own, as `/tasks/health-check`.
 
 ## 5. Stop gracefully
 
@@ -132,7 +132,7 @@ ENV PORT=3000
 EXPOSE 3000
 VOLUME /app/data
 
-HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/api/health') \
+HEALTHCHECK CMD bun -e "fetch('http://localhost:3000/health-check') \
   .then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
 CMD ["bun", "run", "start"]
@@ -163,7 +163,7 @@ Most hosts put a proxy or load balancer in front of your backend, which handles 
 ```ts title="src/backend.ts"
 return runContexts(contexts, {
   platformWithoutContexts: platform,
-  serve: { port, health: true, trustProxy: 1, drainMs: 5000 },
+  serve: { port, trustProxy: 1, drainMs: 5000 },
 })
 ```
 
@@ -175,6 +175,33 @@ return runContexts(contexts, {
 Set `trustProxy` only to the number of proxies you really have. Too high, and a caller can fake their IP with their own `X-Forwarded-For` header.
 :::
 
-## Frontends
+## A context on its own host
 
-A backend serves its frontends from the same process. How each one is built and served is in [Adding a frontend](/guides/frontend/).
+Each context answers under its name on the backend's address: `https://midominio.com/backoffice/api/…`. Give a context a host, and it answers there instead, at its own paths:
+
+```sh
+BACKOFFICE_HOST=backoffice.midominio.com
+```
+
+| URL | Answered by |
+|---|---|
+| `https://backoffice.midominio.com/api/orders` | `backoffice`'s API |
+| `https://backoffice.midominio.com/orders/12` | `backoffice`'s app |
+| `https://backoffice.midominio.com/health-check` | `backoffice`'s health |
+| `https://backoffice.midominio.com/backoffice/api/orders` | `backoffice`'s API too |
+| `https://midominio.com/shop/api/products` | `shop`, which has no host |
+| `https://midominio.com/backoffice/api/orders` | nothing: `404` |
+| `https://midominio.com/health-check` | the whole backend's health |
+
+- At its host, a path that starts with its name keeps working, so a link built for `/backoffice` still lands. On any other host, its name is a `404`, however the path is written.
+- Point the host's DNS at the same server. Behind a proxy, set `trustProxy`: newt reads the host from `X-Forwarded-Host`.
+- Two contexts at one host stop the backend before it starts.
+- With local files, its file links are signed at its host, with the protocol of `PUBLIC_URL`.
+- Its generated app (`app/base.ts`) finds its base by itself, and an app built elsewhere for `/<context>/` works as it is.
+- Point the load balancer's health check at an address that is not a context's host, such as the server's own.
+
+The generated `<context>.context.ts` reads the variable once, `const host = Bun.env.BACKOFFICE_HOST`, and hands it to its files and to run, next to its router.
+
+## Apps
+
+A backend serves its contexts' apps from the same process. How each one is built and served is in [Adding an app](/guides/app/).

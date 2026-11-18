@@ -316,7 +316,7 @@ describe('idempotency, as routes are registered', () => {
     const router = new HttpRouter({ database, idempotency: true })
 
     expect(() => router.post('/sign-up', () => new Response(), { public: true })).toThrow('POST /api/sign-up is public and idempotent')
-    expect(() => new HttpRouter({ database }).group('/sessions', (_request, next) => next(), { public: true, idempotency: true }).post('', () => new Response())).toThrow('POST /api/sessions is public and idempotent')
+    expect(() => new HttpRouter({ database }).group('/sessions', { public: true, idempotency: true }).post('', () => new Response())).toThrow('POST /api/sessions is public and idempotent')
     expect(() => router.post('/sign-in', () => new Response(), { public: true, idempotency: false })).not.toThrow()
     expect(() => router.put('/sign-up', () => new Response(), { public: true })).not.toThrow()
   })

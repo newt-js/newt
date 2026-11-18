@@ -7,12 +7,12 @@ import { default as tseslint }     from 'typescript-eslint'
 // --------------------------------------------------------
 import { absolute }                from './paths/paths'
 import { slashed }                 from './paths/paths'
+import { appImports }              from './rules/app-imports/app-imports'
 import type { Uses }               from './rules/context-imports/context-imports'
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
-import { frontendImports }         from './rules/frontend-imports/frontend-imports'
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
@@ -36,7 +36,7 @@ export const plugin = {
     'context-imports': contextImports,
     'entity-method-params': entityMethodParams,
     'framework-tables': frameworkTables,
-    'frontend-imports': frontendImports,
+    'app-imports': appImports,
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
@@ -118,16 +118,16 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     ignores: [MODULES],
     rules: { 'newt/module-imports': 'error' },
   }] : []
-  const frontendRules: Linter.Config[] = contexts ? [{
-    // Frontends are .ts and .tsx, each its own project, whose aliases resolve as in the rest.
-    files: [`${inside ? `${inside}/` : ''}*/frontend/**/*.{ts,tsx}`],
+  const appRules: Linter.Config[] = contexts ? [{
+    // A context's app is .ts and .tsx, each its own project, whose aliases resolve as in the rest.
+    files: [`${inside ? `${inside}/` : ''}*/app/**/*.{ts,tsx}`],
     languageOptions: { parser: tseslint.parser, parserOptions: { projectService: true } },
     processor: keepNoDisable,
     linterOptions: { reportUnusedDisableDirectives: 'error' },
     plugins: { newt: plugin },
     ...root === undefined ? {} : { settings: { newt: { root: base } } },
     rules: {
-      'newt/frontend-imports': ['error', { folder: given }],
+      'newt/app-imports': ['error', { folder: given }],
       'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
     },
   }] : []
@@ -154,7 +154,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       },
     },
     ...contextRules,
-    ...frontendRules,
+    ...appRules,
     {
       // A module's file among those it lints: an inner list is every pattern of it at once.
       files: files.map(pattern => [pattern, MODULES]),

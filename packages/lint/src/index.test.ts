@@ -48,7 +48,7 @@ describe('the preset of newt', () => {
 
   test("reads an alias of the tsconfig's paths as the file it names", async () => {
     expect(await complaints('src/contexts/ws/modules/order/order.module.ts', "import { x } from '@/contexts/ws/modules/brand/brand.repository'\nexport const y = x\n")).toEqual(['newt/module-imports'])
-    expect(await complaints('src/contexts/ws/modules/order/order.deps.ts', "import { x } from '@/contexts/ws/modules/brand/brand.module'\nexport const y = x\n")).toEqual([])
+    expect(await complaints('src/contexts/ws/modules/order/order.deps.ts', "import type { x } from '@/contexts/ws/modules/brand/brand.module'\nexport type Y = typeof x\n")).toEqual([])
   })
 
   test('keeps a module writing through persist, never in a transaction of its own', async () => {
@@ -93,6 +93,15 @@ describe('the preset of newt', () => {
     expect(await complaints(schema, "import { Order } from './order'\nexport const x = Order\n")).toEqual(['newt/schema-imports'])
     // The rest of a module is not its contract: it may.
     expect(await complaints('src/contexts/ws/modules/order/order.routes.ts', "import { HttpRouter } from '@newt-js/core/http'\nexport const x = HttpRouter\n")).toEqual([])
+  })
+
+  test("reaches another module only through its API: its DTOs as types, never its schema as a value", async () => {
+    await complaints('src/contexts/ws/modules/folder/folder.schema.ts', "import { z } from 'zod'\nexport const FolderSchema = z.object({ id: z.string() })\nexport type FolderDTO = z.infer<typeof FolderSchema>\n")
+    const schema = 'src/contexts/ws/modules/note/note.schema.ts'
+    // Said once, by module-imports: schema-imports lets a schema name another's, and module-imports says how.
+    expect(await complaints(schema, "import { z } from 'zod'\nimport { FolderSchema } from '../folder/folder.schema'\nexport const NoteSchema = z.object({ folderId: FolderSchema.shape.id })\n")).toEqual(['newt/module-imports'])
+    expect(await complaints(schema, "import { z } from 'zod'\nimport type { FolderDTO } from '../folder/folder.schema'\nexport const NoteSchema = z.object({ folderId: z.string() })\nexport type NoteFolder = FolderDTO\n")).toEqual([])
+    expect(await complaints('src/contexts/ws/modules/note/note.module.ts', "import { FolderSchema } from '@/contexts/ws/modules/folder/folder.schema'\nexport const x = FolderSchema\n")).toEqual(['newt/module-imports'])
   })
 
   test('keeps every public method of a module a use case, wherever the module is', async () => {
@@ -140,12 +149,12 @@ describe('the preset of newt', () => {
     expect(await complaints(file, '// eslint-disable-next-line no-console\nconsole.log(1)\n')).toEqual([expect.stringContaining('Unused eslint-disable directive')])
   })
 
-  test("keeps a frontend's imports, whatever a comment says or an alias hides", async () => {
-    const frontend = 'src/contexts/ws/frontend'
-    await mkdir(join(root, frontend), { recursive: true })
-    await writeFile(join(root, frontend, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'Preserve', moduleResolution: 'bundler', jsx: 'react-jsx', paths: { '@/*': ['../../../*'] } }, include: ['**/*.ts', '**/*.tsx'] }))
-    expect(await complaints(`${frontend}/a.tsx`, "// eslint-disable-next-line newt/frontend-imports\nimport { requiredEnv } from '../../../env'\nexport const a = requiredEnv\n")).toEqual(['newt/no-disable'])
-    expect(await complaints(`${frontend}/b.tsx`, "import { requiredEnv } from '@/env'\nexport const b = requiredEnv\n")).toEqual(['newt/frontend-imports'])
+  test("keeps an app's imports, whatever a comment says or an alias hides", async () => {
+    const app = 'src/contexts/ws/app'
+    await mkdir(join(root, app), { recursive: true })
+    await writeFile(join(root, app, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'Preserve', moduleResolution: 'bundler', jsx: 'react-jsx', paths: { '@/*': ['../../../*'] } }, include: ['**/*.ts', '**/*.tsx'] }))
+    expect(await complaints(`${app}/a.tsx`, "// eslint-disable-next-line newt/app-imports\nimport { requiredEnv } from '../../../env'\nexport const a = requiredEnv\n")).toEqual(['newt/no-disable'])
+    expect(await complaints(`${app}/b.tsx`, "import { requiredEnv } from '@/env'\nexport const b = requiredEnv\n")).toEqual(['newt/app-imports'])
   })
 
   test('says what a rule of newt found in a message an agent can follow', async () => {
@@ -180,7 +189,9 @@ describe('the preset of newt', () => {
 
   test("keeps a context's barrels from handing out a module's own files", async () => {
     expect(await complaints('src/contexts/ws/index.ts', "export * from './modules/brand/brand.repository'\n")).toEqual(['newt/module-imports'])
-    expect(await complaints('src/contexts/ws/index.ts', "export * from './modules/brand/brand.module'\n")).toEqual([])
+    expect(await complaints('src/contexts/ws/index.ts', "export * from './modules/brand/brand.module'\n")).toEqual(['newt/module-imports'])
+    expect(await complaints('src/contexts/ws/index.ts', "export type * from './modules/brand/brand.module'\n")).toEqual([])
+    expect(await complaints('src/contexts/ws/index.ts', "export * from './modules/brand/errors/brand-not-found'\n")).toEqual([])
     expect(await complaints('src/contexts/ws/ws.context.ts', "import { x } from './modules/brand/brand.repository'\nexport const y = x\n")).toEqual([])
   })
 

@@ -30,7 +30,7 @@ export const authenticate: Authenticator = async () => null
 ```
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-const router = new HttpRouter({ database })
+const router = new HttpRouter({ prefix: '/tasks/api', database })
 router.authenticateWith(authenticate)
 ```
 
@@ -151,9 +151,9 @@ Each scope keeps its own value; two scopes never mix.
 Set it in a route group's middleware. The middleware runs after the authenticator, so the actor is known there too:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-const teams = router.group('/teams/:teamId', (request, next) =>
-  team.run(request.params.teamId, next),
-)
+const teams = router.group('/teams/:teamId', {
+  middleware: (request, next) => team.run(request.params.teamId, next),
+})
 
 teams.get('/tasks', async request =>
   Response.json(await tasks.paginate({}, pageRequestFrom(request))),

@@ -29,7 +29,7 @@ newt add module <context>/<module> [options]
 
 También acepta los [flags globales](/es/reference/cli/overview/#flags-globales).
 
-- El plural nombra las rutas (`/tasks/tasks`) y la variable del módulo (`tasks`).
+- El plural nombra las rutas (`/tasks`) y la variable del módulo (`tasks`).
 - Las reglas añaden `s`; `es` tras `s x z ch sh`; `ies` para consonante más `y`; y `es` en las palabras en `-sis`. Conocen `child`, `person`, `man`, `woman`, `mouse`, `goose`, `foot`, `tooth`, `quiz`, `news`, `series` y `species`.
 
 ## Reglas del nombre
@@ -70,7 +70,7 @@ Next steps:
 
 - Las migraciones reciben el siguiente número de la carpeta `migrations/` del contexto, y se escriben en el SQL del backend (SQLite, Postgres o MySQL).
 - `<contexto>-modules.ts` recibe la línea que arranca el módulo.
-- Las rutas son `POST /<contexto>/<plural>`, `GET /<contexto>/<plural>` y `GET /<contexto>/<plural>/:id`, bajo `/api`.
+- Las rutas son `POST /<plural>`, `GET /<plural>` y `GET /<plural>/:id`, bajo `/<contexto>/api`.
 
 :::note
 Las rutas generadas piden a alguien con sesión iniciada. Hasta que `authenticate` en `src/auth.ts` diga quién llama, responden 401 fuera de los tests. Mira [Autenticación](/es/guides/authentication/).

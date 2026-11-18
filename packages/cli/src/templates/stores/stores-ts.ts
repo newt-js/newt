@@ -32,7 +32,7 @@ export async function openDatabase(context: string, migrations: string, stores: 
 ${databaseInMemory}  return ${database.open}
 }
 
-export async function openStorage(context: string, router: HttpRouter, stores: Stores): Promise<StorageOptions> {
+export async function openStorage(context: string, router: HttpRouter, stores: Stores, host: string | undefined): Promise<StorageOptions> {
 ${filesInMemory}${files.body}
 }
 `

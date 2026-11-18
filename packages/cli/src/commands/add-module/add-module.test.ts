@@ -43,7 +43,7 @@ describe('newt add module', () => {
     const modules = await read(join(backend, 'src/contexts/sales/sales-modules.ts'))
     expect(modules).toContain('  const order = Order_Module.initialize(base, router)\n  const priceChange = PriceChange_Module.initialize(base, router)\n  return {\n    order,\n    priceChange,\n  }')
     expect(modules).toContain("import { PriceChange_Module } from './modules/price-change/price-change.module'")
-    expect(await read(join(backend, 'src/contexts/sales/modules/price-change/price-change.routes.ts'))).toContain("router.post('/sales/price-changes'")
+    expect(await read(join(backend, 'src/contexts/sales/modules/price-change/price-change.routes.ts'))).toContain("router.post('/price-changes'")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -99,12 +99,12 @@ describe('newt add module', () => {
   test('a module of an irregular plural, and one given with --plural, which later commands keep', async () => {
     const backend = await backendWithContext()
     await run(ADD_MODULE, ['sales/person'], backend)
-    expect(await read(join(backend, 'src/contexts/sales/modules/person/person.routes.ts'))).toContain("router.get('/sales/people'")
+    expect(await read(join(backend, 'src/contexts/sales/modules/person/person.routes.ts'))).toContain("router.get('/people'")
     expect((await run(ADD_MODULE, ['sales/cactus', '--plural', 'cacti'], backend)).code).toBe(0)
-    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(router: HttpRouter, cacti: Cactus_Module): void {')
+    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(router: HttpRouter, cacti: Cactus_Module) {')
     expect((await run(ADD_USE_CASE, ['sales/cactus', 'water'], backend)).code).toBe(0)
     expect((await run(ADD_ROUTE, ['sales/cactus', 'water'], backend)).code).toBe(0)
-    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain("router.post('/sales/cacti/:id/water', async request => Response.json(await cacti.water(")
+    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain("router.post('/cacti/:id/water', async request => Response.json(await cacti.water(")
     expect(await checkGenerated(backend)).toEqual([])
   }, 60_000)
 

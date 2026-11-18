@@ -4,7 +4,7 @@ import { useCaseNames }    from '../../names/use-case-names/use-case-names'
 import { findModule }      from '../../project/find-module/find-module'
 import { routeFileWith }   from '../../project/route-file-with/route-file-with'
 import { useCaseOf }       from '../../project/use-case-of/use-case-of'
-import { routesHead }      from '../../templates/module/files/routes-ts'
+import { routesStart }     from '../../templates/module/files/routes-ts'
 import { routeLine }       from '../../templates/pieces/route-ts'
 import { routeTest }       from '../../templates/pieces/route-ts'
 import type { FileChange } from '../command'
@@ -23,7 +23,7 @@ export const ADD_ROUTE = defineCommand({
   args: '<context>/<module> <use-case>',
   options: {
     method: { type: 'string', value: 'method', description: `${METHODS.join(', ')}; post by default` },
-    path: { type: 'string', value: 'path', description: "Its path under /api, starting with its context; /<context>/<module's plural>/:id/<use-case> by default" },
+    path: { type: 'string', value: 'path', description: "Its path under /<context>/api; /<module's plural>/:id/<use-case> by default" },
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },
   run: async ({ args, cwd, options }) => {
@@ -33,11 +33,11 @@ export const ADD_ROUTE = defineCommand({
     if (!METHODS.includes(method)) throw new CommandError(`'${options.method}' is not a method: ${METHODS.join(', ')}`)
     const { backend, folder, module, context } = await findModule(given, cwd, options.backend, USAGE)
     const useCase = useCaseNames(name)
-    const path = options.path ?? `/${context.folder}/${module.path}/:id/${useCase.folder}`
+    const path = options.path ?? `/${module.path}/:id/${useCase.folder}`
     if (!PATH.test(path)) throw new CommandError(`'${path}' is not a path: it starts with / and has letters, digits and / : _ - alone`)
     if (path.startsWith('/api/')) throw new CommandError(`'${path}' starts with /api, which every route is under already: give --path ${path.slice('/api'.length)}`)
-    if (!path.startsWith(`/${context.folder}/`)) throw new CommandError(`'${path}' is not under /${context.folder}/: a module's routes start with its context`)
-    if (path === `/${context.folder}/files` || path.startsWith(`/${context.folder}/files/`)) throw new CommandError(`'${path}' is where the files of ${context.folder} are served: give the route another --path`)
+    if (path === `/${context.folder}` || path.startsWith(`/${context.folder}/`)) throw new CommandError(`'${path}' starts with /${context.folder}, which every route of the context is under already: give --path ${path.slice(context.folder.length + 1) || '/'}`)
+    if (path === '/files' || path.startsWith('/files/')) throw new CommandError(`'${path}' is where the files of ${context.folder} are served: give the route another --path`)
     const segments = path.split('/').slice(1)
     if (segments.some(segment => segment === '' || segment === ':')) throw new CommandError(`'${path}' has an empty segment: no // and no / at the end`)
     const params = segments.filter(segment => segment.startsWith(':'))
@@ -66,7 +66,7 @@ export const ADD_ROUTE = defineCommand({
       ...again ? [] : [{
         action: 'insert-lines',
         path: file('.routes.ts'),
-        anchor: routesHead(module),
+        anchor: routesStart(module),
         position: 'after',
         lines: routeLine(module, useCase, shape).split('\n'),
         imports: [`import { ${module.type}Id } from './value-objects/${module.folder}-id'`],

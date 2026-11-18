@@ -26,7 +26,7 @@ test('plurals English makes otherwise, and one given', () => {
 })
 
 test("refuses a module whose routes would be the context's files", () => {
-  expect(() => moduleNames('file')).toThrow("'file' cannot name a module: its routes would be under /<context>/files")
+  expect(() => moduleNames('file')).toThrow("'file' cannot name a module: its routes would be under /<context>/api/files")
 })
 
 test('refuses a name that is not lowercase words joined by -', () => {

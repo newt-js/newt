@@ -32,8 +32,6 @@ newthub/
     ├── stores.ts
     ├── auth.ts
     ├── env.ts
-    ├── frontends.ts
-    ├── frontends.test.ts
     └── contexts/
         └── tasks/
             ├── tasks.context.ts
@@ -43,10 +41,11 @@ newthub/
             │   ├── 00001_task_down.sql
             │   ├── 00002_project_up.sql
             │   └── 00002_project_down.sql
-            ├── frontend/
+            ├── app/
             │   ├── index.html
             │   ├── main.tsx
             │   ├── app.tsx
+            │   ├── base.ts
             │   └── tsconfig.json
             └── modules/
                 ├── project/
@@ -142,18 +141,15 @@ Borra `data/` para empezar de nuevo con las bases de datos vacías. Los tests nu
 |---|---|
 | `index.ts` | arranca el backend en `PORT` |
 | `backend.ts` | `startBackend`: abre los contextos y los sirve |
-| `backend.test.ts` | comprueba que `/api/health` responde |
+| `backend.test.ts` | comprueba que `/health-check` responde |
 | `contexts.ts` | la lista de contextos que abre el backend |
 | `stores.ts` | abre la base de datos y los ficheros de cada contexto |
 | `auth.ts` | `authenticate`: quién llama |
 | `env.ts` | `requiredEnv`, para las variables que necesita el backend |
-| `frontends.ts` | los frontends que sirve el backend |
-| `frontends.test.ts` | comprueba que se sirve la página de cada frontend |
 
 - `backend.ts` también elige el clúster, que es lo que comparten varias instancias del backend. Consulta [varias instancias](/es/guides/scaling/).
 - `stores.ts` tiene un modo `memory` para los tests: una base de datos en memoria con las migraciones, y ficheros en memoria.
 - `auth.ts` se explica en [autenticación](/es/guides/authentication/).
-- `frontends.ts` y `frontends.test.ts` aparecen con tu primer `newt add frontend`. Consulta [añadir un frontend](/es/guides/frontend/).
 
 ## Un contexto: `src/contexts/<contexto>/`
 
@@ -162,11 +158,11 @@ Borra `data/` para empezar de nuevo con las bases de datos vacías. Los tests nu
 | `<contexto>.context.ts` | abre el contexto: base de datos, router, ficheros, módulos |
 | `<contexto>-modules.ts` | crea los módulos y da a cada uno los que usa |
 | `migrations/` | ficheros SQL que crean y cambian las tablas |
-| `frontend/` | la aplicación React del contexto, si tiene |
+| `app/` | la aplicación React del contexto, si tiene, servida en `/<contexto>` |
 | `modules/` | una carpeta por módulo |
 
 - Las migraciones van por parejas: `<número>_<tabla>_up.sql` hace el cambio y `<número>_<tabla>_down.sql` lo deshace. El backend ejecuta las pendientes al abrir la base de datos. Consulta [base de datos y migraciones](/es/concepts/database/).
-- Las rutas del contexto viven bajo `/api/<contexto>/`, y su frontend en `/<contexto>`.
+- Las rutas del contexto viven bajo `/<contexto>/api/`, y su app en `/<contexto>`.
 
 ## Un módulo: `modules/<módulo>/`
 

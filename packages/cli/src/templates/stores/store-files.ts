@@ -27,11 +27,18 @@ export const STORE_FILES = {
     imports: ["import { LocalStorage } from '@newt-js/core/files/local'"],
     inMemory: 'new MemoryStorage()',
     memoryImports: ["import { MemoryStorage } from '@newt-js/core/files/memory'"],
-    constants: 'const MAX_UPLOAD_BYTES = 100 * 1024 * 1024\n',
-    body: `  const path = \`/\${context}/files\`
+    constants: `const MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+
+/** Where a context's routes answer from outside: at its host, or at the backend's URL; under its prefix on both. */
+function publicUrlOf(router: HttpRouter, host: string | undefined): string {
+  const origin = host ? \`\${new URL(requiredEnv('PUBLIC_URL')).protocol}//\${host}\` : requiredEnv('PUBLIC_URL')
+  return \`\${origin}\${router.prefix}\`
+}
+`,
+    body: `  const path = '/files'
   const storage = await LocalStorage.open({
     folder: Bun.env[\`\${envOf(context)}_FILES\`] ?? \`data/files/\${context}\`,
-    baseUrl: \`\${requiredEnv('PUBLIC_URL')}\${router.prefix}\${path}\`,
+    baseUrl: \`\${publicUrlOf(router, host)}\${path}\`,
     secret: requiredEnv('FILES_SECRET'),
   })
   router.get(\`\${path}/*\`, request => storage.handler(request), { public: true })

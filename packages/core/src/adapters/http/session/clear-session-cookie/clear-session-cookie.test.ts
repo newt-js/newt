@@ -20,4 +20,16 @@ describe('clearSessionCookie', () => {
       expect(cookie).toContain(part)
     }
   })
+
+  test('given the domain the cookie was set for, it clears that one', async () => {
+    const router = new HttpRouter({ public: true })
+    router.post('/out', request => {
+      clearSessionCookie(request, 'app_session', { secure: true, domain: 'midominio.com' })
+      return new Response(null, { status: 204 })
+    })
+
+    const cookie = (await router.answer(new Request('http://shop.test/api/out', { method: 'POST' }))!).headers.get('set-cookie')!
+
+    expect(cookie).toContain('Domain=midominio.com')
+  })
 })

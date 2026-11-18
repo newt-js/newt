@@ -18,7 +18,7 @@ Newthub podría tener tres contextos: `tasks`, `chat` y `docs`. Cada uno tiene l
 | Su carpeta | `src/contexts/tasks/` |
 | Su base de datos | `data/tasks.sqlite`, o la ruta de `TASKS_DATABASE` |
 | Sus migraciones | `src/contexts/tasks/migrations/` |
-| Sus rutas | bajo `/api/tasks/` |
+| Sus rutas | bajo `/tasks/api/` |
 | Sus ficheros | su propio almacenamiento |
 | Sus jobs | una cola que vive en su propia base de datos |
 
@@ -55,7 +55,7 @@ Dentro de un contexto, un módulo llega a otro de dos formas:
 - Llama a los casos de uso del otro, que recibe como dependencia. Ver [Servicios y dependencias](/es/concepts/services-and-deps/).
 - Reacciona a los eventos del otro. Ver [Eventos y suscripciones](/es/concepts/events/).
 
-Un módulo importa de otro solo su `*.module.ts`, su `*.schema.ts`, sus `events/` y sus `errors/`. La regla de lint `module-imports` rechaza el resto.
+Esa es la API de un módulo, y todo lo que otro módulo alcanza de él. De otro módulo importa solo tipos (`import type`) de su `*.module.ts`, su `*.schema.ts` (los DTOs) y sus `events/`, y sus `errors/` (para distinguir un error conocido). La regla de lint `module-imports` rechaza el resto: sus schemas como valores, su entidad, sus value objects, su repositorio, sus rutas, sus workers y sus servicios.
 
 ## Cómo hablan los contextos entre sí
 
@@ -118,17 +118,19 @@ export class Tasks_Context extends BoundedContext {
       MIGRATIONS_FOLDER,
       stores,
     )
-    const router = new HttpRouter({ database })
+    const router = new HttpRouter({ prefix: '/tasks/api', database })
     router.authenticateWith(authenticate)
+    const host = Bun.env.TASKS_HOST
     const base = new ContextBase({
       name: 'tasks',
       platform,
       database,
-      storage: await openStorage('tasks', router, stores),
+      storage: await openStorage('tasks', router, stores, host),
     })
     return {
       context: new Tasks_Context(base, tasksModules(base, router)),
       router,
+      host,
     }
   }
 }
@@ -147,7 +149,7 @@ export function tasksModules(base: ContextBase, router: HttpRouter) {
 }
 ```
 
-El `initialize` de cada módulo crea su repositorio y el módulo, y después registra sus rutas y sus workers:
+El `initialize` de cada módulo crea su repositorio y el módulo, que registra sus rutas y guarda sus grupos en `routes`, y después registra sus workers:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 export class Task_Module extends Module {
@@ -159,20 +161,24 @@ export class Task_Module extends Module {
     const module = new Task_Module(
       base,
       new Task_Repository(base),
+      router,
       deps,
     )
-    registerTaskRoutes(router, module)
     registerTaskWorkers(module)
     return module
   }
 
+  readonly routes
+
   private constructor(
     base: ContextBase,
     private readonly tasks: Task_Repository,
+    router: HttpRouter,
     private readonly deps: Task_Deps,
   ) {
     super('task', base.useCaseRunner, deps)
     // ...
+    this.routes = registerTaskRoutes(router, this, deps)
   }
 }
 ```

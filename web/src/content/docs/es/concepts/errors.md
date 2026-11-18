@@ -200,6 +200,25 @@ La capa HTTP tiene los suyos, en `@newt-js/core/http`:
 
 Mira [HTTP y rutas](/es/concepts/http/) para saber cuándo pasa cada uno, y para la opción `onError` de una ruta, que responde a los errores a tu manera.
 
+## Los errores de otro módulo
+
+Los errores de un módulo son parte de lo que ofrece a los demás módulos de su contexto: cómo fallan sus casos de uso. Un módulo que llama a un caso de uso de otro puede importar sus errores, tal cual, para distinguirlos:
+
+```ts title="src/contexts/tasks/modules/task/task.module.ts"
+import { ProjectNotFound } from '../project/errors/project-not-found'
+
+try {
+  await this.deps.project.get({ id: projectId })
+} catch (error) {
+  if (error instanceof ProjectNotFound) {
+    // ...
+  }
+  throw error
+}
+```
+
+La regla del lint [`module-imports`](/es/reference/lint/) lo permite: de otro módulo, solo sus errores se importan como valores; su módulo, su schema y sus eventos llegan solo como tipos.
+
 ## Con el CLI
 
 ```sh

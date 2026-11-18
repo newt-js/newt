@@ -12,12 +12,12 @@ export type RunContextsOptions = {
 
 export type ContextToRun = {
   context: Pick<BoundedContext, 'name' | 'base' | 'start' | 'stopWorker' | 'close'>
-  serve?: ServeOptions
   router?: HttpRouter
+  app?: string | Bun.HTMLBundle
+  host?: string | undefined
 }
 
 export type RunningContexts = {
-  servers: Record<string, Bun.Server<undefined>>
   server?: Bun.Server<undefined>
   stop(): Promise<void>
 }

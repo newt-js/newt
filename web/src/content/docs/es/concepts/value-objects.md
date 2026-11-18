@@ -94,7 +94,7 @@ export type TaskId = Uuid<'TaskId'>
 Las rutas convierten el texto de la ruta en un id antes de llamar a un caso de uso:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.get('/tasks/tasks/:id', async request =>
+router.get('/tasks/:id', async request =>
   Response.json(
     await tasks.get({ id: TaskId.from(request.params.id) }),
   ),
@@ -104,7 +104,7 @@ router.get('/tasks/tasks/:id', async request =>
 `Uuid` es un `uuidFactory('Uuid')` ya hecho, para un id que no es de ningún tipo concreto.
 
 :::note
-Un módulo que guarda el id de otro módulo, como el `projectId` de una tarea, declara un value object propio para él. La regla del lint `module-imports` no le deja importar los `value-objects/` del otro módulo.
+Un módulo que guarda el id de otro módulo, como el `projectId` de una tarea, declara un value object propio para él, `value-objects/project-id.ts` con `uuidFactory('ProjectId')`. La regla del lint `module-imports` no le deja importar los `value-objects/` del otro módulo, ni su schema como valor. Aun así, su tipo es el mismo que el del id del otro módulo, porque `uuidFactory` lo marca con su nombre: un `ProjectDTO['id']` encaja en él.
 :::
 
 ## Value objects incluidos

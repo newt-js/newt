@@ -32,6 +32,33 @@ describe('newt add deps', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test("order hangs its routes under invoice's, through the group invoice exposes, and its lint, types and tests pass", async () => {
+    const backend = await withInvoice()
+    await run(ADD_DEPS, ['sales/order', 'invoice'], backend)
+    const routes = join(backend, SALES, 'modules/order/order.routes.ts')
+    expect(await Bun.file(routes).text()).toContain('export function registerOrderRoutes(router: HttpRouter, orders: Order_Module, deps: Order_Deps) {')
+    expect(await read(backend, 'modules/order/order.module.ts')).toContain('    this.routes = registerOrderRoutes(router, this, deps)')
+    const under = "  deps.invoice.routes.one.get('/orders', async request => Response.json({ invoice: request.params.invoiceId }))\n"
+    await Bun.write(routes, (await Bun.file(routes).text()).replace('  return { one:', `${under}  return { one:`))
+    await Bun.write(join(backend, SALES, 'modules/order/order-under-invoice.test.ts'), `import { expect, test } from 'bun:test'
+import { testContext } from '@newt-js/core/application/testing'
+import { MemoryCluster } from '@newt-js/core/cluster/memory'
+import { MemoryDatabase } from '@newt-js/core/database/memory'
+import { HttpRouter } from '@newt-js/core/http'
+import { salesModules } from '../../sales-modules'
+
+test('GET /invoices/:invoiceId/orders answers from order, under invoice', async () => {
+  const context = await testContext({ name: 'sales', cluster: new MemoryCluster(), database: new MemoryDatabase() })
+  const router = new HttpRouter({ prefix: '/sales/api', public: true })
+  salesModules(context.base, router)
+  const response = await router.answer(new Request('http://backend.test/sales/api/invoices/7/orders'))
+  expect(await response?.json()).toEqual({ invoice: '7' })
+  await context.close()
+})
+`)
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
   test('a second module it uses joins the first', async () => {
     const backend = await withInvoice()
     await run(ADD_MODULE, ['sales/customer'], backend)

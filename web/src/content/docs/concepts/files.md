@@ -27,15 +27,16 @@ export async function openStorage(
   context: string,
   router: HttpRouter,
   stores: Stores,
+  host: string | undefined,
 ): Promise<StorageOptions> {
   if (stores === 'memory') {
     return { private: new MemoryStorage() }
   }
-  const path = `/${context}/files`
+  const path = '/files'
   const storage = await LocalStorage.open({
     folder:
       Bun.env[`${envOf(context)}_FILES`] ?? `data/files/${context}`,
-    baseUrl: `${requiredEnv('PUBLIC_URL')}${router.prefix}${path}`,
+    baseUrl: `${publicUrlOf(router, host)}${path}`,
     secret: requiredEnv('FILES_SECRET'),
   })
   router.get(`${path}/*`, request => storage.handler(request), {
@@ -49,12 +50,14 @@ export async function openStorage(
 }
 ```
 
+`publicUrlOf(router, host)` is `PUBLIC_URL`, or the context's host when it has one, followed by the router's prefix.
+
 ```ts title="src/contexts/tasks/tasks.context.ts"
 const base = new ContextBase({
   name: 'tasks',
   platform,
   database,
-  storage: await openStorage('tasks', router, stores),
+  storage: await openStorage('tasks', router, stores, host),
 })
 ```
 
@@ -270,7 +273,7 @@ import { LocalStorage } from '@newt-js/core/files/local'
 
 const storage = await LocalStorage.open({
   folder: 'data/files/tasks',
-  baseUrl: 'http://localhost:3000/api/tasks/files',
+  baseUrl: 'http://localhost:3000/tasks/api/files',
   secret: Bun.env.FILES_SECRET!,
 })
 ```

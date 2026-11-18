@@ -1,6 +1,10 @@
 import type { ContextNames } from '../../../names/context-names/context-names'
 
-export function contextTs({ folder, type, camel }: ContextNames): string {
+/** The line of <ctx>.context.ts that hands the context to run. */
+export const contextToRun = ({ type, camel }: ContextNames) => `return { context: new ${type}_Context(base, ${camel}Modules(base, router)), router, host }`
+
+export function contextTs(names: ContextNames): string {
+  const { folder, type, camel, env } = names
   return `import { join } from 'node:path'
 import { BoundedContext, ContextBase, type Platform } from '@newt-js/core/application'
 import { HttpRouter, type ContextToRun } from '@newt-js/core/http'
@@ -17,10 +21,11 @@ export class ${type}_Context extends BoundedContext {
 
   static async open(platform: Platform, stores: Stores): Promise<ContextToRun> {
     const database = await openDatabase('${folder}', MIGRATIONS_FOLDER, stores)
-    const router = new HttpRouter({ database })
+    const router = new HttpRouter({ prefix: '/${folder}/api', database })
     router.authenticateWith(authenticate)
-    const base = new ContextBase({ name: '${folder}', platform, database, storage: await openStorage('${folder}', router, stores) })
-    return { context: new ${type}_Context(base, ${camel}Modules(base, router)), router }
+    const host = Bun.env.${env}_HOST
+    const base = new ContextBase({ name: '${folder}', platform, database, storage: await openStorage('${folder}', router, stores, host) })
+    ${contextToRun(names)}
   }
 }
 `

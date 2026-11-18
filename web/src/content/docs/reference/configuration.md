@@ -22,8 +22,7 @@ This page lists everything you configure in a newt project: its files, its scrip
 | `src/env.ts` | `requiredEnv(name)`: reads a variable or stops with `<NAME> is not set: see .env.example`. Only written when a store needs one. |
 | `src/contexts.ts` | Which contexts the backend opens. |
 | `src/auth.ts` | Who calls the backend: see [Authentication](/guides/authentication/). |
-| `src/frontends.ts` | The frontends the server mounts (after `newt add frontend`). |
-| `src/contexts/<context>/frontend/tsconfig.json` | TypeScript for a frontend (after `newt add frontend`). |
+| `src/contexts/<context>/app/tsconfig.json` | TypeScript for a context's app (after `newt add app`). |
 
 :::note
 When a command adds variables, it appends the missing ones to `.env` and `.env.example` and never changes a value you already have.
@@ -38,7 +37,7 @@ A single backend's `package.json`:
 | `dev` | `bun --watch src/index.ts` | Starts the backend and restarts it on every change. |
 | `start` | `bun src/index.ts` | Starts the backend. |
 | `test` | `bun test` | Runs the tests. |
-| `typecheck` | `bun check -b` | Type checks the backend and the projects it references (its frontends). |
+| `typecheck` | `bun check -b` | Type checks the backend and the projects it references (its contexts' apps). |
 | `lint` | `bun --bun eslint` | Runs the lint with Bun. |
 
 In a [monorepo](/guides/monorepo/), the root `package.json` has `dev`, `test`, `typecheck` and `lint`, each running `bun run --filter '*' <script>` in every workspace.
@@ -77,6 +76,12 @@ When the backend starts with `stores: 'memory'` (its tests), it reads none of th
 | `PORT` | The port the backend serves on. Read in `src/index.ts`. | `3000` | `PORT=3000` |
 
 `newt init --port` writes it to `.env`.
+
+### A context's host
+
+| Name | Meaning | Default |
+|---|---|---|
+| `<CONTEXT>_HOST` | The host the context answers at, at its own paths, instead of under `/<context>`. See [A context on its own host](/guides/deploy/#a-context-on-its-own-host). | none |
 
 ### Database (`--db`)
 
@@ -157,7 +162,7 @@ export async function startBackend(
   const contexts = await openContexts(platform, stores)
   return runContexts(contexts, {
     platformWithoutContexts: platform,
-    serve: { port, health: true, frontend: frontends },
+    serve: { port },
   })
 }
 ```
@@ -167,7 +172,7 @@ export async function startBackend(
 | `port` | The port to serve on. | none (`src/index.ts` passes `PORT`, or `3000`) |
 | `stores` | `'configured'` opens the stores from the environment; `'memory'` opens new ones in memory, as the tests want. | `'configured'` |
 
-It returns `RunningContexts`: `server`, `servers` and `stop()`. See [HTTP API](/reference/http/).
+It returns `RunningContexts`: `server` and `stop()`. See [HTTP API](/reference/http/).
 
 ## Platform
 
@@ -197,8 +202,7 @@ The `serve` options the generated project sets:
 | Option | Meaning | Default |
 |---|---|---|
 | `port` | The port. Required. | none |
-| `health` | `true` answers `GET /api/health` with `{ "status": "ok" }` (`503` and `"stopping"` while stopping); a string sets another path. | off |
-| `frontend` | The frontends to serve, from `src/frontends.ts`. | none |
+| `health` | Answers `GET /health-check` with `{ "status": "ok" }` (`503` and `"stopping"` while stopping), and `GET /<context>/health-check` for each context that serves routes. `false` turns it off. | on |
 
 `serve` has more options (`maxBodyBytes`, `trustProxy`, `securityHeaders`, `hsts`, `csp`, `proxy`, `drainMs`, `idleTimeoutSeconds`, `development`, `publicFolder`, `routes`). See [HTTP API](/reference/http/).
 
@@ -211,7 +215,7 @@ const base = new ContextBase({
   name: 'tasks',
   platform,
   database,
-  storage: await openStorage('tasks', router, stores),
+  storage: await openStorage('tasks', router, stores, host),
 })
 ```
 
@@ -248,12 +252,12 @@ const base = new ContextBase({
     "noImplicitOverride": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "src/contexts/*/frontend"],
-  "references": [{ "path": "./src/contexts/tasks/frontend" }]
+  "exclude": ["node_modules", "src/contexts/*/app"],
+  "references": [{ "path": "./src/contexts/tasks/app" }]
 }
 ```
 
-`exclude` and `references` for frontends appear after `newt add frontend`. Each frontend has its own `tsconfig.json`, with `DOM` in `lib`, `"jsx": "react-jsx"` and `"composite": true`, so `bun check -b` checks it as a project of its own.
+`exclude` and `references` for the apps appear after `newt add app`. Each app has its own `tsconfig.json`, with `DOM` in `lib`, `"jsx": "react-jsx"` and `"composite": true`, so `bun check -b` checks it as a project of its own. Its `rootDir` is the context, and it includes the context's schemas with their value objects and errors, so the app type-checks the DTOs it imports.
 
 ## ESLint
 

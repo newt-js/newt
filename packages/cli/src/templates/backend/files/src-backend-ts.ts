@@ -11,7 +11,7 @@ import type { Stores } from './stores'
 export async function startBackend(port: number, { stores = 'configured' }: { stores?: Stores } = {}): Promise<RunningContexts> {
   const platform = new Platform(${options})
   const contexts = await openContexts(platform, stores)
-  return runContexts(contexts, { platformWithoutContexts: platform, serve: { port, health: true } })
+  return runContexts(contexts, { platformWithoutContexts: platform, serve: { port } })
 }
 `
 }
