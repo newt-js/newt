@@ -2,7 +2,7 @@
 export const TEMPLATE_VARIABLES = new Set([
   'module', 'base', 'router', 'events', 'deps', 'input', 'criteria', 'sort', 'page', 'found', 'orderBy', 'each', 'context',
   'database', 'created', 'response', 'posted', 'read', 'request', 'id', 'z', 'name', 'on',
-  'queued', 'first', 'second', 'opened', 'signedIn', 'described', 'uses', 'defineFeature',
+  'queued', 'first', 'second', 'opened', 'signedIn', 'described', 'uses', 'defineFeature', 'features',
 ])
 
 export const TEMPLATE_TYPES = new Set([

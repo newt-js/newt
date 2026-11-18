@@ -5,10 +5,9 @@ import { cronOf }           from '../../options/cron-of/cron-of'
 import { classMembers }     from '../../project/class-members/class-members'
 import { findModule }       from '../../project/find-module/find-module'
 import { useCaseOf }        from '../../project/use-case-of/use-case-of'
+import { workersChanges }   from '../../project/workers-changes/workers-changes'
 import { scheduleTest }     from '../../templates/pieces/schedule-ts'
 import { scheduledUseCase } from '../../templates/pieces/schedule-ts'
-import { workersHead }      from '../../templates/pieces/subscription-ts'
-import { workersTs }        from '../../templates/pieces/subscription-ts'
 import { quoted }           from '../../templates/quoted/quoted'
 import type { FileChange }  from '../command'
 import { defineCommand }    from '../command'
@@ -44,13 +43,13 @@ export const ADD_SCHEDULE = defineCommand({
     if (scheduled && scheduled[2] !== cron) {
       throw new CommandError(`${useCase.camel} runs at '${scheduled[2]}' already: change that cron in ${module.folder}.module.ts, or schedule a use case of its own`)
     }
+    const workers = await workersChanges(cwd, folder, module, false)
     const changes: FileChange[] = [
       { action: 'add-class-member', path: file('.module.ts'), className: `${module.type}_Module`, name: field, member: `  readonly ${field}`, imports: [] },
       { action: 'add-constructor-statement', path: file('.module.ts'), className: `${module.type}_Module`, statement: `this.${field} = base.schedules.define('${module.name}.${useCase.camel}', ${quoted(cron)})` },
       { action: 'add-class-member', path: file('.module.ts'), className: `${module.type}_Module`, name: useCase.camel, member: scheduledUseCase(useCase), imports: [] },
-      { action: 'create', path: file('.workers.ts'), content: workersTs(module) },
-      { action: 'insert-lines', path: file('.workers.ts'), anchor: workersHead(module), position: 'after', lines: [`  ${module.plural}.on(${module.plural}.${field}, '${useCase.camel}')`], imports: [] },
-      { action: 'insert-lines', path: file('.module.ts'), anchor: '    return module', position: 'before', lines: [`    register${module.type}Workers(module)`], imports: [`import { register${module.type}Workers } from './${module.folder}.workers'`] },
+      ...workers.changes,
+      { action: 'insert-lines', path: file('.workers.ts'), anchor: workers.head, position: 'after', lines: [`  ${module.plural}.on(${module.plural}.${field}, '${useCase.camel}')`], imports: [] },
       { action: 'append-block', path: file('.module.test.ts'), block: scheduleTest(module, useCase, cron, context.folder), imports: ["import { describeApplication } from '@newt-js/core/application'"] },
     ]
     return { changes, nextSteps: [`write what ${useCase.camel} does, in ${module.folder}.module.ts`, `bun test ${folder}`] }
