@@ -11,6 +11,7 @@ import { join }               from 'node:path'
 // --------------------------------------------------------
 import { authenticate }       from './authenticate'
 import { Application_Module } from './modules/application/application.module'
+import { User_Module }        from './modules/user/user.module'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
@@ -21,19 +22,25 @@ export class Auth_Context extends BoundedContext {
     router: HttpRouter,
   ): Auth_Context {
     const application = Application_Module.initialize(base, router)
-    return new Auth_Context(base, { application })
+    const user = User_Module.initialize(base, router, {
+      application,
+    })
+    return new Auth_Context(base, { application, user })
   }
 
   private readonly application: Application_Module
+  private readonly user: User_Module
 
   private constructor(
     base: ContextBase,
     modules: {
       application: Application_Module,
+      user: User_Module,
     },
   ) {
     super('auth', base, modules)
     this.application = modules.application
+    this.user = modules.user
   }
 
   static async open(
