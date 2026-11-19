@@ -12,19 +12,21 @@ El `Repository` de newt ya sabe leer, guardar, comprobar versiones y publicar ev
 ## Un repositorio
 
 ```ts title="src/contexts/tasks/modules/task/task.repository.ts"
-import { Repository } from '@newt-js/core'
+import { Repository, type ResolvedRow } from '@newt-js/core'
 import type { ContextBase } from '@newt-js/core/application'
+import type { z } from 'zod'
 import { Task } from './task'
-import type { TaskDTO } from './task.schema'
+import type { TaskSchema } from './task.schema'
 
-export type TaskRow = TaskDTO & { version: number }
+/** What its table keeps: the ids of what it references, never the entities. */
+export type TaskRow = z.infer<typeof TaskSchema> & { version: number }
 
 export class Task_Repository extends Repository<Task, TaskRow> {
   constructor(base: ContextBase) {
     super(base, base.database.records<TaskRow>('task'), { scope: 'none' })
   }
 
-  protected toEntity(row: TaskRow): Task {
+  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {
     return Task.fromDTO(row)
   }
 }
@@ -34,7 +36,7 @@ El constructor recibe:
 
 - La base del contexto, por sus transacciones, sus eventos y su ejecutor de casos de uso.
 - `base.database.records<TaskRow>('task')`: las filas de la tabla `task`.
-- Opciones: `scope` (obligatoria, `'none'` o un scope) y `softDelete` (por defecto `false`). Ver las secciones Scope y Borrado lógico.
+- Opciones: `scope` (obligatoria, `'none'` o un scope), `softDelete` (por defecto `false`) y, cuando su entidad referencia otras, `references`. Ver las secciones Scope, Borrado lógico y [Referencias a otros módulos](#referencias-a-otros-módulos).
 
 Un repositorio no tiene métodos públicos propios. La regla del lint `repository-public-methods` los rechaza: lo que decide un módulo va en sus casos de uso y en su entidad.
 
@@ -224,19 +226,42 @@ Los tres son `ConcurrencyConflict`, así que el [caso de uso se ejecuta otra vez
 De los reintentos, como mucho uno sigue a un `DuplicateValue` por defecto (`conflictRetries.duplicates`). Un valor que guarda otro suele seguir ocupado en la siguiente ejecución.
 :::
 
-## Referencias a otras filas
+## Referencias a otros módulos
 
-`ReferenceNotFound` (`400`, código `reference_not_found`) dice que un id no apunta a nada: `The project 0190… does not exist`. Lánzalo tú, o usa `resolveRefs`, que busca varios ids y lo lanza para el primero que falte:
+Cuando su entidad referencia entidades de otros módulos (ver [Entidades](/es/concepts/entities/#referencias-a-otros-módulos)), un repositorio recibe en sus opciones cómo se carga cada una: el `find` del otro módulo, por id. Cada lectura las resuelve antes de construir las entidades:
 
-```ts
-const refs = await resolveRefs(
-  { project: projectId },
-  { project: projectFinder },
-)
-// { project: { id, name } }
+```ts title="order.repository.ts"
+export class Order_Repository extends Repository<Order, OrderRow> {
+  constructor(base: ContextBase, references: Loads<OrderReferences>) {
+    super(base, base.database.records<OrderRow>('orders$order'), { scope: 'none', references })
+  }
+
+  protected toEntity(row: ResolvedRow<OrderRow, Order>): Order {
+    return Order.fromDTO(row)   // { customer, lines: [{ product, quantity }], version, ... }
+  }
+}
 ```
 
-Cada buscador tiene `find({ id: [id] })`, que devuelve objetos `{ id, name }`. Un id `null` se resuelve como `null`.
+El módulo se las da en `initialize`, donde tiene sus dependencias:
+
+```ts title="order.module.ts"
+static initialize(base: ContextBase, router: HttpRouter, deps: Order_Deps): Order_Module {
+  const orders = new Order_Repository(base, {
+    customerId: ids => deps.customers.customer.find({ field: 'id', op: 'in', value: ids }),
+    lines: { productId: ids => deps.catalog.product.find({ field: 'id', op: 'in', value: ids }) },
+  })
+  const module = new Order_Module(base, orders, router, deps)
+  // ...
+}
+```
+
+- Una lectura carga cada referencia una vez, para todas las filas y todas sus líneas: sus ids distintos, de 100 en 100, todas las referencias a la vez. 50 pedidos de 20 clientes con 200 líneas de 30 productos son dos llamadas.
+- Lee el otro módulo solo a través de su caso de uso, nunca de su tabla: `module-imports` se sigue cumpliendo.
+- La fila guarda los ids, `customerId` y `lines[].productId`: un guardado guarda esos, nunca las entidades.
+- Un repositorio cuya entidad tiene referencias no compila sin `references`.
+- Toda lectura las paga, también las de una escritura y las de un worker, y el otro módulo resuelve a su vez las suyas. Una lectura demasiado frecuente para eso guarda su propia copia de lo que necesita, alimentada por los eventos del otro módulo: un read model.
+
+`ReferenceNotFound` (`400`, código `reference_not_found`) dice que un id no apunta a nada: `The customer 0190… does not exist`. Una lectura lo lanza cuando un id que guarda ya no nombra nada: mantén vivos los ids siguiendo los eventos del otro módulo. `referenced` también lo lanza cuando un caso de uso toma del otro módulo lo que nombra su entrada (ver [Casos de uso](/es/concepts/use-cases/#referencias-a-otros-módulos)).
 
 ## Texto que la base de datos no puede guardar
 
@@ -267,7 +292,7 @@ Un repositorio convierte filas en entidades y al revés con tres métodos proteg
 
 | Método | Por defecto |
 |---|---|
-| `toEntity(row)` | Ninguno: lo escribes tú. |
+| `toEntity(row)` | Ninguno: lo escribes tú. La fila llega con las entidades que referencia su entidad en lugar de sus ids. |
 | `toRow(entity)` | Los campos de la entidad, para un insert. |
 | `toChanges(entity)` | Los campos cambiados y `updatedAt`, para un update. |
 

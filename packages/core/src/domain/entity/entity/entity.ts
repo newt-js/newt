@@ -4,6 +4,8 @@ import { z }                          from 'zod'
 // --------------------------------------------------------
 import { now as clockNow }            from '../../clock/now/now'
 import type { DomainEvent }           from '../../events/event/domain-event'
+import type { References }            from '../../module/resolve-reference/resolve-reference'
+import type { Resolved }              from '../../module/resolve-reference/resolve-reference'
 import { uuidV7 }                     from '../../value-objects/uuid/uuid-v7/uuid-v7'
 import type { EntityInput }           from '../entity-input'
 import type { EntitySchema }          from '../entity-schema'
@@ -15,6 +17,9 @@ import { NewEntityNotDeletable }      from '../errors/new-entity-not-deletable/n
 import { SaveRolledBack }             from '../errors/save-rolled-back/save-rolled-back'
 import { UnknownEntityField }         from '../errors/unknown-entity-field/unknown-entity-field'
 import { forRepository }              from '../for-repository/for-repository'
+import type { EntityReferences }      from '../references/entity-references'
+import { keptOf }                     from '../references/entity-references'
+import { shownOf }                    from '../references/entity-references'
 import type { RepositoryAccess }      from '../repository-access'
 import type { SavedState }            from '../saved-state'
 import { checkEntitySchema }          from '../schema/check-entity-schema/check-entity-schema'
@@ -24,12 +29,21 @@ import { optionalOnly }               from '../schema/optional-only/optional-onl
 
 type Fields = Record<string, unknown>
 
-export class Entity<TSchema extends EntitySchema, TPublic extends EntitySchema = TSchema> {
+/**
+ * An entity: its schema says what it keeps, its public schema what it shows, and its references (`{ customerId:
+ * CustomerDTO }`) the entities of other modules it shows in place of the ids it keeps. It is given those entities,
+ * `customer`, never their ids alone, so its DTO is always whole.
+ */
+export class Entity<TSchema extends EntitySchema, TPublic extends EntitySchema = TSchema, TReferences extends References = {}> {
+  /** Its references, for the types alone: a repository reads them to know what to load. */
+  declare readonly '~references'?: TReferences
+
   private initial: Fields | null
   private current: Fields
   private _isNew: boolean
   private _version: number
   private readonly publicFields: string[] | undefined
+  private readonly references: EntityReferences = new Map()
 
   private domainEvents: DomainEvent[] = []
   private deletion: 'none' | 'pending' | 'saved' = 'none'
@@ -38,7 +52,7 @@ export class Entity<TSchema extends EntitySchema, TPublic extends EntitySchema =
 
   protected constructor(
     protected readonly schema: TSchema,
-    input: EntityInput<z.infer<TSchema>>,
+    input: EntityInput<Resolved<z.infer<TSchema>, TReferences>>,
     isNew: boolean,
     ...[publicSchema]: [TPublic] extends [TSchema] ? [publicSchema?: TPublic] : [publicSchema: TPublic]
   ) {
@@ -48,7 +62,7 @@ export class Entity<TSchema extends EntitySchema, TPublic extends EntitySchema =
       throw new Error(`${new.target.name} read from storage comes with its version`)
     }
 
-    const data: Fields = { ...input, id }
+    const data: Fields = keptOf({ ...input, id }, schema.shape, this.references)
     for (const key of FRAMEWORK_FIELDS) {
       if (!Object.hasOwn(schema.shape, key)) {
         delete data[key]
@@ -106,11 +120,11 @@ export class Entity<TSchema extends EntitySchema, TPublic extends EntitySchema =
     return this.current as z.infer<TSchema>
   }
 
-  protected change(partial: Partial<Omit<z.infer<TSchema>, 'id'>>): void {
+  protected change(partial: Partial<Omit<Resolved<z.infer<TSchema>, TReferences>, 'id'>>): void {
     if (this.deletion !== 'none') {
       throw new DeletedEntityNotChangeable()
     }
-    const given = Object.entries(partial).filter(([key]) => key !== 'id')
+    const given = Object.entries(keptOf(partial, this.schema.shape, this.references)).filter(([key]) => key !== 'id')
     for (const [key] of given) {
       if (TIMESTAMP_FIELDS.includes(key)) {
         throw new UnknownEntityField(key, 'the framework keeps it, and a save never stores a change to it')
@@ -168,10 +182,11 @@ export class Entity<TSchema extends EntitySchema, TPublic extends EntitySchema =
     return changes !== null && field in changes
   }
 
-  toDTO(): z.infer<TPublic> {
+  toDTO(): Resolved<z.infer<TPublic>, TReferences> {
     const fields = this.publicFields
     const shown = fields ? Object.fromEntries(Object.entries(this.current).filter(([field]) => fields.includes(field))) : this.current
-    return structuredClone(shown) as z.infer<TPublic>
+    const shape = fields ? Object.fromEntries(Object.entries(this.schema.shape).filter(([field]) => fields.includes(field))) : this.schema.shape
+    return structuredClone(shownOf(shown, shape, this.references)) as Resolved<z.infer<TPublic>, TReferences>
   }
 
   get isDeleted(): boolean {

@@ -10,9 +10,9 @@ import { InvalidFilter }     from '../invalid-filter/invalid-filter'
 import { InvalidSort }       from '../invalid-sort/invalid-sort'
 import { isNode }            from '../is-node/is-node'
 import { issuesOf }          from '../issues-of/issues-of'
+import { MAX_IN }            from '../max-in'
 import type { Sort }         from '../sort'
 
-const MAX_IN = 100
 const NEEDS_VALUE = 'A condition needs a value'
 
 export function defineFilter<const Fields extends Record<string, FilterField>, const Sortable extends string = never>(

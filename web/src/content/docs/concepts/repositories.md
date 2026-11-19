@@ -12,19 +12,21 @@ newt's `Repository` already knows how to read, save, check versions and publish 
 ## A repository
 
 ```ts title="src/contexts/tasks/modules/task/task.repository.ts"
-import { Repository } from '@newt-js/core'
+import { Repository, type ResolvedRow } from '@newt-js/core'
 import type { ContextBase } from '@newt-js/core/application'
+import type { z } from 'zod'
 import { Task } from './task'
-import type { TaskDTO } from './task.schema'
+import type { TaskSchema } from './task.schema'
 
-export type TaskRow = TaskDTO & { version: number }
+/** What its table keeps: the ids of what it references, never the entities. */
+export type TaskRow = z.infer<typeof TaskSchema> & { version: number }
 
 export class Task_Repository extends Repository<Task, TaskRow> {
   constructor(base: ContextBase) {
     super(base, base.database.records<TaskRow>('task'), { scope: 'none' })
   }
 
-  protected toEntity(row: TaskRow): Task {
+  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {
     return Task.fromDTO(row)
   }
 }
@@ -34,7 +36,7 @@ The constructor takes:
 
 - The context's base, for its transactions, its events and its use case runner.
 - `base.database.records<TaskRow>('task')`: the rows of the table `task`.
-- Options: `scope` (required, `'none'` or a scope) and `softDelete` (default `false`). See [Scope](#scope) and [Soft delete](#soft-delete).
+- Options: `scope` (required, `'none'` or a scope), `softDelete` (default `false`) and, when its entity references others, `references`. See [Scope](#scope), [Soft delete](#soft-delete) and [References to other modules](#references-to-other-modules).
 
 A repository has no public methods of its own. The lint rule `repository-public-methods` refuses them: what a module decides belongs in its use cases and its entity.
 
@@ -224,19 +226,42 @@ All three are `ConcurrencyConflict`s, so the [use case runs again](/concepts/use
 Of the retries, at most one follows a `DuplicateValue` by default (`conflictRetries.duplicates`). A value someone else keeps is usually still taken on the next run.
 :::
 
-## References to other rows
+## References to other modules
 
-`ReferenceNotFound` (`400`, code `reference_not_found`) says an id points to nothing: `The project 0190… does not exist`. Throw it yourself, or use `resolveRefs`, which looks up several ids and throws it for the first missing one:
+When its entity references entities of other modules (see [Entities](/concepts/entities/#references-to-other-modules)), a repository is given, in its options, how each one loads: the other module's `find`, by id. Every read resolves them before it builds the entities:
 
-```ts
-const refs = await resolveRefs(
-  { project: projectId },
-  { project: projectFinder },
-)
-// { project: { id, name } }
+```ts title="order.repository.ts"
+export class Order_Repository extends Repository<Order, OrderRow> {
+  constructor(base: ContextBase, references: Loads<OrderReferences>) {
+    super(base, base.database.records<OrderRow>('orders$order'), { scope: 'none', references })
+  }
+
+  protected toEntity(row: ResolvedRow<OrderRow, Order>): Order {
+    return Order.fromDTO(row)   // { customer, lines: [{ product, quantity }], version, ... }
+  }
+}
 ```
 
-Each finder has `find({ id: [id] })`, returning `{ id, name }` objects. An id given as `null` resolves to `null`.
+The module gives it them in `initialize`, where it has its dependencies:
+
+```ts title="order.module.ts"
+static initialize(base: ContextBase, router: HttpRouter, deps: Order_Deps): Order_Module {
+  const orders = new Order_Repository(base, {
+    customerId: ids => deps.customers.customer.find({ field: 'id', op: 'in', value: ids }),
+    lines: { productId: ids => deps.catalog.product.find({ field: 'id', op: 'in', value: ids }) },
+  })
+  const module = new Order_Module(base, orders, router, deps)
+  // ...
+}
+```
+
+- A read loads each reference once, for every row and every line in it: its distinct ids, 100 at a time, every reference at once. 50 orders of 20 customers with 200 lines of 30 products are two calls.
+- It reads the other module only through its use case, never its table: `module-imports` still holds.
+- The row keeps the ids, `customerId` and `lines[].productId`: a save stores those, never the entities.
+- A repository whose entity has references does not compile without `references`.
+- Every read pays for them, those of a write and of a worker too, and the other module resolves its own references in turn. A read too hot for that keeps its own copy of what it needs, fed by the other module's events: a read model.
+
+`ReferenceNotFound` (`400`, code `reference_not_found`) says an id points to nothing: `The customer 0190… does not exist`. A read throws it when an id it keeps names nothing any more: keep the ids alive by following the other module's events. `referenced` throws it too when a use case takes from another module what its input names (see [Use cases](/concepts/use-cases/#references-to-other-modules)).
 
 ## Text the database cannot keep
 
@@ -267,7 +292,7 @@ A repository turns rows into entities and back with three protected methods:
 
 | Method | Default |
 |---|---|
-| `toEntity(row)` | None: you write it. |
+| `toEntity(row)` | None: you write it. The row comes with the entities its entity references in place of their ids. |
 | `toRow(entity)` | The entity's fields, for an insert. |
 | `toChanges(entity)` | The changed fields and `updatedAt`, for an update. |
 
