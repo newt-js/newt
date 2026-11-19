@@ -17,22 +17,6 @@ function saysNothing(type: TSESTree.TypeNode): boolean {
   return type.type === 'TSUnionType' && type.types.some(saysNothing)
 }
 
-/** The types that say only what a value is made of, never what it is. */
-const BARE: Record<string, string> = {
-  TSStringKeyword: 'string',
-  TSNumberKeyword: 'number',
-  TSBooleanKeyword: 'boolean',
-  TSBigIntKeyword: 'bigint',
-}
-
-/** The bare type a parameter is, alone, in a union (`string | undefined`) or as the items of an array (`string[]`). */
-function bareOf(type: TSESTree.TypeNode): string | null {
-  if (Object.hasOwn(BARE, type.type)) return BARE[type.type]!
-  if (type.type === 'TSArrayType') return bareOf(type.elementType)
-  if (type.type === 'TSUnionType') return type.types.map(bareOf).find(bare => bare !== null) ?? null
-  return null
-}
-
 const PARSES = new Set(['parse', 'safeParse', 'parseAsync', 'safeParseAsync'])
 
 /**
@@ -57,19 +41,17 @@ function inputSchemaOf(checker: ts.TypeChecker, reference: ts.Node): string | un
 /**
  * A use case's inputs say what a caller sends, and are checked all the same: no parameter
  * of a `@UseCase` is typed `unknown` or `any`, nor with an object written in place, which
- * belongs in the module's schema as a DTO, nor with a bare `string`, `number`, `boolean`
- * or `bigint`: an id, a token or a text is a value object, which says what it is and was
- * checked where it was made. With the program typescript-eslint builds, a parameter typed
+ * belongs in the module's schema as a DTO. A single attribute, as an id, is a plain
+ * `string` or `number`. With the program typescript-eslint builds, a parameter typed
  * with an input DTO (`z.input<typeof XSchema>`) is parsed with that schema in the use
  * case, or in a private method of the module it hands it to.
  */
-export const useCaseParams: TSESLint.RuleModule<'nothing' | 'inline' | 'bare' | 'unparsed'> = {
+export const useCaseParams: TSESLint.RuleModule<'nothing' | 'inline' | 'unparsed'> = {
   defaultOptions: [],
   meta: {
     type: 'problem',
-    docs: { description: "A use case's parameters are value objects or DTOs of its schema, and its input DTOs are parsed with that schema." },
+    docs: { description: "A use case's parameters are attributes or DTOs of its schema, and its input DTOs are parsed with that schema." },
     messages: {
-      bare: "'{{name}}' of the use case '{{useCase}}' is a bare {{type}}: take a value object (an id is `XId.from(...)` where it is called, `export const XId = uuidFactory('XId')`), or a DTO of the module's schema.",
       nothing: "'{{name}}' of the use case '{{useCase}}' is typed as nothing: type it with a DTO of the module's schema (`z.input<typeof …Schema>`), and parse it with that schema.",
       inline: "'{{name}}' of the use case '{{useCase}}' is an object written in place: name it in the module's schema as a DTO (`z.input<typeof …Schema>`), and parse it with that schema.",
       unparsed: "'{{name}}' of the use case '{{useCase}}' is a {{type}}, the input of {{schema}}, but nothing parses it: its type checks nothing at run time. Call `{{schema}}.parse({{name}})` first.",
@@ -119,11 +101,6 @@ export const useCaseParams: TSESLint.RuleModule<'nothing' | 'inline' | 'bare' | 
           }
           if (type.type === 'TSTypeLiteral') {
             context.report({ node: at, messageId: 'inline', data })
-            continue
-          }
-          const bare = bareOf(type)
-          if (bare) {
-            context.report({ node: at, messageId: 'bare', data: { ...data, type: bare } })
             continue
           }
           if (!checker || !map || !name || !member.value.body || type.type !== 'TSTypeReference') continue

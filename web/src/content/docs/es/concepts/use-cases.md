@@ -147,7 +147,7 @@ Cuando se acaban los reintentos, el conflicto llega a quien llamó: HTTP respond
 | Caso de uso | Recibe | Devuelve | Si nada coincide |
 |---|---|---|---|
 | `create(input)` | un `TaskCreateDTO` | el nuevo `TaskDTO` | |
-| `get(id)` | un `TaskId` | un `TaskDTO` | lanza `TaskNotFound` |
+| `get(id)` | un `string`, el id | un `TaskDTO` | lanza `TaskNotFound` |
 | `find(criteria, sort?)` | un `TaskFilterDTO`, un `TaskSortDTO` | `TaskDTO[]` | `[]` |
 | `paginate(criteria, page)` | un `TaskFilterDTO`, un `PageRequest` | `Page<TaskDTO>`, los más nuevos primero | una página sin elementos |
 
@@ -160,7 +160,7 @@ async create(input: TaskCreateDTO): Promise<TaskDTO> {
 }
 
 @UseCase()
-async get(id: TaskId): Promise<TaskDTO> {
+async get(id: string): Promise<TaskDTO> {
   const [task] = await this.tasks.find({ id: TaskId.from(id) }, { limit: 1 })
   if (!task) {
     throw new TaskNotFound()

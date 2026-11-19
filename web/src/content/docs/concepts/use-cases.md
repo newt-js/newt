@@ -147,7 +147,7 @@ When the retries run out, the conflict reaches the caller: HTTP answers it with 
 | Use case | Takes | Returns | When nothing matches |
 |---|---|---|---|
 | `create(input)` | a `TaskCreateDTO` | the new `TaskDTO` | |
-| `get(id)` | a `TaskId` | one `TaskDTO` | throws `TaskNotFound` |
+| `get(id)` | a `string`, the id | one `TaskDTO` | throws `TaskNotFound` |
 | `find(criteria, sort?)` | a `TaskFilterDTO`, a `TaskSortDTO` | `TaskDTO[]` | `[]` |
 | `paginate(criteria, page)` | a `TaskFilterDTO`, a `PageRequest` | `Page<TaskDTO>`, newest first | a page with no items |
 
@@ -160,7 +160,7 @@ async create(input: TaskCreateDTO): Promise<TaskDTO> {
 }
 
 @UseCase()
-async get(id: TaskId): Promise<TaskDTO> {
+async get(id: string): Promise<TaskDTO> {
   const [task] = await this.tasks.find({ id: TaskId.from(id) }, { limit: 1 })
   if (!task) {
     throw new TaskNotFound()

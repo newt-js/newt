@@ -1,6 +1,6 @@
 import { default as ts } from 'typescript'
 
-/** `input`: the type its first input is written with (`OrderId`), when it takes one. */
+/** `input`: the type its first input is written with (`string`), when it takes one. */
 export type UseCase = { inputs: number, input: string | null, returnsNothing: boolean }
 
 /** A use case of a module's class in `code`, read from its method: how many inputs it takes, the type of the first, and whether it tells nothing; null when the class has no such method. */

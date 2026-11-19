@@ -91,12 +91,12 @@ export type TaskId = Uuid<'TaskId'>
 - `TaskId.generate()` devuelve un UUID v7 nuevo, con tipo `TaskId`.
 - `TaskId.from(text)` rechaza todo lo que no sea un UUID v7, con `InvalidUuid` (código `invalid_uuid`).
 
-Las rutas convierten el texto de la ruta en un id antes de llamar a un caso de uso:
+Las rutas convierten el texto de la ruta en un id antes de pasarlo a un caso de uso dentro de un DTO:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-router.get('/tasks/:id', async request =>
+router.post('/tasks/:id/complete-task', async request =>
   Response.json(
-    await tasks.get(TaskId.from(request.params.id)),
+    await tasks.completeTask({ id: TaskId.from(request.params.id) }),
   ),
 )
 ```

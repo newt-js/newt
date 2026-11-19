@@ -38,7 +38,7 @@ ${lines.routes}
   }
 
   @UseCase()
-  async get(id: ${type}Id): Promise<${type}DTO> {
+  async get(id: string): Promise<${type}DTO> {
     const [${module}] = await this.${plural}.find({ id: ${type}Id.from(id) }, { limit: 1 })
     if (!${module}) {
       throw new ${type}NotFound()

@@ -2,13 +2,12 @@ import type { ModuleNames } from '../../names/module-names/module-names'
 import type { PieceNames }  from '../../names/piece-names/piece-names'
 import { quoted }           from '../quoted/quoted'
 
-/** `takesId`: its input is the entity's id itself (`get(id: OrderId)`), not a DTO that carries it. */
+/** `takesId`: its input is the entity's id itself, a string it parses (`get(id: string)`), not a DTO that carries it. */
 export type RouteShape = { method: string, path: string, takesInput: boolean, takesId: boolean, returnsNothing: boolean }
 
 /** A route that calls a use case: with the id of its path, or its body as it came, and answers what it tells. */
 export function routeLine({ type, plural }: ModuleNames, useCase: PieceNames, { method, path, takesInput, takesId, returnsNothing }: RouteShape): string {
-  const id = `${type}Id.from(request.params.id)`
-  const input = !takesInput ? '' : path.split('/').includes(':id') ? (takesId ? id : `{ id: ${id} }`) : 'await bodyOf(request)'
+  const input = !takesInput ? '' : path.split('/').includes(':id') ? (takesId ? 'request.params.id' : `{ id: ${type}Id.from(request.params.id) }`) : 'await bodyOf(request)'
   const call = `await ${plural}.${useCase.camel}(${input})`
   const answer = returnsNothing ? `{\n    ${call}\n    return new Response(null, { status: 204 })\n  }` : `Response.json(${call})`
   const uses = input === '' ? '()' : 'request'

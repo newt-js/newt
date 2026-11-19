@@ -7,7 +7,7 @@ const cardModule = (body: string) => `export class Card_Module extends Module {\
 
 tester.run('use-case-reads', asRule(useCaseReads), {
   valid: [
-    { code: cardModule('async find(criteria: CardFilterDTO, sort?: CardSortDTO) {}\nasync get(id: CardId) {}\nasync paginate(criteria: CardFilterDTO, page: PageRequest) {}\nasync search(text: SearchText, page: PageRequest) {}'), filename: CARD_MODULE },
+    { code: cardModule('async find(criteria: CardFilterDTO, sort?: CardSortDTO) {}\nasync get(id: string) {}\nasync paginate(criteria: CardFilterDTO, page: PageRequest) {}\nasync search(text: SearchText, page: PageRequest) {}'), filename: CARD_MODULE },
     // Not a module.
     { code: cardModule('async search(input: CardSearchDTO) {}'), filename: '/repo/src/contexts/boards/features/boards/card/card.ts' },
     { code: cardModule('private async search(input: CardSearchDTO) {}'), filename: CARD_MODULE },

@@ -200,13 +200,13 @@ Por qué: `@UseCase` es lo que ejecuta un método como caso de uso (regla de esc
 
 ### newt/use-case-params
 
-Los parámetros de un caso de uso son value objects o DTOs del schema del módulo, y cada DTO de entrada se valida con su schema.
+Los parámetros de un caso de uso son atributos (un `string`, un `number`, un value object) o DTOs del schema del módulo, y cada DTO de entrada se valida con su schema.
 
-Se rechazan: `unknown` o `any`, un tipo objeto escrito en el sitio, un `string`, `number`, `boolean` o `bigint` sueltos (también en una unión o un array), y un DTO de entrada (`z.input<typeof XSchema>`) que nada valida con `XSchema.parse` (en el caso de uso o en un método privado al que se lo pasa).
+Se rechazan: `unknown` o `any`, un tipo objeto escrito en el sitio y un DTO de entrada (`z.input<typeof XSchema>`) que nada valida con `XSchema.parse` (en el caso de uso o en un método privado al que se lo pasa).
 
 ```ts
 @UseCase()
-async completeTask(id: string) { /* ... */ }       // mal: string suelto
+async completeTask(input: { id: string }) { /* ... */ } // mal: objeto escrito en el sitio
 
 @UseCase()
 async completeTask(input: TaskCompleteTaskDTO): Promise<TaskDTO> {

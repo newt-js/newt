@@ -99,7 +99,7 @@ export const ADD_SUBSCRIPTION = defineCommand({
         : `${emitter.module} has no event ${event.folder}`)
     }
     const takesInput = useCaseFound.inputs > 0
-    const reaction = reactionLine(module, useCase, event, takesInput, emitter.from, useCaseFound.input === `${module.type}IdInput`)
+    const reaction = reactionLine(module, useCase, event, takesInput, emitter.from, useCaseFound.input === 'string')
     const workers = await workersChanges(cwd, folder, module, !own)
     const tested = event.folder === 'created' && (own || !takesInput)
     const creator = emitter.creator ?? `features.${emitter.feature === null ? found.feature.camel : featureNames(emitter.feature).camel}.${moduleNames(found.feature, emitter.module).module}`

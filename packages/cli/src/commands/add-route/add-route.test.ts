@@ -29,7 +29,7 @@ describe('newt add route', () => {
   test('a use case that takes the id itself, as get does, is given the id of its path, and its lint, types and tests pass', async () => {
     const backend = await moduleProject()
     expect((await run(ADD_ROUTE, ['sales/orders/order', 'get', '--method', 'get', '--path', '/orders/orders/:id/again'], backend)).code).toBe(0)
-    expect(await read(backend, 'order.routes.ts')).toContain("  router.get('/orders/orders/:id/again', async request => Response.json(await orders.get(OrderId.from(request.params.id))))")
+    expect(await read(backend, 'order.routes.ts')).toContain("  router.get('/orders/orders/:id/again', async request => Response.json(await orders.get(request.params.id)))")
     expect(await read(backend, 'order.module.test.ts')).toContain('expect(called).toHaveBeenCalledWith(created.id)')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)

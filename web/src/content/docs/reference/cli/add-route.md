@@ -68,7 +68,7 @@ How the route calls the use case:
 | The use case | The route |
 |---|---|
 | Takes an input, path has `:id` | Passes `{ id }` from the path |
-| Takes the entity's id itself (`get(id: TaskId)`), path has `:id` | Passes the id from the path |
+| Takes the entity's id itself (`get(id: string)`), path has `:id` | Passes the id from the path |
 | Takes an input, no `:id` | Passes the request body |
 | Takes no input | Calls it with nothing |
 | Returns nothing | Answers `204` with no body |
