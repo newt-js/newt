@@ -26,13 +26,14 @@ const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 export class ${type}_Context extends BoundedContext {
   /** Builds its features, each after those it uses. */
   static initialize(base: ContextBase, router: HttpRouter): ${type}_Context {
-    return new ${type}_Context(base)
+    return new ${type}_Context(base, {})
   }
 
   private constructor(
     base: ContextBase,
+    features: {},
   ) {
-    super('${folder}', base)
+    super('${folder}', base, features)
   }
 
   static async open(platform: Platform, place: DataPlace): Promise<ContextToRun> {
