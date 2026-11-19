@@ -90,15 +90,11 @@ diff --git a/backend/contexts/boards/modules/card/card.routes.ts b/backend/conte
 +    Response.json(await cards.setDueDate(request.params.cardId, await request.json())))
 diff --git a/backend/contexts/boards/modules/card/card.deps.ts b/backend/contexts/boards/modules/card/card.deps.ts
 @@ -1 +1 @@
- import type { Access_Module } from '../../../auth/modules/access/access.module'
-+import type { Notification_Module } from '../../../notifications/modules/notification/notification.module'
+ import type { Auth_Context } from '../../../auth/auth.context'
++import type { Notifications_Context } from '../../../notifications/notifications.context'
 @@ -15 +16 @@ export interface Card_Deps {
-   auth: {
-     access: Access_Module
-   }
-+  notifications: {
-+    notification: Notification_Module
-+  }
+   auth: Auth_Context
++  notifications: Notifications_Context
  }
 diff --git a/backend/contexts/notifications/modules/notification/notification.module.ts b/backend/contexts/notifications/modules/notification/notification.module.ts
 @@ -44 +44 @@ export class Notification_Module extends Module {
