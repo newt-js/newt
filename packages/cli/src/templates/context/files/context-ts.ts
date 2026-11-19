@@ -5,7 +5,7 @@ import type { FilesKind }    from '../../stores/store-files'
 import { STORE_FILES }       from '../../stores/store-files'
 
 /** The line of <ctx>.context.ts that hands the context to run. */
-export const contextToRun = ({ type, camel }: ContextNames) => `return { context: new ${type}_Context(base, ${camel}Features(base, router)), router, host }`
+export const contextToRun = ({ type }: ContextNames) => `return { context: ${type}_Context.initialize(base, router), router, host }`
 
 export type ContextStores = { database: DatabaseKind, files: FilesKind }
 
@@ -19,12 +19,19 @@ import { ${database.adapter} } from '${database.from}'
 import { ${files.adapter} } from '${files.from}'
 import { HttpRouter, openData, type ContextToRun } from '@newt-js/core/http'
 import { authenticate } from '../../auth'
-import { ${camel}Features, type ${type}Features } from './${folder}-features'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
+/** ${folder}: its features, each one reached as ${camel}.<feature>. */
 export class ${type}_Context extends BoundedContext {
-  private constructor(base: ContextBase, readonly features: ${type}Features) {
+  /** Builds its features, each after those it uses. */
+  static initialize(base: ContextBase, router: HttpRouter): ${type}_Context {
+    return new ${type}_Context(base)
+  }
+
+  private constructor(
+    base: ContextBase,
+  ) {
     super('${folder}', base)
   }
 

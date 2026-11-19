@@ -18,7 +18,7 @@ describe('newt add app', () => {
     expect((await addApp(['sales'], backend)).code).toBe(0)
     const context = await read(join(backend, 'src/contexts/sales/sales.context.ts'))
     expect(context).toContain("import app from './app/index.html'")
-    expect(context).toContain('return { context: new Sales_Context(base, salesFeatures(base, router)), router, host, app }')
+    expect(context).toContain('return { context: Sales_Context.initialize(base, router), router, host, app }')
     expect(await read(join(backend, 'src/contexts/sales/app/base.ts'))).toContain("const PATH = '/sales'\n")
     expect(await read(join(backend, 'src/index.test.ts'))).toContain("test('the backend serves the app of sales'")
     expect(await Bun.file(join(backend, 'src/frontends.ts')).exists()).toBe(false)

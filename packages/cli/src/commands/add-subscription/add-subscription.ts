@@ -4,7 +4,6 @@ import { codeTokens }       from '../../changes/code-tokens/code-tokens'
 import { indexOfTokens }    from '../../changes/index-of-tokens/index-of-tokens'
 import { featureNames }     from '../../names/feature-names/feature-names'
 import { moduleNames }      from '../../names/module-names/module-names'
-import type { PieceNames }  from '../../names/piece-names/piece-names'
 import { pieceNames }       from '../../names/piece-names/piece-names'
 import { useCaseNames }     from '../../names/use-case-names/use-case-names'
 import type { FoundModule } from '../../project/find-module/find-module'
@@ -30,7 +29,7 @@ type Emitter = {
   module: string
   /** Its variable in the module's test, to make it emit `created`. */
   creator: string | null
-  /** When it is another feature's: its name, and its module's file, where the event is exposed. */
+  /** When it is another feature's: its name. */
   feature: string | null
 }
 
@@ -69,13 +68,6 @@ async function givenEmitter(found: FoundModule, featureFolder: string, moduleFol
   }
 }
 
-/** Whether the emitting module of another feature lists the event in its exposes. */
-async function exposed(emitter: Emitter, event: PieceNames, cwd: string): Promise<boolean> {
-  const code = await Bun.file(join(cwd, emitter.folder, `${emitter.module}.module.ts`)).text().catch(() => '')
-  const events = /events\s*:\s*\[([^\]]*)\]/.exec(/exposes\s*=\s*\{[^}]*\}/.exec(code)?.[0] ?? '')?.[1] ?? ''
-  return new RegExp(`['"]${event.camel}['"]`).test(events)
-}
-
 export const ADD_SUBSCRIPTION = defineCommand({
   name: 'add subscription',
   summary: 'Runs a use case of a module on an event, its own or of a module it uses, in its workers',
@@ -110,7 +102,7 @@ export const ADD_SUBSCRIPTION = defineCommand({
     const reaction = reactionLine(module, useCase, event, takesInput, emitter.from)
     const workers = await workersChanges(cwd, folder, module, !own)
     const tested = event.folder === 'created' && (own || !takesInput)
-    const creator = emitter.creator ?? `modulesOf(features.${emitter.feature === null ? found.feature.camel : featureNames(emitter.feature).camel}).${moduleNames(found.feature, emitter.module).module}`
+    const creator = emitter.creator ?? `features.${emitter.feature === null ? found.feature.camel : featureNames(emitter.feature).camel}.${moduleNames(found.feature, emitter.module).module}`
     const changes: FileChange[] = [
       ...workers.changes,
       { action: 'insert-lines', path: file('.workers.ts'), anchor: workers.head, position: 'after', lines: [reaction], imports: [] },
@@ -124,11 +116,7 @@ export const ADD_SUBSCRIPTION = defineCommand({
       ...tested ? [] : [`newt cannot tell how to make ${event.folder} happen${own ? '' : ` for ${useCase.camel}`}, so it wrote no test of ${useCase.camel} on it: write one in ${module.folder}.module.test.ts`],
       ...!own && takesInput ? [`${useCase.camel} is given the id of ${emitter.name}'s entity as its id: change what it takes from ${event.camel}, in ${module.folder}.workers.ts`] : [],
     ]
-    const notExposed = emitter.feature !== null && !await exposed(emitter, event, cwd)
-    const nextSteps = [
-      ...notExposed ? [`${emitter.feature} exposes no ${event.camel} yet: list it in exposes.events, in ${emitter.module}.module.ts`] : [],
-      `bun test ${folder}`,
-    ]
+    const nextSteps = [`bun test ${folder}`]
     return { changes, warnings, nextSteps }
   },
 })

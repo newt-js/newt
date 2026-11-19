@@ -17,7 +17,6 @@ import { INIT }             from './init/init'
 
 const ENGAGEMENT = 'src/contexts/engagement'
 const CAMPAIGN = `${ENGAGEMENT}/features/campaigns/campaign`
-const CONTACT = `${ENGAGEMENT}/features/contacts/contact`
 
 /** Replaces `from` by `to` in a file of the backend, as a person would by hand: the edit must be there. */
 async function edit(backend: string, file: string, from: string | RegExp, to: string): Promise<void> {
@@ -45,26 +44,22 @@ test('a context with two features, campaigns using contacts and reacting to them
   await run(ADD_DEPS, 'engagement/campaigns/campaign', 'contacts')
   await run(ADD_DEPS, 'engagement/contacts/contact', 'tag')
 
-  // contacts shows campaigns how to list its contacts, and that one was created.
-  await edit(backend, `${CONTACT}/contact.module.ts`, 'exposes = { useCases: [], events: [] } as const', "exposes = { useCases: ['paginate'], events: ['created'] } as const")
-
   await run(ADD_USE_CASE, 'engagement/campaigns/campaign', 'launch')
   await run(ADD_ROUTE, 'engagement/campaigns/campaign', 'launch')
 
   // Every night, and on every contact created, campaign counts its audience again.
   await run(ADD_SCHEDULE, 'engagement/campaigns/campaign', 'count-audience', '--cron', '0 4 * * *')
-  const subscribed = await run(ADD_SUBSCRIPTION, 'engagement/campaigns/campaign', 'count-audience', '--on', 'contacts/contact/created')
-  expect(subscribed).not.toContain('exposes no created')
+  await run(ADD_SUBSCRIPTION, 'engagement/campaigns/campaign', 'count-audience', '--on', 'contacts/contact/created')
 
-  // count-audience lists the contacts through what contacts exposes.
+  // count-audience lists the contacts, through the module contacts holds.
   await edit(backend, `${CAMPAIGN}/campaign.module.ts`, /async countAudience\(\): Promise<void> \{\n {2}\}/, [
     'async countAudience(): Promise<void> {',
     '    await this.deps.contacts.contact.paginate({}, { size: 1 })',
     '  }',
   ].join('\n'))
 
-  const features = await Bun.file(join(backend, ENGAGEMENT, 'engagement-features.ts')).text()
-  expect(features.indexOf('const contacts =')).toBeLessThan(features.indexOf('const campaigns ='))
-  expect(features).toContain('campaignsFeature(base, router, { contacts })')
+  const context = await Bun.file(join(backend, ENGAGEMENT, 'engagement.context.ts')).text()
+  expect(context.indexOf('const contacts =')).toBeLessThan(context.indexOf('const campaigns ='))
+  expect(context).toContain('Campaigns_Feature.initialize(base, router, { contacts })')
   expect(await checkGenerated(backend)).toEqual([])
 }, 60_000)

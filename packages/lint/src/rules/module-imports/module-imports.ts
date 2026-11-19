@@ -48,7 +48,8 @@ export const moduleImports: TSESLint.RuleModule<'private' | 'type' | 'barrel'> =
     const problemOf = (node: TSESTree.Node, specifier: string) => {
       const path = resolved(context, specifier)
       if (!path) return null
-      const imported = modulePlace(path, root) ?? modulePlace(`${path}/index`, root)
+      // A folder's index.ts, when it names a folder: `./orders.feature` is the feature's file, no module's folder.
+      const imported = modulePlace(path, root) ?? (/\.[^/]*$/.test(path) ? null : modulePlace(`${path}/index`, root))
       if (!imported) return null
       if (place && sameModule(imported, place)) return null
       // Another feature's modules are reached through its entry point alone: newt/feature-imports says so.

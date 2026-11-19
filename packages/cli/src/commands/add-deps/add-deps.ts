@@ -8,8 +8,9 @@ import { featureDepsGraph }  from '../../project/feature-deps-graph/feature-deps
 import type { FoundModule }  from '../../project/find-module/find-module'
 import { findModule }        from '../../project/find-module/find-module'
 import { moduleDepsGraph }   from '../../project/module-deps-graph/module-deps-graph'
-import { featureHead }       from '../../templates/feature/files/feature-ts'
-import { featureType }       from '../../templates/feature/files/feature-ts'
+import { classHead }         from '../../templates/feature/files/feature-ts'
+import { featureClass }      from '../../templates/feature/files/feature-ts'
+import { initializeHead }    from '../../templates/feature/files/feature-ts'
 import { usesHead }          from '../../templates/feature/files/feature-ts'
 import { usesTs }            from '../../templates/feature/files/feature-ts'
 import { routesHead }        from '../../templates/module/files/routes-ts'
@@ -45,7 +46,7 @@ async function moduleOfItsFeature(found: FoundModule, other: string, cwd: string
   const used = moduleNames(feature, other)
   const elsewhere = found.features.find(each => each.modules.includes(used.folder))
   if (!siblings.includes(used.folder) && elsewhere) {
-    throw new CommandError(`${used.folder} is a module of ${elsewhere.name}: a module uses another feature whole, through what it exposes, as in newt add deps ${context.folder}/${feature.folder}/${module.folder} ${elsewhere.name}`)
+    throw new CommandError(`${used.folder} is a module of ${elsewhere.name}: a module uses another feature whole, as in newt add deps ${context.folder}/${feature.folder}/${module.folder} ${elsewhere.name}`)
   }
   if (!siblings.includes(used.folder)) {
     throw new CommandError(`Neither ${context.folder}/${feature.folder} has a module ${used.folder} nor ${context.folder} a feature ${used.folder}: add the module with newt add module ${context.folder}/${feature.folder}/${used.folder}, or the feature with newt add feature ${context.folder}/${used.folder}`)
@@ -63,7 +64,7 @@ async function moduleOfItsFeature(found: FoundModule, other: string, cwd: string
   return { changes, nextSteps: [`call it in a use case of ${module.folder}: this.deps.${used.module}`, `bun test ${found.folder}`] }
 }
 
-/** Another feature of its context: what that feature exposes, which <ctx>-features.ts gives the module's feature, built first. */
+/** Another feature of its context, through its index.ts: <ctx>.context.ts initializes it first and hands it to the module's feature. */
 async function anotherFeature(found: FoundModule, used: FeatureNames, cwd: string) {
   const { module, context, feature, features, featureFolder } = found
   const contextFolder = join(featureFolder, '..', '..')
@@ -72,21 +73,20 @@ async function anotherFeature(found: FoundModule, used: FeatureNames, cwd: strin
     throw new CommandError(`${[feature.camel, ...cycle].join(' → ')} would be a cycle: features never use each other, even through others`)
   }
   const entry = join(featureFolder, `${feature.folder}.feature.ts`)
+  const contextFile = join(contextFolder, `${context.folder}.context.ts`)
   const text = await Bun.file(join(cwd, entry)).text().catch(() => '')
-  const usedType = `${used.type}Feature`
-  const usedFrom = `../${used.folder}/${used.folder}.feature`
+  const usedClass = featureClass(used)
   const changes: FileChange[] = [
-    ...moduleChanges(found, { key: used.camel, type: usedType, from: `../${usedFrom}` }),
-    { action: 'replace-line', path: entry, line: featureHead(feature, false), with: featureHead(feature, true), imports: [] },
-    ...text.includes(usesHead(feature)) ? [] : [{ action: 'insert-lines' as const, path: entry, anchor: featureType(feature), position: 'before' as const, lines: usesTs(feature, context.folder), imports: [] }],
-    { action: 'insert-lines', path: entry, anchor: usesHead(feature), position: 'after', lines: [`  ${used.camel}: ${usedType}`], imports: [`import type { ${usedType} } from '${usedFrom}'`] },
+    ...moduleChanges(found, { key: used.camel, type: usedClass, from: `../../${used.folder}` }),
+    { action: 'replace-line', path: entry, line: initializeHead(feature, false), with: initializeHead(feature, true), imports: [] },
+    ...text.includes(usesHead(feature)) ? [] : [{ action: 'insert-lines' as const, path: entry, anchor: classHead(feature), position: 'before' as const, lines: usesTs(feature, context.folder), imports: [] }],
+    { action: 'insert-lines', path: entry, anchor: usesHead(feature), position: 'after', lines: [`  ${used.camel}: ${usedClass}`], imports: [`import type { ${usedClass} } from '../${used.folder}'`] },
     { action: 'add-object-property', path: entry, call: `${module.type}_Module.initialize`, argument: 2, key: used.camel, value: `uses.${used.camel}`, imports: [], createArgument: true },
-    { action: 'add-object-property', path: join(contextFolder, `${context.folder}-features.ts`), call: `${feature.camel}Feature`, argument: 2, key: used.camel, value: used.camel, imports: [], createArgument: true },
-    { action: 'order-modules', path: join(contextFolder, `${context.folder}-features.ts`) },
+    { action: 'add-object-property', path: contextFile, call: `${featureClass(feature)}.initialize`, argument: 2, key: used.camel, value: used.camel, imports: [], createArgument: true },
+    { action: 'order-modules', path: contextFile },
   ]
   const nextSteps = [
-    `call what it exposes in a use case of ${module.folder}: this.deps.${used.camel}.<module>.<use case>`,
-    `${used.folder} exposes nothing until its modules list their use cases and events in exposes`,
+    `call it in a use case of ${module.folder}: this.deps.${used.camel}.<module>.<use case>`,
     `bun test ${found.folder}`,
   ]
   return { changes, nextSteps }
@@ -94,7 +94,7 @@ async function anotherFeature(found: FoundModule, used: FeatureNames, cwd: strin
 
 export const ADD_DEPS = defineCommand({
   name: 'add deps',
-  summary: 'Lets a module use another module of its feature, or what another feature of its context exposes',
+  summary: 'Lets a module use another module of its feature, or another feature of its context',
   args: '<context>/<feature>/<module> <module-or-feature>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
@@ -107,7 +107,7 @@ export const ADD_DEPS = defineCommand({
     if (other.includes('/')) {
       const [first] = other.split('/')
       if (features.some(each => each.name === first)) {
-        throw new CommandError(`A module uses another feature whole, through what it exposes, by the feature's name alone: newt add deps ${given} ${first}`)
+        throw new CommandError(`A module uses another feature whole, by the feature's name alone: newt add deps ${given} ${first}`)
       }
       throw new CommandError("A module uses another context's modules once its context is opened with that context: newt does not write that yet")
     }

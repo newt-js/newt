@@ -5,8 +5,8 @@ import type { VirtualFiles }  from '../virtual-files/virtual-files'
 
 type Initialized = { statement: ts.VariableStatement, name: string, uses: string[] }
 
-/** A module's initialize, `Order_Module.initialize`, or a feature's entry point, `ordersFeature`. */
-const builds = (callee: string) => callee.endsWith('_Module.initialize') || /^[a-z]\w*Feature$/.test(callee)
+/** A module's initialize, `Order_Module.initialize`, or a feature's, `Orders_Feature.initialize`. */
+const builds = (callee: string) => callee.endsWith('_Module.initialize') || callee.endsWith('_Feature.initialize')
 
 function initializedIn(source: ts.SourceFile): Initialized[] {
   const found: Initialized[] = []
@@ -45,7 +45,7 @@ function sorted(modules: Initialized[]): Initialized[] {
   return result
 }
 
-/** Puts the modules <feature>.feature.ts initializes, or the features <ctx>-features.ts builds, in an order where each comes after the ones it uses. */
+/** Puts the modules <feature>.feature.ts initializes, or the features <ctx>.context.ts initializes, in an order where each comes after the ones it uses. */
 export async function orderModules(path: string, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)
