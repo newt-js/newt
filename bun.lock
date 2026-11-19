@@ -5,6 +5,7 @@
     "": {
       "name": "newt-framework",
       "devDependencies": {
+        "@newt-js/cli": "^0.0.0",
         "@types/bun": "1.4.4",
         "@typescript-eslint/parser": "8.71.1",
         "eslint": "10.12.0",
@@ -68,6 +69,20 @@
         "eslint": "^10.12.0",
       },
     },
+    "studio": {
+      "name": "studio",
+      "dependencies": {
+        "@newt-js/core": "^0.0.0",
+        "zod": "4.3.6",
+      },
+      "devDependencies": {
+        "@newt-js/cli": "^0.0.0",
+        "@newt-js/lint": "^0.0.0",
+        "@types/bun": "1.4.4",
+        "eslint": "10.12.0",
+        "typescript": "7.0.2",
+      },
+    },
     "web": {
       "name": "@newt-js/web",
       "version": "0.0.1",
@@ -109,7 +124,31 @@
     },
   },
   "overrides": {
+    "@typescript-eslint/eslint-plugin": {
+      "typescript": "npm:@typescript/typescript6@6.0.2",
+    },
     "@typescript-eslint/parser": {
+      "typescript": "npm:@typescript/typescript6@6.0.2",
+    },
+    "@typescript-eslint/project-service": {
+      "typescript": "npm:@typescript/typescript6@6.0.2",
+    },
+    "@typescript-eslint/tsconfig-utils": {
+      "typescript": "npm:@typescript/typescript6@6.0.2",
+    },
+    "@typescript-eslint/type-utils": {
+      "typescript": "npm:@typescript/typescript6@6.0.2",
+    },
+    "@typescript-eslint/typescript-estree": {
+      "typescript": "npm:@typescript/typescript6@6.0.2",
+    },
+    "@typescript-eslint/utils": {
+      "typescript": "npm:@typescript/typescript6@6.0.2",
+    },
+    "ts-api-utils": {
+      "typescript": "npm:@typescript/typescript6@6.0.2",
+    },
+    "typescript-eslint": {
       "typescript": "npm:@typescript/typescript6@6.0.2",
     },
   },
@@ -1252,6 +1291,8 @@
 
     "strip-ansi": ["strip-ansi@7.2.0", "", { "dependencies": { "ansi-regex": "^6.2.2" } }, "sha512-yDPMNjp4WyfYBkHnjIRLfca1i6KMyGCtsVgoKe/z1+6vukgaENdgGBZt+ZmKPc4gavvEZ5OgHfHdrazhgNyG7w=="],
 
+    "studio": ["studio@workspace:studio"],
+
     "style-to-js": ["style-to-js@1.1.21", "", { "dependencies": { "style-to-object": "1.0.14" } }, "sha512-RjQetxJrrUJLQPHbLku6U/ocGtzyjbJMP9lCNK7Ag0CNh690nSH8woqWH9u16nMjYBAok+i7JO1NP2pOy8IsPQ=="],
 
     "style-to-object": ["style-to-object@2.0.2", "", { "dependencies": { "inline-style-parser": "0.2.9" } }, "sha512-QmbXPUylqU80HAgTOJeEOdbA40W9KtxmjMhQy+tq+b8F2aoh3aQLuy82hh2jm2qsC9hR9eI0+eQidTMydKcqRA=="],
@@ -1458,6 +1499,12 @@
 
     "@typescript-eslint/parser/typescript": ["@typescript/typescript6@6.0.2", "", { "dependencies": { "@typescript/old": "npm:typescript@^6" }, "bin": { "tsc6": "bin/tsc6" } }, "sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w=="],
 
+    "@typescript-eslint/project-service/typescript": ["@typescript/typescript6@6.0.2", "", { "dependencies": { "@typescript/old": "npm:typescript@^6" }, "bin": { "tsc6": "bin/tsc6" } }, "sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w=="],
+
+    "@typescript-eslint/tsconfig-utils/typescript": ["@typescript/typescript6@6.0.2", "", { "dependencies": { "@typescript/old": "npm:typescript@^6" }, "bin": { "tsc6": "bin/tsc6" } }, "sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w=="],
+
+    "@typescript-eslint/typescript-estree/typescript": ["@typescript/typescript6@6.0.2", "", { "dependencies": { "@typescript/old": "npm:typescript@^6" }, "bin": { "tsc6": "bin/tsc6" } }, "sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w=="],
+
     "@vscode/emmet-helper/jsonc-parser": ["jsonc-parser@2.3.1", "", {}, "sha512-H8jvkz1O50L3dMZCsLqiuB2tA7muqbSg1AtGEkN0leAqGjsUzDJir3Zwr02BhqdcITPg3ei3mZ+HjMocAknhhg=="],
 
     "anymatch/picomatch": ["picomatch@2.3.2", "", {}, "sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA=="],
@@ -1485,6 +1532,8 @@
     "qified/hookified": ["hookified@2.2.0", "", {}, "sha512-p/LgFzRN5FeoD3DLS6bkUapeye6E4SI6yJs6KetENd18S+FBthqYq2amJUWpt5z0EQwwHemidjY5OqJGEKm5uA=="],
 
     "style-to-js/style-to-object": ["style-to-object@1.0.14", "", { "dependencies": { "inline-style-parser": "0.2.7" } }, "sha512-LIN7rULI0jBscWQYaSswptyderlarFkjQ+t79nzty8tcIAceVomEVlLzH5VP4Cmsv6MtKhs7qaAiwlcp+Mgaxw=="],
+
+    "ts-api-utils/typescript": ["@typescript/typescript6@6.0.2", "", { "dependencies": { "@typescript/old": "npm:typescript@^6" }, "bin": { "tsc6": "bin/tsc6" } }, "sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w=="],
 
     "wrap-ansi/string-width": ["string-width@7.2.0", "", { "dependencies": { "emoji-regex": "^10.3.0", "get-east-asian-width": "^1.0.0", "strip-ansi": "^7.1.0" } }, "sha512-tsaTIkKW9b4N+AEj+SVA+WhJzV7/zMhcSu78mLKWSk7cXMOSHsBKFWUs0fWwq8QyK3MgJBQRX6Gbi4kYbdvGkQ=="],
 

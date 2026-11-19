@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "web"
+    "web",
+    "studio"
   ],
   "scripts": {
     "typecheck": "bun check",
@@ -18,10 +19,35 @@
     "@types/bun": "1.4.4",
     "@typescript-eslint/parser": "8.71.1",
     "eslint": "10.12.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "@newt-js/cli": "^0.0.0"
   },
   "overrides": {
     "@typescript-eslint/parser": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    },
+    "typescript-eslint": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    },
+    "@typescript-eslint/eslint-plugin": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    },
+    "@typescript-eslint/project-service": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    },
+    "@typescript-eslint/tsconfig-utils": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    },
+    "@typescript-eslint/type-utils": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    },
+    "@typescript-eslint/utils": {
+      "typescript": "npm:@typescript/typescript6@6.0.2"
+    },
+    "ts-api-utils": {
       "typescript": "npm:@typescript/typescript6@6.0.2"
     }
   }
