@@ -10,9 +10,17 @@ export function routesTs(names: ModuleNames): string {
 import type { ${type}_Module } from './${folder}.module'
 
 ${routesHead(names, false)}
-  router.post('/${path}', async request => Response.json(await ${plural}.create(await bodyOf(request)), { status: 201 }))
-  router.get('/${path}', async request => Response.json(await ${plural}.paginate({}, pageRequestFrom(request))))
-  router.get('/${path}/:id', async request => Response.json(await ${plural}.get(request.params.id)))
+  router.post('/${path}', async request => {
+    const created = await ${plural}.create(await bodyOf(request))
+    return Response.json(created, { status: 201 })
+  })
+  router.get('/${path}', async request => {
+    const page = pageRequestFrom(request)
+    return Response.json(await ${plural}.paginate({}, page))
+  })
+  router.get('/${path}/:id', async request => {
+    return Response.json(await ${plural}.get(request.params.id))
+  })
   return { one: router.group('/${path}/:${module}Id') }
 }
 `

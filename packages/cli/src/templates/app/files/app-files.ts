@@ -33,7 +33,10 @@ export function appTsx({ type }: ContextNames): string {
 export function baseTs({ folder }: ContextNames): string {
   return `const PATH = '/${folder}'
 
-export const BASE = location.pathname === PATH || location.pathname.startsWith(\`\${PATH}/\`) ? PATH : ''
+const atPath = location.pathname === PATH
+const underPath = location.pathname.startsWith(\`\${PATH}/\`)
+
+export const BASE = atPath || underPath ? PATH : ''
 export const API = \`\${BASE}/api\`
 `
 }

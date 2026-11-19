@@ -36,7 +36,7 @@ export const ADD_EVENT = defineCommand({
     return {
       changes: [{ action: 'create', path: join(folder, 'events', `${module.folder}-${event.folder}.ts`), content: eventTs(module, event, hasSchema) }],
       nextSteps: [
-        `emit it from a method of the entity: this.trackEvent(new ${type}({ id: this.id }))`,
+        `emit it from a method of the entity: this.trackEvent(new ${type}(this.toDTO()))`,
         `let other modules subscribe to it: add ${event.camel}: ${type} to eventsOf in ${module.folder}.module.ts`,
       ],
     }

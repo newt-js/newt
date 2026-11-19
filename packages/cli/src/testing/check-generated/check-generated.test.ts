@@ -18,7 +18,7 @@ const PROJECT = {
     compilerOptions: { strict: true, target: 'ESNext', lib: ['ESNext'], module: 'Preserve', moduleResolution: 'bundler', types: ['bun'], noEmit: true, skipLibCheck: true },
     include: ['**/*.ts'],
   }),
-  'eslint.config.ts': "import { newt } from '@newt-js/lint'\n\nexport default newt({ root: import.meta.dirname, contexts: { folder: 'src/contexts' } })\n",
+  'eslint.config.ts': "import { newt } from '@newt-js/lint'\n\nexport default newt({\n  root: import.meta.dirname,\n  contexts: { folder: 'src/contexts' },\n})\n",
   'src/email.ts': "import { Email } from '@newt-js/core'\n\nexport const email = (text: string): Email => Email.from(text)\n",
   'src/email.test.ts': "import { expect, test } from 'bun:test'\nimport { email } from './email'\n\ntest('email', () => {\n  expect(email(' A@B.com ') as string).toBe('a@b.com')\n})\n",
 }

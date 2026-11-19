@@ -15,7 +15,7 @@ const addEvent = (args: string[], cwd: string) => runCommand(ADD_EVENT, args, { 
 
 const SHIP = `
   ship(): void {
-    this.trackEvent(new Order_PriceChanged({ id: this.id }))
+    this.trackEvent(new Order_PriceChanged(this.toDTO()))
   }
 
 }
@@ -26,7 +26,7 @@ describe('newt add event', () => {
     const backend = await moduleProject()
     expect((await addEvent(['sales/order', 'price-changed'], backend)).code).toBe(0)
     const event = await Bun.file(join(backend, ORDER_MODULE, 'events/order-price-changed.ts')).text()
-    expect(event).toContain("export const Order_PriceChanged = defineEvent('order.priceChanged', OrderSchema.pick({ id: true }))")
+    expect(event).toContain("export const Order_PriceChanged = defineEvent('order.priceChanged', OrderSchema)")
     const entity = join(backend, ORDER_MODULE, 'order.ts')
     const code = (await Bun.file(entity).text()).replace(/\n\n}\n$/, SHIP)
     await Bun.write(entity, sortedImports(entity, `import { Order_PriceChanged } from './events/order-price-changed'\n${code}`))
@@ -37,14 +37,14 @@ describe('newt add event', () => {
     const backend = await moduleProject()
     await rm(join(backend, ORDER_MODULE, 'order.schema.ts'))
     await addEvent(['sales/order', 'shipped'], backend)
-    expect(await Bun.file(join(backend, ORDER_MODULE, 'events/order-shipped.ts')).text()).toContain("defineEvent('order.shipped', z.object({ id: z.string() }))")
+    expect(await Bun.file(join(backend, ORDER_MODULE, 'events/order-shipped.ts')).text()).toContain("defineEvent(\n  'order.shipped',\n  z.object({ id: z.string() }),\n)")
   })
 
   test('says how to emit it and let other modules hear it', async () => {
     const output = await addEvent(['sales/order', 'shipped', '--dry-run'], await moduleProject())
     expect(output.text).toEndWith([
       'Next steps:',
-      '  emit it from a method of the entity: this.trackEvent(new Order_Shipped({ id: this.id }))',
+      '  emit it from a method of the entity: this.trackEvent(new Order_Shipped(this.toDTO()))',
       '  let other modules subscribe to it: add shipped: Order_Shipped to eventsOf in order.module.ts',
     ].join('\n'))
   })
