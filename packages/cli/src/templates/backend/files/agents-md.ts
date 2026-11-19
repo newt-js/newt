@@ -27,8 +27,9 @@ A backend built with newt (@newt-js/core), on Bun.
 - \`src/auth.ts\`: \`authenticate\`, who calls the backend, for every context's router.
 - \`src/contexts/contexts.ts\`: the list of contexts the backend opens.
 ${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context. Its \`<context>.context.ts\` opens its own data with
-  \`openData\`: its database (\`sqlite()\`, \`postgres()\`…) and its files (\`localFiles()\`…), as \`.env\` says. Its features in \`features/<feature>/\`,
-  each holding only its entry point \`<feature>.feature.ts\` and a folder for each of its modules, \`<module>/\` with its \`<module>.module.ts\`; their routes under \`/<context>/api/<feature>/\`.
+  \`openData\`, its database (\`sqlite()\`, \`postgres()\`…) and its files (\`localFiles()\`…) as \`.env\` says, and its \`initialize\`
+  builds its features. Each feature in \`features/<feature>/\`: its class \`<feature>.feature.ts\`, which holds its modules, its \`index.ts\`,
+  the only file the other features import of it, and a folder for each module, \`<module>/\` with its \`<module>.module.ts\`; their routes under \`/<context>/api/<feature>/\`.
 
 ## Sign-in
 

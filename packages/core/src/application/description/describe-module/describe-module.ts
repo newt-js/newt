@@ -1,5 +1,4 @@
 import type { BrandedEventEmitter } from '../../../domain/events/is-event-emitter/is-event-emitter'
-import type { Exposes }             from '../../../domain/module/module-contract/exposes'
 import { ContextRegistry }          from '../../../domain/registry/context-registry/context-registry'
 import type { RegisteredModule }    from '../../../domain/registry/registered-module'
 import type { UseCaseOptions }      from '../../../domain/use-case/use-case-options'
@@ -13,14 +12,12 @@ import { moduleId }                 from '../module-id/module-id'
 export function describeModule(registry: ContextRegistry, module: RegisteredModule, owners: Map<BrandedEventEmitter, string>): ModuleDescription {
   const { context } = registry
   const { name } = module.instance
-  const exposes = (module.instance as { exposes?: Exposes }).exposes
   return {
     id: moduleId(context, name),
     context,
     name,
     feature: featureOfModule(name),
     className: module.className,
-    exposes: { useCases: [...exposes?.useCases ?? []], events: [...exposes?.events ?? []] },
     useCases: [...module.useCases].map(([useCase, options]) => ({
       id: `${context}/${name}.${useCase}`,
       name: `${name}.${useCase}`,

@@ -39,7 +39,6 @@ describe('describeModule', () => {
       name: 'reports[report]',
       feature: 'reports',
       className: 'Report_Module',
-      exposes: { useCases: [], events: [] },
       useCases: [
         { id: 'shop/reports[report].build', name: 'reports[report].build', retryOnConflict: true },
         { id: 'shop/reports[report].send', name: 'reports[report].send', retryOnConflict: false },
@@ -49,9 +48,8 @@ describe('describeModule', () => {
     })
   })
 
-  test('tells the feature of a module of a feature, and what it exposes', () => {
+  test('tells the feature of a module of a feature', () => {
     class Template_Module extends Module {
-      readonly exposes = { useCases: ['get'], events: [] } as const
       constructor(base: ContextBase) {
         super('campaigns[template]', base.useCaseRunner)
       }
@@ -65,7 +63,7 @@ describe('describeModule', () => {
 
     const described = describeModule(registry, registry.registeredModules[0]!, new Map())
 
-    expect(described).toMatchObject({ id: 'engagement/campaigns[template]', name: 'campaigns[template]', feature: 'campaigns', exposes: { useCases: ['get'], events: [] } })
+    expect(described).toMatchObject({ id: 'engagement/campaigns[template]', name: 'campaigns[template]', feature: 'campaigns' })
     expect(described.useCases).toEqual([{ id: 'engagement/campaigns[template].get', name: 'campaigns[template].get', retryOnConflict: true }])
   })
 })

@@ -13,14 +13,14 @@ import { featureImports } from './feature-imports'
 /** A context engagement whose campaigns use contacts, and a context loop whose features a and b use each other. */
 const CONTEXTS = join(realpathSync(mkdtempSync(join(tmpdir(), 'newt-lint-features-'))), 'src/contexts')
 const FILES: Record<string, string> = {
-  'engagement/features/campaigns/campaigns.feature.ts': "import type { ContactsFeature } from '../contacts/contacts.feature'\n",
+  'engagement/features/campaigns/campaigns.feature.ts': "import type { Contacts_Feature } from '../contacts'\n",
   'engagement/features/contacts/contacts.feature.ts': '',
   'engagement/features/reports/reports.feature.ts': '',
-  'loop/features/a/a.feature.ts': "import type { B } from '../b/b.feature'\n",
-  'loop/features/b/b.feature.ts': "import type { A } from '../a/a.feature'\n",
-  'ring/features/a/a.feature.ts': "import type { B } from '../b/b.feature'\n",
-  'ring/features/b/b.feature.ts': "import type { C } from '../c/c.feature'\n",
-  'ring/features/c/c.feature.ts': "import type { A } from '../a/a.feature'\n",
+  'loop/features/a/a.feature.ts': "import type { B_Feature } from '../b'\n",
+  'loop/features/b/b.feature.ts': "import type { A_Feature } from '../a'\n",
+  'ring/features/a/a.feature.ts': "import type { B_Feature } from '../b'\n",
+  'ring/features/b/b.feature.ts': "import type { C_Feature } from '../c'\n",
+  'ring/features/c/c.feature.ts': "import type { A_Feature } from '../a'\n",
 }
 for (const [file, code] of Object.entries(FILES)) {
   mkdirSync(dirname(join(CONTEXTS, file)), { recursive: true })
@@ -35,17 +35,14 @@ tester.run('feature-imports', asRule(featureImports), {
     // Inside its own feature, anything of it.
     { code: "import type { Tag_Module } from '../tag/tag.module'", filename: `${CAMPAIGNS}/template/template.deps.ts`, options },
     { code: "import { Template_Module } from './template/template.module'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
-    // Another feature it uses, through its entry point.
-    { code: "import type { ContactsFeature } from '../contacts/contacts.feature'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
-    { code: "import type { ContactDTO } from '../../contacts/contacts.feature'", filename: `${CAMPAIGNS}/campaign/campaign.module.ts`, options },
-    // Its entry point, index.ts: by its folder, or by its name.
+    { code: "export { Campaigns_Feature } from './campaigns.feature'", filename: `${CAMPAIGNS}/index.ts`, options },
+    // Another feature it uses, through its entry point, index.ts: by its folder, or by its name.
     { code: "import type { Contacts_Feature } from '../contacts'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
     { code: "import type { ContactDTO } from '../../contacts/index'", filename: `${CAMPAIGNS}/campaign/campaign.module.ts`, options },
+    // The context imports every feature's entry point.
     { code: "import { Contacts_Feature } from './features/contacts'", filename: `${CONTEXTS}/engagement/engagement.context.ts`, options },
-    // The context's composition imports every feature's entry point.
-    { code: "import { contactsFeature } from './features/contacts/contacts.feature.ts'", filename: `${CONTEXTS}/engagement/engagement-features.ts`, options },
-    // An entry point's own import is what it uses, even one it is not read with, as through an alias.
-    { code: `import type { ReportsFeature } from '${CONTEXTS}/engagement/features/reports/reports.feature'`, filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
+    // A feature's own import is what it uses, even one it is not read with, as through an alias.
+    { code: `import type { Reports_Feature } from '${CONTEXTS}/engagement/features/reports'`, filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
     // Outside the contexts, and a package.
     { code: "import { x } from './features/a/b/b.module'", filename: '/elsewhere/file.ts', options },
     { code: "import { z } from 'zod'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
@@ -58,17 +55,20 @@ tester.run('feature-imports', asRule(featureImports), {
       errors: [{ messageId: 'inside', data: { path: '../../contacts/contact/contact.module', feature: 'contacts' } }],
     },
     { code: "import type { ContactDTO } from '../../contacts/contact/contact.schema'", filename: `${CAMPAIGNS}/campaign/campaign.module.ts`, options, errors: [{ messageId: 'inside' }] },
-    { code: "import { Contact_Module } from './features/contacts/contact/contact.module'", filename: `${CONTEXTS}/engagement/engagement-features.ts`, options, errors: [{ messageId: 'inside' }] },
-    // A feature its entry point does not import: it is not given it.
+    { code: "import { Contact_Module } from './features/contacts/contact/contact.module'", filename: `${CONTEXTS}/engagement/engagement.context.ts`, options, errors: [{ messageId: 'inside' }] },
+    // Its class is no entry point: only its index.ts is.
+    { code: "import type { Contacts_Feature } from '../../contacts/contacts.feature'", filename: `${CAMPAIGNS}/campaign/campaign.module.ts`, options, errors: [{ messageId: 'inside' }] },
+    { code: "import { Contacts_Feature } from './features/contacts/contacts.feature'", filename: `${CONTEXTS}/engagement/engagement.context.ts`, options, errors: [{ messageId: 'inside' }] },
+    // A feature its class does not import: it is not given it.
     {
-      code: "import type { ReportsFeature } from '../../reports/reports.feature'",
+      code: "import type { Reports_Feature } from '../../reports'",
       filename: `${CAMPAIGNS}/campaign/campaign.module.ts`,
       options,
-      errors: [{ messageId: 'undeclared', data: { path: '../../reports/reports.feature', feature: 'reports', own: 'campaigns', uses: 'contacts' } }],
+      errors: [{ messageId: 'undeclared', data: { path: '../../reports', feature: 'reports', own: 'campaigns', uses: 'contacts' } }],
     },
-    { code: "import type { CampaignsFeature } from '../../campaigns/campaigns.feature'", filename: `${CONTEXTS}/engagement/features/contacts/contact/contact.module.ts`, options, errors: [{ messageId: 'undeclared', data: { path: '../../campaigns/campaigns.feature', feature: 'campaigns', own: 'contacts', uses: 'no other feature' } }] },
-    // Two features whose entry points import each other.
-    { code: "import type { B } from '../b/b.feature'", filename: `${CONTEXTS}/loop/features/a/a.feature.ts`, options, errors: [{ messageId: 'cycle', data: { cycle: 'a → b → a' } }] },
-    { code: "import type { B } from '../b/b.feature'", filename: `${CONTEXTS}/ring/features/a/a.feature.ts`, options, errors: [{ messageId: 'cycle', data: { cycle: 'a → b → c → a' } }] },
+    { code: "import type { Campaigns_Feature } from '../../campaigns'", filename: `${CONTEXTS}/engagement/features/contacts/contact/contact.module.ts`, options, errors: [{ messageId: 'undeclared', data: { path: '../../campaigns', feature: 'campaigns', own: 'contacts', uses: 'no other feature' } }] },
+    // Two features whose classes import each other.
+    { code: "import type { B_Feature } from '../b'", filename: `${CONTEXTS}/loop/features/a/a.feature.ts`, options, errors: [{ messageId: 'cycle', data: { cycle: 'a → b → a' } }] },
+    { code: "import type { B_Feature } from '../b'", filename: `${CONTEXTS}/ring/features/a/a.feature.ts`, options, errors: [{ messageId: 'cycle', data: { cycle: 'a → b → c → a' } }] },
   ],
 })

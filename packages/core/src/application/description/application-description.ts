@@ -11,12 +11,11 @@ export type ContextDescription = {
   subscriptions: SubscriptionDescription[]
 }
 
-/** A feature of a context: the ids of its modules, and of those its contract shows. */
+/** A feature of a context: the ids of its modules. */
 export type FeatureDescription = {
   id: string
   name: string
   modules: string[]
-  shows: string[]
 }
 
 export type ModuleDescription = {
@@ -25,7 +24,6 @@ export type ModuleDescription = {
   name: string
   feature: string
   className: string
-  exposes: { useCases: string[], events: string[] }
   useCases: UseCaseDescription[]
   events: EventDescription[]
   deps: ModuleDependency[]

@@ -3,7 +3,7 @@ import { expect }          from 'bun:test'
 import { test }            from 'bun:test'
 // --------------------------------------------------------
 import { MemoryDatabase }  from '../../../adapters/database/memory/memory-database/memory-database'
-import { defineFeature }   from '../../../domain/feature/define-feature/define-feature'
+import { Feature }         from '../../../domain/feature/feature/feature'
 import { Module }          from '../../../domain/module/module/module'
 import { UseCase }         from '../../../domain/use-case/use-case/use-case'
 import { MemoryCluster }   from '../../cluster/memory-cluster/memory-cluster'
@@ -58,23 +58,26 @@ describe('describeContext', () => {
     expect(subscription?.handler).toBe('billing[invoice].open')
   })
 
-  test('lists its features, the modules of each, and those its contract shows', () => {
+  test('lists its features and the modules of each, a feature with no modules yet too', () => {
     class Template_Module extends Module {
       constructor(base: ContextBase, name = 'campaigns[template]') {
         super(name, base.useCaseRunner)
       }
     }
     const engagement = new ContextBase({ name: 'engagement', platform, database: new MemoryDatabase() })
+    class Of_Feature extends Feature {}
     const template = new Template_Module(engagement)
-    new Template_Module(engagement, 'campaigns[log]')
+    const log = new Template_Module(engagement, 'campaigns[log]')
     new Template_Module(engagement, 'contacts[contact]')
-    defineFeature('campaigns', engagement, { template })
+    new Of_Feature('campaigns', engagement, [template, log])
+    new Of_Feature('mailings', engagement, [])
 
     const described = describeContext(engagement.useCaseRunner.registry, new Map())
 
     expect(described.features).toEqual([
-      { id: 'engagement/campaigns', name: 'campaigns', modules: ['engagement/campaigns[template]', 'engagement/campaigns[log]'], shows: ['engagement/campaigns[template]'] },
-      { id: 'engagement/contacts', name: 'contacts', modules: ['engagement/contacts[contact]'], shows: [] },
+      { id: 'engagement/campaigns', name: 'campaigns', modules: ['engagement/campaigns[template]', 'engagement/campaigns[log]'] },
+      { id: 'engagement/contacts', name: 'contacts', modules: ['engagement/contacts[contact]'] },
+      { id: 'engagement/mailings', name: 'mailings', modules: [] },
     ])
   })
 })

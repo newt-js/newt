@@ -46,15 +46,16 @@ describe('the preset of newt', () => {
     expect(await complaints('src/contexts/ws/ws.context.ts', "import { x } from '../auth/auth.context'\nexport const y = x\n")).toEqual([])
   })
 
-  test('reaches another feature only through its entry point, one its own entry point imports', async () => {
+  test('reaches another feature only through its index.ts, one its own class imports', async () => {
     const campaign = 'src/contexts/ws/features/campaigns/campaign/campaign.module.ts'
-    await complaints('src/contexts/ws/features/contacts/contacts.feature.ts', 'export type ContactDTO = { id: string }\n')
     await complaints('src/contexts/ws/features/contacts/contact/contact.schema.ts', 'export type ContactDTO = { id: string }\n')
-    await complaints('src/contexts/ws/features/campaigns/campaigns.feature.ts', "import type { ContactDTO } from '../contacts/contacts.feature'\nexport type C = ContactDTO\n")
+    await complaints('src/contexts/ws/features/contacts/index.ts', "export type { ContactDTO } from './contact/contact.schema'\n")
+    await complaints('src/contexts/ws/features/campaigns/index.ts', 'export type C = { id: string }\n')
+    await complaints('src/contexts/ws/features/campaigns/campaigns.feature.ts', "import type { ContactDTO } from '../contacts'\nexport type C = ContactDTO\n")
 
     expect(await complaints(campaign, "import type { ContactDTO } from '../../contacts/contact/contact.schema'\nexport type C = ContactDTO\n")).toEqual(['newt/feature-imports'])
-    expect(await complaints(campaign, "import type { ContactDTO } from '../../contacts/contacts.feature'\nexport type C = ContactDTO\n")).toEqual([])
-    expect(await complaints('src/contexts/ws/features/contacts/contact/contact.module.ts', "import type { C } from '../../campaigns/campaigns.feature'\nexport type D = C\n")).toEqual(['newt/feature-imports'])
+    expect(await complaints(campaign, "import type { ContactDTO } from '../../contacts'\nexport type C = ContactDTO\n")).toEqual([])
+    expect(await complaints('src/contexts/ws/features/contacts/contact/contact.module.ts', "import type { C } from '../../campaigns'\nexport type D = C\n")).toEqual(['newt/feature-imports'])
   })
 
   test('refuses contexts that are no tree', () => {

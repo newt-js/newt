@@ -11,40 +11,20 @@ import { rootOf }        from '../../paths/paths'
 /** The calls that define a name of a module's: its schedules and its rate limits (`base.schedules.define('…', …)`). */
 const DEFINES = new Set(['schedules', 'rateLimits'])
 
-/** That a property is `as const` (`{ … } as const`, also `satisfies` something), or a constant declared elsewhere. */
-function isConst(value: TSESTree.Expression | null): boolean {
-  const inner = value?.type === 'TSSatisfiesExpression' ? value.expression : value
-  if (inner?.type === 'Identifier' || inner?.type === 'MemberExpression') return true
-  return inner?.type === 'TSAsExpression' && inner.typeAnnotation.type === 'TSTypeReference' && inner.typeAnnotation.typeName.type === 'Identifier' && inner.typeAnnotation.typeName.name === 'const'
-}
-
-/** The keys of what a module exposes, written in place, that are neither useCases nor events. */
-function unknownKeys(value: TSESTree.Expression | null): (TSESTree.Identifier | TSESTree.Literal)[] {
-  let inner = value
-  while (inner?.type === 'TSSatisfiesExpression' || inner?.type === 'TSAsExpression') inner = inner.expression
-  if (inner?.type !== 'ObjectExpression') return []
-  return inner.properties.flatMap(each => each.type === 'Property' && !each.computed && (each.key.type === 'Identifier' || each.key.type === 'Literal')
-    && !['useCases', 'events'].includes(each.key.type === 'Identifier' ? each.key.name : String(each.key.value)) ? [each.key] : [])
-}
-
 /**
  * A module of a feature goes by `<feature>[<module>]`, from its folders: the name it gives
  * `super`, and the start of its events', schedules' and rate limits' names, which its use
  * cases and its workers' queues are named after. Written by hand, it could say another
- * feature or another module. And what it exposes is written `as const`: without it, its
- * names are just strings, and its feature's contract shows none of them.
+ * feature or another module.
  */
-export const moduleNames: TSESLint.RuleModule<'module' | 'name' | 'exposes' | 'expose' | 'key'> = {
+export const moduleNames: TSESLint.RuleModule<'module' | 'name'> = {
   defaultOptions: [],
   meta: {
     type: 'problem',
-    docs: { description: 'A module of a feature is named <feature>[<module>], after its folders, and writes its exposes as const.' },
+    docs: { description: 'A module of a feature is named <feature>[<module>], after its folders.' },
     messages: {
       module: "This module is {{expected}}, after its folders: super('{{expected}}', …), not '{{found}}'.",
       name: "Name it '{{expected}}.<name>', after its folders, not '{{found}}'.",
-      exposes: 'Write what a module exposes `as const`: `{ useCases: [...], events: [...] } as const`. Without it its names are mere strings, and its feature\'s contract shows none of them.',
-      expose: 'Rename `expose` to `exposes`: a module shows the other features what it lists there.',
-      key: "exposes lists useCases and events, not '{{key}}': a key of another name shows nothing.",
     },
     schema: [],
   },
@@ -65,13 +45,6 @@ export const moduleNames: TSESLint.RuleModule<'module' | 'name' | 'exposes' | 'e
     const checkClass = (node: TSESTree.ClassDeclaration | TSESTree.ClassExpression) => {
       if (!extendsModule(node, modules)) return
       for (const member of node.body.body) {
-        if (member.type === 'PropertyDefinition' && member.key.type === 'Identifier' && !member.computed) {
-          if (member.key.name === 'exposes' && !isConst(member.value)) context.report({ node: member, messageId: 'exposes' })
-          if (member.key.name === 'expose') context.report({ node: member.key, messageId: 'expose' })
-          if (member.key.name === 'exposes') {
-            for (const key of unknownKeys(member.value)) context.report({ node: key, messageId: 'key', data: { key: key.type === 'Identifier' ? key.name : String(key.value) } })
-          }
-        }
         if (member.type !== 'MethodDefinition' || member.kind !== 'constructor') continue
         for (const statement of member.value.body?.body ?? []) {
           const call = statement.type === 'ExpressionStatement' ? statement.expression : undefined

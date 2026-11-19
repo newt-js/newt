@@ -9,9 +9,6 @@ const CLASS = (body: string) => `import { Module } from '@newt-js/core'\nclass T
 tester.run('module-names', asRule(moduleNames), {
   valid: [
     { code: CLASS("constructor(base) { super('campaigns[template]', base.useCaseRunner) }"), filename: MODULE_TS },
-    { code: CLASS("readonly exposes = { useCases: ['get'], events: ['created'] } as const"), filename: MODULE_TS },
-    { code: CLASS("readonly exposes = { useCases: ['get'] } as const satisfies Exposes"), filename: MODULE_TS },
-    { code: CLASS('readonly exposes = EXPOSES'), filename: MODULE_TS },
     { code: "import { defineEvent } from '@newt-js/core'\nexport const Template_Created = defineEvent('campaigns[template].created', schema)", filename: `${TEMPLATE}/events/template-created.ts` },
     { code: "this.nightly = base.schedules.define('campaigns[template].nightly', '0 3 * * *')", filename: MODULE_TS },
     { code: "const limit = base.rateLimits.define('campaigns[template].send', rule)", filename: MODULE_TS },
@@ -28,9 +25,6 @@ tester.run('module-names', asRule(moduleNames), {
   invalid: [
     { code: CLASS("constructor(base) { super('template', base.useCaseRunner) }"), filename: MODULE_TS, errors: [{ messageId: 'module', data: { expected: 'campaigns[template]', found: 'template' } }] },
     { code: CLASS("constructor(base) { super('emails[template]', base.useCaseRunner) }"), filename: MODULE_TS, errors: [{ messageId: 'module' }] },
-    { code: CLASS("readonly exposes = { useCases: ['get'] }"), filename: MODULE_TS, errors: [{ messageId: 'exposes' }] },
-    { code: CLASS("readonly expose = { useCases: ['get'] } as const"), filename: MODULE_TS, errors: [{ messageId: 'expose' }] },
-    { code: CLASS("readonly exposes = { usecases: ['get'], event: [] } as const"), filename: MODULE_TS, errors: [{ messageId: 'key', data: { key: 'usecases' } }, { messageId: 'key', data: { key: 'event' } }] },
     { code: "import { defineEvent } from '@newt-js/core'\nexport const Template_Created = defineEvent('template.created', schema)", filename: `${TEMPLATE}/events/template-created.ts`, errors: [{ messageId: 'name', data: { found: 'template.created', expected: 'campaigns[template]' } }] },
     { code: "this.nightly = base.schedules.define('campaigns[tag].nightly', '0 3 * * *')", filename: MODULE_TS, errors: [{ messageId: 'name' }] },
     { code: "const limit = base.rateLimits.define('send', rule)", filename: MODULE_TS, errors: [{ messageId: 'name' }] },
