@@ -19,7 +19,7 @@ export function usesTs(names: FeatureNames, context: string): string[] {
   return [`/** What ${names.camel} uses of the other features of ${context}, which ${context}.context.ts builds before it. */`, usesHead(names), '}', '']
 }
 
-/** <feature>.feature.ts: the feature's class, which builds its modules and holds each one. */
+/** <feature>.feature.ts: the feature's class, which builds its modules and holds each one in a field. */
 export function featureTs(names: FeatureNames): string {
   return `import { Feature } from '@newt-js/core'
 import type { ContextBase } from '@newt-js/core/application'
@@ -27,13 +27,14 @@ import type { HttpRouter } from '@newt-js/core/http'
 
 ${classHead(names)}
 ${initializeHead(names, false)}
-    return new ${featureClass(names)}(base)
+    return new ${featureClass(names)}(base, {})
   }
 
   private constructor(
     base: ContextBase,
+    modules: {},
   ) {
-    super('${names.camel}', base, [])
+    super('${names.camel}', base, modules)
   }
 }
 `

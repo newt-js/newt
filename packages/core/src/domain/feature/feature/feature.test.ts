@@ -46,15 +46,22 @@ class Campaigns_Feature extends Feature {
   static initialize(runner = new UseCaseRunner({ context: 'engagement' })): Campaigns_Feature {
     const template = new Template_Module(runner)
     const campaign = new Campaign_Module(runner, { template })
-    return new Campaigns_Feature({ useCaseRunner: runner }, campaign, template)
+    return new Campaigns_Feature({ useCaseRunner: runner }, { campaign, template })
   }
+
+  public readonly campaign: Campaign_Module
+  public readonly template: Template_Module
 
   private constructor(
     base: { useCaseRunner: UseCaseRunner },
-    readonly campaign: Campaign_Module,
-    readonly template: Template_Module,
+    modules: {
+      campaign: Campaign_Module,
+      template: Template_Module,
+    },
   ) {
-    super('campaigns', base, [campaign, template])
+    super('campaigns', base, modules)
+    this.campaign = modules.campaign
+    this.template = modules.template
   }
 }
 
@@ -82,15 +89,16 @@ describe('Feature', () => {
     expect(runner.registry.registeredFeatures).toEqual([{ name: 'campaigns', modules: ['campaign', 'template'] }])
   })
 
-  test('refuses a name not in camelCase, and a module of another feature or context', () => {
+  test('refuses a name not in camelCase, a module of another feature or context, and one under another name', () => {
     const runner = new UseCaseRunner()
     const template = new Template_Module(runner)
     class Of_Feature extends Feature {}
     const base = { useCaseRunner: runner }
 
-    expect(() => new Of_Feature('Campaigns', base, [])).toThrow("'Campaigns' cannot name a feature")
-    expect(() => new Of_Feature('sales-orders', base, [])).toThrow("'sales-orders' cannot name a feature")
-    expect(() => new Of_Feature('emails', base, [template])).toThrow('The feature emails: campaigns[template] is a module of the feature campaigns: a feature holds only its own modules, emails[<module>]')
-    expect(() => new Of_Feature('campaigns', { useCaseRunner: new UseCaseRunner({ context: 'billing' }) }, [template])).toThrow("campaigns[template] is a module of another context than billing's")
+    expect(() => new Of_Feature('Campaigns', base, {})).toThrow("'Campaigns' cannot name a feature")
+    expect(() => new Of_Feature('sales-orders', base, {})).toThrow("'sales-orders' cannot name a feature")
+    expect(() => new Of_Feature('emails', base, { template })).toThrow('The feature emails: campaigns[template] is a module of the feature campaigns: a feature holds only its own modules, emails[<module>]')
+    expect(() => new Of_Feature('campaigns', { useCaseRunner: new UseCaseRunner({ context: 'billing' }) }, { template })).toThrow("campaigns[template] is a module of another context than billing's")
+    expect(() => new Of_Feature('campaigns', base, { layout: template })).toThrow('The feature campaigns: campaigns[template] is given as layout: each module goes under its own name, template')
   })
 })

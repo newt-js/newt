@@ -42,7 +42,7 @@ describe('dependenciesOf', () => {
 
   test("tells a feature by the feature's id", () => {
     class Contacts_Feature extends Feature {}
-    const contacts = new Contacts_Feature('contacts', { useCaseRunner: new UseCaseRunner({ context: 'engagement' }) }, [])
+    const contacts = new Contacts_Feature('contacts', { useCaseRunner: new UseCaseRunner({ context: 'engagement' }) }, {})
 
     expect(dependenciesOf({ contacts }, new Map())).toEqual([{ name: 'contacts', kind: 'feature', target: 'engagement/contacts' }])
   })
