@@ -1,4 +1,5 @@
 import { DuplicateValue }          from '@newt-js/core'
+import { InvalidEntity }           from '@newt-js/core'
 import type { TestContext }        from '@newt-js/core/application/testing'
 import { testContext }             from '@newt-js/core/application/testing'
 import { MemoryCluster }           from '@newt-js/core/cluster/memory'
@@ -85,8 +86,11 @@ test('the same email in two applications is two users', async () => {
   const inBackoffice = await saved('ana@example.com', backoffice)
 
   expect(inAuth.id).not.toBe(inBackoffice.id)
-  const found = await users.find({ email: 'ana@example.com' })
-  expect(found).toHaveLength(2)
+  const email = 'ana@example.com'
+  const auth = await users.find({ applicationId: AUTH, email })
+  expect(auth).toMatchObject([{ id: inAuth.id }])
+  const other = await users.find({ applicationId: backoffice, email })
+  expect(other).toMatchObject([{ id: inBackoffice.id }])
 })
 
 test('the same email twice in one application is refused', async () => {
@@ -108,17 +112,26 @@ test('a user may have no email, and many of one application', async () => {
 test('refuses an email it cannot keep', async () => {
   const application = await applications.get(AUTH)
   const props = { application, email: 'ana', name: 'Ana' }
-  expect(() => User.create(props)).toThrow()
+  expect(() => User.create(props)).toThrow(InvalidEntity)
 })
 
-test('finds the users of an application by their email', async () => {
+test('finds a user of an application by its email, as typed', async () => {
   const ana = await saved('ana@example.com')
   await saved('abel@example.com')
 
-  const criteria = { applicationId: AUTH, email: 'Ana@Example.com' }
-  expect(await users.find(criteria)).toMatchObject([{ id: ana.id }])
+  const typed = { applicationId: AUTH, email: ' Ana@Example.com ' }
+  expect(await users.find(typed)).toMatchObject([{ id: ana.id }])
+  const unknown = { applicationId: AUTH, email: 'eva@example.com' }
+  expect(await users.find(unknown)).toEqual([])
   const page = await users.paginate({ applicationId: AUTH }, { size: 10 })
   expect(page.total).toBe(2)
+})
+
+test('lists every user by its route', async () => {
+  const ana = await saved('ana@example.com')
+
+  const listed = await call('GET', '/users')
+  expect(await listed?.json()).toMatchObject({ items: [{ id: ana.id }] })
 })
 
 test('says there is no user with an id it does not have', async () => {

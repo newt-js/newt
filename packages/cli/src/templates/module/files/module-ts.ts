@@ -1,4 +1,6 @@
 import type { ModuleNames } from '../../../names/module-names/module-names'
+import { fittedCall }       from '../../fitted-call/fitted-call'
+import { fitting }          from '../../fitted-call/fitted-call'
 import { moduleLines }      from '../module-lines/module-lines'
 
 export function moduleTs(names: ModuleNames): string {
@@ -33,8 +35,9 @@ ${lines.routes}
   }
 
   @UseCase()
-  async create(input: ${type}CreateDTO): Promise<${type}DTO> {
-    const ${module} = ${type}.create(${type}CreateSchema.parse(input))
+${fitting(`  async create(input: ${type}CreateDTO): Promise<${type}DTO> {`, `  async create(\n    input: ${type}CreateDTO,\n  ): Promise<${type}DTO> {`)}
+    const props = ${type}CreateSchema.parse(input)
+${fitting(`    const ${module} = ${type}.create(props)`, `    const ${module} =\n      ${type}.create(props)`)}
     await this.repository.persist(${module})
     return ${module}.toDTO()
   }

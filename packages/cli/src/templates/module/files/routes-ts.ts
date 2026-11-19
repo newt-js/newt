@@ -1,4 +1,5 @@
 import type { ModuleNames } from '../../../names/module-names/module-names'
+import { fitting }          from '../../fitted-call/fitted-call'
 
 /** The head of the routes function: given the module's deps once it has them. */
 export const routesHead = ({ type, plural }: ModuleNames, withDeps: boolean) =>
@@ -11,7 +12,8 @@ import type { ${type}_Module } from './${folder}.module'
 
 ${routesHead(names, false)}
   router.post('/${path}', async request => {
-    const created = await ${plural}.create(await bodyOf(request))
+    const body = await bodyOf(request)
+    const created = await ${plural}.create(body)
     return Response.json(created, { status: 201 })
   })
   router.get('/${path}', async request => {
@@ -19,9 +21,10 @@ ${routesHead(names, false)}
     return Response.json(await ${plural}.paginate({}, page))
   })
   router.get('/${path}/:id', async request => {
-    return Response.json(await ${plural}.get(request.params.id))
+    const found = await ${plural}.get(request.params.id)
+    return Response.json(found)
   })
-  return { one: router.group('/${path}/:${module}Id') }
+${fitting(`  return { one: router.group('/${path}/:${module}Id') }`, `  return {\n    one: router.group('/${path}/:${module}Id'),\n  }`, `  return {\n    one: router.group(\n      '/${path}/:${module}Id',\n    ),\n  }`)}
 }
 `
 }

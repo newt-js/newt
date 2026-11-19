@@ -8,6 +8,7 @@ import { beforeEach }              from 'bun:test'
 import { expect }                  from 'bun:test'
 import { test }                    from 'bun:test'
 import { join }                    from 'node:path'
+import { ZodError }                from 'zod'
 // --------------------------------------------------------
 import { Auth_Context }            from '../../auth.context'
 import type { Application_Module } from './application.module'
@@ -48,7 +49,7 @@ function call(method: string, path: string, body?: unknown) {
 }
 
 test('auth has its own application from the first migration', async () => {
-  expect(await applications.find({ slug: 'auth' })).toMatchObject([
+  expect(await applications.find({ slug: ' AUTH ' })).toMatchObject([
     { slug: 'auth', name: 'auth', registration: 'closed' },
   ])
 })
@@ -109,12 +110,12 @@ const MALFORMED = [' ', 'a', 'back office', 'back_office', '-back', 'back-']
 
 test.each(MALFORMED)('refuses %p as a slug', async slug => {
   const created = applications.create({ slug, name: 'Back office' })
-  await expect(created).rejects.toThrow()
+  await expect(created).rejects.toThrow(ZodError)
 })
 
 test('refuses a name it cannot keep', async () => {
   const created = applications.create({ slug: 'backoffice', name: '  ' })
-  await expect(created).rejects.toThrow()
+  await expect(created).rejects.toThrow(ZodError)
 })
 
 test('says there is no application with an id it does not have', async () => {

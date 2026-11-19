@@ -14,6 +14,9 @@ const KEBAB = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/
 
 const MAX_TABLE = 63
 
+/** The longest a module's name may be in its code, `CustomerAccountStatementLine`: newt keeps its lines to 80. */
+const MAX_TYPE = 28
+
 /** What a context already is, its name, its base and how it starts and stops: its modules are fields of it too. */
 const CONTEXT_MEMBERS = new Set(['name', 'base', 'start', 'stopWorker', 'close', 'stop'])
 
@@ -53,11 +56,13 @@ export function moduleNames(folder: string, given?: string): ModuleNames {
   if (plural.join('-') === 'files') refuse("its routes would be under /<context>/api/files, where the context's files are served; name it by what it holds")
   const table = words.join('_')
   if (table.length > MAX_TABLE) refuse(`its table, ${table}, would have more than ${MAX_TABLE} characters, more than databases take`)
+  const type = capital(camel(words))
+  if (type.length > MAX_TYPE) refuse(`its code would call it ${type}, of more than ${MAX_TYPE} characters, too long for lines of 80; name it in fewer words`)
   return {
     folder,
     module: camel(words),
     name: camel(words),
-    type: capital(camel(words)),
+    type,
     table,
     migration: table,
     words: words.join(' '),

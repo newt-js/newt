@@ -21,7 +21,11 @@ export const ApplicationCreateSchema = ApplicationSchema.pick({
 
 export const ApplicationFilter = defineFilter({
   id: { field: 'id', value: ApplicationId.schema, ops: ['eq', 'in'] },
-  slug: { field: 'slug', value: z.string(), ops: ['eq'] },
+  slug: {
+    field: 'slug',
+    value: z.string().trim().toLowerCase(),
+    ops: ['eq'],
+  },
   name: { field: 'name', value: z.string(), ops: ['eq', 'ieq'] },
 }, { sort: ['name', 'createdAt'] })
 

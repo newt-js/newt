@@ -154,6 +154,7 @@ describe('the preset of newt', () => {
     expect(await allComplaints(file, `export const long = [${'1, '.repeat(30)}1]\n`)).toEqual(['@stylistic/max-len'])
     expect(await allComplaints(file, `export const text = '${'a'.repeat(90)}'\n`)).toEqual(['@stylistic/max-len'])
     expect(await allComplaints(file, `// https://example.com/${'a'.repeat(90)}\nexport const x = 1\n`)).toEqual([])
+    expect(await allComplaints(file, `import { a } from './${'a'.repeat(90)}'\nexport const x = a\n`)).toEqual([])
   })
 
   test('refuses a promise left unawaited, or handed where nobody awaits it', async () => {
