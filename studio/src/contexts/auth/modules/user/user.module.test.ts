@@ -10,9 +10,11 @@ import { beforeEach }              from 'bun:test'
 import { expect }                  from 'bun:test'
 import { test }                    from 'bun:test'
 import { join }                    from 'node:path'
+import { ZodError }                from 'zod'
 // --------------------------------------------------------
 import { Auth_Context }            from '../../auth.context'
 import type { Application_Module } from '../application/application.module'
+import { SetupClosed }             from './errors/setup-closed'
 import { User }                    from './user'
 import type { User_Module }        from './user.module'
 import { User_Repository }         from './user.repository'
@@ -64,10 +66,55 @@ async function anotherApplication(): Promise<ApplicationId> {
   return ApplicationId.from(created.id)
 }
 
-function call(method: string, path: string) {
+function call(method: string, path: string, body?: unknown) {
   const url = `http://backend.test${router.prefix}${path}`
-  return router.answer(new Request(url, { method }))
+  const json = body === undefined ? {} : {
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }
+  return router.answer(new Request(url, { method, ...json }))
 }
+
+const ADMIN = { email: 'Admin@Example.com', name: 'Admin' }
+
+test('the setup creates the first admin of auth, and only the first', async () => {
+  const admin = await users.createFirstAdmin(ADMIN)
+
+  expect(admin).toMatchObject({
+    application: { id: AUTH },
+    email: 'admin@example.com',
+    emailVerified: false,
+  })
+  const ofAuth = await users.find({ applicationId: AUTH })
+  expect(ofAuth).toMatchObject([{ id: admin.id }])
+  const again = users.createFirstAdmin({ ...ADMIN, email: 'eve@example.com' })
+  await expect(again).rejects.toThrow(SetupClosed)
+})
+
+test('the first admin signs in by its email, so it needs one', async () => {
+  const nameless = users.createFirstAdmin({ email: null as never, name: 'A' })
+  await expect(nameless).rejects.toThrow(ZodError)
+})
+
+test('users of other applications leave the setup open', async () => {
+  await saved('abel@example.com', await anotherApplication())
+
+  expect(await users.createFirstAdmin(ADMIN)).toBeDefined()
+})
+
+test('the whole setup by its routes, before anyone signs in', async () => {
+  signedIn = false
+
+  const created = await call('POST', '/setup', ADMIN)
+  expect(created?.status).toBe(201)
+  const { id } = await created!.json() as UserDTO
+  const password = { userId: id, password: 'correct horse battery staple' }
+  expect((await call('POST', '/setup/password', password))?.status).toBe(204)
+
+  expect((await call('POST', '/setup', ADMIN))?.status).toBe(409)
+  const again = { ...password, password: 'another pass phrase' }
+  expect((await call('POST', '/setup/password', again))?.status).toBe(409)
+})
 
 test('a user is of an application, its email lower case', async () => {
   const ana = await saved(' Ana@Example.com ')

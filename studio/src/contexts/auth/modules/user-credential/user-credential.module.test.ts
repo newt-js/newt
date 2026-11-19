@@ -12,7 +12,9 @@ import { join }                       from 'node:path'
 import { ZodError }                   from 'zod'
 // --------------------------------------------------------
 import { Auth_Context }               from '../../auth.context'
+import type { Application_Module }    from '../application/application.module'
 import { UserNotFound }               from '../user/errors/user-not-found'
+import { SetupClosed }                from './errors/setup-closed'
 import { UserCredential }             from './user-credential'
 import type { UserCredential_Module } from './user-credential.module'
 import { UserCredential_Repository }  from './user-credential.repository'
@@ -26,6 +28,7 @@ const PASSWORD = 'correct horse battery staple'
 let context: TestContext
 let router: HttpRouter
 let credentials: UserCredential_Module
+let applications: Application_Module
 let stored: UserCredential_Repository
 let userId: UserId
 
@@ -40,6 +43,7 @@ beforeEach(async () => {
   router.authenticateWith(async () => ({ userId: 'tester' }))
   const composed = Auth_Context.initialize(context.base, router)
   credentials = composed['userCredential']
+  applications = composed['application']
   stored = new UserCredential_Repository(context.base)
   userId = await savedUser()
 })
@@ -59,13 +63,16 @@ type UserRow = {
 }
 
 /** Users are born by use cases still to come: here, a row of its table. */
-async function savedUser(): Promise<UserId> {
+async function savedUser(
+  applicationId = AUTH,
+  email = 'ana@example.com',
+): Promise<UserId> {
   const id = UserId.from(Bun.randomUUIDv7())
   const now = new Date().toISOString()
   await context.base.database.records<UserRow>('user').insert({
     id,
-    applicationId: AUTH,
-    email: 'ana@example.com',
+    applicationId,
+    email,
     emailVerified: false,
     name: 'Ana',
     createdAt: now,
@@ -141,6 +148,33 @@ test('tells what it creates without its secret', async () => {
   expect(JSON.stringify(told)).toContain(userId)
   expect(JSON.stringify(told)).not.toContain('secretHash')
   expect(JSON.stringify(told)).not.toContain('$argon2')
+})
+
+test('the setup gives the first admin of auth its password, once', async () => {
+  await credentials.setFirstAdminPassword({ userId, password: PASSWORD })
+
+  expect(await credentials.verify({ userId, password: PASSWORD })).toBe(true)
+  const again = { userId, password: 'another pass phrase' }
+  const closed = credentials.setFirstAdminPassword(again)
+  await expect(closed).rejects.toThrow(SetupClosed)
+})
+
+test('the setup gives no password to a user of another application', async () => {
+  const backOffice = await applications.create({ name: 'Back office' })
+  const abel = await savedUser(backOffice.id)
+
+  const given = { userId: abel, password: PASSWORD }
+  const closed = credentials.setFirstAdminPassword(given)
+  await expect(closed).rejects.toThrow(SetupClosed)
+})
+
+test('the setup closes once an admin of auth has a password', async () => {
+  await credentials.setPassword({ userId, password: PASSWORD })
+  const another = await savedUser(AUTH, 'eva@example.com')
+
+  const given = { userId: another, password: PASSWORD }
+  const closed = credentials.setFirstAdminPassword(given)
+  await expect(closed).rejects.toThrow(SetupClosed)
 })
 
 test('no route reaches the credentials', async () => {
