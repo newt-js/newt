@@ -25,7 +25,7 @@ sidebar:
 
 See [Entities](/concepts/entities/).
 
-### `Entity<TSchema, TPublic = TSchema>`
+### `Entity<TSchema, TPublic = TSchema, TReferences = {}>`
 
 The base class of an entity: data checked by a zod schema, with an id, a version and the events it tracks.
 
@@ -39,7 +39,7 @@ export class Task extends Entity<typeof TaskSchema> {
 
 | Member | Kind | What it does |
 |---|---|---|
-| `constructor(schema, input, isNew, publicSchema?)` | protected | Parses `input` with `schema`. A new entity gets an id (UUID v7) when it has none, and `createdAt`/`updatedAt` from the clock. One read from storage needs its `version`. `publicSchema` picks the fields `toDTO()` shows. |
+| `constructor(schema, input, isNew, publicSchema?)` | protected | Parses `input` with `schema`. A new entity gets an id (UUID v7) when it has none, and `createdAt`/`updatedAt` from the clock. One read from storage needs its `version`. `publicSchema` picks the fields `toDTO()` shows. With `TReferences`, `input` takes the entities it references (`customer`) and keeps their ids (`customerId`). |
 | `id` | getter | The entity's id. |
 | `version` | getter | `0` when new; goes up by one on every save. |
 | `isNew` | getter | `true` until its first save. |
@@ -52,7 +52,7 @@ export class Task extends Entity<typeof TaskSchema> {
 | `getChanges()` | method | The changed fields, or `null`. |
 | `getPrevious()` | method | The values those fields had when read, or `null`. |
 | `hasChanged(field)` | method | Whether `field` changed (always `true` when new). |
-| `toDTO()` | method | A copy of its fields, only the public ones when there is a `publicSchema`. |
+| `toDTO()` | method | A copy of its fields, only the public ones when there is a `publicSchema`, with the entities it references in place of their ids. |
 
 Rules the constructor checks on the schema: it names `createdAt` and `updatedAt`, and it does not keep unknown fields (`z.looseObject`, `.catchall`, `.passthrough`). A public schema only has fields of the schema.
 
@@ -180,7 +180,7 @@ export class Task_Repository extends Repository<Task, TaskRow> {
     super(base, base.database.records<TaskRow>('task'), { scope: 'none' })
   }
 
-  protected toEntity(row: TaskRow): Task {
+  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {
     return Task.fromDTO(row)
   }
 }
@@ -188,8 +188,8 @@ export class Task_Repository extends Repository<Task, TaskRow> {
 
 | Member | Signature | What it does |
 |---|---|---|
-| `constructor` | `(deps: D, records: Records<Row>, options: RepositoryOptions<Row>)` | |
-| `toEntity` | `protected abstract (row: Row) => E` | Builds the entity from a row. |
+| `constructor` | `(deps: D, records: Records<Row>, options: RepositoryOptions<Row, ReferencesOf<E>>)` | |
+| `toEntity` | `protected abstract (row: ResolvedRow<Row, E>) => E` | Builds the entity from a row, with the entities its entity references in place of their ids. |
 | `toRow` | `protected (entity: E) => NewRow<Row>` | The row to insert. Override to store other columns. |
 | `toChanges` | `protected (entity: E) => Partial<NewRow<Row>>` | The columns to update. |
 | `find` | `(criteria?, options?: ReadOptions<Row>) => Promise<E[]>` | Entities that match. |
@@ -203,6 +203,7 @@ export class Task_Repository extends Repository<Task, TaskRow> {
 |---|---|---|
 | `scope` | required | `'none'`, or `{ field, current: () => string }`: every read is filtered by `field = current()`, and a save outside it throws. |
 | `softDelete` | `false` | A delete sets `deletedAt` instead of removing the row; reads skip those rows. |
+| `references` | required when its entity has references | `Loads<References>`: how each entity its entity references loads. Every read resolves them, once per reference for all its rows. See [References to other modules](/concepts/repositories/#references-to-other-modules). |
 
 `ReadOptions<Row>` is `{ orderBy?: { field, direction?: 'asc' \| 'desc' }[], limit?: number, everyScope?: boolean }`. `everyScope: true` reads past the scope.
 
@@ -543,11 +544,11 @@ tasks.on(tasks.remindOverdueSchedule, 'remindOverdue')
 
 | Export | Signature | Meaning |
 |---|---|---|
-| `Ref` | `{ id: string, name: string }` | A short view of something in another module. |
-| `RefQuery` | `{ id: string[] }` | |
-| `RefFinder` | `{ find(query: RefQuery): Promise<Ref[]> }` | What a module offers to be referenced. |
-| `resolveRefs(ids, finders)` | `=> Promise<Record<K, Ref \| null>>` | Finds each id with its finder. A `null` id gives `null`, an `undefined` one is skipped, a missing one throws `ReferenceNotFound`. |
-| `resolve(find, onMissing)` | `=> Promise<T>` | The first result of `find`, or throws `onMissing()`. |
+| `References` | `{ [<name>Id]: DTO, [list]: References }` | What an entity references, as a plain type: `{ customerId: CustomerDTO, lines: { productId: ProductDTO } }`. |
+| `Resolved<T, S>` | | A `T` with each referenced `<name>Id` replaced by the entity it names, `<name>`: `null` only where the id may be missing. |
+| `Loads<S>` | `{ [<name>Id]: (ids) => Promise<DTO[]>, [list]: Loads }` | How the references `S` load: the other module's `find({ field: 'id', op: 'in', value: ids })`. |
+| `resolveReference(items, loads)` | `=> Promise<Resolved<T, S>[]>` | Replaces each `<name>Id` of the items, and of the lists they hold, with the entity it names, loading each reference once for the whole list, 100 ids at a time. A `null` or absent id gives `null`; one that names nothing throws `ReferenceNotFound`. Repositories resolve their reads with it. |
+| `referenced(entities, id, name)` | `=> T` | The entity of `entities` with that id, or `ReferenceNotFound` naming it: how a use case takes what its input references from what the other module's `find` gave. |
 
 ## Observability
 

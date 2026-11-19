@@ -155,6 +155,64 @@ export class Task extends Entity<
 
 Cada campo del schema público tiene que estar en el principal, o el constructor lanza un error.
 
+## Referencias a otros módulos
+
+Un pedido guarda el id de su cliente, `customerId`, y cada una de sus líneas el id de su producto, `productId`. Decláralos como las referencias del pedido, junto a su schema, cada uno con el DTO de la entidad que nombra:
+
+```ts title="order.schema.ts"
+import type { Resolved } from '@newt-js/core'
+import type { CustomerDTO } from '../../customers'
+import type { ProductDTO } from '../../catalog'
+
+export const OrderSchema = z.object({
+  id: OrderId.schema,
+  customerId: CustomerId.schema,
+  lines: z.array(z.object({ productId: ProductId.schema, quantity: z.number().int().positive() })).min(1),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+/** What an order references: under each id it keeps, the DTO of the entity that id names. */
+export type OrderReferences = { customerId: CustomerDTO, lines: { productId: ProductDTO } }
+
+/** { id, customer, lines: { product, quantity }[], createdAt, updatedAt } */
+export type OrderDTO = Resolved<z.infer<typeof OrderSchema>, OrderReferences>
+```
+
+Una referencia es un campo llamado `<nombre>Id`, y la entidad lo enseña como `<nombre>`. Un id de su mismo tipo (el `parentId` de una tarea) no es una referencia: déjalo fuera.
+
+La entidad recibe sus referencias como su tercer tipo:
+
+```ts title="order.ts"
+export type OrderCreateProps = { customer: CustomerDTO, lines: { product: ProductDTO, quantity: number }[] }
+export type OrderChangeCustomerProps = { customer: CustomerDTO }
+
+export class Order extends Entity<typeof OrderSchema, typeof OrderSchema, OrderReferences> {
+  private constructor(input: EntityInput<OrderDTO>, isNew: boolean) {
+    super(OrderSchema, input, isNew)
+  }
+
+  static fromDTO(dto: OrderDTO & { version: number }): Order {
+    return new Order(dto, false)
+  }
+
+  static create(props: OrderCreateProps): Order {
+    return new Order(props, true)
+  }
+
+  changeCustomer({ customer }: OrderChangeCustomerProps): void {
+    this.change({ customer })
+  }
+}
+```
+
+- Recibe las entidades, nunca solo sus ids: `create` y `change` reciben `customer`, así que un pedido nunca apunta a un cliente que nadie cargó.
+- Guarda sus ids: `this.data.customerId`, `getChanges()` y la fila en la que se guarda.
+- `toDTO()` enseña las entidades en lugar de sus ids: completo, siempre.
+- Un id que admite null recibe `null`, y enseña `null`.
+
+Su repositorio las carga en cada lectura: ver [Repositorios](/es/concepts/repositories/#referencias-a-otros-módulos).
+
 ## Su vida
 
 Esta es la vida de una tarea, desde que se crea o se lee hasta que se borra:

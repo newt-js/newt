@@ -56,7 +56,7 @@ If you pass `uses`, list every context, even those that use none (`[]`). A missi
 
 | Files | Rules |
 |---|---|
-| Every linted file | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable`, and the rules from other plugins |
+| Every linted file | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `use-case-resolved`, `use-case-batched`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable`, and the rules from other plugins |
 | A module's files (`**/modules/<module>/**`) | `module-entity`, `module-files`, `module-imports`, `entity-method-params`, `reaction-queue`, `schema-imports`, `use-case-files`, `module-transactions` |
 | Files in the contexts folder (with `contexts`) | `context-imports`, `route-context`; `module-imports` for files outside the modules |
 | A context's app (`<context>/app/**/*.{ts,tsx}`, with `contexts`) | `app-imports`, `no-disable` |
@@ -228,6 +228,39 @@ async search(text: SearchText, page: PageRequest) { /* ... */ } // right
 
 Why: every module reads the same four ways: `find(criteria, sort?)`, `get(id)`, `paginate(criteria, page, sort?)`, `search(text, page)`.
 
+### newt/use-case-resolved
+
+What a use case returns holds no id it keeps of another entity: in place of `projectId` (an id made with `uuidFactory`), the entity it names, `project`. It looks through lists, pages and the entities resolved in them. An id of its own entity's kind (a task's `parentId`) and a plain `string` (an id of another system) are no reference. It needs the program typescript-eslint builds.
+
+```ts
+@UseCase()
+async get(id: string): Promise<OrderRow> { /* ... */ } // wrong: returns customerId and lines[].productId
+
+@UseCase()
+async get(id: string): Promise<OrderDTO> {
+  // ...
+  return order.toDTO() // right: customer and lines[].product
+}
+```
+
+Why: a module shows its entities, never what it keeps of them. See [References to other modules](/concepts/use-cases/#references-to-other-modules).
+
+### newt/use-case-batched
+
+In a `*.module.ts`, a call to another module's use case (`this.deps.<module>.<use case>(…)`) is never inside a loop (`for`, `for…of`, `while`…) or a callback a list runs once per item (`map`, `flatMap`, `forEach`, `filter`, `reduce`, `some`, `every`, `find`…). The list a `for…of` reads runs once, and is allowed.
+
+```ts
+const lines = await Promise.all(input.lines.map(async line => ({
+  product: await this.deps.catalog.product.get(line.productId), // wrong: one call per line
+  quantity: line.quantity,
+})))
+
+const products = await this.deps.catalog.product.find({ field: 'id', op: 'in', value: input.lines.map(line => line.productId) })
+const lines = input.lines.map(line => ({ product: referenced(products, line.productId, 'product'), quantity: line.quantity })) // right: one call
+```
+
+Why: each call to another module is a query, or a request when it lives elsewhere. One per item makes a list as slow as it is long (N+1). See [References to other modules](/concepts/use-cases/#references-to-other-modules).
+
 ### newt/use-case-files
 
 What a module does with its files is done by use cases named after it: `uploadUrl` is called by `uploadStart`, `verifyUpload` by `uploadConfirm`, `signedUrl` by `downloadUrl`, each a method of the module itself. Each of those use cases makes its call. A prefix tells apart several kinds of file (`avatarUploadStart`).
@@ -264,7 +297,7 @@ A class that extends `Repository` (or `BaseRepository`) declares no public metho
 ```ts
 export class Task_Repository extends Repository<Task, TaskRow> {
   async findOverdue() { /* ... */ }                             // wrong
-  protected toEntity(row: TaskRow): Task {                      // right
+  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {                      // right
     return Task.fromDTO(row)
   }
 }

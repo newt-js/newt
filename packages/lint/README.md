@@ -67,6 +67,8 @@ Everything else is its own: its schemas as values (another module never parses, 
 | `newt/use-case-public-methods` | Every public method of a module is a use case, marked `@UseCase`. |
 | `newt/use-case-params` | A use case's parameters are value objects or DTOs of its schema, and its input DTOs are parsed with that schema. |
 | `newt/use-case-reads` | `find`, `get` and `paginate` read by criteria; `search` reads by text, as `(text, page)`. |
+| `newt/use-case-batched` | Another module's use case is called once for a batch, never once per item: never inside a loop or a `map`, `forEach`, `flatMap`, `filter`, `reduce`… |
+| `newt/use-case-resolved` | A use case returns the entities its ids reference, as its entity's DTO shows them, never the ids it keeps (`projectId`). |
 | `newt/use-case-files` | What a module does with its files is done by `uploadStart`, `uploadConfirm` and `downloadUrl`. |
 
 ### Entity, repository, routes and reactions

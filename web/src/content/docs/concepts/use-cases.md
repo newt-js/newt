@@ -202,6 +202,8 @@ A search by text has its own shape: `search(text, page)`, where `text` is a `Sea
 ## Rules the lint holds
 
 - **Every public method of a module is a use case** (`use-case-public-methods`). A method only the module calls is `private`.
+- **Another module is called once for a batch, never once per item** (`use-case-batched`).
+- **Outputs show entities, never the ids they keep** (`use-case-resolved`). See [References to other modules](#references-to-other-modules).
 - **Inputs say what they are** (`use-case-params`). A parameter is a DTO of the module's schema or a value object, never `unknown`, `any`, an object written in place, or a bare `string`, `number`, `boolean` or `bigint`. An input DTO (`z.input<typeof XSchema>`) is parsed with `XSchema` in the use case, or in a private method it hands it to.
 
 ## Calling one use case from another
@@ -239,6 +241,48 @@ The context's `writeRule` option sets what a broken rule does:
 | `'error'` (default) | The save throws. |
 | `'warn'` | It logs a warning once per place, and goes on. |
 | `'off'` | Nothing. |
+
+## References to other modules
+
+A use case never returns an id it keeps of another module's entity: it returns the entity's DTO, which shows that entity in its place, `customer` and not `customerId`. Declare the references on the entity (see [Entities](/concepts/entities/#references-to-other-modules)) and give its repository how they load (see [Repositories](/concepts/repositories/#references-to-other-modules)): `find`, `get`, `paginate` and every other use case then return `toDTO()`, with nothing more to do. There is one `find`, never a `findWithCustomer`.
+
+Reads come whole from the repository. A write gives the entity what its input names: the use case loads it from the other module, in one `find` per reference, and takes each one with `referenced`, which throws `ReferenceNotFound` (`400`) when it is not there, before anything is saved.
+
+```ts title="order.module.ts"
+@UseCase()
+async create(input: OrderCreateDTO): Promise<OrderDTO> {
+  const { name, customerId, lines } = OrderCreateSchema.parse(input)
+  const customers = await this.deps.customers.customer.find({ id: customerId })
+  const products = await this.deps.catalog.product.find({ field: 'id', op: 'in', value: lines.map(line => line.productId) })
+
+  const order = Order.create({
+    name,
+    customer: referenced(customers, customerId, 'customer'),
+    lines: lines.map(({ productId, quantity }) => ({ product: referenced(products, productId, 'product'), quantity })),
+  })
+  await this.orders.persist(order)
+  return order.toDTO()
+}
+
+@UseCase()
+async changeCustomer(input: OrderChangeCustomerDTO): Promise<OrderDTO> {
+  const { id, customerId } = OrderChangeCustomerSchema.parse(input)
+  const [order] = await this.orders.find({ id: OrderId.from(id) }, { limit: 1 })   // whole, as every read
+  if (!order) {
+    throw new OrderNotFound()
+  }
+  const customers = await this.deps.customers.customer.find({ id: customerId })
+  order.changeCustomer({ customer: referenced(customers, customerId, 'customer') })
+  await this.orders.persist(order)   // stores the new customerId
+  return order.toDTO()
+}
+```
+
+- Load each reference of the input in one call: every product of the lines in one `find`, never one per line.
+- What comes from another module is as it is now. What must stay as it was when the order was placed, as the price of a line, is kept on the line.
+- Inputs take ids, `customerId`; outputs show entities, `customer`.
+
+The lint rule `use-case-resolved` refuses a use case that returns an id it keeps, and `use-case-batched` a call to another module once per item.
 
 ## With the CLI
 

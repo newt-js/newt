@@ -202,6 +202,8 @@ Una búsqueda por texto tiene su propia forma: `search(text, page)`, donde `text
 ## Reglas que mantiene el lint
 
 - **Cada método público de un módulo es un caso de uso** (`use-case-public-methods`). Un método que solo llama el propio módulo es `private`.
+- **A otro módulo se le llama una vez por lote, nunca una por elemento** (`use-case-batched`).
+- **Las salidas enseñan entidades, nunca los ids que guardan** (`use-case-resolved`). Ver [Referencias a otros módulos](#referencias-a-otros-módulos).
 - **Las entradas dicen lo que son** (`use-case-params`). Un parámetro es un DTO del schema del módulo o un value object, nunca `unknown`, `any`, un objeto escrito en el sitio, ni un `string`, `number`, `boolean` o `bigint` a secas. Un DTO de entrada (`z.input<typeof XSchema>`) se valida con `XSchema` en el caso de uso, o en un método privado al que se lo pase.
 
 ## Llamar a un caso de uso desde otro
@@ -239,6 +241,48 @@ La opción `writeRule` del contexto dice qué pasa cuando se rompe la regla:
 | `'error'` (por defecto) | El guardado lanza un error. |
 | `'warn'` | Escribe un aviso en el log una vez por sitio, y sigue. |
 | `'off'` | Nada. |
+
+## Referencias a otros módulos
+
+Un caso de uso nunca devuelve un id que guarda de la entidad de otro módulo: devuelve el DTO de la entidad, que enseña esa entidad en su lugar, `customer` y no `customerId`. Declara las referencias en la entidad (ver [Entidades](/es/concepts/entities/#referencias-a-otros-módulos)) y dale a su repositorio cómo se cargan (ver [Repositorios](/es/concepts/repositories/#referencias-a-otros-módulos)): `find`, `get`, `paginate` y cualquier otro caso de uso devuelven entonces `toDTO()`, sin hacer nada más. Hay un solo `find`, nunca un `findWithCustomer`.
+
+Las lecturas llegan completas del repositorio. Una escritura le da a la entidad lo que nombra su entrada: el caso de uso lo carga del otro módulo, con un `find` por referencia, y toma cada una con `referenced`, que lanza `ReferenceNotFound` (`400`) cuando no está, antes de guardar nada.
+
+```ts title="order.module.ts"
+@UseCase()
+async create(input: OrderCreateDTO): Promise<OrderDTO> {
+  const { name, customerId, lines } = OrderCreateSchema.parse(input)
+  const customers = await this.deps.customers.customer.find({ id: customerId })
+  const products = await this.deps.catalog.product.find({ field: 'id', op: 'in', value: lines.map(line => line.productId) })
+
+  const order = Order.create({
+    name,
+    customer: referenced(customers, customerId, 'customer'),
+    lines: lines.map(({ productId, quantity }) => ({ product: referenced(products, productId, 'product'), quantity })),
+  })
+  await this.orders.persist(order)
+  return order.toDTO()
+}
+
+@UseCase()
+async changeCustomer(input: OrderChangeCustomerDTO): Promise<OrderDTO> {
+  const { id, customerId } = OrderChangeCustomerSchema.parse(input)
+  const [order] = await this.orders.find({ id: OrderId.from(id) }, { limit: 1 })   // whole, as every read
+  if (!order) {
+    throw new OrderNotFound()
+  }
+  const customers = await this.deps.customers.customer.find({ id: customerId })
+  order.changeCustomer({ customer: referenced(customers, customerId, 'customer') })
+  await this.orders.persist(order)   // stores the new customerId
+  return order.toDTO()
+}
+```
+
+- Carga cada referencia de la entrada en una sola llamada: todos los productos de las líneas en un `find`, nunca uno por línea.
+- Lo que viene de otro módulo está como está ahora. Lo que debe quedarse como estaba al hacer el pedido, como el precio de una línea, se guarda en la línea.
+- Las entradas reciben ids, `customerId`; las salidas enseñan entidades, `customer`.
+
+La regla del lint `use-case-resolved` rechaza un caso de uso que devuelve un id que guarda, y `use-case-batched` una llamada a otro módulo por cada elemento.
 
 ## Con el CLI
 

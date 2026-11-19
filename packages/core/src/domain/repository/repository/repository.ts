@@ -4,6 +4,8 @@ import type { Criteria }          from '../../criteria/criteria/criteria'
 import type { EntitySchema }      from '../../entity/entity-schema'
 import { Entity }                 from '../../entity/entity/entity'
 import { forRepository }          from '../../entity/for-repository/for-repository'
+import type { Resolved }          from '../../module/resolve-reference/resolve-reference'
+import { resolveReference }       from '../../module/resolve-reference/resolve-reference'
 import type { Page }              from '../../pagination/page'
 import type { PageRequest }       from '../../pagination/page-request'
 import { toPage }                 from '../../pagination/to-page/to-page'
@@ -22,17 +24,24 @@ type SoftDeletedRow = StoredRow & { deletedAt: string | null, updatedAt: string 
 
 const NOT_DELETED: Criteria<SoftDeletedRow> = Object.freeze({ deletedAt: null })
 
+/** The entities of other modules an entity references, as it declares them: `{ customerId: CustomerDTO }`. */
+export type ReferencesOf<E> = E extends { readonly '~references'?: infer R } ? NonNullable<R> : {}
+
+/** A row with the entities it references in place of their ids: what an entity is built from. */
+export type ResolvedRow<Row, E> = Resolved<Row, ReferencesOf<E>>
+
 export abstract class Repository<
   E extends Entity<EntitySchema>,
   Row extends StoredRow,
   D extends RepositoryDeps = RepositoryDeps,
 > extends BaseRepository<E, D> {
 
-  constructor(deps: D, protected readonly records: Records<Row>, private readonly options: RepositoryOptions<Row>) {
+  constructor(deps: D, protected readonly records: Records<Row>, private readonly options: RepositoryOptions<Row, ReferencesOf<E>>) {
     super(deps)
   }
 
-  protected abstract toEntity(row: Row): E
+  /** An entity from its row, with the entities it references in place of their ids. */
+  protected abstract toEntity(row: ResolvedRow<Row, E>): E
 
   protected toRow(entity: E): NewRow<Row> {
     const row = entity[forRepository].storedFields() as Record<string, unknown>
@@ -48,7 +57,9 @@ export abstract class Repository<
   async find(criteria: Criteria<Row> = {}, options: ReadOptions<Row> = {}): Promise<E[]> {
     const { everyScope, ...findOptions } = options
     const rows = await this.records.find(this.visible(criteria, everyScope), findOptions)
-    return rows.map(row => this.toEntity(row))
+    const { references } = this.options
+    const resolved = references ? await resolveReference(rows, references as object) : rows
+    return resolved.map(row => this.toEntity(row as ResolvedRow<Row, E>))
   }
 
   count(criteria?: Criteria<Row>, options?: { everyScope?: boolean | undefined }): Promise<number>

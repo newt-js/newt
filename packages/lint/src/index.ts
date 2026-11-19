@@ -27,10 +27,12 @@ import { repositoryPublicMethods } from './rules/repository-public-methods/repos
 import { routeBodyUnchecked }      from './rules/route-body-unchecked/route-body-unchecked'
 import { routeContext }            from './rules/route-context/route-context'
 import { schemaImports }           from './rules/schema-imports/schema-imports'
+import { useCaseBatched }          from './rules/use-case-batched/use-case-batched'
 import { useCaseFiles }            from './rules/use-case-files/use-case-files'
 import { useCaseParams }           from './rules/use-case-params/use-case-params'
 import { useCasePublicMethods }    from './rules/use-case-public-methods/use-case-public-methods'
 import { useCaseReads }            from './rules/use-case-reads/use-case-reads'
+import { useCaseResolved }         from './rules/use-case-resolved/use-case-resolved'
 
 /** The rules of newt that no other plugin has, as ESLint takes them: typescript-eslint's types of a rule are not ESLint's, though ESLint runs them. */
 export const plugin = {
@@ -57,6 +59,8 @@ export const plugin = {
     'use-case-params': useCaseParams,
     'use-case-public-methods': useCasePublicMethods,
     'use-case-reads': useCaseReads,
+    'use-case-resolved': useCaseResolved,
+    'use-case-batched': useCaseBatched,
   },
   processors: { 'keep-no-disable': keepNoDisable },
 } as unknown as ESLint.Plugin
@@ -156,6 +160,8 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/use-case-public-methods': 'error',
         'newt/use-case-params': 'error',
         'newt/use-case-reads': 'error',
+        'newt/use-case-resolved': 'error',
+        'newt/use-case-batched': 'error',
         'newt/route-body-unchecked': 'error',
         'newt/framework-tables': 'error',
         'newt/repository-public-methods': 'error',

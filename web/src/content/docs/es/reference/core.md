@@ -25,7 +25,7 @@ sidebar:
 
 Mira [Entidades](/es/concepts/entities/).
 
-### `Entity<TSchema, TPublic = TSchema>`
+### `Entity<TSchema, TPublic = TSchema, TReferences = {}>`
 
 La clase base de una entidad: datos comprobados por un schema de zod, con un id, una versión y los eventos que registra.
 
@@ -39,7 +39,7 @@ export class Task extends Entity<typeof TaskSchema> {
 
 | Miembro | Tipo | Qué hace |
 |---|---|---|
-| `constructor(schema, input, isNew, publicSchema?)` | protected | Valida `input` con `schema`. Una entidad nueva recibe un id (UUID v7) si no lo trae, y `createdAt`/`updatedAt` del reloj. Una leída del almacenamiento necesita su `version`. `publicSchema` elige los campos que muestra `toDTO()`. |
+| `constructor(schema, input, isNew, publicSchema?)` | protected | Valida `input` con `schema`. Una entidad nueva recibe un id (UUID v7) si no lo trae, y `createdAt`/`updatedAt` del reloj. Una leída del almacenamiento necesita su `version`. `publicSchema` elige los campos que muestra `toDTO()`. Con `TReferences`, `input` recibe las entidades que referencia (`customer`) y guarda sus ids (`customerId`). |
 | `id` | getter | El id de la entidad. |
 | `version` | getter | `0` si es nueva; sube en uno con cada guardado. |
 | `isNew` | getter | `true` hasta que se guarda por primera vez. |
@@ -52,7 +52,7 @@ export class Task extends Entity<typeof TaskSchema> {
 | `getChanges()` | método | Los campos cambiados, o `null`. |
 | `getPrevious()` | método | Los valores que tenían esos campos al leerla, o `null`. |
 | `hasChanged(field)` | método | Si `field` ha cambiado (siempre `true` si es nueva). |
-| `toDTO()` | método | Una copia de sus campos, solo los públicos si hay `publicSchema`. |
+| `toDTO()` | método | Una copia de sus campos, solo los públicos si hay `publicSchema`, con las entidades que referencia en lugar de sus ids. |
 
 Reglas que el constructor comprueba sobre el schema: nombra `createdAt` y `updatedAt`, y no guarda campos desconocidos (`z.looseObject`, `.catchall`, `.passthrough`). Un schema público solo tiene campos del schema.
 
@@ -180,7 +180,7 @@ export class Task_Repository extends Repository<Task, TaskRow> {
     super(base, base.database.records<TaskRow>('task'), { scope: 'none' })
   }
 
-  protected toEntity(row: TaskRow): Task {
+  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {
     return Task.fromDTO(row)
   }
 }
@@ -188,8 +188,8 @@ export class Task_Repository extends Repository<Task, TaskRow> {
 
 | Miembro | Firma | Qué hace |
 |---|---|---|
-| `constructor` | `(deps: D, records: Records<Row>, options: RepositoryOptions<Row>)` | |
-| `toEntity` | `protected abstract (row: Row) => E` | Construye la entidad a partir de una fila. |
+| `constructor` | `(deps: D, records: Records<Row>, options: RepositoryOptions<Row, ReferencesOf<E>>)` | |
+| `toEntity` | `protected abstract (row: ResolvedRow<Row, E>) => E` | Construye la entidad a partir de una fila, con las entidades que referencia su entidad en lugar de sus ids. |
 | `toRow` | `protected (entity: E) => NewRow<Row>` | La fila que se inserta. Sobrescríbelo para guardar otras columnas. |
 | `toChanges` | `protected (entity: E) => Partial<NewRow<Row>>` | Las columnas que se actualizan. |
 | `find` | `(criteria?, options?: ReadOptions<Row>) => Promise<E[]>` | Las entidades que cumplen los criterios. |
@@ -203,6 +203,7 @@ export class Task_Repository extends Repository<Task, TaskRow> {
 |---|---|---|
 | `scope` | obligatoria | `'none'`, o `{ field, current: () => string }`: cada lectura se filtra por `field = current()`, y guardar fuera de él lanza un error. |
 | `softDelete` | `false` | Borrar pone `deletedAt` en vez de quitar la fila; las lecturas se saltan esas filas. |
+| `references` | obligatoria cuando su entidad tiene referencias | `Loads<References>`: cómo se carga cada entidad que referencia su entidad. Cada lectura las resuelve, una vez por referencia para todas sus filas. Ver [Referencias a otros módulos](/es/concepts/repositories/#referencias-a-otros-módulos). |
 
 `ReadOptions<Row>` es `{ orderBy?: { field, direction?: 'asc' \| 'desc' }[], limit?: number, everyScope?: boolean }`. `everyScope: true` lee más allá del scope.
 
@@ -543,11 +544,11 @@ tasks.on(tasks.remindOverdueSchedule, 'remindOverdue')
 
 | Export | Firma | Significado |
 |---|---|---|
-| `Ref` | `{ id: string, name: string }` | Una vista corta de algo de otro módulo. |
-| `RefQuery` | `{ id: string[] }` | |
-| `RefFinder` | `{ find(query: RefQuery): Promise<Ref[]> }` | Lo que ofrece un módulo para que lo referencien. |
-| `resolveRefs(ids, finders)` | `=> Promise<Record<K, Ref \| null>>` | Busca cada id con su finder. Un id `null` da `null`, uno `undefined` se salta, uno que no existe lanza `ReferenceNotFound`. |
-| `resolve(find, onMissing)` | `=> Promise<T>` | El primer resultado de `find`, o lanza `onMissing()`. |
+| `References` | `{ [<nombre>Id]: DTO, [lista]: References }` | Lo que referencia una entidad, como un tipo normal: `{ customerId: CustomerDTO, lines: { productId: ProductDTO } }`. |
+| `Resolved<T, S>` | | Un `T` con cada `<nombre>Id` referenciado cambiado por la entidad que nombra, `<nombre>`: `null` solo donde el id puede faltar. |
+| `Loads<S>` | `{ [<nombre>Id]: (ids) => Promise<DTO[]>, [lista]: Loads }` | Cómo se cargan las referencias `S`: el `find({ field: 'id', op: 'in', value: ids })` del otro módulo. |
+| `resolveReference(items, loads)` | `=> Promise<Resolved<T, S>[]>` | Cambia cada `<nombre>Id` de los items, y de las listas que tienen, por la entidad que nombra, cargando cada referencia una vez para toda la lista, 100 ids cada vez. Un id `null` o ausente da `null`; uno que no nombra nada lanza `ReferenceNotFound`. Los repositorios resuelven sus lecturas con él. |
+| `referenced(entities, id, name)` | `=> T` | La entidad de `entities` con ese id, o `ReferenceNotFound` nombrándola: cómo un caso de uso toma lo que referencia su entrada de lo que dio el `find` del otro módulo. |
 
 ## Observabilidad
 

@@ -106,6 +106,8 @@ Con `priority: z.string().default('normal')`, el tipo de entrada tiene `priority
 
 Por eso el código generado declara `TaskCreateDTO` con `z.input` y `TaskDTO` con `z.infer`.
 
+Una entidad que referencia otras las enseña en su DTO: `Resolved<z.infer<typeof OrderSchema>, OrderReferences>` pone `customer` en lugar de `customerId`. Ver [Entidades](/es/concepts/entities/#referencias-a-otros-módulos).
+
 ## Filtros
 
 Un filtro dice cómo pueden leer un módulo los clientes: por qué campos, con qué operadores y ordenado por qué. Todo lo demás se rechaza.

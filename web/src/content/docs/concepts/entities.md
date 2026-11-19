@@ -155,6 +155,64 @@ export class Task extends Entity<
 
 Every field of the public schema must be in the main one, or the constructor throws.
 
+## References to other modules
+
+An order keeps the id of its customer, `customerId`, and each of its lines the id of its product, `productId`. Declare them as the order's references, next to its schema, each with the DTO of the entity it names:
+
+```ts title="order.schema.ts"
+import type { Resolved } from '@newt-js/core'
+import type { CustomerDTO } from '../../customers'
+import type { ProductDTO } from '../../catalog'
+
+export const OrderSchema = z.object({
+  id: OrderId.schema,
+  customerId: CustomerId.schema,
+  lines: z.array(z.object({ productId: ProductId.schema, quantity: z.number().int().positive() })).min(1),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+/** What an order references: under each id it keeps, the DTO of the entity that id names. */
+export type OrderReferences = { customerId: CustomerDTO, lines: { productId: ProductDTO } }
+
+/** { id, customer, lines: { product, quantity }[], createdAt, updatedAt } */
+export type OrderDTO = Resolved<z.infer<typeof OrderSchema>, OrderReferences>
+```
+
+A reference is a field named `<name>Id`, and the entity shows it as `<name>`. An id of its own kind (a task's `parentId`) is no reference: leave it out.
+
+The entity takes its references as its third type:
+
+```ts title="order.ts"
+export type OrderCreateProps = { customer: CustomerDTO, lines: { product: ProductDTO, quantity: number }[] }
+export type OrderChangeCustomerProps = { customer: CustomerDTO }
+
+export class Order extends Entity<typeof OrderSchema, typeof OrderSchema, OrderReferences> {
+  private constructor(input: EntityInput<OrderDTO>, isNew: boolean) {
+    super(OrderSchema, input, isNew)
+  }
+
+  static fromDTO(dto: OrderDTO & { version: number }): Order {
+    return new Order(dto, false)
+  }
+
+  static create(props: OrderCreateProps): Order {
+    return new Order(props, true)
+  }
+
+  changeCustomer({ customer }: OrderChangeCustomerProps): void {
+    this.change({ customer })
+  }
+}
+```
+
+- It is given the entities, never their ids alone: `create` and `change` take `customer`, so an order never points to a customer nobody loaded.
+- It keeps their ids: `this.data.customerId`, `getChanges()` and the row it is saved in.
+- `toDTO()` shows the entities in place of their ids: whole, always.
+- A nullable id takes `null`, and shows `null`.
+
+Its repository loads them on every read: see [Repositories](/concepts/repositories/#references-to-other-modules).
+
 ## Its life
 
 This is the life of a task, from the moment it is made or read until it is deleted:

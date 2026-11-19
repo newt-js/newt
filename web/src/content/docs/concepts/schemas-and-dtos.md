@@ -106,6 +106,8 @@ With `priority: z.string().default('normal')`, the input type has `priority?: st
 
 That is why the generated code types `TaskCreateDTO` with `z.input` and `TaskDTO` with `z.infer`.
 
+An entity that references others shows them in its DTO: `Resolved<z.infer<typeof OrderSchema>, OrderReferences>` puts `customer` in place of `customerId`. See [Entities](/concepts/entities/#references-to-other-modules).
+
 ## Filters
 
 A filter says how clients may read a module: by which fields, with which operators, sorted by what. Anything else is refused.

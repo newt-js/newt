@@ -1,5 +1,3 @@
-import { KnownError }         from '../../errors/known-error/known-error'
-import { ReferenceNotFound }  from '../../errors/reference-not-found/reference-not-found'
 import { DomainEventEmitter } from '../../events/domain-event-emitter/domain-event-emitter'
 import { queueOf }            from '../../events/event-of-queue/event-of-queue'
 import type { EventMeta }     from '../../events/event/event-meta'
@@ -11,8 +9,6 @@ import { MODULE_BRAND }       from '../is-module/is-module'
 import { MODULE_NAME }        from '../module-name/module-name'
 import { moduleNameError }    from '../module-name/module-name'
 import type { Reaction }      from '../reaction/reaction'
-import type { Ref }           from '../ref/ref'
-import type { RefFinder }     from '../ref/ref-finder'
 
 export abstract class Module {
 

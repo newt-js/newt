@@ -56,7 +56,7 @@ Si pasas `uses`, lista todos los contextos, también los que no usan ninguno (`[
 
 | Ficheros | Reglas |
 |---|---|
-| Todos los ficheros revisados | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable` y las reglas de otros plugins |
+| Todos los ficheros revisados | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `use-case-resolved`, `use-case-batched`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable` y las reglas de otros plugins |
 | Los ficheros de un módulo (`**/modules/<módulo>/**`) | `module-entity`, `module-files`, `module-imports`, `entity-method-params`, `reaction-queue`, `schema-imports`, `use-case-files`, `module-transactions` |
 | Ficheros en la carpeta de contextos (con `contexts`) | `context-imports`, `route-context`; `module-imports` para los ficheros fuera de los módulos |
 | La app de un contexto (`<contexto>/app/**/*.{ts,tsx}`, con `contexts`) | `app-imports`, `no-disable` |
@@ -228,6 +228,39 @@ async search(text: SearchText, page: PageRequest) { /* ... */ } // bien
 
 Por qué: todos los módulos leen de las mismas cuatro formas: `find(criteria, sort?)`, `get(id)`, `paginate(criteria, page, sort?)`, `search(text, page)`.
 
+### newt/use-case-resolved
+
+Lo que devuelve un caso de uso no tiene ningún id que guarde de otra entidad: en lugar de `projectId` (un id hecho con `uuidFactory`), la entidad que nombra, `project`. Mira dentro de listas, páginas y las entidades resueltas en ellas. Un id del mismo tipo que su entidad (el `parentId` de una tarea) y un `string` a secas (un id de otro sistema) no son referencias. Necesita el programa que construye typescript-eslint.
+
+```ts
+@UseCase()
+async get(id: string): Promise<OrderRow> { /* ... */ } // mal: devuelve customerId y lines[].productId
+
+@UseCase()
+async get(id: string): Promise<OrderDTO> {
+  // ...
+  return order.toDTO() // bien: customer y lines[].product
+}
+```
+
+Por qué: un módulo enseña sus entidades, nunca lo que guarda de ellas. Ver [Referencias a otros módulos](/es/concepts/use-cases/#referencias-a-otros-módulos).
+
+### newt/use-case-batched
+
+En un `*.module.ts`, una llamada a un caso de uso de otro módulo (`this.deps.<módulo>.<caso de uso>(…)`) nunca está dentro de un bucle (`for`, `for…of`, `while`…) ni de un callback que una lista ejecuta una vez por elemento (`map`, `flatMap`, `forEach`, `filter`, `reduce`, `some`, `every`, `find`…). La lista que lee un `for…of` se ejecuta una vez, y está permitida.
+
+```ts
+const lines = await Promise.all(input.lines.map(async line => ({
+  product: await this.deps.catalog.product.get(line.productId), // mal: una llamada por línea
+  quantity: line.quantity,
+})))
+
+const products = await this.deps.catalog.product.find({ field: 'id', op: 'in', value: input.lines.map(line => line.productId) })
+const lines = input.lines.map(line => ({ product: referenced(products, line.productId, 'product'), quantity: line.quantity })) // bien: una llamada
+```
+
+Por qué: cada llamada a otro módulo es una consulta, o una petición cuando vive en otro sitio. Una por elemento hace que una lista tarde tanto como larga sea (N+1). Ver [Referencias a otros módulos](/es/concepts/use-cases/#referencias-a-otros-módulos).
+
 ### newt/use-case-files
 
 Lo que un módulo hace con sus ficheros lo hacen casos de uso con nombre fijo: `uploadUrl` lo llama `uploadStart`, `verifyUpload` lo llama `uploadConfirm`, `signedUrl` lo llama `downloadUrl`, cada uno un método del propio módulo. Y cada uno de esos casos de uso hace su llamada. Un prefijo distingue varios tipos de fichero (`avatarUploadStart`).
@@ -264,7 +297,7 @@ Una clase que extiende `Repository` (o `BaseRepository`) no declara métodos pú
 ```ts
 export class Task_Repository extends Repository<Task, TaskRow> {
   async findOverdue() { /* ... */ }                             // mal
-  protected toEntity(row: TaskRow): Task {                      // bien
+  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {                      // bien
     return Task.fromDTO(row)
   }
 }
