@@ -1,8 +1,10 @@
 import type { ModuleNames } from '../../../names/module-names/module-names'
+import { fittedCall }       from '../../fitted-call/fitted-call'
+import { fitting }          from '../../fitted-call/fitted-call'
 import { moduleLines }      from '../module-lines/module-lines'
 
 export function moduleTs(names: ModuleNames): string {
-  const { folder, module, type, plural } = names
+  const { folder, module, type } = names
   const lines = moduleLines(names, false)
   return `import { eventsOf, mapPage, Module, UseCase, type Page, type PageRequest } from '@newt-js/core'
 import type { ContextBase } from '@newt-js/core/application'
@@ -10,7 +12,7 @@ import type { HttpRouter } from '@newt-js/core/http'
 import { ${type}NotFound } from './errors/${folder}-not-found'
 import { ${type}_Created } from './events/${folder}-created'
 import { ${type} } from './${folder}'
-import { ${type}_Repository, type ${type}Row } from './${folder}.repository'
+import { ${type}_Repository } from './${folder}.repository'
 import { register${type}Routes } from './${folder}.routes'
 import { ${type}CreateSchema, ${type}Filter, type ${type}CreateDTO, type ${type}DTO, type ${type}FilterDTO, type ${type}SortDTO } from './${folder}.schema'
 import { ${type}Id } from './value-objects/${folder}-id'
@@ -33,15 +35,16 @@ ${lines.routes}
   }
 
   @UseCase()
-  async create(input: ${type}CreateDTO): Promise<${type}DTO> {
-    const ${module} = ${type}.create(${type}CreateSchema.parse(input))
-    await this.${plural}.persist(${module})
+${fitting(`  async create(input: ${type}CreateDTO): Promise<${type}DTO> {`, `  async create(\n    input: ${type}CreateDTO,\n  ): Promise<${type}DTO> {`)}
+    const props = ${type}CreateSchema.parse(input)
+${fitting(`    const ${module} = ${type}.create(props)`, `    const ${module} =\n      ${type}.create(props)`)}
+    await this.repository.persist(${module})
     return ${module}.toDTO()
   }
 
   @UseCase()
   async get(id: string): Promise<${type}DTO> {
-    const [${module}] = await this.${plural}.find(
+    const [${module}] = await this.repository.find(
       { id: ${type}Id.from(id) },
       { limit: 1 },
     )
@@ -56,14 +59,9 @@ ${lines.routes}
     criteria: ${type}FilterDTO,
     sort?: ${type}SortDTO,
   ): Promise<${type}DTO[]> {
-    const parsed = sort === undefined
-      ? undefined
-      : ${type}Filter.sortSchema.parse(sort)
-    const orderBy = ${type}Filter.toOrder<${type}Row>(parsed)
-    const where = ${type}Filter.schema.parse(criteria)
-    const found = await this.${plural}.find(
-      ${type}Filter.toCriteria<${type}Row>(where),
-      { orderBy },
+    const found = await this.repository.find(
+      ${type}Filter.toCriteria(criteria),
+      { orderBy: ${type}Filter.toOrder(sort) },
     )
     return found.map(each => each.toDTO())
   }
@@ -73,9 +71,8 @@ ${lines.routes}
     criteria: ${type}FilterDTO,
     page: PageRequest,
   ): Promise<Page<${type}DTO>> {
-    const where = ${type}Filter.schema.parse(criteria)
-    const found = await this.${plural}.paginate(
-      ${type}Filter.toCriteria<${type}Row>(where),
+    const found = await this.repository.paginate(
+      ${type}Filter.toCriteria(criteria),
       page,
       { newestFirst: true },
     )

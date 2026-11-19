@@ -133,6 +133,14 @@ describe('parse and parseSort', () => {
     expect(() => defineFilter({}, { sort: ['name'] }).parseSort([{ field: 'price' }])).toThrow(InvalidSort)
   })
 
+  test('run first in toCriteria and toOrder, which take a filter and a sort as they came', () => {
+    const wrongFilter = { field: 'brand', op: 'lt', value: 'a' } as unknown as Parameters<typeof ProductFilter.toCriteria>[0]
+    const wrongSort = [{ field: 'price' }] as unknown as Parameters<ReturnType<typeof defineFilter<{}, 'name'>>['toOrder']>[0]
+    expect(() => ProductFilter.toCriteria(wrongFilter)).toThrow(InvalidFilter)
+    expect(() => defineFilter({}, { sort: ['name'] }).toOrder(wrongSort)).toThrow(InvalidSort)
+    expect(defineFilter({}, { sort: ['name'] }).toOrder([])).toBeUndefined()
+  })
+
   test('say the limits it goes beyond', () => {
     const many = { or: [1, 2, 3, 4].map(value => ({ field: 'price', op: 'eq', value })) }
 
