@@ -50,9 +50,9 @@ ${contextInitializeHead(names, false)}
 
   private constructor(
     base: ContextBase,
-    features: {},
+    modules: {},
   ) {
-    super('${folder}', base, features)
+    super('${folder}', base, modules)
   }
 
 ${contextOpenHead(names, false)}

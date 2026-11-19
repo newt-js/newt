@@ -51,7 +51,7 @@ const typed = (files: Record<string, string>) => {
 
 describe('route-context, with types', () => {
   const good = typed({
-    [`${CONTEXTS}/ws/features/prices/price-change/price-change.routes.ts`]: [
+    [`${CONTEXTS}/ws/modules/price-change/price-change.routes.ts`]: [
       "const BASE = '/price-changes'",
       'const PATHS = { one: `${BASE}/:id` }',
       'export function register(http: HttpRouter, path: string) {',
@@ -67,7 +67,7 @@ describe('route-context, with types', () => {
     [`${CONTEXTS}/ws/ws-modules.ts`]: "export function more(http: HttpRouter) {\n  http.get('/more', handle)\n}",
   })
   const bad = typed({
-    [`${CONTEXTS}/ws/features/prices/price-change/price-change.routes.ts`]: [
+    [`${CONTEXTS}/ws/modules/price-change/price-change.routes.ts`]: [
       "const BASE = '/ws/price-changes'",
       'export function register(http: HttpRouter) {',
       '  http.get(BASE, handle)',

@@ -27,7 +27,7 @@ export function describeInboxContract(name: string, fixture: DatabaseFixture): v
     afterEach(() => fixture.close?.(database))
 
     const event = uuidV7()
-    const reaction = (queue = 'billing[invoice].invoice_on_order.placed', id = event): ReactionRun => ({ event: id, queue, received: false })
+    const reaction = (queue = 'invoice.invoice_on_order.placed', id = event): ReactionRun => ({ event: id, queue, received: false })
 
     test('receives a reaction once: a later transaction finds it there already', async () => {
       const first = reaction()
@@ -44,7 +44,7 @@ export function describeInboxContract(name: string, fixture: DatabaseFixture): v
     test('tells apart the queues that react to one event, and the events one queue reacts to', async () => {
       await database.run(() => inbox.receive(reaction()))
 
-      expect(await database.run(() => inbox.receive(reaction('audit[trail].record_on_order.placed')))).toBe(true)
+      expect(await database.run(() => inbox.receive(reaction('trail.record_on_order.placed')))).toBe(true)
       expect(await database.run(() => inbox.receive(reaction(undefined, uuidV7())))).toBe(true)
     })
 
@@ -64,7 +64,7 @@ export function describeInboxContract(name: string, fixture: DatabaseFixture): v
     test('a reaction found there already leaves its transaction to go on and commit', async () => {
       await database.run(() => inbox.receive(reaction()))
 
-      const other = reaction('audit[trail].record_on_order.placed')
+      const other = reaction('trail.record_on_order.placed')
       await database.run(async () => {
         expect(await inbox.receive(reaction())).toBe(false)
         expect(await inbox.receive(other)).toBe(true)
@@ -86,7 +86,7 @@ export function describeInboxContract(name: string, fixture: DatabaseFixture): v
     })
 
     test('purges what it received before a time, and keeps the rest', async () => {
-      const old = reaction('audit[trail].record_on_order.placed')
+      const old = reaction('trail.record_on_order.placed')
       await database.run(() => inbox.receive(old))
       clock.advance(60_000)
       await database.run(() => inbox.receive(reaction()))

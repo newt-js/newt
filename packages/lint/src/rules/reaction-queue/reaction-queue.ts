@@ -13,16 +13,16 @@ import { pascalCase }                             from '../../paths/paths'
 import { rootOf }                                 from '../../paths/paths'
 
 /**
- * `<feature>[<module>].<use case>_on_<module>.<event>`: newt refuses at startup a handler's
+ * `<module>.<use case>_on_<module>.<event>`: newt refuses at startup a handler's
  * queue of any other shape; the event is the name of the one it subscribes to, a module's
  * and its own. Stricter than newt's own `eventOfQueue`: reaction-queue.test.ts holds every
  * queue this takes to be one newt takes.
  */
-export const FEATURE_QUEUE = /^([a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\])\.([a-z][A-Za-z0-9]*)_on_([^.\s]+\.([^.\s]+))$/
+export const MODULE_QUEUE = /^([a-z][A-Za-z0-9]*)\.([a-z][A-Za-z0-9]*)_on_([^.\s]+\.([^.\s]+))$/
 
 /** How a queue is written, and one written so, for the message of one that is not. */
-const SHAPE = '<feature>[<module>].<use case>_on_<event>'
-const EXAMPLE = 'shipping[delivery].prepare_on_sales[order].placed'
+const SHAPE = '<module>.<use case>_on_<event>'
+const EXAMPLE = 'delivery.prepare_on_order.placed'
 
 /** The property of an object written with a name, `queue: …` or `'queue': …`. */
 function property(object: TSESTree.ObjectExpression, name: string): TSESTree.Property | undefined {
@@ -93,7 +93,7 @@ function typesOf(checker: ts.TypeChecker, map: ParserServicesWithTypeInformation
 
 /**
  * A handler's queue says who reacts with what to which event:
- * `<feature>[<module>].<use case>_on_<event>`, the event by its whole name. Written by hand, it could say another
+ * `<module>.<use case>_on_<event>`, the event by its whole name. Written by hand, it could say another
  * module's or another use case's: in every file of a module, this checks it has that
  * shape, that it is the module's, that its callback calls that use case on the module
  * itself, and that it ends with the event it subscribes to. A reaction written with
@@ -118,7 +118,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
     const place = modulePlace(context.filename, rootOf(context))
     if (!place) return {}
     const own = camelCase(place.module)
-    const module = `${camelCase(place.feature)}[${own}]`
+    const module = own
     const type = `${pascalCase(place.module)}_Module`
     const file = posix.basename(place.inside)
 
@@ -201,7 +201,7 @@ export const reactionQueue: TSESLint.RuleModule<'shape' | 'module' | 'useCase' |
         const queue = unwrap(property(options, 'queue')?.value)
         const name = textOf(queue)
         if (textOf(property(options, 'strategy')?.value) !== 'handler' || queue === undefined || name === undefined) return
-        const shape = FEATURE_QUEUE.exec(name)
+        const shape = MODULE_QUEUE.exec(name)
         if (!shape) {
           context.report({ node: queue, messageId: 'shape', data: { queue: name, shape: SHAPE, example: EXAMPLE } })
           return

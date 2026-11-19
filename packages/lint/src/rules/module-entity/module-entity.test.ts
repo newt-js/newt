@@ -32,8 +32,8 @@ const SHARED = '/repo/src/shared/root.ts'
 const program = programOf({
   [CORE]: 'export class Entity<S> {\n  constructor(readonly props: S) {}\n}\n',
   [SHARED]: "import { Entity } from '../../node_modules/@newt-js/core/index'\nexport class Root<S> extends Entity<S> {}\nexport class Plain {}\n",
-  [`${MODULE}/price-change.ts`]: "import { Root } from '../../../../../shared/root'\nexport class PriceChange extends Root<{ a: number }> {}\n",
-  [`${MODULE}/services/line.ts`]: "import { Plain, Root } from '../../../../../../shared/root'\nexport class Line extends Root<{ b: number }> {}\nexport class Rounder extends Plain {}\n",
+  [`${MODULE}/price-change.ts`]: "import { Root } from '../../../../shared/root'\nexport class PriceChange extends Root<{ a: number }> {}\n",
+  [`${MODULE}/services/line.ts`]: "import { Plain, Root } from '../../../../../shared/root'\nexport class Line extends Root<{ b: number }> {}\nexport class Rounder extends Plain {}\n",
 })
 
 describe('module-entity, with types', () => {

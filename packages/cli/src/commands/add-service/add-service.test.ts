@@ -15,7 +15,7 @@ const addService = (args: string[], cwd: string) => runCommand(ADD_SERVICE, args
 describe('newt add service', () => {
   test("a function on the module's DTO, whose lint and types pass", async () => {
     const backend = await moduleProject()
-    expect((await addService(['sales/orders/order', 'price-rounding'], backend)).code).toBe(0)
+    expect((await addService(['sales/order', 'price-rounding'], backend)).code).toBe(0)
     expect(await Bun.file(join(backend, ORDER_MODULE, 'services/price-rounding.ts')).text()).toBe([
       "import type { OrderDTO } from '../order.schema'",
       '',
@@ -30,16 +30,16 @@ describe('newt add service', () => {
   test('in a module without the schema newt writes, on what it is given', async () => {
     const backend = await moduleProject()
     await rm(join(backend, ORDER_MODULE, 'order.schema.ts'))
-    await addService(['sales/orders/order', 'price-rounding'], backend)
+    await addService(['sales/order', 'price-rounding'], backend)
     expect(await Bun.file(join(backend, ORDER_MODULE, 'services/price-rounding.ts')).text()).toStartWith('export function priceRounding(order: unknown): unknown {')
   })
 
   test('says how to use it', async () => {
-    const output = await addService(['sales/orders/order', 'price-rounding', '--dry-run'], await moduleProject())
+    const output = await addService(['sales/order', 'price-rounding', '--dry-run'], await moduleProject())
     expect(output.text).toEndWith("Next steps:\n  call it from the use cases that share it: import { priceRounding } from './services/price-rounding'")
   })
 
   test('refuses a name its function cannot take', async () => {
-    expect((await addService(['sales/orders/order', 'delete'], await moduleProject())).text).toStartWith("'delete' cannot name a service")
+    expect((await addService(['sales/order', 'delete'], await moduleProject())).text).toStartWith("'delete' cannot name a service")
   })
 })

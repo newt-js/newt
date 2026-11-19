@@ -12,26 +12,25 @@ import { rootOf }        from '../../paths/paths'
 const DEFINES = new Set(['schedules', 'rateLimits'])
 
 /**
- * A module of a feature goes by `<feature>[<module>]`, from its folders: the name it gives
- * `super`, and the start of its events', schedules' and rate limits' names, which its use
- * cases and its workers' queues are named after. Written by hand, it could say another
- * feature or another module.
+ * A module goes by its folder's name in camelCase: the name it gives `super`, and the
+ * start of its events', schedules' and rate limits' names, which its use cases and its
+ * workers' queues are named after. Written by hand, it could say another module.
  */
 export const moduleNames: TSESLint.RuleModule<'module' | 'name'> = {
   defaultOptions: [],
   meta: {
     type: 'problem',
-    docs: { description: 'A module of a feature is named <feature>[<module>], after its folders.' },
+    docs: { description: 'A module is named after its folder, in camelCase.' },
     messages: {
-      module: "This module is {{expected}}, after its folders: super('{{expected}}', …), not '{{found}}'.",
-      name: "Name it '{{expected}}.<name>', after its folders, not '{{found}}'.",
+      module: "This module is {{expected}}, after its folder: super('{{expected}}', …), not '{{found}}'.",
+      name: "Name it '{{expected}}.<name>', after its folder, not '{{found}}'.",
     },
     schema: [],
   },
   create(context) {
     const place = modulePlace(context.filename, rootOf(context))
-    if (!place?.feature) return {}
-    const expected = `${camelCase(place.feature)}[${camelCase(place.module)}]`
+    if (!place) return {}
+    const expected = camelCase(place.module)
     const program = context.sourceCode.ast
     const modules = importedAs(program, 'Module')
     const events = importedAs(program, 'defineEvent')

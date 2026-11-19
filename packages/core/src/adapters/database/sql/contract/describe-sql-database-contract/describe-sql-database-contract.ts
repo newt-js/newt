@@ -121,8 +121,8 @@ export function describeSqlDatabaseContract(name: string, fixture: SqlDatabaseFi
       await expect(items.update('a', 1, { code: 'same' })).resolves.toBeUndefined()
     })
 
-    test('a table of a module of a feature, campaigns$template, keeps, finds, changes and deletes its rows, and names a taken field', async () => {
-      const templates = world.database.records<{ id: string, version: number, name: string, body: string | null }>('campaigns$template')
+    test('the table of a module, email_template, keeps, finds, changes and deletes its rows, and names a taken field', async () => {
+      const templates = world.database.records<{ id: string, version: number, name: string, body: string | null }>('email_template')
 
       await templates.insert({ id: 'a', name: 'welcome', body: null })
       await templates.insert({ id: 'b', name: 'reminder', body: 'soon' })
@@ -390,10 +390,10 @@ export function describeSqlDatabaseContract(name: string, fixture: SqlDatabaseFi
       try {
         const now = new Date().toISOString()
         const lease = new Date(Date.now() + 60_000).toISOString()
-        const jobs = Array.from({ length: 20 }, () => ({ id: uuidV7(), queue: 'f[a].b_on_c', event: '{}', status: 'pending' as const, attempts: 0, runAfter: now, lockedBy: null, lockedUntil: null, lastError: null, createdAt: now, updatedAt: now }))
+        const jobs = Array.from({ length: 20 }, () => ({ id: uuidV7(), queue: 'a.b_on_c', event: '{}', status: 'pending' as const, attempts: 0, runAfter: now, lockedBy: null, lockedUntil: null, lastError: null, createdAt: now, updatedAt: now }))
         await world.database.outbox.add(jobs)
 
-        const claims = await Promise.allSettled(Array.from({ length: 10 }, (_, i) => (i % 2 === 0 ? world.database : twin).outbox.claim(['f[a].b_on_c'], 3, `w${i}`, lease, now)))
+        const claims = await Promise.allSettled(Array.from({ length: 10 }, (_, i) => (i % 2 === 0 ? world.database : twin).outbox.claim(['a.b_on_c'], 3, `w${i}`, lease, now)))
 
         const refused = claims.flatMap(claim => (claim.status === 'rejected' ? [claim.reason] : []))
         const claimed = claims.flatMap(claim => (claim.status === 'fulfilled' ? claim.value : [])).map(job => job.id)
@@ -408,7 +408,7 @@ export function describeSqlDatabaseContract(name: string, fixture: SqlDatabaseFi
     test('the engine runs on it: a job published in a transaction runs once it commits, and goes with it if it rolls back', async () => {
       const base = new ContextBase({ name: 'shop', platform: new Platform({ cluster: quietCluster() }), database: world.database })
       const mailed: unknown[] = []
-      base.bus.subscribe('order.placed', event => void mailed.push(event.payload), { strategy: 'handler', queue: 'mail[mailer].send_on_order.placed' })
+      base.bus.subscribe('order.placed', event => void mailed.push(event.payload), { strategy: 'handler', queue: 'mailer.send_on_order.placed' })
 
       await world.database.run(async () => {
         await items.insert(item('a'))

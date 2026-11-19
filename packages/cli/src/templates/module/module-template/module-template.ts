@@ -18,22 +18,15 @@ import { moduleMigration }   from '../migrations'
 
 export type ModuleTemplateOptions = { backend: string, context: ContextNames, names: ModuleNames, database: DatabaseKind, migration: string }
 
-/** The line of <feature>.feature.ts that initializes a module. */
-function initializedLine({ module, type }: ModuleNames, deps = ''): string {
-  return `    const ${module} = ${type}_Module.initialize(base, router${deps})`
+/** The line of <ctx>.context.ts that initializes a module. */
+function initializedLine({ module, type }: ModuleNames): string {
+  return `    const ${module} = ${type}_Module.initialize(base, router)`
 }
 
-/** The line of the feature's index.ts that lets the other features use a module's DTOs. */
-function dtosLines({ type, folder }: ModuleNames): string[] {
-  const dtos = ['CreateDTO', 'DTO', 'FilterDTO', 'SortDTO']
-  return dtos.map(dto => `export type { ${type}${dto} } from './${folder}/${folder}.schema'`)
-}
-
-/** A module of a feature: its files, its table's migration in its context's, its place in <feature>.feature.ts and its DTOs in the feature's index.ts. */
+/** A module of a context: its files, its table's migration in its context's, and its place, unpublished, in <ctx>.context.ts. */
 export function moduleTemplate({ backend, context, names, database, migration }: ModuleTemplateOptions): FileChange[] {
   const contextFolder = join(backend, CONTEXTS_FOLDER, context.folder)
-  const featureFolder = join(contextFolder, 'features', names.feature.folder)
-  const folder = join(featureFolder, names.folder)
+  const folder = join(contextFolder, 'modules', names.folder)
   const files: Record<string, string> = {
     [`value-objects/${names.folder}-id.ts`]: idTs(names),
     [`${names.folder}.schema.ts`]: schemaTs(names),
@@ -46,7 +39,6 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     [`${names.folder}.module.test.ts`]: moduleTestTs(names, context, database),
   }
   const sql = moduleMigration(names, database)
-  const entry = join(featureFolder, `${names.feature.folder}.feature.ts`)
   return [
     ...Object.entries(files).map(([path, content]): FileChange => ({ action: 'create', path: join(folder, path), content })),
     ...sql ? [
@@ -56,13 +48,12 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     ] : [],
     {
       action: 'wire-module',
-      path: entry,
-      className: `${names.feature.type}_Feature`,
+      path: join(contextFolder, `${context.folder}.context.ts`),
+      className: `${context.type}_Context`,
       name: names.module,
       type: `${names.type}_Module`,
       declaration: initializedLine(names),
-      imports: [`import { ${names.type}_Module } from './${names.folder}/${names.folder}.module'`],
+      imports: [`import { ${names.type}_Module } from './modules/${names.folder}/${names.folder}.module'`],
     },
-    { action: 'ensure-lines', path: join(featureFolder, 'index.ts'), lines: dtosLines(names) },
   ]
 }

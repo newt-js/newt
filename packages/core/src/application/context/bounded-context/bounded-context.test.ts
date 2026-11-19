@@ -3,7 +3,7 @@ import { expect }         from 'bun:test'
 import { test }           from 'bun:test'
 // --------------------------------------------------------
 import { MemoryDatabase } from '../../../adapters/database/memory/memory-database/memory-database'
-import { Feature }        from '../../../domain/feature/feature/feature'
+import { Module }         from '../../../domain/module/module/module'
 import { MemoryCluster }  from '../../cluster/memory-cluster/memory-cluster'
 import { Platform }       from '../../platform/platform/platform'
 import { ContextBase }    from '../context-base/context-base'
@@ -38,19 +38,19 @@ describe('BoundedContext', () => {
     expect(log).toEqual(['worker started', 'schedules started', 'schedules stopped', 'worker stopped', 'database closed'])
   })
 
-  test('refuses a feature of another context, and one under another name', () => {
-    class Of_Feature extends Feature {}
+  test('refuses a module of another context, and one under another name', () => {
+    class Of_Module extends Module {}
     class Of_Context extends BoundedContext {
-      constructor(base: ContextBase, features: Record<string, Feature>) {
-        super('shop', base, features)
+      constructor(base: ContextBase, modules: Record<string, Module>) {
+        super('shop', base, modules)
       }
     }
     const base = new ContextBase({ name: 'shop', platform, database: new MemoryDatabase() })
     const billing = new ContextBase({ name: 'billing', platform, database: new MemoryDatabase() })
-    const orders = new Of_Feature('orders', base, {})
+    const order = new Of_Module('order', base.useCaseRunner)
 
-    expect(() => new Of_Context(base, { orders })).not.toThrow()
-    expect(() => new Of_Context(base, { invoices: new Of_Feature('invoices', billing, {}) })).toThrow('The context shop: invoices is a feature of the context billing: a context holds only its own features')
-    expect(() => new Of_Context(base, { sales: orders })).toThrow('The context shop: orders is given as sales: each feature goes under its own name, orders')
+    expect(() => new Of_Context(base, { order })).not.toThrow()
+    expect(() => new Of_Context(base, { invoice: new Of_Module('invoice', billing.useCaseRunner) })).toThrow('The context shop: invoice is a module of the context billing: a context holds only its own modules')
+    expect(() => new Of_Context(base, { sale: order })).toThrow('The context shop: order is given as sale: each module goes under its own name, order')
   })
 })

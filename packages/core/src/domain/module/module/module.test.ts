@@ -18,7 +18,7 @@ const Placed = defineEvent('order.placed', z.object({ id: z.string(), total: z.n
 class Orders extends Module {
   readonly calls: unknown[][] = []
   constructor() {
-    super('shop[order]', new UseCaseRunner())
+    super('order', new UseCaseRunner())
   }
 
   async fulfil(id: string, eventId: string): Promise<void> {
@@ -51,18 +51,18 @@ describe('on', () => {
     orders.on(placed, 'fulfil', (order, { id }) => [order.id, id])
 
     expect(subscriptions.map(({ pattern, options }) => ({ pattern, options }))).toEqual([
-      { pattern: 'order.placed', options: { strategy: 'handler', queue: 'shop[order].fulfil_on_order.placed' } },
+      { pattern: 'order.placed', options: { strategy: 'handler', queue: 'order.fulfil_on_order.placed' } },
     ])
     await subscriptions[0]!.handler({ id: 'e1' as EventId, name: 'order.placed', payload: { id: 'o1', total: 5 }, occurredAt: '', actor: null })
     expect(orders.calls).toEqual([['fulfil', 'o1', 'e1']])
   })
 
-  test('a module of a feature subscribes on the queue <feature>[<module>].<use case>_on_<event>', () => {
+  test('a module subscribes on the queue <module>.<use case>_on_<event>', () => {
     const { bus, subscriptions } = recordingBus()
     const { placed } = eventsOf(bus, { placed: Placed })
     class Invoices extends Module {
       constructor() {
-        super('billing[invoice]', new UseCaseRunner())
+        super('invoice', new UseCaseRunner())
       }
 
       async open(): Promise<void> {}
@@ -70,7 +70,7 @@ describe('on', () => {
 
     new Invoices().on(placed, 'open')
 
-    expect(subscriptions.map(({ options }) => options)).toEqual([{ strategy: 'handler', queue: 'billing[invoice].open_on_order.placed' }])
+    expect(subscriptions.map(({ options }) => options)).toEqual([{ strategy: 'handler', queue: 'invoice.open_on_order.placed' }])
   })
 
   test('a use case that takes nothing needs no args', async () => {
@@ -90,21 +90,21 @@ describe('on', () => {
     const orders = new Orders()
     const when = (order: { total: number }) => order.total > 0
 
-    orders.on(placed, 'fulfil', (order, { id }) => [order.id, id], { attempts: 10, when, queue: 'shop[order].fulfilPlaced_on_order.placed' })
+    orders.on(placed, 'fulfil', (order, { id }) => [order.id, id], { attempts: 10, when, queue: 'order.fulfilPlaced_on_order.placed' })
 
-    expect(subscriptions[0]!.options).toEqual({ strategy: 'handler', queue: 'shop[order].fulfilPlaced_on_order.placed', attempts: 10, when: when as NonNullable<Subscription['when']> })
+    expect(subscriptions[0]!.options).toEqual({ strategy: 'handler', queue: 'order.fulfilPlaced_on_order.placed', attempts: 10, when: when as NonNullable<Subscription['when']> })
   })
 
   test("a queue said by hand is still the module's", () => {
     const { placed } = eventsOf(recordingBus().bus, { placed: Placed })
 
-    expect(() => new Orders().on(placed, 'fulfil', (order, { id }) => [order.id, id], { queue: 'billing[invoice].fulfil_on_order.placed' })).toThrow("shop[order].on(order.placed, 'fulfil'): a queue said by hand is still shop[order]'s, 'shop[order].<use case>_on_order.placed', not 'billing[invoice].fulfil_on_order.placed': leave queue out, and on names it")
+    expect(() => new Orders().on(placed, 'fulfil', (order, { id }) => [order.id, id], { queue: 'invoice.fulfil_on_order.placed' })).toThrow("order.on(order.placed, 'fulfil'): a queue said by hand is still order's, 'order.<use case>_on_order.placed', not 'invoice.fulfil_on_order.placed': leave queue out, and on names it")
   })
 
   test('a queue said by hand still ends with its event', () => {
     const { placed } = eventsOf(recordingBus().bus, { placed: Placed })
 
-    expect(() => new Orders().on(placed, 'purge', undefined, { queue: 'shop[order].purge_on_order.shipped' })).toThrow("A handler's queue is '<feature>[<module>].<use case>_on_order.placed'")
+    expect(() => new Orders().on(placed, 'purge', undefined, { queue: 'order.purge_on_order.shipped' })).toThrow("A handler's queue is '<module>.<use case>_on_order.placed'")
   })
 })
 
@@ -113,7 +113,7 @@ describe('a module', () => {
     const runner = new UseCaseRunner({ context: 'shop' })
     class Stock extends Module {
       constructor() {
-        super('shop[stock]', runner, { warehouse: 'main' })
+        super('stock', runner, { warehouse: 'main' })
       }
     }
     const stock = new Stock()
@@ -121,16 +121,16 @@ describe('a module', () => {
     expect(runner.registry.registeredModules).toEqual([expect.objectContaining({ instance: stock, className: 'Stock', deps: { warehouse: 'main' } })])
   })
 
-  test('is named <feature>[<module>] in camelCase, and refuses any other name', () => {
+  test('is named with one word in camelCase, and refuses any other name', () => {
     class Named extends Module {
       constructor(name: string) {
         super(name, new UseCaseRunner())
       }
     }
 
-    expect(new Named('campaigns[emailTemplate]').name).toBe('campaigns[emailTemplate]')
-    for (const name of ['order', 'shop.order', 'Shop[order]', 'shop[Order]', 'shop[order]x', 'shop[]']) {
-      expect(() => new Named(name)).toThrow(`A module is named after its feature and itself, '<feature>[<module>]' in camelCase, as 'campaigns[template]': '${name}' is not`)
+    expect(new Named('emailTemplate').name).toBe('emailTemplate')
+    for (const name of ['shop.order', 'Order', 'shop[order]', 'order-line', 'newtOutbox']) {
+      expect(() => new Named(name)).toThrow(`A module is named with one word in camelCase, as 'oauthSigningKey': '${name}' is not`)
     }
   })
 

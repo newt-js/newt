@@ -2,14 +2,14 @@ import { asRule }       from '../../testing/testing'
 import { tester }       from '../../testing/testing'
 import { useCaseReads } from './use-case-reads'
 
-const CARD_MODULE = '/repo/src/contexts/boards/features/boards/card/card.module.ts'
+const CARD_MODULE = '/repo/src/contexts/boards/modules/card/card.module.ts'
 const cardModule = (body: string) => `export class Card_Module extends Module {\n${body}\n}`
 
 tester.run('use-case-reads', asRule(useCaseReads), {
   valid: [
     { code: cardModule('async find(criteria: CardFilterDTO, sort?: CardSortDTO) {}\nasync get(id: string) {}\nasync paginate(criteria: CardFilterDTO, page: PageRequest) {}\nasync search(text: SearchText, page: PageRequest) {}'), filename: CARD_MODULE },
     // Not a module.
-    { code: cardModule('async search(input: CardSearchDTO) {}'), filename: '/repo/src/contexts/boards/features/boards/card/card.ts' },
+    { code: cardModule('async search(input: CardSearchDTO) {}'), filename: '/repo/src/contexts/boards/modules/card/card.ts' },
     { code: cardModule('private async search(input: CardSearchDTO) {}'), filename: CARD_MODULE },
   ],
   invalid: [

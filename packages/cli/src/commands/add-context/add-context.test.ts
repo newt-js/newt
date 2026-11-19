@@ -116,7 +116,7 @@ describe('newt add context', () => {
     const backend = await backendProject()
     await addContext(['sales'], backend)
     const migrations = join(backend, 'src/contexts/sales/migrations')
-    await Bun.write(join(migrations, '00001_orders__order_up.sql'), 'SELECT 1')
+    await Bun.write(join(migrations, '00001_order_up.sql'), 'SELECT 1')
     await Bun.file(join(migrations, '.gitkeep')).delete()
     await addContext(['sales'], backend)
     expect(await Bun.file(join(migrations, '.gitkeep')).exists()).toBe(false)

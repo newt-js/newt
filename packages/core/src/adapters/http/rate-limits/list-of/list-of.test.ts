@@ -8,8 +8,8 @@ import { systemClock }   from '../../../../domain/clock/system-clock/system-cloc
 import { listOf }        from './list-of'
 
 const limits = new RateLimits(new MemoryCluster(), 'shop', systemClock)
-const one = { limit: limits.define('shop[api].calls', { limit: 5, windowMs: 60_000 }) }
-const other = { limit: limits.define('shop[thing].list', { limit: 2, windowMs: 60_000 }) }
+const one = { limit: limits.define('api.calls', { limit: 5, windowMs: 60_000 }) }
+const other = { limit: limits.define('thing.list', { limit: 2, windowMs: 60_000 }) }
 
 describe('listOf', () => {
   test('one limit is a list of one, a list stays as it is', () => {

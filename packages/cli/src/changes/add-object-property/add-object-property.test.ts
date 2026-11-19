@@ -37,16 +37,6 @@ describe('addObjectProperty', () => {
     expect(await edited('M.initialize(\n  base,\n  router,\n)\n', change)).toBe('M.initialize(\n  base,\n  router, {\n    supplier,\n  },\n)\n')
   })
 
-  test('with in, the property goes in the object under that key, added with it when there is none', async () => {
-    const change = { ...CHANGE, call: 'M.initialize', argument: 2, key: 'users', value: 'uses.auth.users', imports: [], createArgument: true, in: 'auth' }
-    expect(await edited('M.initialize(base, router)\n', change)).toBe('M.initialize(base, router, {\n  auth: { users: uses.auth.users },\n})\n')
-    expect(await edited('M.initialize(base, router, {\n  plan,\n})\n', change)).toBe('M.initialize(base, router, {\n  plan,\n  auth: { users: uses.auth.users },\n})\n')
-    const roles = { ...change, key: 'roles', value: 'uses.auth.roles' }
-    expect(await edited('M.initialize(base, router, {\n  auth: { users: uses.auth.users },\n})\n', roles)).toBe('M.initialize(base, router, {\n  auth: { users: uses.auth.users, roles: uses.auth.roles },\n})\n')
-    const text = 'M.initialize(base, router, {\n  auth: { users: uses.auth.users },\n})\n'
-    expect(await edited(text, change)).toBe(text)
-  })
-
   test('a key it has already is left alone', async () => {
     const text = 'x = eventsOf(bus, { shipped: Mine })\n'
     expect(await edited(text, { ...CHANGE, imports: [] })).toBe(text)

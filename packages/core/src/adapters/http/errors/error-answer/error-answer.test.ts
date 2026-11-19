@@ -15,7 +15,7 @@ describe('errorAnswer', () => {
   })
 
   test('one who ran into a rate limit is told when to try again', () => {
-    const answer = errorAnswer(429, { error: 'Too many', code: 'too_many_requests' }, new TooManyRequests('auth[session].signIn', 3000))
+    const answer = errorAnswer(429, { error: 'Too many', code: 'too_many_requests' }, new TooManyRequests('session.signIn', 3000))
 
     expect(answer.headers.get('retry-after')).toBe('3')
   })

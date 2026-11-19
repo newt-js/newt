@@ -1,21 +1,14 @@
 import { TSESLint }    from '@typescript-eslint/utils'
 // --------------------------------------------------------
 import { CORE }        from '../../ast/ast'
-import { isTypeOnly }  from '../../ast/ast'
 import { importsOf }   from '../../paths/paths'
 import { modulePlace } from '../../paths/paths'
 import { resolved }    from '../../paths/paths'
 import { rootOf }      from '../../paths/paths'
 import { sameModule }  from '../../paths/paths'
-import { slashed }     from '../../paths/paths'
 
 /** The packages a schema may import: zod, to write it, and newt's core, for its value objects, filters and pages. */
 const PACKAGES = new Set(['zod', CORE])
-
-/** The feature whose entry point a path is, `features/<feature>/index.ts` or its folder: `null` for any other path. */
-function entryPointOf(path: string): string | null {
-  return /\/features\/([^/]+)(?:\/index(?:\.[cm]?[jt]sx?)?)?$/.exec(slashed(path))?.[1] ?? null
-}
 
 /**
  * A module's schema (`<m>.schema.ts`) is its contract: the DTOs its use cases take and
@@ -24,9 +17,8 @@ function entryPointOf(path: string): string | null {
  * module's own value objects and other modules' schemas: never the entity, the
  * repository, the module or any other file, which would make the contract depend on how
  * the module works. Of another module's schema it takes only the DTO types
- * (`import type`): `newt/module-imports` says so, for every file of a module, once. Of another
- * feature, whose modules it reaches only through its entry point, it takes the DTO types that
- * entry point exports, again with `import type`: those of the entities it references.
+ * (`import type`): `newt/module-imports` says so, for every file of a module, once, and
+ * `newt/published-modules` for those of another context.
  */
 export const schemaImports: TSESLint.RuleModule<'package' | 'file'> = {
   defaultOptions: [],
@@ -35,7 +27,7 @@ export const schemaImports: TSESLint.RuleModule<'package' | 'file'> = {
     docs: { description: "A module's schema imports only zod, @newt-js/core, its value objects and other modules' DTO types." },
     messages: {
       package: "'{{path}}' is not part of a contract: {{file}} imports only 'zod' and '@newt-js/core' (its root, not an adapter's entry). Move what needs it out of the schema.",
-      file: "'{{path}}' is not part of a contract: {{file}} imports only the module's value objects (value-objects/) and other modules' DTO types (import type from *.schema.ts, or from another feature's index.ts). The DTO says what the data is; how the module works stays out of it.",
+      file: "'{{path}}' is not part of a contract: {{file}} imports only the module's value objects (value-objects/) and other modules' DTO types (import type from *.schema.ts). The DTO says what the data is; how the module works stays out of it.",
     },
     schema: [],
   },
@@ -49,8 +41,6 @@ export const schemaImports: TSESLint.RuleModule<'package' | 'file'> = {
         if (!PACKAGES.has(specifier)) context.report({ node, messageId: 'package', data: { path: specifier, file: place.inside } })
         return
       }
-      const feature = entryPointOf(path)
-      if (feature !== null && feature !== place.feature && isTypeOnly(node)) return
       const imported = modulePlace(path, root)
       const own = imported !== null && sameModule(imported, place)
       const contract = imported && (own ? imported.inside.startsWith('value-objects/') : /^[^/]+\.schema$/.test(imported.inside))

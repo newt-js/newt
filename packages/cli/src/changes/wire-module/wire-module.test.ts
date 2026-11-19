@@ -11,16 +11,16 @@ import { wireModule }  from './wire-module'
 const CHANGE = {
   action: 'wire-module' as const,
   path: 'm.ts',
-  className: 'Shop_Feature',
+  className: 'Shop_Context',
   name: 'box',
   type: 'Box_Module',
   declaration: '    const box = Box_Module.initialize(base, router)',
   imports: ["import { Box_Module } from './box'"],
 }
 
-const EMPTY = `export class Shop_Feature extends Feature {
-  static initialize(base, router): Shop_Feature {
-    return new Shop_Feature(base, {})
+const EMPTY = `export class Shop_Context extends BoundedContext {
+  static initialize(base, router): Shop_Context {
+    return new Shop_Context(base, {})
   }
 
   private constructor(
@@ -32,13 +32,13 @@ const EMPTY = `export class Shop_Feature extends Feature {
 }
 `
 
-const WITH_ORDER = `export class Shop_Feature extends Feature {
-  static initialize(base, router): Shop_Feature {
+const WITH_ORDER = `export class Shop_Context extends BoundedContext {
+  static initialize(base, router): Shop_Context {
     const order = Order_Module.initialize(base, router)
-    return new Shop_Feature(base, { order })
+    return new Shop_Context(base, { order })
   }
 
-  public readonly order: Order_Module
+  private readonly order: Order_Module
 
   private constructor(
     base: ContextBase,
@@ -63,13 +63,13 @@ describe('wireModule', () => {
   test('initializes the module, gives it by name to the constructor, types it there and holds it in a field', async () => {
     expect((await edited(EMPTY)).text).toBe(`import { Box_Module } from './box'
 
-export class Shop_Feature extends Feature {
-  static initialize(base, router): Shop_Feature {
+export class Shop_Context extends BoundedContext {
+  static initialize(base, router): Shop_Context {
     const box = Box_Module.initialize(base, router)
-    return new Shop_Feature(base, { box })
+    return new Shop_Context(base, { box })
   }
 
-  public readonly box: Box_Module
+  private readonly box: Box_Module
 
   private constructor(
     base: ContextBase,
@@ -86,8 +86,8 @@ export class Shop_Feature extends Feature {
 
   test('after the modules it has', async () => {
     const { text } = await edited(WITH_ORDER)
-    expect(text).toContain('    const order = Order_Module.initialize(base, router)\n    const box = Box_Module.initialize(base, router)\n    return new Shop_Feature(base, { order, box })')
-    expect(text).toContain('  public readonly order: Order_Module\n  public readonly box: Box_Module\n\n  private constructor(')
+    expect(text).toContain('    const order = Order_Module.initialize(base, router)\n    const box = Box_Module.initialize(base, router)\n    return new Shop_Context(base, { order, box })')
+    expect(text).toContain('  private readonly order: Order_Module\n  private readonly box: Box_Module\n\n  private constructor(')
     expect(text).toContain('    modules: {\n      order: Order_Module,\n      box: Box_Module,\n    },\n  ) {')
     expect(text).toContain('    this.order = modules.order\n    this.box = modules.box\n  }')
   })

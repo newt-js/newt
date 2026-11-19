@@ -42,15 +42,15 @@ describe('DomainEventEmitter.subscribe', () => {
     const seen: unknown[] = []
     const placed = new DomainEventEmitter(bus, Placed)
 
-    placed.subscribe(order => seen.push(order), { strategy: 'handler', queue: 'notifications[notification].orderPlaced_on_order.placed' })
-    placed.subscribe(order => seen.push(order.id), { strategy: 'handler', queue: 'notifications[notification].remind_on_order.placed', attempts: 2 })
+    placed.subscribe(order => seen.push(order), { strategy: 'handler', queue: 'notification.orderPlaced_on_order.placed' })
+    placed.subscribe(order => seen.push(order.id), { strategy: 'handler', queue: 'notification.remind_on_order.placed', attempts: 2 })
     for (const { handler } of subscriptions) {
       await handler(new Placed({ id: 'o1' }))
     }
 
     expect(subscriptions.map(each => [each.pattern, each.options])).toEqual([
-      ['order.placed', { strategy: 'handler', queue: 'notifications[notification].orderPlaced_on_order.placed' }],
-      ['order.placed', { strategy: 'handler', queue: 'notifications[notification].remind_on_order.placed', attempts: 2 }],
+      ['order.placed', { strategy: 'handler', queue: 'notification.orderPlaced_on_order.placed' }],
+      ['order.placed', { strategy: 'handler', queue: 'notification.remind_on_order.placed', attempts: 2 }],
     ])
     expect(seen).toEqual([{ id: 'o1' }, 'o1'])
   })
@@ -72,7 +72,7 @@ describe('DomainEventEmitter.subscribe', () => {
     const seen: unknown[] = []
 
     placed.subscribe((_, meta) => seen.push(meta), { strategy: 'fire-and-forget' })
-    placed.subscribe((_, meta) => seen.push(meta), { strategy: 'handler', queue: 'notifications[notification].orderPlaced_on_order.placed' })
+    placed.subscribe((_, meta) => seen.push(meta), { strategy: 'handler', queue: 'notification.orderPlaced_on_order.placed' })
     for (const { handler } of subscriptions) {
       await handler({ id: 'e7' as EventId, name: 'order.placed', payload: { id: 'o1' }, occurredAt: '2026-01-01T00:00:00.000Z', actor: 'u1' })
     }
@@ -91,24 +91,24 @@ describe('DomainEventEmitter.subscribe', () => {
   test("refuses a queue that does not say who reacts with what to this event", () => {
     const placed = new DomainEventEmitter(recordingBus().bus, Placed)
 
-    expect(() => placed.subscribe(() => {}, { strategy: 'handler', queue: 'notifications[notification].orderPlaced_on_order.confirmed' }))
-      .toThrow("A handler's queue is '<feature>[<module>].<use case>_on_order.placed': 'notifications[notification].orderPlaced_on_order.confirmed' is not")
-    expect(() => placed.subscribe(() => {}, { strategy: 'handler', queue: 'notifications[notification].order.placed_on_order.placed' })).toThrow()
+    expect(() => placed.subscribe(() => {}, { strategy: 'handler', queue: 'notification.orderPlaced_on_order.confirmed' }))
+      .toThrow("A handler's queue is '<module>.<use case>_on_order.placed': 'notification.orderPlaced_on_order.confirmed' is not")
+    expect(() => placed.subscribe(() => {}, { strategy: 'handler', queue: 'notification.order.placed_on_order.placed' })).toThrow()
   })
 
-  test('refuses the old queue of a module of no feature, <module>.<use case>.on.<event>', () => {
+  test('refuses the old queue, <module>.<use case>.on.<event>', () => {
     const placed = new DomainEventEmitter(recordingBus().bus, Placed)
     const old = 'notification.orderPlaced.on.order.placed' as string as HandlerQueue
 
     expect(() => placed.subscribe(() => {}, { strategy: 'handler', queue: old }))
-      .toThrow("A handler's queue is '<feature>[<module>].<use case>_on_order.placed': 'notification.orderPlaced.on.order.placed' is not")
+      .toThrow("A handler's queue is '<module>.<use case>_on_order.placed': 'notification.orderPlaced.on.order.placed' is not")
   })
 
   test('refuses the queue the worker would refuse: a module or use case in upper case', () => {
     const placed = new DomainEventEmitter(recordingBus().bus, Placed)
 
     expect(() => placed.subscribe(() => {}, { strategy: 'handler', queue: 'Notifications[notification].orderPlaced_on_order.placed' })).toThrow()
-    expect(() => placed.subscribe(() => {}, { strategy: 'handler', queue: 'notifications[notification].OrderPlaced_on_order.placed' })).toThrow()
+    expect(() => placed.subscribe(() => {}, { strategy: 'handler', queue: 'notification.OrderPlaced_on_order.placed' })).toThrow()
   })
 })
 
@@ -118,8 +118,8 @@ describe('DomainEventEmitter.subscribe, when', () => {
     const placed = new DomainEventEmitter(bus, Placed)
 
     placed.subscribe(() => {}, { strategy: 'fire-and-forget', when: order => order.id !== 'o2' })
-    placed.subscribe(() => {}, { strategy: 'handler', queue: 'notifications[notification].orderPlaced_on_order.placed', when: order => order.id !== 'o2' })
-    placed.subscribe(() => {}, { strategy: 'handler', queue: 'notifications[notification].remind_on_order.placed' })
+    placed.subscribe(() => {}, { strategy: 'handler', queue: 'notification.orderPlaced_on_order.placed', when: order => order.id !== 'o2' })
+    placed.subscribe(() => {}, { strategy: 'handler', queue: 'notification.remind_on_order.placed' })
     const [inMemory, taking, all] = subscriptions.map(each => each.options!)
 
     for (const each of [inMemory, taking]) {
@@ -158,7 +158,7 @@ describe('DomainEventEmitter.subscribe, further', () => {
     const placed = new DomainEventEmitter(bus, Placed)
 
     const inMemory = placed.subscribe(() => {}, { strategy: 'fire-and-forget' })
-    const durable = placed.subscribe(() => {}, { strategy: 'handler', queue: 'notifications[notification].orderPlaced_on_order.placed' })
+    const durable = placed.subscribe(() => {}, { strategy: 'handler', queue: 'notification.orderPlaced_on_order.placed' })
 
     expect(inMemory).toBe(unsubscribes[0]!)
     expect(durable).toBe(unsubscribes[1]!)
@@ -174,13 +174,13 @@ describe('DomainEventEmitter.subscribe, further', () => {
     }
 
     placed.subscribe(slow, { strategy: 'fire-and-forget' })
-    placed.subscribe(slow, { strategy: 'handler', queue: 'notifications[notification].orderPlaced_on_order.placed' })
+    placed.subscribe(slow, { strategy: 'handler', queue: 'notification.orderPlaced_on_order.placed' })
     placed.subscribe(async () => {
       throw new Error('boom')
     }, { strategy: 'fire-and-forget' })
     placed.subscribe(async () => {
       throw new Error('boom')
-    }, { strategy: 'handler', queue: 'notifications[notification].fail_on_order.placed' })
+    }, { strategy: 'handler', queue: 'notification.fail_on_order.placed' })
 
     await subscriptions[0]!.handler(new Placed({ id: 'o1' }))
     await subscriptions[1]!.handler(new Placed({ id: 'o1' }))

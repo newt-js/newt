@@ -39,11 +39,10 @@ export type AppendBlockChange = { action: 'append-block', path: string, block: s
 
 export type AddClassMemberChange = { action: 'add-class-member', path: string, className: string, name: string, member: string, imports: string[] }
 
-/** With `in`, the property goes in the object under that key of the argument, `auth: { users }`, added with it when the argument has no such key. */
-export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[], createArgument?: boolean, in?: string }
+export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[], createArgument?: boolean }
 
-/** A property of a type, `type X = { … }`; with `in`, of the type under that key of it, `auth: { users: Users_Feature }`, added with it when it has no such key. */
-export type AddTypePropertyChange = { action: 'add-type-property', path: string, type: string, key: string, value: string, imports: string[], in?: string }
+/** A property of a type, `type X = { … }`. */
+export type AddTypePropertyChange = { action: 'add-type-property', path: string, type: string, key: string, value: string, imports: string[] }
 
 /** An item of the list a function returns, `return [sales]`. */
 export type AddReturnedItemChange = { action: 'add-returned-item', path: string, function: string, item: string }

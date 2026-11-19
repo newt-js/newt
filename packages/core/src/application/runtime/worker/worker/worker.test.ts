@@ -106,7 +106,7 @@ class WatchedOutbox extends MemoryOutbox {
   }
 }
 
-const QUEUE = 'mail[mailer].sendWelcome_on_user.created'
+const QUEUE = 'mailer.sendWelcome_on_user.created'
 
 const created = (id = 'u1'): PublishedEvent => ({ id: uuidV7() as EventId, name: 'user.created', payload: { id }, occurredAt: '', actor: null })
 
@@ -144,10 +144,10 @@ describe('register', () => {
   test('a handler is named after who reacts with what to which event', async () => {
     const { queue } = await setup()
 
-    expect(() => queue.register('mail[mailer].sendWelcome_on_user.updated', 'user.created', () => {})).toThrow("'<feature>[<module>].<use case it calls>_on_user.created'")
+    expect(() => queue.register('mailer.sendWelcome_on_user.updated', 'user.created', () => {})).toThrow("'<module>.<use case it calls>_on_user.created'")
     expect(() => queue.register('Mail[mailer].sendWelcome_on_user.created', 'user.created', () => {})).toThrow()
     expect(() => queue.register('mail.sendWelcome.on.user.created', 'user.created', () => {}))
-      .toThrow("A handler of 'user.created' is named '<feature>[<module>].<use case it calls>_on_user.created', not 'mail.sendWelcome.on.user.created'")
+      .toThrow("A handler of 'user.created' is named '<module>.<use case it calls>_on_user.created', not 'mail.sendWelcome.on.user.created'")
     queue.register(QUEUE, 'user.created', () => {})
   })
 
@@ -184,12 +184,12 @@ describe('enqueue', () => {
   test('writes one pending job for each handler the event concerns', async () => {
     const { outbox, queue } = await setup()
     queue.register(QUEUE, 'user.created', () => {})
-    queue.register('audit[trail].record_on_user.*', 'user.*', () => {})
-    queue.register('mail[mailer].sendBye_on_user.deleted', 'user.deleted', () => {})
+    queue.register('trail.record_on_user.*', 'user.*', () => {})
+    queue.register('mailer.sendBye_on_user.deleted', 'user.deleted', () => {})
 
     await queue.enqueue(created())
 
-    expect((await outbox.list()).map(job => job.queue).sort()).toEqual(['audit[trail].record_on_user.*', QUEUE])
+    expect((await outbox.list()).map(job => job.queue).sort()).toEqual([QUEUE, 'trail.record_on_user.*'])
     expect(await outbox.job(QUEUE)).toMatchObject({ status: 'pending', attempts: 0, lockedBy: null, lockedUntil: null, lastError: null })
     const [first, second] = (await outbox.list()).map(job => JSON.parse(job.event) as DomainEvent)
     expect(first).toEqual({ ...created(), id: expect.any(String), actor: null })
@@ -937,28 +937,28 @@ describe('the worker', () => {
     queue.register(QUEUE, 'user.created', () => {})
     const recently = new Date().toISOString()
     await outbox.add([
-      { ...pendingJob(), id: 'a', queue: 'mail[mailer].old_on_user.created', runAfter: '9999' },
-      { ...pendingJob(), id: 'b', queue: 'mail[mailer].old_on_user.created', status: 'running', lockedUntil: '9999' },
-      { ...pendingJob(), id: 'c', queue: 'mail[mailer].gone_on_user.created', status: 'done' },
-      { ...pendingJob(), id: 'd', queue: 'mail[mailer].elsewhere_on_user.created', runAfter: '9999' },
+      { ...pendingJob(), id: 'a', queue: 'mailer.old_on_user.created', runAfter: '9999' },
+      { ...pendingJob(), id: 'b', queue: 'mailer.old_on_user.created', status: 'running', lockedUntil: '9999' },
+      { ...pendingJob(), id: 'c', queue: 'mailer.gone_on_user.created', status: 'done' },
+      { ...pendingJob(), id: 'd', queue: 'mailer.elsewhere_on_user.created', runAfter: '9999' },
       { ...pendingJob(), id: 'e', queue: QUEUE, runAfter: '9999' },
     ])
-    await outbox.seen([{ name: 'mail[mailer].elsewhere_on_user.created', event: 'user.created', attempts: 5 }], recently)
+    await outbox.seen([{ name: 'mailer.elsewhere_on_user.created', event: 'user.created', attempts: 5 }], recently)
 
     queue.start()
     await until(() => warnings.length > 0)
     await Bun.sleep(20)
     await queue.stop()
 
-    expect(warnings).toEqual([expect.stringContaining("2 job(s) of 'mail[mailer].old_on_user.created' wait")])
+    expect(warnings).toEqual([expect.stringContaining("2 job(s) of 'mailer.old_on_user.created' wait")])
   })
 
   test('warns about a queue seen moments ago once nobody has served it for a while, as after a deploy that renamed it', async () => {
     const { outbox, queue } = await setup({ pollMs: 5, seenEveryMs: 100 })
     const warnings = logLines().said('warn')
     queue.register(QUEUE, 'user.created', () => {})
-    await outbox.add([{ ...pendingJob(), id: 'a', queue: 'mail[mailer].old_on_user.created', runAfter: '9999' }])
-    await outbox.seen([{ name: 'mail[mailer].old_on_user.created', event: 'user.created', attempts: 5 }], new Date().toISOString())
+    await outbox.add([{ ...pendingJob(), id: 'a', queue: 'mailer.old_on_user.created', runAfter: '9999' }])
+    await outbox.seen([{ name: 'mailer.old_on_user.created', event: 'user.created', attempts: 5 }], new Date().toISOString())
 
     queue.start()
     await Bun.sleep(20)
@@ -968,20 +968,20 @@ describe('the worker', () => {
     await queue.stop()
 
     expect(atStart).toEqual([])
-    expect(warnings).toEqual([expect.stringContaining("1 job(s) of 'mail[mailer].old_on_user.created' wait")])
+    expect(warnings).toEqual([expect.stringContaining("1 job(s) of 'mailer.old_on_user.created' wait")])
   })
 
   test('warns again about a queue left alone again, once it was served or emptied', async () => {
     const { outbox, queue } = await setup({ pollMs: 5, seenEveryMs: 5 })
     const warnings = logLines().said('warn')
     queue.register(QUEUE, 'user.created', () => {})
-    await outbox.add([{ ...pendingJob(), id: 'a', queue: 'mail[mailer].old_on_user.created', runAfter: '9999' }])
+    await outbox.add([{ ...pendingJob(), id: 'a', queue: 'mailer.old_on_user.created', runAfter: '9999' }])
 
     queue.start()
     await until(() => warnings.length === 1)
     await outbox.clear()
     await Bun.sleep(30)
-    await outbox.add([{ ...pendingJob(), id: 'b', queue: 'mail[mailer].old_on_user.created', runAfter: '9999' }])
+    await outbox.add([{ ...pendingJob(), id: 'b', queue: 'mailer.old_on_user.created', runAfter: '9999' }])
     await until(() => warnings.length === 2)
     await queue.stop()
 

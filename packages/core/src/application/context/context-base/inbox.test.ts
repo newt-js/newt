@@ -44,7 +44,7 @@ class Invoices extends Repository<Invoice, InvoiceRow> {
 class Orders extends Module {
   readonly events
   constructor(base: ContextBase) {
-    super('shop[order]', base.useCaseRunner)
+    super('order', base.useCaseRunner)
     this.events = eventsOf(base.bus, { placed: Placed })
   }
 }
@@ -52,7 +52,7 @@ class Orders extends Module {
 class Billing extends Module {
   failures = 0
   constructor(base: ContextBase, private readonly invoices: Invoices) {
-    super('billing[invoice]', base.useCaseRunner)
+    super('invoice', base.useCaseRunner)
   }
   @UseCase()
   async invoice(order: string) {
