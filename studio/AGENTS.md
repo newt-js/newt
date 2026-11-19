@@ -26,6 +26,8 @@ Read a session cookie or a bearer token there and return `{ userId }`, or `null`
 ## Rules
 
 newt's lint holds the rules of the code: run it after every change and fix what it says.
+Which contexts each context uses is listed in `eslint.config.ts` (`uses`). No context uses `auth`, ever: they sign in
+through OAuth, over HTTP. Do not add `auth` to `uses` nor publish its modules to make a lint error go away.
 A table changes only through a migration: a change to a module's schema needs the next pair in its context's
 `migrations/`, `<number>_<module>_up.sql` and `<number>_<module>_down.sql` (the table is `<module>` in snake_case), the number one above the highest there.
 The tests run them.
