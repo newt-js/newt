@@ -30,6 +30,8 @@ describe('newt add module', () => {
     const backend = await backendWithContext()
     const output = await run(ADD_MODULE, ['sales/orders/order'], backend)
     expect(output.code).toBe(0)
+    expect(output.text).toContain('removed  src/contexts/sales/migrations/.gitkeep')
+    expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/.gitkeep')).exists()).toBe(false)
     expect(await read(join(backend, 'src/contexts/sales/migrations/00001_orders__order_up.sql'))).toStartWith('CREATE TABLE "orders$order" (')
     expect(await read(join(backend, 'src/contexts/sales/sales.context.ts'))).toContain('    const orders = Orders_Feature.initialize(base, router)\n    return new Sales_Context(base, orders)')
     expect(await read(join(backend, 'src/contexts/sales/features/orders/orders.feature.ts'))).toContain("    const order = Order_Module.initialize(base, router)\n    return new Orders_Feature(base, order)\n  }\n\n  private constructor(\n    base: ContextBase,\n    readonly order: Order_Module,\n  ) {\n    super('orders', base, [order])")

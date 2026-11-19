@@ -51,6 +51,7 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     ...sql ? [
       { action: 'create', path: join(contextFolder, 'migrations', `${migration}_${names.migration}_up.sql`), content: sql.up } as const,
       { action: 'create', path: join(contextFolder, 'migrations', `${migration}_${names.migration}_down.sql`), content: sql.down } as const,
+      { action: 'remove-unchanged', path: join(contextFolder, 'migrations/.gitkeep'), content: '', why: 'the folder has its migrations now' } as const,
     ] : [],
     {
       action: 'wire-module',
