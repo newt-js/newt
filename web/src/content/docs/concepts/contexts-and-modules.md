@@ -16,7 +16,7 @@ Newthub could have three contexts: `tasks`, `chat` and `docs`. Each one owns:
 | What | Where, for the context `tasks` |
 |---|---|
 | Its folder | `src/contexts/tasks/` |
-| Its database | `data/tasks.sqlite`, or the path in `TASKS_DATABASE` |
+| Its database | `data/databases/tasks/tasks.sqlite`, or the path in `TASKS_DATABASE` |
 | Its migrations | `src/contexts/tasks/migrations/` |
 | Its routes | under `/tasks/api/` |
 | Its files | its own storage |

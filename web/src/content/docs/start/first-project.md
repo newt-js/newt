@@ -90,10 +90,10 @@ Next steps:
   bun run dev
 ```
 
-The context opens its SQLite database at `data/tasks.sqlite`, created on the next start. `.env` now says so:
+The context opens its SQLite database at `data/databases/tasks/tasks.sqlite`, created on the next start. `.env` now says so:
 
 ```sh title=".env"
-TASKS_DATABASE=data/tasks.sqlite
+TASKS_DATABASE=data/databases/tasks/tasks.sqlite
 TASKS_FILES=data/files/tasks
 ```
 

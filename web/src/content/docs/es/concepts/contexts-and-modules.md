@@ -16,7 +16,7 @@ Newthub podría tener tres contextos: `tasks`, `chat` y `docs`. Cada uno tiene l
 | Qué | Dónde, para el contexto `tasks` |
 |---|---|
 | Su carpeta | `src/contexts/tasks/` |
-| Su base de datos | `data/tasks.sqlite`, o la ruta de `TASKS_DATABASE` |
+| Su base de datos | `data/databases/tasks/tasks.sqlite`, o la ruta de `TASKS_DATABASE` |
 | Sus migraciones | `src/contexts/tasks/migrations/` |
 | Sus rutas | bajo `/tasks/api/` |
 | Sus ficheros | su propio almacenamiento |

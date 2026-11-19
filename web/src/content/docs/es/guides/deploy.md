@@ -20,7 +20,7 @@ Un backend en una sola máquina, con SQLite y ficheros locales, tiene esta forma
 flowchart TD
   users[Usuarios] -->|HTTPS| proxy[Proxy o balanceador]
   proxy -->|HTTP en PORT| bun[bun src/index.ts]
-  bun --> db[(data/tasks.sqlite)]
+  bun --> db[(data/databases/tasks/tasks.sqlite)]
   bun --> files[(data/files/tasks/)]
 ```
 
@@ -64,12 +64,12 @@ Bun lee `.env` de la carpeta desde la que arrancas, pero en producción lo norma
 | `PORT` | `3000` | El puerto HTTP; `3000` si no está definida |
 | `PUBLIC_URL` | `https://newthub.example.com` | La dirección a la que llegan los usuarios |
 | `FILES_SECRET` | 64 caracteres hexadecimales | Firma los enlaces a ficheros |
-| `TASKS_DATABASE` | `/app/data/tasks.sqlite` | Una por contexto |
+| `TASKS_DATABASE` | `/app/data/databases/tasks/tasks.sqlite` | Una por contexto |
 | `TASKS_FILES` | `/app/data/files/tasks` | Una por contexto |
 
 - `PUBLIC_URL` y `FILES_SECRET` son obligatorias con ficheros locales; sin ellas el backend no arranca. `PUBLIC_URL` construye los enlaces a los ficheros subidos, así que debe ser la dirección pública, con `https`.
 - `FILES_SECRET` debe tener al menos 32 caracteres. Genera uno con `openssl rand -hex 32`.
-- `TASKS_DATABASE` y `TASKS_FILES` valen por defecto `data/tasks.sqlite` y `data/files/tasks`, relativas a la carpeta desde la que arrancas.
+- `TASKS_DATABASE` y `TASKS_FILES` valen por defecto `data/databases/tasks/tasks.sqlite` y `data/files/tasks`, relativas a la carpeta desde la que arrancas.
 
 Otras configuraciones añaden o cambian variables:
 
@@ -85,7 +85,7 @@ Nunca subas `.env` a git ni reutilices en producción el `FILES_SECRET` de desar
 
 ## 3. Guarda data/ en un disco persistente
 
-Con SQLite y ficheros locales, todo lo que guarda tu backend vive en `data/`: un fichero `.sqlite` por contexto (más sus ficheros `-wal` y `-shm`) y `data/files/`. Monta ahí un volumen persistente.
+Con SQLite y ficheros locales, todo lo que guarda tu backend vive en `data/`: `data/databases/`, una carpeta por contexto con su fichero `.sqlite` (más sus ficheros `-wal` y `-shm`), y `data/files/`, una carpeta por contexto. Monta ahí un volumen persistente.
 
 Si tu proveedor da un disco nuevo en cada despliegue, pierdes esos datos en cada despliegue. Usa un volumen, o pasa a [Postgres](/es/guides/databases/postgres/) y ficheros en S3.
 

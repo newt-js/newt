@@ -52,7 +52,7 @@ describe('newt add context', () => {
     expect(context).toContain('    router.authenticateWith(authenticate)\n')
     expect(await read(join(backend, 'src/auth.ts'))).toContain('export const authenticate: Authenticator = async () => null')
     expect(await read(join(backend, 'src/contexts/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform, place))\n  return contexts')
-    expect(await read(join(backend, '.env'))).toEndWith('\nSALES_DATABASE=data/sales.sqlite\nSALES_FILES=data/files/sales\n')
+    expect(await read(join(backend, '.env'))).toEndWith('\nSALES_DATABASE=data/databases/sales/sales.sqlite\nSALES_FILES=data/files/sales\n')
     expect(await Bun.file(join(backend, '.env.test')).exists()).toBe(false)
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)

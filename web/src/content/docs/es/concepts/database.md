@@ -15,8 +15,8 @@ El contexto `tasks` tiene una base de datos; un contexto `chat` tendría otra. N
 flowchart TD
   B["tu backend"] --> T["contexto tasks"]
   B --> C["contexto chat"]
-  T --> TD["data/tasks.sqlite"]
-  C --> CD["data/chat.sqlite"]
+  T --> TD["data/databases/tasks/tasks.sqlite"]
+  C --> CD["data/databases/chat/chat.sqlite"]
   TD --> TT["tus tablas + tablas newt_"]
   CD --> CT["tus tablas + tablas newt_"]
 ```
@@ -34,7 +34,7 @@ export async function openDatabase(
   }
   return SqliteDatabase.open({
     path:
-      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/databases/${context}/${context}.sqlite`,
     migrations,
   })
 }
@@ -49,7 +49,7 @@ const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 const database = await openDatabase('tasks', MIGRATIONS_FOLDER, stores)
 ```
 
-Así, el contexto `tasks` vive en `data/tasks.sqlite`, o donde indique `TASKS_DATABASE`. Los tests la abren con `stores: 'memory'`: una base de datos SQLite nueva con las mismas migraciones.
+Así, el contexto `tasks` vive en `data/databases/tasks/tasks.sqlite`, o donde indique `TASKS_DATABASE`. Los tests la abren con `stores: 'memory'`: una base de datos SQLite nueva con las mismas migraciones.
 
 ## Opciones de SQLite
 

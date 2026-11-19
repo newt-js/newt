@@ -67,7 +67,7 @@ La variable de cada contexto pasa de ser la ruta de un fichero a ser una URL:
 
 | Antes (SQLite) | Después (Postgres) |
 |---|---|
-| `TASKS_DATABASE=data/tasks.sqlite` | `TASKS_DATABASE_URL=postgres://...` |
+| `TASKS_DATABASE=data/databases/tasks/tasks.sqlite` | `TASKS_DATABASE_URL=postgres://...` |
 
 Actualiza `.env`, `.env.example` y la configuración de producción. Después crea una base de datos por contexto, como explican [Postgres](/es/guides/databases/postgres/#crear-las-bases-de-datos) o [MySQL](/es/guides/databases/mysql/#crear-las-bases-de-datos).
 
@@ -149,7 +149,7 @@ newt no copia datos entre bases de datos. Lo hace un script corto de Bun, tabla 
    import { SQL } from 'bun'
 
    const tables = ['project', 'task']
-   const from = new Database('data/tasks.sqlite', { readonly: true })
+   const from = new Database('data/databases/tasks/tasks.sqlite', { readonly: true })
    const to = new SQL(Bun.env.TASKS_DATABASE_URL!)
 
    for (const table of tables) {

@@ -24,16 +24,16 @@ Each context has one database file, in `data/` by default:
 
 | Context | File | Variable |
 |---|---|---|
-| `tasks` | `data/tasks.sqlite` | `TASKS_DATABASE` |
-| `chat` | `data/chat.sqlite` | `CHAT_DATABASE` |
+| `tasks` | `data/databases/tasks/tasks.sqlite` | `TASKS_DATABASE` |
+| `chat` | `data/databases/chat/chat.sqlite` | `CHAT_DATABASE` |
 
 The variable is the context's folder name in capitals, with `-` turned into `_`, plus `_DATABASE`. `newt add context` writes it to `.env` and `.env.example`:
 
 ```sh title=".env"
-TASKS_DATABASE=data/tasks.sqlite
+TASKS_DATABASE=data/databases/tasks/tasks.sqlite
 ```
 
-`src/stores.ts` reads it, and falls back to `data/<context>.sqlite` when it is not set:
+`src/stores.ts` reads it, and falls back to `data/databases/<context>/<context>.sqlite` when it is not set:
 
 ```ts title="src/stores.ts"
 export async function openDatabase(
@@ -46,7 +46,7 @@ export async function openDatabase(
   }
   return SqliteDatabase.open({
     path:
-      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/databases/${context}/${context}.sqlite`,
     migrations,
   })
 }
@@ -96,7 +96,7 @@ Copying `tasks.sqlite` with `cp` while the backend runs can give you a broken co
    import { Database } from 'bun:sqlite'
 
    const stamp = new Date().toISOString().replaceAll(':', '-')
-   const database = new Database('data/tasks.sqlite')
+   const database = new Database('data/databases/tasks/tasks.sqlite')
    database.run(`VACUUM INTO 'backups/tasks-${stamp}.sqlite'`)
    database.close()
    ```
@@ -108,13 +108,13 @@ Copying `tasks.sqlite` with `cp` while the backend runs can give you a broken co
    With the `sqlite3` command line tool, `.backup` does the same:
 
    ```sh
-   sqlite3 data/tasks.sqlite ".backup 'backups/tasks.sqlite'"
+   sqlite3 data/databases/tasks/tasks.sqlite ".backup 'backups/tasks.sqlite'"
    ```
 
 2. Copy the backup file somewhere else: another disk, another machine, or object storage.
 3. Run it on a schedule, for example once a day with cron.
 
-To restore, stop the backend, put the backup file in place of `data/tasks.sqlite`, delete the old `-wal` and `-shm` files, and start the backend again.
+To restore, stop the backend, put the backup file in place of `data/databases/tasks/tasks.sqlite`, delete the old `-wal` and `-shm` files, and start the backend again.
 
 :::tip
 Back up every context's file, and the files folder (`data/files/`) if you keep uploads on local disk. A backup you have never restored is not a backup: try a restore once.

@@ -20,7 +20,7 @@ A backend on one machine, with SQLite and local files, looks like this:
 flowchart TD
   users[Users] -->|HTTPS| proxy[Proxy or load balancer]
   proxy -->|HTTP on PORT| bun[bun src/index.ts]
-  bun --> db[(data/tasks.sqlite)]
+  bun --> db[(data/databases/tasks/tasks.sqlite)]
   bun --> files[(data/files/tasks/)]
 ```
 
@@ -64,12 +64,12 @@ Bun reads `.env` from the folder you start in, but in production you usually set
 | `PORT` | `3000` | The HTTP port; `3000` if unset |
 | `PUBLIC_URL` | `https://newthub.example.com` | The address users reach |
 | `FILES_SECRET` | 64 hex characters | Signs file links |
-| `TASKS_DATABASE` | `/app/data/tasks.sqlite` | One per context |
+| `TASKS_DATABASE` | `/app/data/databases/tasks/tasks.sqlite` | One per context |
 | `TASKS_FILES` | `/app/data/files/tasks` | One per context |
 
 - `PUBLIC_URL` and `FILES_SECRET` are required with local files; the backend does not start without them. `PUBLIC_URL` builds the links to uploaded files, so it must be the public address, with `https`.
 - `FILES_SECRET` must have at least 32 characters. Generate one with `openssl rand -hex 32`.
-- `TASKS_DATABASE` and `TASKS_FILES` fall back to `data/tasks.sqlite` and `data/files/tasks`, relative to the folder you start in.
+- `TASKS_DATABASE` and `TASKS_FILES` fall back to `data/databases/tasks/tasks.sqlite` and `data/files/tasks`, relative to the folder you start in.
 
 Other setups add or replace variables:
 
@@ -85,7 +85,7 @@ Never commit `.env` or reuse the development `FILES_SECRET` in production. Anyon
 
 ## 3. Keep data/ on a persistent disk
 
-With SQLite and local files, everything your backend stores lives in `data/`: one `.sqlite` file per context (plus its `-wal` and `-shm` files) and `data/files/`. Mount a persistent volume there.
+With SQLite and local files, everything your backend stores lives in `data/`: `data/databases/`, a folder per context with its `.sqlite` file (plus its `-wal` and `-shm` files), and `data/files/`, a folder per context. Mount a persistent volume there.
 
 If your host gives each deploy a fresh disk, you lose that data on every deploy. Use a volume, or move to [Postgres](/guides/databases/postgres/) and files on S3.
 

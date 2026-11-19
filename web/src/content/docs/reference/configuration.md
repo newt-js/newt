@@ -87,14 +87,14 @@ When the backend starts with `stores: 'memory'` (its tests), it reads none of th
 
 | Name | With | Meaning | Default |
 |---|---|---|---|
-| `<CONTEXT>_DATABASE` | `sqlite` (default) | Path of the context's SQLite file. | `data/<context>.sqlite` |
+| `<CONTEXT>_DATABASE` | `sqlite` (default) | Path of the context's SQLite file. | `data/databases/<context>/<context>.sqlite` |
 | `<CONTEXT>_DATABASE_URL` | `postgres` | URL of the context's Postgres database. Required. | none |
 | `<CONTEXT>_DATABASE_URL` | `mysql` | URL of the context's MySQL database. Required. | none |
 
 What newt writes to `.env` for a context `tasks` in a backend `demo`, one line per database:
 
 ```sh
-TASKS_DATABASE=data/tasks.sqlite
+TASKS_DATABASE=data/databases/tasks/tasks.sqlite
 TASKS_DATABASE_URL=postgres://postgres:postgres@localhost:5432/demo__tasks
 TASKS_DATABASE_URL=mysql://root:root@localhost:3306/demo__tasks
 ```

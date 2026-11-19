@@ -60,7 +60,7 @@ Next steps:
 
 | Backend uses | Variable added | Value |
 |---|---|---|
-| `sqlite` | `CHAT_DATABASE` | `data/chat.sqlite` |
+| `sqlite` | `CHAT_DATABASE` | `data/databases/chat/chat.sqlite` |
 | `postgres` | `CHAT_DATABASE_URL` | `postgres://postgres:postgres@localhost:5432/<backend>__chat` |
 | `mysql` | `CHAT_DATABASE_URL` | `mysql://root:root@localhost:3306/<backend>__chat` |
 | `local` files | `CHAT_FILES` | `data/files/chat` |

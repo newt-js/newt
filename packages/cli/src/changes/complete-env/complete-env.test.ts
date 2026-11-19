@@ -17,13 +17,13 @@ async function folderWith(content: string): Promise<string> {
 describe('completeEnv', () => {
   test('adds the variables it does not define', async () => {
     const cwd = await folderWith('PORT=3000\n')
-    expect(await completeEnv('.env', { SHOP_DATABASE: 'data/shop.sqlite' }, diskFiles(cwd))).toEqual({ status: 'updated', warnings: [] })
-    expect(await Bun.file(join(cwd, '.env')).text()).toBe('PORT=3000\nSHOP_DATABASE=data/shop.sqlite\n')
+    expect(await completeEnv('.env', { SHOP_DATABASE: 'data/databases/shop/shop.sqlite' }, diskFiles(cwd))).toEqual({ status: 'updated', warnings: [] })
+    expect(await Bun.file(join(cwd, '.env')).text()).toBe('PORT=3000\nSHOP_DATABASE=data/databases/shop/shop.sqlite\n')
   })
 
   test('never changes a value it has, even another one', async () => {
     const cwd = await folderWith('SHOP_DATABASE=/var/shop.sqlite\nexport PORT = 4000\n')
-    expect((await completeEnv('.env', { SHOP_DATABASE: 'data/shop.sqlite', PORT: '3000' }, diskFiles(cwd))).status).toBe('skipped')
+    expect((await completeEnv('.env', { SHOP_DATABASE: 'data/databases/shop/shop.sqlite', PORT: '3000' }, diskFiles(cwd))).status).toBe('skipped')
     expect(await Bun.file(join(cwd, '.env')).text()).toBe('SHOP_DATABASE=/var/shop.sqlite\nexport PORT = 4000\n')
   })
 

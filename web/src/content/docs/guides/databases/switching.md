@@ -67,7 +67,7 @@ Each context's variable changes from a file path to a URL:
 
 | Before (SQLite) | After (Postgres) |
 |---|---|
-| `TASKS_DATABASE=data/tasks.sqlite` | `TASKS_DATABASE_URL=postgres://...` |
+| `TASKS_DATABASE=data/databases/tasks/tasks.sqlite` | `TASKS_DATABASE_URL=postgres://...` |
 
 Update `.env`, `.env.example` and your production settings. Then create one database per context, as [Postgres](/guides/databases/postgres/#create-the-databases) or [MySQL](/guides/databases/mysql/#create-the-databases) explains.
 
@@ -149,7 +149,7 @@ newt does not copy data between databases. A short Bun script does it, table by 
    import { SQL } from 'bun'
 
    const tables = ['project', 'task']
-   const from = new Database('data/tasks.sqlite', { readonly: true })
+   const from = new Database('data/databases/tasks/tasks.sqlite', { readonly: true })
    const to = new SQL(Bun.env.TASKS_DATABASE_URL!)
 
    for (const table of tables) {

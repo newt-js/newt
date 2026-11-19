@@ -87,14 +87,14 @@ Cuando el backend arranca con `stores: 'memory'` (sus tests), no lee ninguna var
 
 | Nombre | Con | Significado | Por defecto |
 |---|---|---|---|
-| `<CONTEXTO>_DATABASE` | `sqlite` (por defecto) | Ruta del fichero SQLite del contexto. | `data/<contexto>.sqlite` |
+| `<CONTEXTO>_DATABASE` | `sqlite` (por defecto) | Ruta del fichero SQLite del contexto. | `data/databases/<contexto>/<contexto>.sqlite` |
 | `<CONTEXTO>_DATABASE_URL` | `postgres` | URL de la base de datos Postgres del contexto. Obligatoria. | ninguno |
 | `<CONTEXTO>_DATABASE_URL` | `mysql` | URL de la base de datos MySQL del contexto. Obligatoria. | ninguno |
 
 Lo que newt escribe en `.env` para un contexto `tasks` de un backend `demo`, una línea por base de datos:
 
 ```sh
-TASKS_DATABASE=data/tasks.sqlite
+TASKS_DATABASE=data/databases/tasks/tasks.sqlite
 TASKS_DATABASE_URL=postgres://postgres:postgres@localhost:5432/demo__tasks
 TASKS_DATABASE_URL=mysql://root:root@localhost:3306/demo__tasks
 ```

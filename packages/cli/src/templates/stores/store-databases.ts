@@ -14,7 +14,7 @@ export const STORE_DATABASES = {
     adapter: 'sqlite',
     from: '@newt-js/core/database/sqlite',
     needsEnv: false,
-    contextEnv: (env, folder) => ({ [`${env}_DATABASE`]: `data/${folder}.sqlite` }),
+    contextEnv: (env, folder) => ({ [`${env}_DATABASE`]: `data/databases/${folder}/${folder}.sqlite` }),
   },
   postgres: {
     adapter: 'postgres',

@@ -24,16 +24,16 @@ Cada contexto tiene un fichero de base de datos, en `data/` por defecto:
 
 | Contexto | Fichero | Variable |
 |---|---|---|
-| `tasks` | `data/tasks.sqlite` | `TASKS_DATABASE` |
-| `chat` | `data/chat.sqlite` | `CHAT_DATABASE` |
+| `tasks` | `data/databases/tasks/tasks.sqlite` | `TASKS_DATABASE` |
+| `chat` | `data/databases/chat/chat.sqlite` | `CHAT_DATABASE` |
 
 La variable es el nombre de la carpeta del contexto en mayúsculas, con `-` cambiado por `_`, más `_DATABASE`. `newt add context` la escribe en `.env` y en `.env.example`:
 
 ```sh title=".env"
-TASKS_DATABASE=data/tasks.sqlite
+TASKS_DATABASE=data/databases/tasks/tasks.sqlite
 ```
 
-`src/stores.ts` la lee, y usa `data/<context>.sqlite` si no está definida:
+`src/stores.ts` la lee, y usa `data/databases/<context>/<context>.sqlite` si no está definida:
 
 ```ts title="src/stores.ts"
 export async function openDatabase(
@@ -46,7 +46,7 @@ export async function openDatabase(
   }
   return SqliteDatabase.open({
     path:
-      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/databases/${context}/${context}.sqlite`,
     migrations,
   })
 }
@@ -96,7 +96,7 @@ Copiar `tasks.sqlite` con `cp` mientras el backend funciona puede darte una copi
    import { Database } from 'bun:sqlite'
 
    const stamp = new Date().toISOString().replaceAll(':', '-')
-   const database = new Database('data/tasks.sqlite')
+   const database = new Database('data/databases/tasks/tasks.sqlite')
    database.run(`VACUUM INTO 'backups/tasks-${stamp}.sqlite'`)
    database.close()
    ```
@@ -108,13 +108,13 @@ Copiar `tasks.sqlite` con `cp` mientras el backend funciona puede darte una copi
    Con la herramienta de línea de comandos `sqlite3`, `.backup` hace lo mismo:
 
    ```sh
-   sqlite3 data/tasks.sqlite ".backup 'backups/tasks.sqlite'"
+   sqlite3 data/databases/tasks/tasks.sqlite ".backup 'backups/tasks.sqlite'"
    ```
 
 2. Copia el fichero de la copia de seguridad a otro sitio: otro disco, otro ordenador o un almacenamiento de objetos.
 3. Prográmalo, por ejemplo una vez al día con cron.
 
-Para restaurar, para el backend, pon la copia en lugar de `data/tasks.sqlite`, borra los ficheros `-wal` y `-shm` antiguos y vuelve a arrancar el backend.
+Para restaurar, para el backend, pon la copia en lugar de `data/databases/tasks/tasks.sqlite`, borra los ficheros `-wal` y `-shm` antiguos y vuelve a arrancar el backend.
 
 :::tip
 Haz copia del fichero de cada contexto, y de la carpeta de ficheros (`data/files/`) si guardas las subidas en el disco local. Una copia que nunca has restaurado no es una copia: prueba a restaurar una vez.

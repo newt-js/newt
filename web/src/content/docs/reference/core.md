@@ -769,7 +769,7 @@ Each adapter has its own entry point, so an app only loads what it uses.
 ```ts title="src/stores.ts"
 return SqliteDatabase.open({
   path:
-    Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+    Bun.env[`${envOf(context)}_DATABASE`] ?? `data/databases/${context}/${context}.sqlite`,
   migrations,
 })
 ```

@@ -22,7 +22,7 @@ newthub/
 ├── package.json
 ├── tsconfig.json
 ├── data/                              created on the first start
-│   ├── tasks.sqlite
+│   ├── databases/tasks/tasks.sqlite
 │   └── files/tasks/
 └── src/
     ├── index.ts
@@ -130,7 +130,7 @@ The scripts in `package.json`:
 
 Where the backend keeps its data on your machine. It appears on the first start.
 
-- `data/<context>.sqlite`: each context's SQLite database. The `-shm` and `-wal` files next to it belong to SQLite.
+- `data/databases/<context>/<context>.sqlite`: each context's SQLite database. The `-shm` and `-wal` files next to it belong to SQLite.
 - `data/files/<context>/`: each context's uploaded files.
 
 Delete `data/` to start again from empty databases. Tests never use it: they run in memory.

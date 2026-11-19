@@ -15,8 +15,8 @@ The `tasks` context has one database; a `chat` context would have another. No co
 flowchart TD
   B["your backend"] --> T["tasks context"]
   B --> C["chat context"]
-  T --> TD["data/tasks.sqlite"]
-  C --> CD["data/chat.sqlite"]
+  T --> TD["data/databases/tasks/tasks.sqlite"]
+  C --> CD["data/databases/chat/chat.sqlite"]
   TD --> TT["your tables + newt_ tables"]
   CD --> CT["your tables + newt_ tables"]
 ```
@@ -34,7 +34,7 @@ export async function openDatabase(
   }
   return SqliteDatabase.open({
     path:
-      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/${context}.sqlite`,
+      Bun.env[`${envOf(context)}_DATABASE`] ?? `data/databases/${context}/${context}.sqlite`,
     migrations,
   })
 }
@@ -49,7 +49,7 @@ const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 const database = await openDatabase('tasks', MIGRATIONS_FOLDER, stores)
 ```
 
-So the `tasks` context lives in `data/tasks.sqlite`, or wherever `TASKS_DATABASE` points. Tests open it with `stores: 'memory'`: a fresh SQLite database with the same migrations.
+So the `tasks` context lives in `data/databases/tasks/tasks.sqlite`, or wherever `TASKS_DATABASE` points. Tests open it with `stores: 'memory'`: a fresh SQLite database with the same migrations.
 
 ## SQLite options
 

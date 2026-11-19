@@ -22,7 +22,7 @@ newthub/
 ├── package.json
 ├── tsconfig.json
 ├── data/                              se crea en el primer arranque
-│   ├── tasks.sqlite
+│   ├── databases/tasks/tasks.sqlite
 │   └── files/tasks/
 └── src/
     ├── index.ts
@@ -130,7 +130,7 @@ Los scripts de `package.json`:
 
 Donde el backend guarda sus datos en tu ordenador. Aparece en el primer arranque.
 
-- `data/<contexto>.sqlite`: la base de datos SQLite de cada contexto. Los ficheros `-shm` y `-wal` que la acompañan son de SQLite.
+- `data/databases/<contexto>/<contexto>.sqlite`: la base de datos SQLite de cada contexto. Los ficheros `-shm` y `-wal` que la acompañan son de SQLite.
 - `data/files/<contexto>/`: los ficheros subidos de cada contexto.
 
 Borra `data/` para empezar de nuevo con las bases de datos vacías. Los tests nunca la usan: funcionan en memoria.
