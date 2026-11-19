@@ -3,14 +3,11 @@ import { join }                  from 'node:path'
 import type { FileChange }       from '../../../commands/command'
 import { STORE_FILES }           from '../../stores/store-files'
 import type { Stores }           from '../../stores/stores'
-import { storesNeedEnv }         from '../../stores/stores-ts'
-import { storesTs }              from '../../stores/stores-ts'
 import type { TemplateVersions } from '../../template-versions/template-versions'
 import { BUN_INIT_INDEX_TS }     from '../bun-init/bun-init'
 import { CLUSTERS }              from '../clusters'
 import { agentsMd }              from '../files/agents-md'
 import { CLAUDE_MD }             from '../files/claude-md'
-import { ENV_TS }                from '../files/env-ts'
 import { ESLINT_CONFIG_TS }      from '../files/eslint-config-ts'
 import { GITIGNORE }             from '../files/gitignore'
 import { packageJson }           from '../files/package-json'
@@ -34,15 +31,13 @@ export function backendTemplate({ folder, name, port, stores, versions, inMonore
   const created: Record<string, string> = {
     'eslint.config.ts': ESLINT_CONFIG_TS,
     'AGENTS.md': agentsMd(stores.database),
-    'src/stores.ts': storesTs(stores),
-    ...storesNeedEnv(stores) ? { 'src/env.ts': ENV_TS } : {},
     'src/index.test.ts': SRC_INDEX_TEST_TS,
     'src/contexts/contexts.ts': SRC_CONTEXTS_TS,
   }
   const testDatabase = srcTestDatabaseTs(stores.database)
   if (testDatabase) created['src/test-database.ts'] = testDatabase
   return [
-    { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions, inMonorepo) },
+    { action: 'complete-json', path: at('package.json'), values: packageJson(name, versions, inMonorepo, stores) },
     { action: 'create', path: at('tsconfig.json'), content: TSCONFIG_JSON, kept: TSCONFIG_KEPT },
     ...Object.entries(created).map(([path, content]): FileChange => ({ action: 'create', path: at(path), content })),
     { action: 'create', path: at('src/index.ts'), content: srcIndexTs(CLUSTERS[stores.cluster]), kept: INDEX_KEPT },

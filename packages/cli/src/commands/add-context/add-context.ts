@@ -34,7 +34,7 @@ export const ADD_CONTEXT = defineCommand({
     const { database, files } = await backendStores(backend)
     if (!database || !files) {
       const missing = [...database ? [] : ['database'], ...files ? [] : ['storage']].join(' nor any ')
-      throw new CommandError(`The backend's src/stores.ts opens no ${missing} of newt's, so newt cannot tell what each context opens: newt init writes it, with the database and the files every context opens`)
+      throw new CommandError(`The backend's package.json says no ${missing} of newt's for its contexts, so newt cannot tell what a new one opens: write it as newt init does, "newt": { "database": "sqlite", "files": "local" }`)
     }
     const stores = { database, files }
     const packageName = await backendPackageName(backend)

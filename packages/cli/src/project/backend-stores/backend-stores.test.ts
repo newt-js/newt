@@ -1,34 +1,38 @@
-import { expect }        from 'bun:test'
-import { test }          from 'bun:test'
-import { mkdtemp }       from 'node:fs/promises'
-import { tmpdir }        from 'node:os'
-import { join }          from 'node:path'
+import { expect }          from 'bun:test'
+import { test }            from 'bun:test'
+import { mkdtemp }         from 'node:fs/promises'
+import { tmpdir }          from 'node:os'
+import { join }            from 'node:path'
 // --------------------------------------------------------
-import { backendStores } from './backend-stores'
+import { backendStores }   from './backend-stores'
+import { contextDatabase } from './backend-stores'
 
-async function backendWith(stores: string | null): Promise<string> {
+async function backendWith(files: Record<string, string>): Promise<string> {
   const backend = await mkdtemp(join(tmpdir(), 'newt-cli-stores-'))
-  if (stores !== null) await Bun.write(join(backend, 'src/stores.ts'), stores)
+  for (const [path, content] of Object.entries(files)) await Bun.write(join(backend, path), content)
   return backend
 }
 
-const IMPORTS = "import { PostgresDatabase } from '@newt-js/core/database/postgres'\nimport { S3Storage } from '@newt-js/core/files/s3'\n"
-
-test('the kinds its stores.ts imports, whatever its comments name', async () => {
-  expect(await backendStores(await backendWith(`${IMPORTS}// moved off SqliteDatabase in 2026\n`))).toEqual({ database: 'postgres', files: 's3' })
+test("the kinds a new context gets: its package.json's newt, as newt init wrote it", async () => {
+  expect(await backendStores(await backendWith({ 'package.json': JSON.stringify({ newt: { database: 'postgres', files: 's3' } }) }))).toEqual({ database: 'postgres', files: 's3' })
 })
 
-test('refuses a stores.ts that imports two databases', async () => {
-  const both = `${IMPORTS}import { SqliteDatabase } from '@newt-js/core/database/sqlite'\n`
-  await expect(backendStores(await backendWith(both))).rejects.toThrow('src/stores.ts imports SqliteDatabase and PostgresDatabase')
+test("each undefined without them, or with one that is none of newt's", async () => {
+  expect(await backendStores(await backendWith({}))).toEqual({ database: undefined, files: undefined })
+  expect(await backendStores(await backendWith({ 'package.json': JSON.stringify({ newt: { database: 'mongo' } }) }))).toEqual({ database: undefined, files: undefined })
+  expect(await backendStores(await backendWith({ 'package.json': '{ nope' }))).toEqual({ database: undefined, files: undefined })
 })
 
-test('each undefined without a stores.ts, or one that opens none of newt\'s', async () => {
-  expect(await backendStores(await backendWith(null))).toEqual({ database: undefined, files: undefined })
-  expect(await backendStores(await backendWith('openMine()'))).toEqual({ database: undefined, files: undefined })
+const CONTEXT = 'src/contexts/sales/sales.context.ts'
+
+test('the database a context opens: the adapter its context file imports, whatever its comments name', async () => {
+  const code = "import { postgres } from '@newt-js/core/database/postgres'\n// moved off sqlite() in 2026\n"
+  expect(await contextDatabase(await backendWith({ [CONTEXT]: code }), 'sales')).toBe('postgres')
 })
 
-test('the database apart from the files, and no import of a type alone', async () => {
-  const mine = "import { SqliteDatabase } from '@newt-js/core/database/sqlite'\nimport { MyStorage } from './my-storage'\nimport type { PostgresDatabase } from '@newt-js/core/database/postgres'\n"
-  expect(await backendStores(await backendWith(mine))).toEqual({ database: 'sqlite', files: undefined })
+test('none without one of newt\'s, or with an import of a type alone; and refuses two', async () => {
+  expect(await contextDatabase(await backendWith({}), 'sales')).toBeUndefined()
+  expect(await contextDatabase(await backendWith({ [CONTEXT]: "import type { sqlite } from '@newt-js/core/database/sqlite'\n" }), 'sales')).toBeUndefined()
+  const both = "import { postgres } from '@newt-js/core/database/postgres'\nimport { sqlite } from '@newt-js/core/database/sqlite'\n"
+  await expect(contextDatabase(await backendWith({ [CONTEXT]: both }), 'sales')).rejects.toThrow('src/contexts/sales/sales.context.ts imports sqlite() and postgres()')
 })

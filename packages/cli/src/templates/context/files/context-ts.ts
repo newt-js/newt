@@ -1,15 +1,24 @@
 import type { ContextNames } from '../../../names/context-names/context-names'
+import type { DatabaseKind } from '../../stores/store-databases'
+import { STORE_DATABASES }   from '../../stores/store-databases'
+import type { FilesKind }    from '../../stores/store-files'
+import { STORE_FILES }       from '../../stores/store-files'
 
 /** The line of <ctx>.context.ts that hands the context to run. */
 export const contextToRun = ({ type, camel }: ContextNames) => `return { context: new ${type}_Context(base, ${camel}Features(base, router)), router, host }`
 
-export function contextTs(names: ContextNames): string {
+export type ContextStores = { database: DatabaseKind, files: FilesKind }
+
+export function contextTs(names: ContextNames, stores: ContextStores): string {
   const { folder, type, camel, env } = names
+  const database = STORE_DATABASES[stores.database]
+  const files = STORE_FILES[stores.files]
   return `import { join } from 'node:path'
-import { BoundedContext, ContextBase, type Platform } from '@newt-js/core/application'
-import { HttpRouter, type ContextToRun } from '@newt-js/core/http'
+import { BoundedContext, ContextBase, type DataPlace, type Platform } from '@newt-js/core/application'
+import { ${database.adapter} } from '${database.from}'
+import { ${files.adapter} } from '${files.from}'
+import { HttpRouter, openData, type ContextToRun } from '@newt-js/core/http'
 import { authenticate } from '../../auth'
-import { openDatabase, openStorage, type Stores } from '../../stores'
 import { ${camel}Features, type ${type}Features } from './${folder}-features'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
@@ -19,12 +28,18 @@ export class ${type}_Context extends BoundedContext {
     super('${folder}', base)
   }
 
-  static async open(platform: Platform, stores: Stores): Promise<ContextToRun> {
-    const database = await openDatabase('${folder}', MIGRATIONS_FOLDER, stores)
-    const router = new HttpRouter({ prefix: '/${folder}/api', database })
+  static async open(platform: Platform, place: DataPlace): Promise<ContextToRun> {
+    const router = new HttpRouter({ prefix: '/${folder}/api' })
     router.authenticateWith(authenticate)
     const host = Bun.env.${env}_HOST
-    const base = new ContextBase({ name: '${folder}', platform, database, storage: await openStorage('${folder}', router, stores, host) })
+    const { database, storage } = await openData('${folder}', {
+      database: { adapter: ${database.adapter}(), migrations: MIGRATIONS_FOLDER },
+      files: ${files.adapter}(),
+      router,
+      place,
+      host,
+    })
+    const base = new ContextBase({ name: '${folder}', platform, database, storage })
     ${contextToRun(names)}
   }
 }

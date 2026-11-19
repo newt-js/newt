@@ -32,8 +32,6 @@ describe('backendTemplate', () => {
       'create apps/shop/tsconfig.json',
       'create apps/shop/eslint.config.ts',
       'create apps/shop/AGENTS.md',
-      'create apps/shop/src/stores.ts',
-      'create apps/shop/src/env.ts',
       'create apps/shop/src/index.test.ts',
       'create apps/shop/src/contexts/contexts.ts',
       'create apps/shop/src/index.ts',
@@ -55,7 +53,7 @@ describe('backendTemplate', () => {
     expect(backendTs('memory')).toContain('const platform = new Platform()\n')
     expect(backendTs('memory')).not.toContain('MemoryCluster')
     expect(backendTs('valkey')).toContain("import { ValkeyCluster } from '@newt-js/core/cluster/valkey'\n")
-    expect(backendTs('valkey')).toContain("new Platform({ cluster: stores === 'memory' ? new MemoryCluster() : new ValkeyCluster(Bun.env.VALKEY_URL) })")
+    expect(backendTs('valkey')).toContain("new Platform({ cluster: data === 'memory' ? new MemoryCluster() : new ValkeyCluster(Bun.env.VALKEY_URL) })")
   })
 
   test("the lint's parser stack gets TypeScript 6, whatever TypeScript the project has", () => {

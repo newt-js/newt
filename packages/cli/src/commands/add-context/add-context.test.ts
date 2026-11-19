@@ -18,11 +18,11 @@ const read = (path: string) => Bun.file(path).text()
 
 const STORAGE_TEST = `import { expect, test } from 'bun:test'
 import { HttpRouter } from '@newt-js/core/http'
-import { openStorage } from '../../stores'
+import { localFiles } from '@newt-js/core/files/local'
 
 test('sales keeps a file uploaded to its signed address, and serves it at another', async () => {
   const router = new HttpRouter({ prefix: '/sales/api' })
-  const storage = (await openStorage('sales', router, 'configured', undefined)).private!
+  const storage = (await localFiles().open('sales', { router, host: undefined, place: 'configured' })).private!
   const upload = await storage.uploadUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain', size: 5 })
   const put = await router.answer(new Request(upload.url, { method: 'PUT', headers: upload.headers, body: 'hello' }))
   expect(put?.ok).toBe(true)
@@ -33,7 +33,7 @@ test('sales keeps a file uploaded to its signed address, and serves it at anothe
 
 test('at a host, its files are signed at that host', async () => {
   const router = new HttpRouter({ prefix: '/sales/api' })
-  const storage = (await openStorage('sales', router, 'configured', 'sales.midominio.com')).private!
+  const storage = (await localFiles().open('sales', { router, host: 'sales.midominio.com', place: 'configured' })).private!
   const download = new URL(await storage.signedUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain' }))
   expect(download.host).toBe('sales.midominio.com')
   expect(download.pathname).toStartWith('/sales/api/files/')
@@ -46,13 +46,12 @@ describe('newt add context', () => {
     expect((await addContext(['sales'], backend)).code).toBe(0)
     const context = await read(join(backend, 'src/contexts/sales/sales.context.ts'))
     expect(context).toContain("const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')\n")
-    expect(context).toContain("const database = await openDatabase('sales', MIGRATIONS_FOLDER, stores)")
     expect(context).toContain("    const host = Bun.env.SALES_HOST\n")
-    expect(context).toContain("storage: await openStorage('sales', router, stores, host)")
+    expect(context).toContain("const { database, storage } = await openData('sales', {\n      database: { adapter: sqlite(), migrations: MIGRATIONS_FOLDER },\n      files: localFiles(),")
     expect(context).toContain('router, host }')
     expect(context).toContain('    router.authenticateWith(authenticate)\n')
     expect(await read(join(backend, 'src/auth.ts'))).toContain('export const authenticate: Authenticator = async () => null')
-    expect(await read(join(backend, 'src/contexts/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform, stores))\n  return contexts')
+    expect(await read(join(backend, 'src/contexts/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform, place))\n  return contexts')
     expect(await read(join(backend, '.env'))).toEndWith('\nSALES_DATABASE=data/sales.sqlite\nSALES_FILES=data/files/sales\n')
     expect(await Bun.file(join(backend, '.env.test')).exists()).toBe(false)
     expect(await checkGenerated(backend)).toEqual([])
@@ -71,7 +70,7 @@ describe('newt add context', () => {
     await addContext(['web-session'], backend)
     const contexts = await read(join(backend, 'src/contexts/contexts.ts'))
     expect(contexts).toContain("import { WebSession_Context } from './web-session/web-session.context'")
-    expect(contexts).toContain('  contexts.push(await Sales_Context.open(platform, stores))\n  contexts.push(await WebSession_Context.open(platform, stores))\n  return contexts')
+    expect(contexts).toContain('  contexts.push(await Sales_Context.open(platform, place))\n  contexts.push(await WebSession_Context.open(platform, place))\n  return contexts')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -126,7 +125,7 @@ describe('newt add context', () => {
     await Bun.write(join(backend, 'src/contexts/contexts.ts'), 'export const openContexts = async () => []\n')
     const output = await addContext(['sales', '--json'], backend)
     expect(output.code).toBe(1)
-    expect((JSON.parse(output.text) as { error: string }).error).toBe("newt wrote nothing, since its changes go together and some cannot be made:\n- src/contexts/contexts.ts is not as newt wrote it, so newt did not change it: add import { Sales_Context } from './sales/sales.context'; contexts.push(await Sales_Context.open(platform, stores))")
+    expect((JSON.parse(output.text) as { error: string }).error).toBe("newt wrote nothing, since its changes go together and some cannot be made:\n- src/contexts/contexts.ts is not as newt wrote it, so newt did not change it: add import { Sales_Context } from './sales/sales.context'; contexts.push(await Sales_Context.open(platform, place))")
     expect(await Bun.file(join(backend, 'src/contexts/sales/sales.context.ts')).exists()).toBe(false)
   })
 
@@ -135,7 +134,8 @@ describe('newt add context', () => {
     expect((await addContext(['Sales'], backend)).text).toStartWith("'Sales' cannot name a context")
     expect((await addContext(['api'], backend)).text).toStartWith("'api' cannot name a context")
     expect((await addContext([], backend)).text).toBe('newt add context takes the name of the context, as in newt add context shop')
-    await Bun.write(join(backend, 'src/stores.ts'), 'export const mine = 1\n')
-    expect((await addContext(['sales'], backend)).text).toStartWith("The backend's src/stores.ts opens no database nor any storage of newt's")
+    const manifest = join(backend, 'package.json')
+    await Bun.write(manifest, JSON.stringify({ ...await Bun.file(manifest).json(), newt: undefined }))
+    expect((await addContext(['sales'], backend)).text).toStartWith("The backend's package.json says no database nor any storage of newt's for its contexts")
   })
 })

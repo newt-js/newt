@@ -23,12 +23,11 @@ A backend built with newt (@newt-js/core), on Bun.
 
 - \`src/index.ts\`: the backend, \`startBackend\`: opens the contexts and serves them, with \`GET /health-check\`;
   run as \`bun src/index.ts\`, it starts on \`PORT\` (from \`.env\`).
-- \`src/stores.ts\`: the database and the files each context opens. Tests start the backend with
-  \`startBackend(0, { stores: 'memory' })\`: databases, files and cluster in memory, sqlite with its migrations.
+  Tests start it with \`startBackend(0, { data: 'memory' })\`: databases, files and cluster in memory, sqlite with its migrations.
 - \`src/auth.ts\`: \`authenticate\`, who calls the backend, for every context's router.
-- \`src/env.ts\`: \`requiredEnv\`, for the variables the backend cannot start without.
 - \`src/contexts/contexts.ts\`: the list of contexts the backend opens.
-${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context, its features in \`features/<feature>/\`,
+${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/contexts/<context>/\`: one folder per bounded context. Its \`<context>.context.ts\` opens its own data with
+  \`openData\`: its database (\`sqlite()\`, \`postgres()\`…) and its files (\`localFiles()\`…), as \`.env\` says. Its features in \`features/<feature>/\`,
   each holding only its entry point \`<feature>.feature.ts\` and a folder for each of its modules, \`<module>/\` with its \`<module>.module.ts\`; their routes under \`/<context>/api/<feature>/\`.
 
 ## Sign-in

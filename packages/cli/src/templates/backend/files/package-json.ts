@@ -1,3 +1,4 @@
+import type { Stores }           from '../../stores/stores'
 import type { TemplateVersions } from '../../template-versions/template-versions'
 
 /** What loads TypeScript for the lint: its parser stack needs TypeScript 6's API, whatever TypeScript the project uses. */
@@ -16,7 +17,7 @@ const LINT_TYPESCRIPT_USERS = [
 /** Bun reads overrides in the root's package.json alone: a monorepo's backend leaves them to it. */
 export const lintOverrides = (versions: TemplateVersions) => Object.fromEntries(LINT_TYPESCRIPT_USERS.map(name => [name, { typescript: versions.lintTypescript }]))
 
-export function packageJson(name: string, versions: TemplateVersions, inMonorepo: boolean): Record<string, unknown> {
+export function packageJson(name: string, versions: TemplateVersions, inMonorepo: boolean, { database, files }: Stores): Record<string, unknown> {
   return {
     name,
     private: true,
@@ -40,5 +41,7 @@ export function packageJson(name: string, versions: TemplateVersions, inMonorepo
       'typescript': versions.typescript,
     },
     ...inMonorepo ? {} : { overrides: lintOverrides(versions) },
+    // What newt add context gives each new context: its database and its files.
+    newt: { database, files },
   }
 }

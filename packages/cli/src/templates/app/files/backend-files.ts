@@ -9,7 +9,7 @@ export function appTest({ folder, env }: ContextNames, built?: string): string {
   const name = built === undefined ? `the backend serves the app of ${folder}` : `the backend serves the app of ${folder}, once built`
   const head = built === undefined ? `test('${name}'` : `test.skipIf(!(await Bun.file(join(import.meta.dir, ${built}, 'index.html')).exists()))('${name}'`
   return `${head}, async () => {
-  const backend = await startBackend(0, { stores: 'memory' })
+  const backend = await startBackend(0, { data: 'memory' })
   const response = await fetch(new URL('/${folder}/any/page', backend.server!.url), { headers: { host: Bun.env.${env}_HOST ?? 'localhost' } })
   expect(response.headers.get('content-type')).toContain('text/html')
   await backend.stop()
