@@ -13,7 +13,7 @@ const USAGE = 'newt add feature takes the context and the feature, as in newt ad
 
 export const ADD_FEATURE = defineCommand({
   name: 'add feature',
-  summary: 'Adds a feature to a context: its entry point, which builds its modules and returns what the other features see of them',
+  summary: 'Adds a feature to a context: its class, which builds its modules and holds them, and its index.ts, the only file the other features import',
   args: '<context>/<feature>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },

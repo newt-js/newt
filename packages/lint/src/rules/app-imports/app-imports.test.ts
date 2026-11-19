@@ -23,7 +23,7 @@ tester.run('app-imports', asRule(appImports), {
     at("type Order = import('../features/orders/order/order.schema').OrderDTO"),
     at("import type { Page } from '@newt-js/core'"),
     at("import type { BunFile } from 'bun'"),
-    at("import { Order_Module } from './features/orders/order/order.module'", `${FOLDER}/sales/sales-features.ts`),
+    at("import { Order_Module } from './features/orders/order/order.module'", `${FOLDER}/sales/sales.context.ts`),
   ],
   invalid: [
     { ...at("import { OrderSchema } from '../features/orders/order/order.schema'"), errors: [{ messageId: 'schema', data: { path: '../features/orders/order/order.schema', context: 'sales' } }] },

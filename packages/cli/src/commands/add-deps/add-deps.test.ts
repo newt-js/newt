@@ -32,7 +32,7 @@ describe('newt add deps', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
-  test("order hangs its routes under invoice's, through the group invoice exposes, and its lint, types and tests pass", async () => {
+  test("order hangs its routes under invoice's, through the route group of invoice, and its lint, types and tests pass", async () => {
     const backend = await withInvoice()
     await run(ADD_DEPS, ['sales/orders/order', 'invoice'], backend)
     const routes = join(backend, SALES, 'features/orders/order/order.routes.ts')

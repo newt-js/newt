@@ -2,6 +2,8 @@ import { describe }       from 'bun:test'
 import { expect }         from 'bun:test'
 import { test }           from 'bun:test'
 // --------------------------------------------------------
+import { Feature }        from '../../../domain/feature/feature/feature'
+import { UseCaseRunner }  from '../../../domain/use-case/use-case-runner/use-case-runner'
 import { dependenciesOf } from './dependencies-of'
 
 const module = { name: 'tax', useCaseRunner: { registry: { context: 'billing' } }, [Symbol.for('@newt-js/core/module')]: true }
@@ -38,8 +40,9 @@ describe('dependenciesOf', () => {
     ])
   })
 
-  test("tells a feature's contract by the feature's id, whatever it shows", () => {
-    const contacts = { contact: { get: async () => {}, events: {} }, [Symbol.for('@newt-js/core/feature')]: { name: 'contacts', context: 'engagement' } }
+  test("tells a feature by the feature's id", () => {
+    class Contacts_Feature extends Feature {}
+    const contacts = new Contacts_Feature('contacts', { useCaseRunner: new UseCaseRunner({ context: 'engagement' }) }, [])
 
     expect(dependenciesOf({ contacts }, new Map())).toEqual([{ name: 'contacts', kind: 'feature', target: 'engagement/contacts' }])
   })

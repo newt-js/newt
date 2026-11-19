@@ -78,6 +78,16 @@ describe('openData', () => {
     expect(storage.private).toBeInstanceOf(MemoryStorage)
   })
 
+  test('closes the database it opened when its files cannot open', async () => {
+    const router = new HttpRouter({ prefix: '/api' })
+    const database = new MemoryDatabase()
+    let closed = false
+    database.close = async () => { closed = true }
+
+    await expect(openData('sales', { database: { adapter: { open: async () => database }, migrations: MIGRATIONS }, files: localFiles(), router, place: 'configured' })).rejects.toThrow('is not set')
+    expect(closed).toBe(true)
+  })
+
   test('says which variable is missing to open what is configured', async () => {
     const router = new HttpRouter({ prefix: '/api' })
 

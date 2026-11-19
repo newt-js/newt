@@ -23,7 +23,7 @@ tester.run('module-place', asRule(modulePlace), {
     at('sales/features/orders/order/value-objects/order-id.ts'),
     at('sales/features/orders/orders.feature.ts'),
     at('sales/sales.context.ts'),
-    at('sales/sales-features.ts'),
+    at('sales/features/orders/index.ts'),
     at('sales/app/app.tsx'),
     at('contexts.ts'),
     { code: 'export const x = 1', filename: '/repo/src/modules/order/order.module.ts', options },

@@ -23,7 +23,7 @@ tester.run('route-context', asRule(routeContext), {
     { code: "router.group('/mine').get('/price-changes', handle)", filename: ROUTES },
     { code: "export function register(http: HttpRouter) { http.get('/price-changes', handle) }", filename: ROUTES },
     { code: "router.get('/ws/price-changes', handle)", filename: `${MODULE}/price-change.module.test.ts` },
-    { code: "router.get('/ws/price-changes', handle)", filename: '/repo/src/stores.ts' },
+    { code: "router.get('/ws/price-changes', handle)", filename: '/repo/src/index.ts' },
   ],
   invalid: [
     // A module of a feature is in its context, not in its feature.

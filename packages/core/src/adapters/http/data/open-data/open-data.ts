@@ -23,5 +23,11 @@ export type DataOptions = {
 export async function openData(context: string, { database, files, router, place, host }: DataOptions): Promise<{ database: Database, storage: StorageOptions }> {
   const opened = await database.adapter.open(context, database.migrations, place)
   router.keepAnswersIn(opened)
-  return { database: opened, storage: await files.open(context, { router, host, place }) }
+  try {
+    return { database: opened, storage: await files.open(context, { router, host, place }) }
+  } catch (error) {
+    // Its files cannot open, so the context does not start: the database it opened is closed.
+    await opened.close()
+    throw error
+  }
 }

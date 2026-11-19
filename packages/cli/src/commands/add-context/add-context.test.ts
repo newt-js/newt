@@ -111,6 +111,16 @@ describe('newt add context', () => {
     expect(again.files.filter(file => file.status !== 'skipped')).toEqual([])
   })
 
+  test('run again once it has a migration, it does not bring back migrations/.gitkeep', async () => {
+    const backend = await backendProject()
+    await addContext(['sales'], backend)
+    const migrations = join(backend, 'src/contexts/sales/migrations')
+    await Bun.write(join(migrations, '00001_orders__order_up.sql'), 'SELECT 1')
+    await Bun.file(join(migrations, '.gitkeep')).delete()
+    await addContext(['sales'], backend)
+    expect(await Bun.file(join(migrations, '.gitkeep')).exists()).toBe(false)
+  })
+
   test("from a monorepo's root, in its only backend; with several, --backend says which", async () => {
     const root = join(await generate(INIT, ['acme', '--monorepo']), 'acme')
     expect((await addContext(['sales'], root)).code).toBe(0)

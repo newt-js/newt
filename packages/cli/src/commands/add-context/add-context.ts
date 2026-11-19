@@ -1,6 +1,9 @@
+import { readdir }            from 'node:fs/promises'
+import { join }               from 'node:path'
 import { relative }           from 'node:path'
 // --------------------------------------------------------
 import { contextNames }       from '../../names/context-names/context-names'
+import { CONTEXTS_FOLDER }    from '../../project/backend-contexts/backend-contexts'
 import { backendPackageName } from '../../project/backend-package-name/backend-package-name'
 import { backendStores }      from '../../project/backend-stores/backend-stores'
 import { findBackend }        from '../../project/find-backend/find-backend'
@@ -13,6 +16,12 @@ import { CommandError }       from '../command-error/command-error'
 
 /** The longest database or bucket name Postgres, MySQL and S3 all take whole. */
 const MAX_NAME = 63
+
+/** Whether a context's migrations folder has a migration already. */
+async function migrated(folder: string): Promise<boolean> {
+  const files = await readdir(folder).catch(() => [])
+  return files.some(file => file.endsWith('.sql'))
+}
 
 export const ADD_CONTEXT = defineCommand({
   name: 'add context',
@@ -47,7 +56,7 @@ export const ADD_CONTEXT = defineCommand({
       throw new CommandError(`The ${tooLong.what} of ${name} would be ${tooLong.name}, ${tooLong.name.length} characters, and servers take ${MAX_NAME} at most: give the context a shorter name`)
     }
     return {
-      changes: contextTemplate({ backend: relative(cwd, backend), packageName, names, stores }),
+      changes: contextTemplate({ backend: relative(cwd, backend), packageName, names, stores, migrated: await migrated(join(backend, CONTEXTS_FOLDER, names.folder, 'migrations')) }),
       nextSteps: [
         ...STORE_DATABASES[stores.database].needsEnv ? [`create the database of ${name} in your ${stores.database} server, as ${names.env}_DATABASE_URL in .env says`] : [],
         ...stores.files === 's3' ? [`set ${names.env}_S3_BUCKET in .env to its bucket`] : [],
