@@ -10,12 +10,16 @@ import { asRule }         from '../../testing/testing'
 import { tester }         from '../../testing/testing'
 import { featureImports } from './feature-imports'
 
-/** A context engagement whose campaigns use contacts, and a context loop whose features a and b use each other. */
+/** A context engagement whose campaigns use contacts, a context loop whose features a and b use each other, and backoffice's accounts using auth's users. */
 const CONTEXTS = join(realpathSync(mkdtempSync(join(tmpdir(), 'newt-lint-features-'))), 'src/contexts')
 const FILES: Record<string, string> = {
   'engagement/features/campaigns/campaigns.feature.ts': "import type { Contacts_Feature } from '../contacts'\n",
   'engagement/features/contacts/contacts.feature.ts': '',
   'engagement/features/reports/reports.feature.ts': '',
+  'engagement/features/users/users.feature.ts': '',
+  'auth/features/users/users.feature.ts': '',
+  'auth/features/roles/roles.feature.ts': '',
+  'backoffice/features/accounts/accounts.feature.ts': "import type { Users_Feature } from '../../../auth/features/users'\n",
   'loop/features/a/a.feature.ts': "import type { B_Feature } from '../b'\n",
   'loop/features/b/b.feature.ts': "import type { A_Feature } from '../a'\n",
   'ring/features/a/a.feature.ts': "import type { B_Feature } from '../b'\n",
@@ -28,6 +32,7 @@ for (const [file, code] of Object.entries(FILES)) {
 }
 
 const CAMPAIGNS = `${CONTEXTS}/engagement/features/campaigns`
+const ACCOUNTS = `${CONTEXTS}/backoffice/features/accounts`
 const options = [{ folder: CONTEXTS }]
 
 tester.run('feature-imports', asRule(featureImports), {
@@ -43,11 +48,23 @@ tester.run('feature-imports', asRule(featureImports), {
     { code: "import { Contacts_Feature } from './features/contacts'", filename: `${CONTEXTS}/engagement/engagement.context.ts`, options },
     // A feature's own import is what it uses, even one it is not read with, as through an alias.
     { code: `import type { Reports_Feature } from '${CONTEXTS}/engagement/features/reports'`, filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
+    // A feature of another context its class imports, through its entry point.
+    { code: "import type { Users_Feature } from '../../../../auth/features/users'", filename: `${ACCOUNTS}/account/account.deps.ts`, options },
+    { code: "import type { Roles_Feature } from '../../../auth/features/roles'", filename: `${ACCOUNTS}/accounts.feature.ts`, options },
     // Outside the contexts, and a package.
     { code: "import { x } from './features/a/b/b.module'", filename: '/elsewhere/file.ts', options },
     { code: "import { z } from 'zod'", filename: `${CAMPAIGNS}/campaigns.feature.ts`, options },
   ],
   invalid: [
+    // A feature of another context its class does not import, though one of its name in its own context is there.
+    {
+      code: "import type { Roles_Feature } from '../../../../auth/features/roles'",
+      filename: `${ACCOUNTS}/account/account.deps.ts`,
+      options,
+      errors: [{ messageId: 'undeclaredOther', data: { path: '../../../../auth/features/roles', feature: 'roles', context: 'auth', own: 'accounts', uses: 'auth/users' } }],
+    },
+    { code: "import type { Users_Feature } from '../../users'", filename: `${CAMPAIGNS}/campaign/campaign.deps.ts`, options, errors: [{ messageId: 'undeclared' }] },
+    { code: "import type { User_Module } from '../../../../auth/features/users/user/user.module'", filename: `${ACCOUNTS}/account/account.deps.ts`, options, errors: [{ messageId: 'inside' }] },
     {
       code: "import { Contact_Module } from '../../contacts/contact/contact.module'",
       filename: `${CAMPAIGNS}/campaign/campaign.deps.ts`,

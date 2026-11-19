@@ -12,7 +12,13 @@ import { contextTs }          from '../files/context-ts'
 
 export type ContextTemplateOptions = { backend: string, packageName: string, names: ContextNames, stores: Required<{ [K in keyof BackendStores]: NonNullable<BackendStores[K]> }>, migrated?: boolean }
 
-const RETURN_CONTEXTS = '  return contexts'
+const RETURN_CONTEXTS = '  return ['
+
+/** The line of contexts.ts that opens a context, on lines of its own past 80 characters. */
+export function openingLines({ camel, type }: ContextNames): string[] {
+  const line = `  const ${camel} = await ${type}_Context.open(platform, place)`
+  return line.length <= 80 ? [line] : [`  const ${camel} = await ${type}_Context.open(`, '    platform,', '    place,', '  )']
+}
 
 /** A context in `backend`, on the backend's stores: its folder, its variables, and its place in src/contexts/contexts.ts. */
 export function contextTemplate({ backend, packageName, names, stores, migrated = false }: ContextTemplateOptions): FileChange[] {
@@ -33,8 +39,9 @@ export function contextTemplate({ backend, packageName, names, stores, migrated 
       path: at('src/contexts/contexts.ts'),
       anchor: RETURN_CONTEXTS,
       position: 'before',
-      lines: [`  contexts.push(await ${names.type}_Context.open(platform, place))`],
+      lines: openingLines(names),
       imports: [`import { ${names.type}_Context } from './${names.folder}/${names.folder}.context'`],
     },
+    { action: 'add-returned-item', path: at('src/contexts/contexts.ts'), function: 'openContexts', item: names.camel },
   ]
 }

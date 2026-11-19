@@ -39,6 +39,9 @@ export const ADD_CONTEXT = defineCommand({
     if (name === 'api') {
       throw new CommandError("'api' cannot name a context: its app would be served at /api, where the backend's routes are")
     }
+    if (names.camel === 'platform' || names.camel === 'place') {
+      throw new CommandError(`'${name}' cannot name a context: contexts.ts opens each one in a variable of its name, beside its own platform and place`)
+    }
     const backend = await findBackend(cwd, options.backend)
     const { database, files } = await backendStores(backend)
     if (!database || !files) {

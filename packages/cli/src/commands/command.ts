@@ -39,7 +39,20 @@ export type AppendBlockChange = { action: 'append-block', path: string, block: s
 
 export type AddClassMemberChange = { action: 'add-class-member', path: string, className: string, name: string, member: string, imports: string[] }
 
-export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[], createArgument?: boolean }
+/** With `in`, the property goes in the object under that key of the argument, `auth: { users }`, added with it when the argument has no such key. */
+export type AddObjectPropertyChange = { action: 'add-object-property', path: string, call: string, argument: number, key: string, value: string, imports: string[], createArgument?: boolean, in?: string }
+
+/** A property of a type, `type X = { … }`; with `in`, of the type under that key of it, `auth: { users: Users_Feature }`, added with it when it has no such key. */
+export type AddTypePropertyChange = { action: 'add-type-property', path: string, type: string, key: string, value: string, imports: string[], in?: string }
+
+/** An item of the list a function returns, `return [sales]`. */
+export type AddReturnedItemChange = { action: 'add-returned-item', path: string, function: string, item: string }
+
+/** A context another opens with, in a module's test: opened in memory before its context is initialized, and closed after it. */
+export type UsedContext = { type: string, camel: string, folder: string, uses: string[] }
+
+/** The contexts a module's test opens, in the order they are opened, and those its own context is initialized with. */
+export type OpenUsedContextsChange = { action: 'open-used-contexts', path: string, context: string, opened: UsedContext[], uses: string[], imports: string[] }
 
 export type FileChange =
   | CreateChange
@@ -56,6 +69,9 @@ export type FileChange =
   | OrderModulesChange
   | WireModuleChange
   | AddConstructorStatementChange
+  | AddTypePropertyChange
+  | AddReturnedItemChange
+  | OpenUsedContextsChange
 
 export type CommandResult = { changes: FileChange[], warnings?: string[], nextSteps?: string[] }
 

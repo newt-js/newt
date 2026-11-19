@@ -9,6 +9,27 @@ export const CONTEXT_TO_RUN = 'return { context, router, host }'
 
 export type ContextStores = { database: DatabaseKind, files: FilesKind }
 
+/** The head of the initialize of <ctx>.context.ts: without the contexts it is opened with, and with them. */
+export function contextInitializeHead({ type }: ContextNames, withUses: boolean): string {
+  const uses = withUses ? `    uses: ${type}_Uses,\n` : ''
+  return `  static initialize(\n    base: ContextBase,\n    router: HttpRouter,\n${uses}  ): ${type}_Context {`
+}
+
+/** The head of the open of <ctx>.context.ts: without the contexts it is opened with, and with them. */
+export function contextOpenHead({ type }: ContextNames, withUses: boolean): string {
+  const uses = withUses ? `    uses: ${type}_Uses,\n` : ''
+  return `  static async open(\n    platform: Platform,\n    place: DataPlace,\n${uses}  ): Promise<ContextToRun & { context: ${type}_Context }> {`
+}
+
+/** The line of the open of <ctx>.context.ts that initializes it: without the contexts it is opened with, and with them. */
+export const contextInitializeCall = ({ type }: ContextNames, withUses: boolean) => `    const context = ${type}_Context.initialize(base, router${withUses ? ', uses' : ''})`
+
+/** The line of <ctx>.context.ts that opens the type of the contexts it is opened with. */
+export const contextUsesHead = ({ type }: ContextNames) => `export type ${type}_Uses = {`
+
+/** The line of <ctx>.context.ts that opens its class, above which goes the type of the contexts it is opened with. */
+export const contextClassHead = ({ type }: ContextNames) => `export class ${type}_Context extends BoundedContext {`
+
 export function contextTs(names: ContextNames, stores: ContextStores): string {
   const { folder, type, camel, env } = names
   const database = STORE_DATABASES[stores.database]
@@ -22,11 +43,8 @@ import { authenticate } from '../../auth'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
-export class ${type}_Context extends BoundedContext {
-  static initialize(
-    base: ContextBase,
-    router: HttpRouter,
-  ): ${type}_Context {
+${contextClassHead(names)}
+${contextInitializeHead(names, false)}
     return new ${type}_Context(base, {})
   }
 
@@ -37,10 +55,7 @@ export class ${type}_Context extends BoundedContext {
     super('${folder}', base, features)
   }
 
-  static async open(
-    platform: Platform,
-    place: DataPlace,
-  ): Promise<ContextToRun> {
+${contextOpenHead(names, false)}
     const router = new HttpRouter({ prefix: '/${folder}/api' })
     router.authenticateWith(authenticate)
     const host = Bun.env.${env}_HOST
@@ -57,7 +72,7 @@ export class ${type}_Context extends BoundedContext {
       database,
       storage,
     })
-    const context = ${type}_Context.initialize(base, router)
+${contextInitializeCall(names, false)}
     ${CONTEXT_TO_RUN}
   }
 }

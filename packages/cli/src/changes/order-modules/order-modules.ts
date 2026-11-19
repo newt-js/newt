@@ -5,20 +5,29 @@ import type { VirtualFiles }  from '../virtual-files/virtual-files'
 
 type Initialized = { statement: ts.VariableStatement, name: string, uses: string[] }
 
-/** A module's initialize, `Order_Module.initialize`, or a feature's, `Orders_Feature.initialize`. */
-const builds = (callee: string) => callee.endsWith('_Module.initialize') || callee.endsWith('_Feature.initialize')
+/** A module's initialize, `Order_Module.initialize`, a feature's, `Orders_Feature.initialize`, or the open of a context, `Auth_Context.open`. */
+const builds = (callee: string) => callee.endsWith('_Module.initialize') || callee.endsWith('_Feature.initialize') || callee.endsWith('_Context.open')
+
+/** What a property hands over: a module or feature by its name, `users`, or a context opened before, `auth.context`. */
+function handed(property: ts.ObjectLiteralElementLike): string[] {
+  if (ts.isShorthandPropertyAssignment(property)) return [property.name.text]
+  if (!ts.isPropertyAssignment(property)) return []
+  const value = property.initializer
+  if (ts.isIdentifier(value)) return [value.text]
+  const opened = ts.isPropertyAccessExpression(value) && value.name.text === 'context' && ts.isIdentifier(value.expression)
+  return opened ? [value.expression.text] : []
+}
 
 function initializedIn(source: ts.SourceFile): Initialized[] {
   const found: Initialized[] = []
   const visit = (node: ts.Node) => {
     if (ts.isVariableStatement(node)) {
       const [declaration] = node.declarationList.declarations
-      const call = declaration?.initializer
+      const initializer = declaration?.initializer
+      const call = initializer && ts.isAwaitExpression(initializer) ? initializer.expression : initializer
       if (declaration && ts.isIdentifier(declaration.name) && call && ts.isCallExpression(call) && builds(call.expression.getText(source))) {
         const deps = call.arguments[2]
-        const uses = deps && ts.isObjectLiteralExpression(deps)
-          ? deps.properties.flatMap(each => ts.isShorthandPropertyAssignment(each) ? [each.name.text] : ts.isPropertyAssignment(each) && ts.isIdentifier(each.initializer) ? [each.initializer.text] : [])
-          : []
+        const uses = deps && ts.isObjectLiteralExpression(deps) ? deps.properties.flatMap(handed) : []
         found.push({ statement: node, name: declaration.name.text, uses })
       }
       return
@@ -45,7 +54,7 @@ function sorted(modules: Initialized[]): Initialized[] {
   return result
 }
 
-/** Puts the modules <feature>.feature.ts initializes, or the features <ctx>.context.ts initializes, in an order where each comes after the ones it uses. */
+/** Puts the modules <feature>.feature.ts initializes, the features <ctx>.context.ts initializes, or the contexts contexts.ts and a test open, in an order where each comes after the ones it uses. */
 export async function orderModules(path: string, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)
