@@ -24,9 +24,9 @@ export class Backoffice_Context extends BoundedContext {
 
   private constructor(
     base: ContextBase,
-    features: {},
+    modules: {},
   ) {
-    super('backoffice', base, features)
+    super('backoffice', base, modules)
   }
 
   static async open(

@@ -24,9 +24,9 @@ export class Auth_Context extends BoundedContext {
 
   private constructor(
     base: ContextBase,
-    features: {},
+    modules: {},
   ) {
-    super('auth', base, features)
+    super('auth', base, modules)
   }
 
   static async open(

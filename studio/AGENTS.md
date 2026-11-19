@@ -11,8 +11,10 @@ A backend built with newt (@newt-js/core), on Bun.
 - `src/contexts/contexts.ts`: the list of contexts the backend opens.
 - `src/contexts/<context>/`: one folder per bounded context. Its `<context>.context.ts` opens its own data with
   `openData`, its database (`sqlite()`, `postgres()`…) and its files (`localFiles()`…) as `.env` says, and its `initialize`
-  builds its features. Each feature in `features/<feature>/`: its class `<feature>.feature.ts`, which holds its modules, its `index.ts`,
-  the only file the other features import of it, and a folder for each module, `<module>/` with its `<module>.module.ts`; their routes under `/<context>/api/<feature>/`.
+  builds its modules, each in `modules/<module>/` with its `<module>.module.ts`; their routes under `/<context>/api/`.
+  Modules that belong together share a prefix in their name: `oauth-authorization`, `oauth-signing-key`.
+  A context holds each module in a field: `private` by default, `public` once it publishes it (`newt publish`);
+  another context reaches only the modules it publishes.
 
 ## Sign-in
 
@@ -25,7 +27,7 @@ Read a session cookie or a bearer token there and return `{ userId }`, or `null`
 
 newt's lint holds the rules of the code: run it after every change and fix what it says.
 A table changes only through a migration: a change to a module's schema needs the next pair in its context's
-`migrations/`, `<number>_<feature>__<module>_up.sql` and `<number>_<feature>__<module>_down.sql` (the table is `<feature>$<module>`), the number one above the highest there.
+`migrations/`, `<number>_<module>_up.sql` and `<number>_<module>_down.sql` (the table is `<module>` in snake_case), the number one above the highest there.
 The tests run them.
 
 ## Commands

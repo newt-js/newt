@@ -24,9 +24,9 @@ export class Panel_Context extends BoundedContext {
 
   private constructor(
     base: ContextBase,
-    features: {},
+    modules: {},
   ) {
-    super('panel', base, features)
+    super('panel', base, modules)
   }
 
   static async open(
