@@ -21,7 +21,7 @@ describe('newt add route', () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
     expect((await run(ADD_ROUTE, ['sales/order', 'mark-paid'], backend)).code).toBe(0)
-    expect(await read(backend, 'order.routes.ts')).toContain("  router.post('/orders/:id/mark-paid', async request => Response.json(await orders.markPaid({ id: OrderId.from(request.params.id) })))")
+    expect(await read(backend, 'order.routes.ts')).toContain("  router.post('/orders/:id/mark-paid', async request => {\n    const id = OrderId.from(request.params.id)\n    return Response.json(await orders.markPaid({ id }))\n  })")
     expect(await read(backend, 'order.module.test.ts')).toContain("test('POST /orders/:id/mark-paid calls markPaid'")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
@@ -29,7 +29,7 @@ describe('newt add route', () => {
   test('a use case that takes the id itself, as get does, is given the id of its path, and its lint, types and tests pass', async () => {
     const backend = await moduleProject()
     expect((await run(ADD_ROUTE, ['sales/order', 'get', '--method', 'get', '--path', '/orders/:id/again'], backend)).code).toBe(0)
-    expect(await read(backend, 'order.routes.ts')).toContain("  router.get('/orders/:id/again', async request => Response.json(await orders.get(request.params.id)))")
+    expect(await read(backend, 'order.routes.ts')).toContain("  router.get('/orders/:id/again', async request => {\n    return Response.json(await orders.get(request.params.id))\n  })")
     expect(await read(backend, 'order.module.test.ts')).toContain('expect(called).toHaveBeenCalledWith(created.id)')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
@@ -42,8 +42,8 @@ describe('newt add route', () => {
     const written = await Bun.file(routes).text()
     await Bun.write(routes, written.replace('await orders.markPaid({', 'await orders.find({'))
     expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /orders/:id/mark-paid calls markPaid')
-    await Bun.write(routes, written.replace("OrderId.from(request.params.id) })))", "OrderId.from(request.params.id) })), { public: true })"))
-    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /orders/:id/mark-paid answers 401 to who has not signed in')
+    await Bun.write(routes, written.replace("orders.markPaid({ id }))\n  })", "orders.markPaid({ id }))\n  }, { public: true })"))
+    expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /orders/:id/mark-paid refuses who has not signed in')
   }, 30_000)
 
   test('a use case that takes nothing and tells nothing answers 204', async () => {
@@ -109,7 +109,7 @@ describe('newt add route', () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
     await run(ADD_ROUTE, ['sales/order', 'mark-paid', '--path', '/orders/paid'], backend)
-    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/orders/paid', async request => Response.json(await orders.markPaid(await bodyOf(request))))")
+    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/orders/paid', async request => {\n    const body = await bodyOf(request)\n    return Response.json(await orders.markPaid(body))\n  })")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -141,7 +141,7 @@ describe('newt add route', () => {
     await run(ADD_USE_CASE, ['sales/order', 'mark-paid'], backend)
     const report = JSON.parse((await run(ADD_ROUTE, ['sales/order', 'mark-paid', '--path', '/orders/:idx/pay', '--json'], backend)).text) as { warnings: string[] }
     expect(report.warnings).toContain(':idx of /orders/:idx/pay is not given to markPaid: read it in order.routes.ts, request.params.idx')
-    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/orders/:idx/pay', async request => Response.json(await orders.markPaid(await bodyOf(request))))")
+    expect(await read(backend, 'order.routes.ts')).toContain("router.post('/orders/:idx/pay', async request => {\n    const body = await bodyOf(request)\n    return Response.json(await orders.markPaid(body))\n  })")
     expect(await checkGenerated(backend, { tests: false })).toEqual([])
   }, 30_000)
 })

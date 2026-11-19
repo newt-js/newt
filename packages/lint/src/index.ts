@@ -80,13 +80,14 @@ const MODULES = '**/modules/*/**/*.ts'
 /**
  * newt's style, which no rule of its own says: braces on every `if`, `else` and loop,
  * each body on lines of its own, a blank line inside a class at each end, and lines of
- * 80 characters at most but for those with a string. All but the last fix themselves.
+ * 80 characters at most, strings too: only a URL or a regular expression may run longer.
+ * All but the last fix themselves.
  */
 export const STYLE: Linter.RulesRecord = {
   'curly': ['error', 'all'],
   'brace-style': ['error', '1tbs', { allowSingleLine: false }],
   '@stylistic/padded-blocks': ['error', { classes: 'always' }],
-  '@stylistic/max-len': ['error', { code: 80, ignoreStrings: true, ignoreTemplateLiterals: true, ignoreUrls: true, ignoreRegExpLiterals: true }],
+  '@stylistic/max-len': ['error', { code: 80, ignoreUrls: true, ignoreRegExpLiterals: true }],
 }
 
 /** The rules of other plugins the preset turns on: `newt/no-disable` keeps them on, as it keeps newt's. */

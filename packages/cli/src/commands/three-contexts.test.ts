@@ -38,11 +38,11 @@ test('backoffice using panel and auth, and panel using auth, made with the CLI i
   // count-members reads the modules auth and panel publish, through the contexts account is given.
   const module = join(backend, ACCOUNT, 'account.module.ts')
   const text = await Bun.file(module).text()
-  const edited = text.replace('    await this.accounts.persist(account)\n    return account.toDTO()\n  }\n\n}', [
+  const edited = text.replace('    await this.repository.persist(account)\n    return account.toDTO()\n  }\n\n}', [
     '    await this.deps.auth.user.paginate({}, { size: 1 })',
     '    await this.deps.panel.workspace.paginate({}, { size: 1 })',
     '    await this.deps.plan.paginate({}, { size: 1 })',
-    '    await this.accounts.persist(account)',
+    '    await this.repository.persist(account)',
     '    return account.toDTO()',
     '  }',
     '',

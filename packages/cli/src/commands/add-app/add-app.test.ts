@@ -59,8 +59,8 @@ describe('newt add app', () => {
     const output = await addApp(['sales', '--built', '../web/dist', '--json'], backend)
     expect(JSON.parse(output.text).warnings).toEqual([])
     expect(JSON.parse(output.text).nextSteps).toEqual(['build it into ../web/dist for /sales/, as in vite build --base=/sales/, or its assets answer 404; then bun run dev, and open /sales/'])
-    expect(await read(join(backend, 'src/contexts/sales/sales.context.ts'))).toContain("router, host, app: join(import.meta.dir, '../../../../web/dist') }")
-    expect(await read(join(backend, 'src/index.test.ts'))).toContain("test.skipIf(!(await Bun.file(join(import.meta.dir, '../../web/dist', 'index.html')).exists()))('the backend serves the app of sales, once built'")
+    expect(await read(join(backend, 'src/contexts/sales/sales.context.ts'))).toContain("      app: join(import.meta.dir, '../../../../web/dist'),\n    }")
+    expect(await read(join(backend, 'src/index.test.ts'))).toContain("const salesApp = join(import.meta.dir, '../../web/dist', 'index.html')\nconst salesBuilt = await Bun.file(salesApp).exists()\n\ntest.skipIf(!salesBuilt)('serves the built app of sales'")
     expect(await Bun.file(join(backend, 'src/contexts/sales/app')).exists()).toBe(false)
     expect((await Bun.file(join(backend, 'package.json')).json()).dependencies).not.toHaveProperty('react')
     expect(await checkGenerated(backend)).toEqual([])
@@ -70,7 +70,7 @@ describe('newt add app', () => {
     const backend = await moduleProject()
     await addApp(['sales', '--built', "../it's/dist')+String(console.log('PWN'))+('", '--dry-run'], backend)
     await addApp(['sales', '--built', "../it's/dist"], backend)
-    expect(await read(join(backend, 'src/contexts/sales/sales.context.ts'))).toContain("app: join(import.meta.dir, '../../../../it\\'s/dist') }")
+    expect(await read(join(backend, 'src/contexts/sales/sales.context.ts'))).toContain("app: join(import.meta.dir, '../../../../it\\'s/dist'),\n    }")
   })
 
   test('--built refuses the backend or a folder that holds it', async () => {

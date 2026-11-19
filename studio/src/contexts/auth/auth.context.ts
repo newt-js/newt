@@ -1,15 +1,16 @@
-import { BoundedContext }    from '@newt-js/core/application'
-import { ContextBase }       from '@newt-js/core/application'
-import type { DataPlace }    from '@newt-js/core/application'
-import type { Platform }     from '@newt-js/core/application'
-import { sqlite }            from '@newt-js/core/database/sqlite'
-import { localFiles }        from '@newt-js/core/files/local'
-import type { ContextToRun } from '@newt-js/core/http'
-import { HttpRouter }        from '@newt-js/core/http'
-import { openData }          from '@newt-js/core/http'
-import { join }              from 'node:path'
+import { BoundedContext }     from '@newt-js/core/application'
+import { ContextBase }        from '@newt-js/core/application'
+import type { DataPlace }     from '@newt-js/core/application'
+import type { Platform }      from '@newt-js/core/application'
+import { sqlite }             from '@newt-js/core/database/sqlite'
+import { localFiles }         from '@newt-js/core/files/local'
+import type { ContextToRun }  from '@newt-js/core/http'
+import { HttpRouter }         from '@newt-js/core/http'
+import { openData }           from '@newt-js/core/http'
+import { join }               from 'node:path'
 // --------------------------------------------------------
-import { authenticate }      from './authenticate'
+import { authenticate }       from './authenticate'
+import { Application_Module } from './modules/application/application.module'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
@@ -19,14 +20,20 @@ export class Auth_Context extends BoundedContext {
     base: ContextBase,
     router: HttpRouter,
   ): Auth_Context {
-    return new Auth_Context(base, {})
+    const application = Application_Module.initialize(base, router)
+    return new Auth_Context(base, { application })
   }
+
+  private readonly application: Application_Module
 
   private constructor(
     base: ContextBase,
-    modules: {},
+    modules: {
+      application: Application_Module,
+    },
   ) {
     super('auth', base, modules)
+    this.application = modules.application
   }
 
   static async open(

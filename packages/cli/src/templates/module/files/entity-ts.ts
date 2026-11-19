@@ -18,8 +18,7 @@ export class ${type} extends Entity<typeof ${type}Schema> {
 
   static create(props: ${type}CreateProps): ${type} {
     const ${module} = new ${type}(props, true)
-    const { id, data } = ${module}
-    ${module}.trackEvent(new ${type}_Created({ id, name: data.name }))
+    ${module}.trackEvent(new ${type}_Created(${module}.toDTO()))
     return ${module}
   }
 }

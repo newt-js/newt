@@ -35,6 +35,14 @@ const typedModule = (body: string) => `
 declare namespace z { type input<T> = T; type infer<T> = T extends { parse(value: unknown): infer R } ? R : never }
 declare const OrderPlaceSchema: { parse(value: unknown): { total: number }, safeParse(value: unknown): unknown }
 declare const OrderSchema: { parse(value: unknown): { id: string } }
+declare const OrderFilter: {
+  schema: { parse(value: unknown): { id?: string } }
+  sortSchema: { parse(value: unknown): { field: 'name' }[] }
+  toCriteria(value: OrderFilterDTO): unknown
+  toOrder(value: OrderSortDTO | undefined): unknown
+}
+type OrderFilterDTO = z.input<typeof OrderFilter.schema>
+type OrderSortDTO = z.input<typeof OrderFilter.sortSchema>
 type OrderPlaceDTO = z.input<typeof OrderPlaceSchema>
 type OrderDTO = z.infer<typeof OrderSchema>
 type OrderId = string & { readonly brand: 'OrderId' }
@@ -49,6 +57,9 @@ const typedCases: [string, string?][] = [
   ['@UseCase() async place(input: OrderPlaceDTO) { return OrderPlaceSchema.safeParse(input) }'],
   // Parsed by a private method it hands it to, at any place among its arguments.
   ['@UseCase() async place(id: OrderId, input: OrderPlaceDTO) { return this.open(id, input) }\nprivate open(id: OrderId, given: OrderPlaceDTO) { return OrderPlaceSchema.parse(given) }'],
+  // A filter's own methods parse with its schemas, a criteria and a sort as they came.
+  ['@UseCase() async find(criteria: OrderFilterDTO, sort?: OrderSortDTO) { return [OrderFilter.toCriteria(criteria), OrderFilter.toOrder(sort)] }'],
+  ['@UseCase() async find(sort?: OrderSortDTO) { return OrderFilter.toCriteria(sort as OrderFilterDTO) }', 'unparsed'],
   // An entity's DTO, what an event says: no input, nothing to parse.
   ['@UseCase() async record(order: OrderDTO) { return order.id }'],
   ['@UseCase() async place(input: OrderPlaceDTO) { return input }', 'unparsed'],
