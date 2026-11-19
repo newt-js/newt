@@ -36,7 +36,7 @@ describe('newt add subscription', () => {
     await run(ADD_EVENT, ['sales/orders/order', 'shipped'], backend)
     const output = JSON.parse((await run(ADD_SUBSCRIPTION, ['sales/orders/order', 'mark-paid', '--on', 'shipped', '--json'], backend)).text) as { warnings: string[] }
     expect(output.warnings).toEqual(['newt cannot tell how to make shipped happen, so it wrote no test of markPaid on it: write one in order.module.test.ts'])
-    expect(await read(backend, 'order.module.ts')).toContain('eventsOf(base.bus, { created: Order_Created, shipped: Order_Shipped })')
+    expect(await read(backend, 'order.module.ts')).toContain('eventsOf(base.bus, {\n      created: Order_Created,\n      shipped: Order_Shipped,\n    })')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -67,7 +67,7 @@ describe('newt add subscription', () => {
     await run(ADD_DEPS, ['sales/orders/order', 'invoice'], backend)
     expect((await run(ADD_SUBSCRIPTION, ['sales/orders/order', 'purge', '--on', 'customers/customer/created'], backend)).code).toBe(0)
     await run(ADD_SUBSCRIPTION, ['sales/orders/order', 'purge', '--on', 'orders/invoice/created'], backend)
-    expect(await read(backend, 'order.workers.ts')).toContain('export function registerOrderWorkers(orders: Order_Module, deps: Order_Deps): void {\n  orders.on(deps.invoice.events.created, \'purge\')\n  orders.on(deps.customers.customer.events.created, \'purge\')\n  orders.on(orders.purgeSchedule, \'purge\')')
+    expect(await read(backend, 'order.workers.ts')).toContain('export function registerOrderWorkers(\n  orders: Order_Module,\n  deps: Order_Deps,\n): void {\n  orders.on(deps.invoice.events.created, \'purge\')\n  orders.on(deps.customers.customer.events.created, \'purge\')\n  orders.on(orders.purgeSchedule, \'purge\')')
     expect(await read(backend, 'order.module.ts')).toContain('    registerOrderWorkers(module, deps)\n    return module')
     const test = await read(backend, 'order.module.test.ts')
     expect(test).toContain("  await features.customers.customer.create({ name: 'First' })")

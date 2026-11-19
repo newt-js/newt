@@ -57,7 +57,8 @@ Tres funciones de `@newt-js/core`:
 Usa `currentActor()` dentro de un caso de uso que necesita a alguien con sesión:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
-import { currentActor, UseCase } from '@newt-js/core'
+import { UseCase }      from '@newt-js/core'
+import { currentActor } from '@newt-js/core'
 
 @UseCase()
 async create(input: TaskCreateDTO): Promise<TaskDTO> {
@@ -182,6 +183,7 @@ Para darle uno, indica el campo y cómo leer su valor actual:
 import { team } from '../../team'
 
 export class Task_Repository extends Repository<Task, TaskRow> {
+
   constructor(base: ContextBase) {
     super(base, base.database.records<TaskRow>('task'), {
       scope: {
@@ -194,6 +196,7 @@ export class Task_Repository extends Repository<Task, TaskRow> {
       },
     })
   }
+
 }
 ```
 

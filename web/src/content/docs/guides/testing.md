@@ -49,16 +49,18 @@ Run `bun run test`, `bun run typecheck` and `bun run lint` after every change. A
 A module test builds the context by hand, with a database in memory, and calls the module's use cases as functions. This is the test `newt add module tasks/task` writes on SQLite:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
-import { afterEach, beforeEach, expect, test } from 'bun:test'
-import { join } from 'node:path'
-import { SqliteDatabase } from '@newt-js/core/database/sqlite'
-import {
-  testContext,
-  type TestContext,
-} from '@newt-js/core/application/testing'
-import { MemoryCluster } from '@newt-js/core/cluster/memory'
-import { HttpRouter } from '@newt-js/core/http'
-import { tasksModules } from '../../tasks-modules'
+import type { TestContext } from '@newt-js/core/application/testing'
+import { testContext }      from '@newt-js/core/application/testing'
+import { MemoryCluster }    from '@newt-js/core/cluster/memory'
+import { SqliteDatabase }   from '@newt-js/core/database/sqlite'
+import { HttpRouter }       from '@newt-js/core/http'
+import { afterEach }        from 'bun:test'
+import { beforeEach }       from 'bun:test'
+import { expect }           from 'bun:test'
+import { test }             from 'bun:test'
+import { join }             from 'node:path'
+// --------------------------------------------------------
+import { tasksModules }     from '../../tasks-modules'
 import type { Task_Module } from './task.module'
 
 let context: TestContext
@@ -329,7 +331,9 @@ To test the exact time, start the clock just before it with `testContext({ ..., 
 `src/backend.test.ts` starts the real backend on a free port, with every store in memory:
 
 ```ts title="src/backend.test.ts"
-import { expect, test } from 'bun:test'
+import { expect }       from 'bun:test'
+import { test }         from 'bun:test'
+// --------------------------------------------------------
 import { startBackend } from './backend'
 
 test('the backend answers its health', async () => {

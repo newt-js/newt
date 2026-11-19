@@ -8,12 +8,10 @@ sidebar:
 `@newt-js/core/http` es la parte de newt que convierte peticiones HTTP en llamadas a tus casos de uso y ejecuta tus contextos en un servidor de Bun. Te sirve cuando escribes rutas o cambias cómo arranca el servidor. Para las ideas que hay detrás, lee [HTTP y rutas](/es/concepts/http/).
 
 ```ts
-import {
-  HttpRouter,
-  bodyOf,
-  pageRequestFrom,
-  runContexts,
-} from '@newt-js/core/http'
+import { HttpRouter }      from '@newt-js/core/http'
+import { bodyOf }          from '@newt-js/core/http'
+import { pageRequestFrom } from '@newt-js/core/http'
+import { runContexts }     from '@newt-js/core/http'
 ```
 
 ## HttpRouter

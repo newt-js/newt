@@ -4,7 +4,7 @@ import { useCaseNames }    from '../../names/use-case-names/use-case-names'
 import { findModule }      from '../../project/find-module/find-module'
 import { routeFileWith }   from '../../project/route-file-with/route-file-with'
 import { useCaseOf }       from '../../project/use-case-of/use-case-of'
-import { routesStart }     from '../../templates/module/files/routes-ts'
+import { routesHead }      from '../../templates/module/files/routes-ts'
 import { routeLine }       from '../../templates/pieces/route-ts'
 import { routeTest }       from '../../templates/pieces/route-ts'
 import type { FileChange } from '../command'
@@ -45,6 +45,7 @@ export const ADD_ROUTE = defineCommand({
     if (twice) throw new CommandError(`'${path}' has ${twice} twice: name each param once`)
     const file = (suffix: string) => join(folder, `${module.folder}${suffix}`)
     const code = await Bun.file(join(cwd, file('.module.ts'))).text().catch(() => '')
+    const routes = await Bun.file(join(cwd, file('.routes.ts'))).text().catch(() => '')
     const found = useCaseOf(code, `${module.type}_Module`, useCase.camel)
     if (!found) {
       throw new CommandError(`${module.type}_Module has no use case ${useCase.camel}: add it with newt add use-case ${given} ${name}`)
@@ -66,7 +67,7 @@ export const ADD_ROUTE = defineCommand({
       ...again ? [] : [{
         action: 'insert-lines',
         path: file('.routes.ts'),
-        anchor: routesStart(module),
+        anchor: routesHead(module, routes.includes(`${module.type}_Deps`)),
         position: 'after',
         lines: routeLine(module, useCase, shape).split('\n'),
         imports: shape.takesInput && hasId && !shape.takesId ? [`import { ${module.type}Id } from './value-objects/${module.folder}-id'`] : [],

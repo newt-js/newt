@@ -49,16 +49,18 @@ Ejecuta `bun run test`, `bun run typecheck` y `bun run lint` después de cada ca
 Un test de módulo construye el contexto a mano, con una base de datos en memoria, y llama a los casos de uso del módulo como funciones. Este es el test que escribe `newt add module tasks/task` en SQLite:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.test.ts"
-import { afterEach, beforeEach, expect, test } from 'bun:test'
-import { join } from 'node:path'
-import { SqliteDatabase } from '@newt-js/core/database/sqlite'
-import {
-  testContext,
-  type TestContext,
-} from '@newt-js/core/application/testing'
-import { MemoryCluster } from '@newt-js/core/cluster/memory'
-import { HttpRouter } from '@newt-js/core/http'
-import { tasksModules } from '../../tasks-modules'
+import type { TestContext } from '@newt-js/core/application/testing'
+import { testContext }      from '@newt-js/core/application/testing'
+import { MemoryCluster }    from '@newt-js/core/cluster/memory'
+import { SqliteDatabase }   from '@newt-js/core/database/sqlite'
+import { HttpRouter }       from '@newt-js/core/http'
+import { afterEach }        from 'bun:test'
+import { beforeEach }       from 'bun:test'
+import { expect }           from 'bun:test'
+import { test }             from 'bun:test'
+import { join }             from 'node:path'
+// --------------------------------------------------------
+import { tasksModules }     from '../../tasks-modules'
 import type { Task_Module } from './task.module'
 
 let context: TestContext
@@ -329,7 +331,9 @@ Para probar la hora exacta, arranca el reloj justo antes con `testContext({ ...,
 `src/backend.test.ts` arranca el backend real en un puerto libre, con todos los almacenes en memoria:
 
 ```ts title="src/backend.test.ts"
-import { expect, test } from 'bun:test'
+import { expect }       from 'bun:test'
+import { test }         from 'bun:test'
+// --------------------------------------------------------
 import { startBackend } from './backend'
 
 test('the backend answers its health', async () => {

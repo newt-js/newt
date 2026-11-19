@@ -14,13 +14,12 @@ Cada opción que aparece aquí está, con su tipo y su valor por defecto, en la 
 Cada módulo guarda sus rutas en `<módulo>.routes.ts`. Este es el del módulo de tareas de un proyecto generado:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-import {
-  bodyOf,
-  pageRequestFrom,
-  type HttpRouter,
-} from '@newt-js/core/http'
+import type { HttpRouter }  from '@newt-js/core/http'
+import { bodyOf }           from '@newt-js/core/http'
+import { pageRequestFrom }  from '@newt-js/core/http'
+// --------------------------------------------------------
 import type { Task_Module } from './task.module'
-import { TaskId } from './value-objects/task-id'
+import { TaskId }           from './value-objects/task-id'
 
 export function registerTaskRoutes(
   router: HttpRouter,

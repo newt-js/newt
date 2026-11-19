@@ -30,7 +30,7 @@ export const ADD_VALUE_OBJECT = defineCommand({
     if (owner) {
       const path = join(folder, 'value-objects', `${value.folder}.ts`)
       return {
-        changes: [{ action: 'create' as const, path, content: foreignIdTs(value, owner.name) }],
+        changes: [{ action: 'create' as const, path, content: foreignIdTs(value) }],
         nextSteps: [`keep it in the module's schema, ${value.type}.schema, and give it as it is to the use cases of ${owner.name}`],
       }
     }

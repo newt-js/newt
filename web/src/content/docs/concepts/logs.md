@@ -66,12 +66,15 @@ new ConsoleLogger({ debug: true })
 A logger is any object with a `write(line)` method. This one writes one JSON object per line, which most log services read:
 
 ```ts title="src/json-logger.ts"
-import type { Logger, LogLine } from '@newt-js/core/application'
+import type { LogLine } from '@newt-js/core/application'
+import type { Logger }  from '@newt-js/core/application'
 
 export class JsonLogger implements Logger {
+
   write(line: LogLine): void {
     console.log(JSON.stringify(line))
   }
+
 }
 ```
 
@@ -106,7 +109,9 @@ Setting only the platform's logger is a common mistake: errors from routes then 
 Both start as a `ConsoleLogger`.
 
 ```ts title="src/backend.ts"
-import { Platform, setLogger } from '@newt-js/core/application'
+import { Platform }   from '@newt-js/core/application'
+import { setLogger }  from '@newt-js/core/application'
+// --------------------------------------------------------
 import { JsonLogger } from './json-logger'
 
 export async function startBackend(
@@ -174,7 +179,7 @@ This one logs how long each use case takes:
 
 ```ts title="src/timing.ts"
 import type { Observability } from '@newt-js/core'
-import { log } from '@newt-js/core/application'
+import { log }                from '@newt-js/core/application'
 
 export const timing: Observability = {
   async useCase(call, run) {

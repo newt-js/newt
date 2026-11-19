@@ -50,13 +50,13 @@ If you pass `uses`, list every context, even those that use none (`[]`). A missi
 | `plugin` | The ESLint plugin with newt's rules, registered as `newt`. |
 | `parser` | The TypeScript parser the preset reads with, for your own configs. |
 | `tseslint` | The `typescript-eslint` the package carries. Take its configs from here: ESLint refuses two plugins under one name. |
-| `STYLE` | The `curly` and `brace-style` rules the preset turns on. |
+| `STYLE` | The style rules from other plugins the preset turns on: `curly`, `brace-style`, `@stylistic/padded-blocks` and `@stylistic/max-len`. |
 
 ## Where each rule applies
 
 | Files | Rules |
 |---|---|
-| Every linted file | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `use-case-resolved`, `use-case-batched`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable`, and the rules from other plugins |
+| Every linted file | `imports-and-exports`, `use-case-public-methods`, `use-case-params`, `use-case-reads`, `use-case-resolved`, `use-case-batched`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable`, and the rules from other plugins |
 | A module's files (`**/modules/<module>/**`) | `module-entity`, `module-files`, `module-imports`, `entity-method-params`, `reaction-queue`, `schema-imports`, `use-case-files`, `module-transactions` |
 | Files in the contexts folder (with `contexts`) | `context-imports`, `route-context`; `module-imports` for files outside the modules |
 | A context's app (`<context>/app/**/*.{ts,tsx}`, with `contexts`) | `app-imports`, `no-disable` |
@@ -102,10 +102,14 @@ A module keeps one entity: only its `<module>.ts` declares a class that extends 
 ```ts
 // modules/task/task.ts
 export class Task extends Entity<typeof TaskSchema> {
+
   /* ... */
+
 }
 export class Comment extends Entity<typeof CommentSchema> {
+
   /* ... */
+
 } // wrong: a second entity
 ```
 
@@ -296,10 +300,12 @@ A class that extends `Repository` (or `BaseRepository`) declares no public metho
 
 ```ts
 export class Task_Repository extends Repository<Task, TaskRow> {
-  async findOverdue() { /* ... */ }                             // wrong
-  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {                      // right
+
+  async findOverdue() { /* ... */ }                           // wrong
+  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task { // right
     return Task.fromDTO(row)
   }
+
 }
 ```
 
@@ -381,6 +387,28 @@ base.database.records<TaskRow>('task')       // right
 
 Why: `newt_…` tables are newt's (jobs, schedule ticks, idempotency keys, applied migrations) and may change in any release.
 
+## Style
+
+### newt/imports-and-exports
+
+Imports go first, then exports from other files. Packages go before local files, split from them by a line of dashes, and local files go from the farthest (`../../x`) to the nearest (`./x`). Each line imports one name, in braces, and the lines are sorted and aligned at `from`. A default import is written `{ default as name }`, and a type is imported with `import type`.
+
+```ts
+// wrong
+import { Task, type TaskDTO } from './task'
+import { z } from 'zod'
+
+// right
+import { z }            from 'zod'
+// --------------------------------------------------------
+import { Task }         from './task'
+import type { TaskDTO } from './task'
+```
+
+It fixes itself, except where a comment sits among the imports or a line imports `* as`. The CLI writes its files this way.
+
+Why: with one name per line, adding or removing an import changes one line, and every file reads the same.
+
 ## The lint's own discipline
 
 ### newt/no-disable
@@ -408,9 +436,11 @@ Why: an agent that cannot make the code pass would otherwise make the lint pass.
 | `@typescript-eslint/no-misused-promises` | No async function where nobody awaits it (a `setInterval`, an event, a `forEach`). |
 | `curly` (`all`) | Every `if`, `else` and loop has braces. Fixes itself. |
 | `brace-style` (`1tbs`, no single line) | Every body goes on lines of its own. Fixes itself. |
+| `@stylistic/padded-blocks` (classes) | A class has a blank line inside it, after its `{` and before its `}`. Fixes itself. |
+| `@stylistic/max-len` (80) | No line is longer than 80 characters, except a line with a string, a template literal, a URL or a regular expression. Does not fix itself: break the line. |
 
 :::tip
-`bun run lint --fix` fixes the `curly` and `brace-style` errors for you.
+`bun run lint --fix` fixes the `curly`, `brace-style`, `padded-blocks` and `imports-and-exports` errors for you.
 :::
 
 The preset also sets `reportUnusedDisableDirectives: 'error'`: a disable comment that turns off nothing is an error.

@@ -1,17 +1,17 @@
-import { default as parser } from '@typescript-eslint/parser'
-import { describe }          from 'bun:test'
-import { it }                from 'bun:test'
-import { RuleTester }        from 'eslint'
+import { describe }            from 'bun:test'
+import { it }                  from 'bun:test'
+import { RuleTester }          from 'eslint'
+import { default as tseslint } from 'typescript-eslint'
 // --------------------------------------------------------
-import { SEPARATOR }         from './imports-and-exports'
-import { importsAndExports } from './imports-and-exports'
+import { SEPARATOR }           from './imports-and-exports'
+import { importsAndExports }   from './imports-and-exports'
 
 RuleTester.describe = describe
 RuleTester.it = it
 // Bun refuses it.only under CI as soon as it is read: read only when a case asks for it.
 RuleTester.itOnly = (text: string, method: () => void) => it.only(text, method)
 
-const tester = new RuleTester({ languageOptions: { parser } })
+const tester = new RuleTester({ languageOptions: { parser: tseslint.parser } })
 const lines = (...each: string[]) => each.join('\n')
 
 tester.run('imports-and-exports', importsAndExports, {
@@ -50,9 +50,9 @@ tester.run('imports-and-exports', importsAndExports, {
       name: 'puts one name per line, sorted by name',
       code: `import { test, describe, type Expect } from 'bun:test'`,
       output: lines(
+        `import type { Expect } from 'bun:test'`,
         `import { describe }    from 'bun:test'`,
         `import { test }        from 'bun:test'`,
-        `import { type Expect } from 'bun:test'`,
       ),
       errors: [{ messageId: 'shape' }],
     },

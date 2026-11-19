@@ -40,9 +40,10 @@ Use `--db mysql` for MySQL. You copy files from this project in the next steps, 
 Replace `openDatabase` and its imports with the model's. From SQLite to Postgres:
 
 ```ts title="src/stores.ts"
-import { MemoryDatabase } from '@newt-js/core/database/memory'
+import { MemoryDatabase }   from '@newt-js/core/database/memory'
 import { PostgresDatabase } from '@newt-js/core/database/postgres'
-import { requiredEnv } from './env'
+// --------------------------------------------------------
+import { requiredEnv }      from './env'
 
 export async function openDatabase(
   context: string,

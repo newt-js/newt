@@ -1,8 +1,8 @@
 import type { ContextNames } from '../../../names/context-names/context-names'
-import { contextToRun }      from '../../context/files/context-ts'
+import { CONTEXT_TO_RUN }    from '../../context/files/context-ts'
 
 /** The line of <ctx>.context.ts that hands the context to run, its app given too. */
-export const contextToRunWithApp = (context: ContextNames, app: string) => contextToRun(context).replace(/ \}$/, `, app${app === 'app' ? '' : `: ${app}`} }`)
+export const contextToRunWithApp = (app: string) => CONTEXT_TO_RUN.replace(/ \}$/, `, app${app === 'app' ? '' : `: ${app}`} }`)
 
 /** The test, in src/index.test.ts, that the backend serves a context's app; a built one, once it is built. */
 export function appTest({ folder, env }: ContextNames, built?: string): string {

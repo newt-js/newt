@@ -20,6 +20,12 @@ let eslint: ESLint
 
 /** Lints one file of an application made with newt, and says which rules complain. */
 async function complaints(path: string, code: string, linter = eslint): Promise<string[]> {
+  return (await allComplaints(path, code, linter)).filter(rule => !LAYOUT.includes(rule))
+}
+
+const LAYOUT = ['newt/imports-and-exports', '@stylistic/padded-blocks', '@stylistic/max-len']
+
+async function allComplaints(path: string, code: string, linter = eslint): Promise<string[]> {
   await mkdir(dirname(join(root, path)), { recursive: true })
   await writeFile(join(root, path), code)
   const [result] = await linter.lintFiles([join(root, path)])
@@ -139,6 +145,15 @@ describe('the preset of newt', () => {
     expect(await complaints(file, 'export function f(x: number) {\n  if (x) {\n    return 1\n  }\n  return 2\n}\n')).toEqual([])
     expect(await complaints(file, 'export function f(x: number) {\n  if (x) return 1\n  return 2\n}\n')).toEqual(['curly'])
     expect(await complaints(file, 'export function f(x: number) {\n  if (x) { return 1 }\n  return 2\n}\n')).toEqual(['brace-style', 'brace-style'])
+  })
+
+  test('keeps imports sorted, a class padded inside and lines to 80', async () => {
+    const file = 'src/contexts/ws/features/sales/brand/brand.module.ts'
+    expect(await allComplaints(file, "import { z } from 'zod'\nimport { a } from './a'\nexport const x = [z, a]\n")).toEqual(['newt/imports-and-exports'])
+    expect(await allComplaints(file, 'export class A {\n  b = 1\n}\n')).toEqual(['@stylistic/padded-blocks', '@stylistic/padded-blocks'])
+    expect(await allComplaints(file, 'export class A {\n\n  b = 1\n\n}\n')).toEqual([])
+    expect(await allComplaints(file, `export const long = [${'1, '.repeat(30)}1]\n`)).toEqual(['@stylistic/max-len'])
+    expect(await allComplaints(file, `export const text = '${'a'.repeat(90)}'\n`)).toEqual([])
   })
 
   test('refuses a promise left unawaited, or handed where nobody awaits it', async () => {

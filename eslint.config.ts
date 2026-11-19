@@ -1,6 +1,6 @@
 import { default as parser } from '@typescript-eslint/parser'
 // --------------------------------------------------------
-import { importsAndExports } from './tools/lint/imports-and-exports'
+import { importsAndExports } from './packages/lint/src/rules/imports-and-exports/imports-and-exports'
 import { layers }            from './tools/lint/layers'
 
 // The framework's own lint: the style of this repository, not of the applications built with newt.

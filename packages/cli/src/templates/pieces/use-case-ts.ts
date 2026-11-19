@@ -11,7 +11,10 @@ export function useCaseMember({ type, module, plural }: ModuleNames, useCase: Pi
   return `  @UseCase()
   async ${useCase.camel}(input: ${type}${useCase.type}DTO): Promise<${type}DTO> {
     const { id } = ${type}${useCase.type}Schema.parse(input)
-    const [${module}] = await this.${plural}.find(${type}Filter.toCriteria<${type}Row>({ id }), { limit: 1 })
+    const [${module}] = await this.${plural}.find(
+      ${type}Filter.toCriteria<${type}Row>({ id }),
+      { limit: 1 },
+    )
     if (!${module}) {
       throw new ${type}NotFound()
     }
@@ -24,6 +27,8 @@ export function useCaseTest({ plural, words }: ModuleNames, useCase: PieceNames)
   return `test('${useCase.camel} reads the ${words} by its id and tells it', async () => {
   const created = await ${plural}.create({ name: 'First' })
 
-  expect(await ${plural}.${useCase.camel}({ id: created.id })).toMatchObject({ id: created.id })
+  const result = await ${plural}.${useCase.camel}({ id: created.id })
+
+  expect(result).toMatchObject({ id: created.id })
 })`
 }

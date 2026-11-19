@@ -1,3 +1,4 @@
+import { default as stylistic }    from '@stylistic/eslint-plugin'
 import { ESLint }                  from 'eslint'
 import { Linter }                  from 'eslint'
 import { defineConfig }            from 'eslint/config'
@@ -14,6 +15,7 @@ import { contextImports }          from './rules/context-imports/context-imports
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
 import { featureImports }          from './rules/feature-imports/feature-imports'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
+import { importsAndExports }       from './rules/imports-and-exports/imports-and-exports'
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
@@ -43,6 +45,7 @@ export const plugin = {
     'feature-imports': featureImports,
     'module-place': modulePlace,
     'framework-tables': frameworkTables,
+    'imports-and-exports': importsAndExports,
     'app-imports': appImports,
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
@@ -74,10 +77,16 @@ export { tseslint }
 /** Where a module's files are: anything under a folder of a feature's, `features/<feature>/<module>/`. */
 const MODULES = '**/features/*/*/**/*.ts'
 
-/** newt's style, which no rule of its own says: every `if`, `else` and loop takes braces, and its body goes on lines of its own. Both fix themselves. */
+/**
+ * newt's style, which no rule of its own says: braces on every `if`, `else` and loop,
+ * each body on lines of its own, a blank line inside a class at each end, and lines of
+ * 80 characters at most but for those with a string. All but the last fix themselves.
+ */
 export const STYLE: Linter.RulesRecord = {
   'curly': ['error', 'all'],
   'brace-style': ['error', '1tbs', { allowSingleLine: false }],
+  '@stylistic/padded-blocks': ['error', { classes: 'always' }],
+  '@stylistic/max-len': ['error', { code: 80, ignoreStrings: true, ignoreTemplateLiterals: true, ignoreUrls: true, ignoreRegExpLiterals: true }],
 }
 
 /** The rules of other plugins the preset turns on: `newt/no-disable` keeps them on, as it keeps newt's. */
@@ -151,11 +160,12 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       // A comment that turns every rule off turns newt/no-disable off too: its processor says what that rule found all the same.
       processor: keepNoDisable,
       linterOptions: { reportUnusedDisableDirectives: 'error' },
-      plugins: { 'newt': plugin, '@typescript-eslint': tseslint.plugin as unknown as ESLint.Plugin },
+      plugins: { 'newt': plugin, '@typescript-eslint': tseslint.plugin as unknown as ESLint.Plugin, '@stylistic': stylistic as unknown as ESLint.Plugin },
       ...root === undefined ? {} : { settings: { newt: { root: base } } },
       rules: {
         ...OTHERS,
         'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
+        'newt/imports-and-exports': 'error',
         // By the file's name, wherever it is: a module out of its feature's folder, one every context shares, too.
         'newt/use-case-public-methods': 'error',
         'newt/use-case-params': 'error',

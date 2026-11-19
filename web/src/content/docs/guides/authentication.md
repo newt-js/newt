@@ -95,7 +95,8 @@ The file routes in `src/stores.ts` are public. Their URLs are signed with `FILES
 
 ```ts title="src/auth.ts"
 import { bearerAuthenticator } from '@newt-js/core/http'
-import { verifyToken } from './verify-token'
+// --------------------------------------------------------
+import { verifyToken }         from './verify-token'
 
 export const authenticate = bearerAuthenticator(async token => {
   const userId = await verifyToken(token)
@@ -131,7 +132,8 @@ A sign-in route sets the cookie, and the authenticator reads it:
 
 ```ts title="src/auth.ts"
 import type { Authenticator } from '@newt-js/core/http'
-import { userOfSession } from './user-of-session'
+// --------------------------------------------------------
+import { userOfSession }      from './user-of-session'
 
 export const SESSION_COOKIE = 'session'
 
@@ -143,7 +145,8 @@ export const authenticate: Authenticator = async request => {
 ```
 
 ```ts
-import { bodyOf, setSessionCookie } from '@newt-js/core/http'
+import { bodyOf }           from '@newt-js/core/http'
+import { setSessionCookie } from '@newt-js/core/http'
 
 router.post(
   '/sign-in',

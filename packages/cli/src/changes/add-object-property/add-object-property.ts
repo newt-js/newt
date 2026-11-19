@@ -40,7 +40,9 @@ export async function addObjectProperty(change: AddObjectPropertyChange, files: 
   }
   const last = found!.call.arguments.at(-1)
   const at = last ? last.getEnd() : found!.call.getEnd() - 1
-  const edited = object ? withProperty(text, source, object, property) : `${text.slice(0, at)}${last ? ', ' : ''}{ ${property} }${text.slice(at)}`
+  const indent = /^[ \t]*/.exec(text.slice(text.lastIndexOf('\n', at) + 1))![0]
+  const created = `{\n${indent}  ${property},\n${indent}}`
+  const edited = object ? withProperty(text, source, object, property) : `${text.slice(0, at)}${last ? ', ' : ''}${created}${text.slice(at)}`
   await files.write(path, addedImports(edited, imports))
   return { status: 'updated', warnings: [] }
 }

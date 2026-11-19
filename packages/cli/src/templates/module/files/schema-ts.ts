@@ -1,11 +1,10 @@
 import type { ModuleNames } from '../../../names/module-names/module-names'
 
-export function schemaTs({ folder, type, words }: ModuleNames): string {
+export function schemaTs({ folder, type }: ModuleNames): string {
   return `import { defineFilter } from '@newt-js/core'
 import { z } from 'zod'
 import { ${type}Id } from './value-objects/${folder}-id'
 
-/** A ${words}, as its module keeps it and tells it: its public contract. */
 export const ${type}Schema = z.object({
   id: ${type}Id.schema,
   name: z.string().trim().min(1).max(100),
@@ -13,10 +12,8 @@ export const ${type}Schema = z.object({
   updatedAt: z.string(),
 })
 
-/** What a client sends to create one: the entity's own rules, picked. */
 export const ${type}CreateSchema = ${type}Schema.pick({ name: true })
 
-/** What they are read by: these fields and operators, nothing else; and what a list may be sorted by. */
 export const ${type}Filter = defineFilter({
   id: { field: 'id', value: ${type}Id.schema, ops: ['eq', 'in'] },
   name: { field: 'name', value: z.string(), ops: ['eq', 'ieq'] },

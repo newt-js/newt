@@ -7,16 +7,18 @@ export function valueObjectTs(value: PieceNames): string {
 import { z } from 'zod'
 import { Invalid${value.type} } from '../errors/invalid-${value.folder}'
 
-export const ${value.type} = defineValueObject(z.string().trim().min(1).max(100).brand<'${value.type}'>(), text => new Invalid${value.type}(text))
+export const ${value.type} = defineValueObject(
+  z.string().trim().min(1).max(100).brand<'${value.type}'>(),
+  text => new Invalid${value.type}(text),
+)
 export type ${value.type} = z.output<typeof ${value.type}.schema>
 `
 }
 
 /** The id of another feature's entity, which a module keeps: of the same brand, so that feature's use cases take it as it is. */
-export function foreignIdTs(value: PieceNames, feature: string): string {
+export function foreignIdTs(value: PieceNames): string {
   return `import { uuidFactory, type Uuid } from '@newt-js/core'
 
-/** A ${value.words.replace(/ id$/, '')} of ${feature}, by its id, as this module keeps it: what ${feature}'s use cases take. */
 export const ${value.type} = uuidFactory('${value.type}')
 export type ${value.type} = Uuid<'${value.type}'>
 `

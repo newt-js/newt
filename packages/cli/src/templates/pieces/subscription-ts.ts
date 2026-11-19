@@ -1,9 +1,10 @@
 import type { ModuleNames } from '../../names/module-names/module-names'
 import type { PieceNames }  from '../../names/piece-names/piece-names'
 
-/** The line that opens a module's workers: given what the module uses, when it reacts to its events. */
+/** The head of a module's workers: given what the module uses, when it reacts to its events. */
 export function workersHead({ type, plural }: ModuleNames, withDeps = false): string {
-  return `export function register${type}Workers(${plural}: ${type}_Module${withDeps ? `, deps: ${type}_Deps` : ''}): void {`
+  const deps = withDeps ? `  deps: ${type}_Deps,\n` : ''
+  return `export function register${type}Workers(\n  ${plural}: ${type}_Module,\n${deps}): void {`
 }
 
 /** The line of the module's initialize that registers its workers. */

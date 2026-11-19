@@ -16,9 +16,10 @@ const addContext = (args: string[], cwd: string) => runCommand(ADD_CONTEXT, args
 
 const read = (path: string) => Bun.file(path).text()
 
-const STORAGE_TEST = `import { expect, test } from 'bun:test'
+const STORAGE_TEST = `import { localFiles } from '@newt-js/core/files/local'
 import { HttpRouter } from '@newt-js/core/http'
-import { localFiles } from '@newt-js/core/files/local'
+import { expect }     from 'bun:test'
+import { test }       from 'bun:test'
 
 test('sales keeps a file uploaded to its signed address, and serves it at another', async () => {
   const router = new HttpRouter({ prefix: '/sales/api' })

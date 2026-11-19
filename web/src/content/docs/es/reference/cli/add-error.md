@@ -60,11 +60,13 @@ Next steps:
 import { ConflictError } from '@newt-js/core'
 
 export class AlreadyDone extends ConflictError {
+
   readonly code = 'task.already_done'
 
   constructor() {
     super('Already done')
   }
+
 }
 ```
 

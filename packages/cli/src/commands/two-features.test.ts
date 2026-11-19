@@ -60,6 +60,6 @@ test('a context with two features, campaigns using contacts and reacting to them
 
   const context = await Bun.file(join(backend, ENGAGEMENT, 'engagement.context.ts')).text()
   expect(context.indexOf('const contacts =')).toBeLessThan(context.indexOf('const campaigns ='))
-  expect(context).toContain('Campaigns_Feature.initialize(base, router, { contacts })')
+  expect(context).toContain('Campaigns_Feature.initialize(base, router, {\n      contacts,\n    })')
   expect(await checkGenerated(backend)).toEqual([])
 }, 60_000)

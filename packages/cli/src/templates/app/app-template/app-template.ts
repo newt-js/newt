@@ -3,7 +3,7 @@ import { join }                  from 'node:path'
 import type { FileChange }       from '../../../commands/command'
 import type { ContextNames }     from '../../../names/context-names/context-names'
 import { CONTEXTS_FOLDER }       from '../../../project/backend-contexts/backend-contexts'
-import { contextToRun }          from '../../context/files/context-ts'
+import { CONTEXT_TO_RUN }        from '../../context/files/context-ts'
 import { quoted }                from '../../quoted/quoted'
 import type { TemplateVersions } from '../../template-versions/template-versions'
 import { APP_TSCONFIG_JSON }     from '../files/app-files'
@@ -22,7 +22,7 @@ export type BuiltAppOptions = { backend: string, context: ContextNames, fromCont
 function servedAt(backend: string, context: ContextNames, app: string, imports: string[], built?: string): FileChange[] {
   const file = join(backend, CONTEXTS_FOLDER, context.folder, `${context.folder}.context.ts`)
   return [
-    { action: 'replace-line', path: file, line: contextToRun(context), with: contextToRunWithApp(context, app), imports },
+    { action: 'replace-line', path: file, line: CONTEXT_TO_RUN, with: contextToRunWithApp(app), imports },
     { action: 'append-block', path: join(backend, 'src/index.test.ts'), block: appTest(context, built), imports: built === undefined ? [] : ["import { join } from 'node:path'"] },
   ]
 }

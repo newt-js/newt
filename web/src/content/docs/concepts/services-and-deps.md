@@ -163,7 +163,10 @@ If `folder` moves its URL, its notes move with it. Its use case reads the folder
 
 ```ts title="src/contexts/notes/modules/note/note.module.ts"
 @UseCase()
-async paginateInFolder(folderId: FolderId, page: PageRequest): Promise<Page<NoteDTO>> {
+async paginateInFolder(
+  folderId: FolderId,
+  page: PageRequest,
+): Promise<Page<NoteDTO>> {
   await this.deps.folder.get({ id: folderId })
   return this.paginate({ folderId }, page)
 }
@@ -174,7 +177,10 @@ async paginateInFolder(folderId: FolderId, page: PageRequest): Promise<Page<Note
 Deleting a folder should delete its notes. `folder` deletes the folder and emits `folder.deleted`; `note` subscribes to it through its deps, which its `initialize` hands to `registerNoteWorkers(module, deps)`, and deletes the folder's notes in a job:
 
 ```ts title="src/contexts/notes/modules/note/note.workers.ts"
-export function registerNoteWorkers(notes: Note_Module, { folder }: Note_Deps): void {
+export function registerNoteWorkers(
+  notes: Note_Module,
+  { folder }: Note_Deps,
+): void {
   notes.on(folder.events.deleted, 'deleteInFolder', deleted => [deleted.id])
 }
 ```

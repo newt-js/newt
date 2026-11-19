@@ -16,12 +16,9 @@ import { ${server.className} } from '@newt-js/core/database/${server.module}'
 
 const serverUrl = Bun.env.TEST_DATABASE_URL
 
-/**
- * A database for a test, and how to drop it once the test has closed it. Without
- * TEST_DATABASE_URL, one in memory; with it, a new one on that server, with the
- * context's migrations, so the tests try the SQL too.
- */
-export async function testDatabase(migrations: string): Promise<{ database: Database, drop: () => Promise<void> }> {
+type TestDatabase = { database: Database, drop: () => Promise<void> }
+
+export async function testDatabase(migrations: string): Promise<TestDatabase> {
   if (!serverUrl) {
     return { database: new MemoryDatabase(), drop: async () => {} }
   }
@@ -35,7 +32,11 @@ export async function testDatabase(migrations: string): Promise<{ database: Data
     await admin.close()
   }
   try {
-    return { database: await ${server.className}.open({ url: url.href, migrations }), drop }
+    const database = await ${server.className}.open({
+      url: url.href,
+      migrations,
+    })
+    return { database, drop }
   } catch (error) {
     await drop()
     throw error

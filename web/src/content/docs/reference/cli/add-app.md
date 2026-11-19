@@ -54,9 +54,10 @@ Next steps:
 ```
 
 ```ts title="src/contexts/tasks/tasks.context.ts"
-import app from './app/index.html'
+import { default as app } from './app/index.html'
 // …
-    return { context: new Tasks_Context(base, tasksModules(base, router)), router, host, app }
+    const context = Tasks_Context.initialize(base, router)
+    return { context, router, host, app }
 ```
 
 - `app/base.ts` holds where the app is served, `BASE`, and its API, `API`.

@@ -50,13 +50,13 @@ Si pasas `uses`, lista todos los contextos, también los que no usan ninguno (`[
 | `plugin` | El plugin de ESLint con las reglas de newt, registrado como `newt`. |
 | `parser` | El parser de TypeScript con el que lee el preset, para tus propias configuraciones. |
 | `tseslint` | El `typescript-eslint` que trae el paquete. Toma sus configuraciones de aquí: ESLint rechaza dos plugins con el mismo nombre. |
-| `STYLE` | Las reglas `curly` y `brace-style` que activa el preset. |
+| `STYLE` | Las reglas de estilo de otros plugins que activa el preset: `curly`, `brace-style`, `@stylistic/padded-blocks` y `@stylistic/max-len`. |
 
 ## Dónde se aplica cada regla
 
 | Ficheros | Reglas |
 |---|---|
-| Todos los ficheros revisados | `use-case-public-methods`, `use-case-params`, `use-case-reads`, `use-case-resolved`, `use-case-batched`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable` y las reglas de otros plugins |
+| Todos los ficheros revisados | `imports-and-exports`, `use-case-public-methods`, `use-case-params`, `use-case-reads`, `use-case-resolved`, `use-case-batched`, `route-body-unchecked`, `framework-tables`, `repository-public-methods`, `no-disable` y las reglas de otros plugins |
 | Los ficheros de un módulo (`**/modules/<módulo>/**`) | `module-entity`, `module-files`, `module-imports`, `entity-method-params`, `reaction-queue`, `schema-imports`, `use-case-files`, `module-transactions` |
 | Ficheros en la carpeta de contextos (con `contexts`) | `context-imports`, `route-context`; `module-imports` para los ficheros fuera de los módulos |
 | La app de un contexto (`<contexto>/app/**/*.{ts,tsx}`, con `contexts`) | `app-imports`, `no-disable` |
@@ -102,10 +102,14 @@ Un módulo guarda una sola entidad: solo su `<módulo>.ts` declara una clase que
 ```ts
 // modules/task/task.ts
 export class Task extends Entity<typeof TaskSchema> {
+
   /* ... */
+
 }
 export class Comment extends Entity<typeof CommentSchema> {
+
   /* ... */
+
 } // mal: una segunda entidad
 ```
 
@@ -296,10 +300,12 @@ Una clase que extiende `Repository` (o `BaseRepository`) no declara métodos pú
 
 ```ts
 export class Task_Repository extends Repository<Task, TaskRow> {
-  async findOverdue() { /* ... */ }                             // mal
-  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {                      // bien
+
+  async findOverdue() { /* ... */ }                           // mal
+  protected toEntity(row: ResolvedRow<TaskRow, Task>): Task { // bien
     return Task.fromDTO(row)
   }
+
 }
 ```
 
@@ -381,6 +387,28 @@ base.database.records<TaskRow>('task')       // bien
 
 Por qué: las tablas `newt_…` son de newt (jobs, ejecuciones de tareas programadas, claves de idempotencia, migraciones aplicadas) y pueden cambiar en cualquier versión.
 
+## Estilo
+
+### newt/imports-and-exports
+
+Primero van los imports y después los exports de otros ficheros. Los paquetes van antes que los ficheros locales, separados de ellos por una línea de guiones, y los ficheros locales van del más lejano (`../../x`) al más cercano (`./x`). Cada línea importa un solo nombre, entre llaves, y las líneas van ordenadas y alineadas en `from`. Un import por defecto se escribe `{ default as nombre }`, y un tipo se importa con `import type`.
+
+```ts
+// mal
+import { Task, type TaskDTO } from './task'
+import { z } from 'zod'
+
+// bien
+import { z }            from 'zod'
+// --------------------------------------------------------
+import { Task }         from './task'
+import type { TaskDTO } from './task'
+```
+
+Se corrige sola, salvo cuando hay un comentario entre los imports o una línea importa `* as`. El CLI escribe así sus ficheros.
+
+Por qué: con un nombre por línea, añadir o quitar un import cambia una sola línea, y todos los ficheros se leen igual.
+
 ## La disciplina del propio lint
 
 ### newt/no-disable
@@ -408,9 +436,11 @@ Por qué: un agente que no consigue que el código pase haría pasar el lint en 
 | `@typescript-eslint/no-misused-promises` | Ninguna función async donde nadie la espera (un `setInterval`, un evento, un `forEach`). |
 | `curly` (`all`) | Todo `if`, `else` y bucle lleva llaves. Se corrige sola. |
 | `brace-style` (`1tbs`, sin una sola línea) | Cada cuerpo va en sus propias líneas. Se corrige sola. |
+| `@stylistic/padded-blocks` (clases) | Una clase lleva una línea en blanco por dentro, tras su `{` y antes de su `}`. Se corrige sola. |
+| `@stylistic/max-len` (80) | Ninguna línea pasa de 80 caracteres, salvo las que llevan un string, un template literal, una URL o una expresión regular. No se corrige sola: parte la línea. |
 
 :::tip
-`bun run lint --fix` corrige por ti los errores de `curly` y `brace-style`.
+`bun run lint --fix` corrige por ti los errores de `curly`, `brace-style`, `padded-blocks` e `imports-and-exports`.
 :::
 
 El preset también fija `reportUnusedDisableDirectives: 'error'`: un comentario de desactivación que no desactiva nada es un error.

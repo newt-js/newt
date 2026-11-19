@@ -8,11 +8,9 @@ sidebar:
 `@newt-js/core/application/testing` builds a context for a test: real database, a clock you move by hand, and jobs that run when you ask. You use it in every module test. For how to write tests, read [Testing](/guides/testing/).
 
 ```ts
-import {
-  testContext,
-  TestClock,
-  type TestContext,
-} from '@newt-js/core/application/testing'
+import { TestClock }        from '@newt-js/core/application/testing'
+import type { TestContext } from '@newt-js/core/application/testing'
+import { testContext }      from '@newt-js/core/application/testing'
 ```
 
 ## testContext

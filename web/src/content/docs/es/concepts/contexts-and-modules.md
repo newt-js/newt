@@ -102,6 +102,7 @@ Cada contexto abre su base de datos, crea su router y su `ContextBase`, y se los
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
 export class Tasks_Context extends BoundedContext {
+
   private constructor(
     base: ContextBase,
     readonly modules: TasksModules,
@@ -133,6 +134,7 @@ export class Tasks_Context extends BoundedContext {
       host,
     }
   }
+
 }
 ```
 
@@ -153,6 +155,7 @@ El `initialize` de cada módulo crea su repositorio y el módulo, que registra s
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 export class Task_Module extends Module {
+
   static initialize(
     base: ContextBase,
     router: HttpRouter,
@@ -180,6 +183,7 @@ export class Task_Module extends Module {
     // ...
     this.routes = registerTaskRoutes(router, this, deps)
   }
+
 }
 ```
 

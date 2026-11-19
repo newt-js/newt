@@ -4,6 +4,7 @@ import { test }           from 'bun:test'
 import { rm }             from 'node:fs/promises'
 import { join }           from 'node:path'
 // --------------------------------------------------------
+import { sortedImports }  from '../../changes/sorted-imports/sorted-imports'
 import { runCommand }     from '../../run/run-command/run-command'
 import { checkGenerated } from '../../testing/check-generated/check-generated'
 import { ORDER_MODULE }   from '../../testing/module-project/module-project'
@@ -16,6 +17,7 @@ const SHIP = `
   ship(): void {
     this.trackEvent(new Order_PriceChanged({ id: this.id }))
   }
+
 }
 `
 
@@ -26,8 +28,8 @@ describe('newt add event', () => {
     const event = await Bun.file(join(backend, ORDER_MODULE, 'events/order-price-changed.ts')).text()
     expect(event).toContain("export const Order_PriceChanged = defineEvent('orders[order].priceChanged', OrderSchema.pick({ id: true }))")
     const entity = join(backend, ORDER_MODULE, 'order.ts')
-    const code = (await Bun.file(entity).text()).replace(/\n}\n$/, SHIP)
-    await Bun.write(entity, `import { Order_PriceChanged } from './events/order-price-changed'\n${code}`)
+    const code = (await Bun.file(entity).text()).replace(/\n\n}\n$/, SHIP)
+    await Bun.write(entity, sortedImports(entity, `import { Order_PriceChanged } from './events/order-price-changed'\n${code}`))
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

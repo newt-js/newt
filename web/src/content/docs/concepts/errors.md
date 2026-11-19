@@ -15,11 +15,13 @@ It exists so the rules of your app can say *what* went wrong without knowing abo
 import { NotFoundError } from '@newt-js/core'
 
 export class TaskNotFound extends NotFoundError {
+
   readonly code = 'task.not_found'
 
   constructor() {
     super('There is no such task')
   }
+
 }
 ```
 
@@ -52,11 +54,13 @@ Its constructor takes the message and the params: `super(message, params?)`.
 import { ValidationError } from '@newt-js/core'
 
 export class InvalidPriority extends ValidationError<{ value: string }> {
+
   readonly code = 'task.invalid_priority'
 
   constructor(value: string) {
     super(`'${value}' is not a valid priority`, { value })
   }
+
 }
 ```
 
@@ -231,10 +235,12 @@ It writes `errors/already-done.ts`, a `ConflictError` with the code `task.alread
 import { ConflictError } from '@newt-js/core'
 
 export class AlreadyDone extends ConflictError {
+
   readonly code = 'task.already_done'
 
   constructor() {
     super('Already done')
   }
+
 }
 ```

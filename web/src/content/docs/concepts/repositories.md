@@ -12,16 +12,18 @@ newt's `Repository` already knows how to read, save, check versions and publish 
 ## A repository
 
 ```ts title="src/contexts/tasks/modules/task/task.repository.ts"
-import { Repository, type ResolvedRow } from '@newt-js/core'
+import { Repository }       from '@newt-js/core'
+import type { ResolvedRow } from '@newt-js/core'
 import type { ContextBase } from '@newt-js/core/application'
-import type { z } from 'zod'
-import { Task } from './task'
-import type { TaskSchema } from './task.schema'
+import type { z }           from 'zod'
+// --------------------------------------------------------
+import { Task }             from './task'
+import type { TaskSchema }  from './task.schema'
 
-/** What its table keeps: the ids of what it references, never the entities. */
 export type TaskRow = z.infer<typeof TaskSchema> & { version: number }
 
 export class Task_Repository extends Repository<Task, TaskRow> {
+
   constructor(base: ContextBase) {
     super(base, base.database.records<TaskRow>('task'), { scope: 'none' })
   }
@@ -29,6 +31,7 @@ export class Task_Repository extends Repository<Task, TaskRow> {
   protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {
     return Task.fromDTO(row)
   }
+
 }
 ```
 
@@ -232,6 +235,7 @@ When its entity references entities of other modules (see [Entities](/concepts/e
 
 ```ts title="order.repository.ts"
 export class Order_Repository extends Repository<Order, OrderRow> {
+
   constructor(base: ContextBase, references: Loads<OrderReferences>) {
     super(base, base.database.records<OrderRow>('orders$order'), { scope: 'none', references })
   }
@@ -239,13 +243,18 @@ export class Order_Repository extends Repository<Order, OrderRow> {
   protected toEntity(row: ResolvedRow<OrderRow, Order>): Order {
     return Order.fromDTO(row)   // { customer, lines: [{ product, quantity }], version, ... }
   }
+
 }
 ```
 
 The module gives it them in `initialize`, where it has its dependencies:
 
 ```ts title="order.module.ts"
-static initialize(base: ContextBase, router: HttpRouter, deps: Order_Deps): Order_Module {
+static initialize(
+  base: ContextBase,
+  router: HttpRouter,
+  deps: Order_Deps,
+): Order_Module {
   const orders = new Order_Repository(base, {
     customerId: ids => deps.customers.customer.find({ field: 'id', op: 'in', value: ids }),
     lines: { productId: ids => deps.catalog.product.find({ field: 'id', op: 'in', value: ids }) },

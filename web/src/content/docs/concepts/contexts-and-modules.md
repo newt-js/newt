@@ -102,6 +102,7 @@ Each context opens its database, makes its router and its `ContextBase`, and han
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
 export class Tasks_Context extends BoundedContext {
+
   private constructor(
     base: ContextBase,
     readonly modules: TasksModules,
@@ -133,6 +134,7 @@ export class Tasks_Context extends BoundedContext {
       host,
     }
   }
+
 }
 ```
 
@@ -153,6 +155,7 @@ Each module's `initialize` makes its repository and the module, which registers 
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
 export class Task_Module extends Module {
+
   static initialize(
     base: ContextBase,
     router: HttpRouter,
@@ -180,6 +183,7 @@ export class Task_Module extends Module {
     // ...
     this.routes = registerTaskRoutes(router, this, deps)
   }
+
 }
 ```
 

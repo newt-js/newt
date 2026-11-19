@@ -33,7 +33,7 @@ describe('newt add error', () => {
     await addError(['sales/orders/order', 'order-already-paid', '--kind', 'conflict'], backend)
     await addError(['sales/orders/order', 'too-late', '--kind', 'validation'], backend)
     const paid = await Bun.file(join(backend, ORDER_MODULE, 'errors/order-already-paid.ts')).text()
-    expect(paid).toContain("export class OrderAlreadyPaid extends ConflictError {\n  readonly code = 'orders[order].already_paid'")
+    expect(paid).toContain("export class OrderAlreadyPaid extends ConflictError {\n\n  readonly code = 'orders[order].already_paid'")
     expect(paid).toContain("super('Order already paid')")
     expect(await Bun.file(join(backend, ORDER_MODULE, 'errors/too-late.ts')).text()).toContain("readonly code = 'orders[order].too_late'")
   })

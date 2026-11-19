@@ -15,10 +15,10 @@ Cada módulo guarda sus schemas en `<módulo>.schema.ts`. Es el contrato del mó
 
 ```ts title="src/contexts/tasks/modules/task/task.schema.ts"
 import { defineFilter } from '@newt-js/core'
-import { z } from 'zod'
-import { TaskId } from './value-objects/task-id'
+import { z }            from 'zod'
+// --------------------------------------------------------
+import { TaskId }       from './value-objects/task-id'
 
-/** A task, as its module keeps it and tells it: its public contract. */
 export const TaskSchema = z.object({
   id: TaskId.schema,
   name: z.string().trim().min(1).max(100),
@@ -26,13 +26,8 @@ export const TaskSchema = z.object({
   updatedAt: z.string(),
 })
 
-/** What a client sends to create one: the entity's own rules, picked. */
 export const TaskCreateSchema = TaskSchema.pick({ name: true })
 
-/**
- * What they are read by: these fields and operators, nothing else;
- * and what a list may be sorted by.
- */
 export const TaskFilter = defineFilter(
   {
     id: { field: 'id', value: TaskId.schema, ops: ['eq', 'in'] },

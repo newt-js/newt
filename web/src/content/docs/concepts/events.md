@@ -13,7 +13,8 @@ You define an event with `defineEvent`: a name and a zod schema for what it carr
 
 ```ts title="src/contexts/tasks/modules/task/events/task-completed.ts"
 import { defineEvent } from '@newt-js/core'
-import { TaskSchema } from '../task.schema'
+// --------------------------------------------------------
+import { TaskSchema }  from '../task.schema'
 
 export const Task_Completed = defineEvent(
   'task.completed',

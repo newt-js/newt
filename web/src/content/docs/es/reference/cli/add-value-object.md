@@ -51,8 +51,9 @@ Next steps:
 
 ```ts title="src/contexts/tasks/modules/task/value-objects/priority.ts"
 import { defineValueObject } from '@newt-js/core'
-import { z } from 'zod'
-import { InvalidPriority } from '../errors/invalid-priority'
+import { z }                 from 'zod'
+// --------------------------------------------------------
+import { InvalidPriority }   from '../errors/invalid-priority'
 
 export const Priority = defineValueObject(
   z.string().trim().min(1).max(100).brand<'Priority'>(),

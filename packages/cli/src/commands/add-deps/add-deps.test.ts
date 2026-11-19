@@ -28,7 +28,7 @@ describe('newt add deps', () => {
     expect((await run(ADD_DEPS, ['sales/orders/order', 'invoice'], backend)).code).toBe(0)
     expect(await read(backend, 'features/orders/order/order.deps.ts')).toBe("import type { Invoice_Module } from '../invoice/invoice.module'\n\nexport type Order_Deps = {\n  invoice: Invoice_Module\n}\n")
     expect(await read(backend, 'features/orders/order/order.module.ts')).toContain("    super('orders[order]', base.useCaseRunner, deps)")
-    expect(await read(backend, 'features/orders/orders.feature.ts')).toContain('    const invoice = Invoice_Module.initialize(base, router)\n    const order = Order_Module.initialize(base, router, { invoice })')
+    expect(await read(backend, 'features/orders/orders.feature.ts')).toContain('    const invoice = Invoice_Module.initialize(base, router)\n    const order = Order_Module.initialize(base, router, {\n      invoice,\n    })')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -36,16 +36,18 @@ describe('newt add deps', () => {
     const backend = await withInvoice()
     await run(ADD_DEPS, ['sales/orders/order', 'invoice'], backend)
     const routes = join(backend, SALES, 'features/orders/order/order.routes.ts')
-    expect(await Bun.file(routes).text()).toContain('export function registerOrderRoutes(router: HttpRouter, orders: Order_Module, deps: Order_Deps) {')
+    expect(await Bun.file(routes).text()).toContain('export function registerOrderRoutes(\n  router: HttpRouter,\n  orders: Order_Module,\n  deps: Order_Deps,\n) {')
     expect(await read(backend, 'features/orders/order/order.module.ts')).toContain('    this.routes = registerOrderRoutes(router, this, deps)')
     const under = "  deps.invoice.routes.one.get('/orders', async request => Response.json({ invoice: request.params.invoiceId }))\n"
     await Bun.write(routes, (await Bun.file(routes).text()).replace('  return { one:', `${under}  return { one:`))
-    await Bun.write(join(backend, SALES, 'features/orders/order/order-under-invoice.test.ts'), `import { expect, test } from 'bun:test'
-import { testContext } from '@newt-js/core/application/testing'
-import { MemoryCluster } from '@newt-js/core/cluster/memory'
+    await Bun.write(join(backend, SALES, 'features/orders/order/order-under-invoice.test.ts'), `import { testContext }    from '@newt-js/core/application/testing'
+import { MemoryCluster }  from '@newt-js/core/cluster/memory'
 import { MemoryDatabase } from '@newt-js/core/database/memory'
-import { HttpRouter } from '@newt-js/core/http'
-import { Sales_Context } from '../../../sales.context'
+import { HttpRouter }     from '@newt-js/core/http'
+import { expect }         from 'bun:test'
+import { test }           from 'bun:test'
+// --------------------------------------------------------
+import { Sales_Context }  from '../../../sales.context'
 
 test('GET /orders/invoices/:invoiceId/orders answers from order, under invoice', async () => {
   const context = await testContext({ name: 'sales', cluster: new MemoryCluster(), database: new MemoryDatabase() })
@@ -64,7 +66,7 @@ test('GET /orders/invoices/:invoiceId/orders answers from order, under invoice',
     await run(ADD_MODULE, ['sales/orders/customer'], backend)
     await run(ADD_DEPS, ['sales/orders/order', 'invoice'], backend)
     await run(ADD_DEPS, ['sales/orders/order', 'customer'], backend)
-    expect(await read(backend, 'features/orders/orders.feature.ts')).toContain('Order_Module.initialize(base, router, { invoice, customer })')
+    expect(await read(backend, 'features/orders/orders.feature.ts')).toContain('Order_Module.initialize(base, router, {\n      invoice,\n      customer,\n    })')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -110,13 +112,13 @@ test('GET /orders/invoices/:invoiceId/orders answers from order, under invoice',
     expect((await run(ADD_DEPS, ['sales/orders/order', 'customers'], backend)).code).toBe(0)
     expect(await read(backend, 'features/orders/order/order.deps.ts')).toBe("import type { Customers_Feature } from '../../customers'\n\nexport type Order_Deps = {\n  customers: Customers_Feature\n}\n")
     const feature = await read(backend, 'features/orders/orders.feature.ts')
-    expect(feature).toContain('  static initialize(base: ContextBase, router: HttpRouter, uses: Orders_Uses): Orders_Feature {\n    const order = Order_Module.initialize(base, router, { customers: uses.customers })')
+    expect(feature).toContain('  static initialize(\n    base: ContextBase,\n    router: HttpRouter,\n    uses: Orders_Uses,\n  ): Orders_Feature {\n    const order = Order_Module.initialize(base, router, {\n      customers: uses.customers,\n    })')
     expect(feature).toContain("import type { Customers_Feature } from '../customers'")
     expect(feature).toContain('export type Orders_Uses = {\n  customers: Customers_Feature\n}\n\nexport class Orders_Feature extends Feature {')
-    expect(await read(backend, 'sales.context.ts')).toContain('    const customers = Customers_Feature.initialize(base, router)\n    const orders = Orders_Feature.initialize(base, router, { customers })')
+    expect(await read(backend, 'sales.context.ts')).toContain('    const customers = Customers_Feature.initialize(base, router)\n    const orders = Orders_Feature.initialize(base, router, {\n      customers,\n    })')
     const order = join(backend, SALES, 'features/orders/order/order.module.ts')
-    const call = "\n  @UseCase()\n  async customerCount(): Promise<number> {\n    return (await this.deps.customers.customer.find({})).length\n  }\n}\n"
-    await Bun.write(order, (await Bun.file(order).text()).replace(/\n}\n$/, call))
+    const call = "\n  @UseCase()\n  async customerCount(): Promise<number> {\n    return (await this.deps.customers.customer.find({})).length\n  }\n\n}\n"
+    await Bun.write(order, (await Bun.file(order).text()).replace(/\n\n}\n$/, call))
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -128,7 +130,7 @@ test('GET /orders/invoices/:invoiceId/orders answers from order, under invoice',
     await run(ADD_DEPS, ['sales/orders/invoice', 'customers'], backend)
     const feature = await read(backend, 'features/orders/orders.feature.ts')
     expect(feature.match(/customers: Customers_Feature/g)).toHaveLength(1)
-    expect(feature).toContain('Invoice_Module.initialize(base, router, { customers: uses.customers })')
+    expect(feature).toContain('Invoice_Module.initialize(base, router, {\n      customers: uses.customers,\n    })')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

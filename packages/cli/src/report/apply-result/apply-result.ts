@@ -1,6 +1,8 @@
 import { join }               from 'node:path'
 // --------------------------------------------------------
 import { applyChange }        from '../../changes/apply-change/apply-change'
+import { paddedClasses }      from '../../changes/padded-classes/padded-classes'
+import { sortedImports }      from '../../changes/sorted-imports/sorted-imports'
 import { syntaxErrors }       from '../../changes/syntax-errors/syntax-errors'
 import { virtualFiles }       from '../../changes/virtual-files/virtual-files'
 import { writeFiles }         from '../../changes/write-files/write-files'
@@ -21,6 +23,9 @@ export async function applyResult(result: CommandResult, cwd: string, dryRun: bo
     reports.push({ path: change.path, ...outcome })
     if (failed) failures.push(...changeWarnings)
     else warnings.push(...changeWarnings)
+  }
+  for (const [path, content] of files.changed()) {
+    if (content !== null && /(?<!\.d)\.ts$/.test(path)) await files.write(path, paddedClasses(path, sortedImports(path, (await files.read(path))!)))
   }
   for (const [path, content] of files.changed()) {
     const file = Bun.file(join(cwd, path))

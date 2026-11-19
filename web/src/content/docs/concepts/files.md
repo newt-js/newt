@@ -78,6 +78,7 @@ A module takes its own folder of the context's storage with `in(name)`:
 import type { PrivateFiles } from '@newt-js/core'
 
 export class Task_Module extends Module {
+
   private readonly attachments: PrivateFiles
 
   private constructor(
@@ -89,6 +90,7 @@ export class Task_Module extends Module {
     this.attachments = base.storage.private.in('task')
     // ...
   }
+
 }
 ```
 
@@ -339,10 +341,8 @@ const storage = await S3Storage.open({
 Keeps files in memory and forgets them when the process ends. For tests and trying things out.
 
 ```ts
-import {
-  MemoryStorage,
-  MemoryPublicStorage,
-} from '@newt-js/core/files/memory'
+import { MemoryPublicStorage } from '@newt-js/core/files/memory'
+import { MemoryStorage }       from '@newt-js/core/files/memory'
 
 const storage = new MemoryStorage()
 ```

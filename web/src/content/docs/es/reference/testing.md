@@ -8,11 +8,9 @@ sidebar:
 `@newt-js/core/application/testing` monta un contexto para un test: base de datos real, un reloj que mueves a mano y jobs que se ejecutan cuando lo pides. Lo usas en cada test de módulo. Para cómo escribir los tests, lee [Testing](/es/guides/testing/).
 
 ```ts
-import {
-  testContext,
-  TestClock,
-  type TestContext,
-} from '@newt-js/core/application/testing'
+import { TestClock }        from '@newt-js/core/application/testing'
+import type { TestContext } from '@newt-js/core/application/testing'
+import { testContext }      from '@newt-js/core/application/testing'
 ```
 
 ## testContext

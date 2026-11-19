@@ -14,13 +14,12 @@ Every option named here is listed with its type and default in the [HTTP API ref
 Each module keeps its routes in `<module>.routes.ts`. This is the task module of a generated project:
 
 ```ts title="src/contexts/tasks/modules/task/task.routes.ts"
-import {
-  bodyOf,
-  pageRequestFrom,
-  type HttpRouter,
-} from '@newt-js/core/http'
+import type { HttpRouter }  from '@newt-js/core/http'
+import { bodyOf }           from '@newt-js/core/http'
+import { pageRequestFrom }  from '@newt-js/core/http'
+// --------------------------------------------------------
 import type { Task_Module } from './task.module'
-import { TaskId } from './value-objects/task-id'
+import { TaskId }           from './value-objects/task-id'
 
 export function registerTaskRoutes(
   router: HttpRouter,

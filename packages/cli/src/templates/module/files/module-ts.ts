@@ -26,7 +26,9 @@ ${lines.created}
 
 ${lines.constructor}
 ${lines.super}
-    this.events = eventsOf(base.bus, { created: ${type}_Created })
+    this.events = eventsOf(base.bus, {
+      created: ${type}_Created,
+    })
 ${lines.routes}
   }
 
@@ -39,7 +41,10 @@ ${lines.routes}
 
   @UseCase()
   async get(id: string): Promise<${type}DTO> {
-    const [${module}] = await this.${plural}.find({ id: ${type}Id.from(id) }, { limit: 1 })
+    const [${module}] = await this.${plural}.find(
+      { id: ${type}Id.from(id) },
+      { limit: 1 },
+    )
     if (!${module}) {
       throw new ${type}NotFound()
     }
@@ -47,15 +52,33 @@ ${lines.routes}
   }
 
   @UseCase()
-  async find(criteria: ${type}FilterDTO, sort?: ${type}SortDTO): Promise<${type}DTO[]> {
-    const orderBy = ${type}Filter.toOrder<${type}Row>(sort === undefined ? undefined : ${type}Filter.sortSchema.parse(sort))
-    const found = await this.${plural}.find(${type}Filter.toCriteria<${type}Row>(${type}Filter.schema.parse(criteria)), { orderBy })
+  async find(
+    criteria: ${type}FilterDTO,
+    sort?: ${type}SortDTO,
+  ): Promise<${type}DTO[]> {
+    const parsed = sort === undefined
+      ? undefined
+      : ${type}Filter.sortSchema.parse(sort)
+    const orderBy = ${type}Filter.toOrder<${type}Row>(parsed)
+    const where = ${type}Filter.schema.parse(criteria)
+    const found = await this.${plural}.find(
+      ${type}Filter.toCriteria<${type}Row>(where),
+      { orderBy },
+    )
     return found.map(each => each.toDTO())
   }
 
   @UseCase()
-  async paginate(criteria: ${type}FilterDTO, page: PageRequest): Promise<Page<${type}DTO>> {
-    const found = await this.${plural}.paginate(${type}Filter.toCriteria<${type}Row>(${type}Filter.schema.parse(criteria)), page, { newestFirst: true })
+  async paginate(
+    criteria: ${type}FilterDTO,
+    page: PageRequest,
+  ): Promise<Page<${type}DTO>> {
+    const where = ${type}Filter.schema.parse(criteria)
+    const found = await this.${plural}.paginate(
+      ${type}Filter.toCriteria<${type}Row>(where),
+      page,
+      { newestFirst: true },
+    )
     return mapPage(found, each => each.toDTO())
   }
 }

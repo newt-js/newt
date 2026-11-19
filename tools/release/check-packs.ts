@@ -65,7 +65,7 @@ try {
     await $`bun run ${script}`.cwd(app)
   }
   // A monorepo, hoisted as an older lockfile or linker = "hoisted" leaves it.
-  await $`${join(tool, 'node_modules/.bin/create-newt')} mono --monorepo`.cwd(work).quiet()
+  await $`${join(tool, 'node_modules/.bin/create-newt')} mono --monorepo --backend apps/api`.cwd(work).quiet()
   const mono = join(work, 'mono')
   await fromTarballs(mono, tarballs)
   await fromTarballs(join(mono, 'apps/api'), tarballs)

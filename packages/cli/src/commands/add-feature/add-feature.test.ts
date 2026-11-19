@@ -27,7 +27,7 @@ describe('newt add feature', () => {
     const backend = await backendWithContext()
     const output = await run(ADD_FEATURE, ['sales/price-lists'], backend)
     expect(output.code).toBe(0)
-    expect(await read(backend, 'features/price-lists/price-lists.feature.ts')).toContain("export class PriceLists_Feature extends Feature {\n  static initialize(base: ContextBase, router: HttpRouter): PriceLists_Feature {\n    return new PriceLists_Feature(base, {})\n  }\n\n  private constructor(\n    base: ContextBase,\n    modules: {},\n  ) {\n    super('priceLists', base, modules)\n  }\n}")
+    expect(await read(backend, 'features/price-lists/price-lists.feature.ts')).toContain("export class PriceLists_Feature extends Feature {\n\n  static initialize(\n    base: ContextBase,\n    router: HttpRouter,\n  ): PriceLists_Feature {\n    return new PriceLists_Feature(base, {})\n  }\n\n  private constructor(\n    base: ContextBase,\n    modules: {},\n  ) {\n    super('priceLists', base, modules)\n  }\n\n}")
     expect(await read(backend, 'features/price-lists/index.ts')).toBe("export { PriceLists_Feature } from './price-lists.feature'\n")
     const context = await read(backend, 'sales.context.ts')
     expect(context).toContain("import { PriceLists_Feature } from './features/price-lists'")

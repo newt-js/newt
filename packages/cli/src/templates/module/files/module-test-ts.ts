@@ -55,7 +55,8 @@ test('creates ${withArticle(words)} and reads it back', async () => {
 
   expect(await ${plural}.get(created.id)).toMatchObject({ id: created.id, name: 'First' })
   expect(await ${plural}.find({ name: 'First' })).toMatchObject([{ id: created.id }])
-  expect(await ${plural}.paginate({}, { size: 10 })).toMatchObject({ items: [{ id: created.id }], total: 1 })
+  const page = await ${plural}.paginate({}, { size: 10 })
+  expect(page).toMatchObject({ items: [{ id: created.id }], total: 1 })
 })
 
 test('keeps each one apart, and finds them by their name', async () => {

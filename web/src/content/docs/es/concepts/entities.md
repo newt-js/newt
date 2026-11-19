@@ -14,17 +14,17 @@ Tener cada cambio en una clase significa que una tarea nunca se guarda en un est
 `newt add module tasks/task` escribe esto:
 
 ```ts title="src/contexts/tasks/modules/task/task.ts"
-import { Entity, type EntityInput } from '@newt-js/core'
-import { Task_Created } from './events/task-created'
-import { TaskSchema, type TaskDTO } from './task.schema'
+import { Entity }           from '@newt-js/core'
+import type { EntityInput } from '@newt-js/core'
+// --------------------------------------------------------
+import { Task_Created }     from './events/task-created'
+import type { TaskDTO }     from './task.schema'
+import { TaskSchema }       from './task.schema'
 
-/**
- * What `create` takes, already checked: the entity's own words,
- * never a DTO.
- */
 export type TaskCreateProps = { name: string }
 
 export class Task extends Entity<typeof TaskSchema> {
+
   private constructor(input: EntityInput<TaskDTO>, isNew: boolean) {
     super(TaskSchema, input, isNew)
   }
@@ -40,6 +40,7 @@ export class Task extends Entity<typeof TaskSchema> {
     )
     return task
   }
+
 }
 ```
 
@@ -147,9 +148,11 @@ export class Task extends Entity<
   typeof TaskSchema,
   typeof TaskPublicSchema
 > {
+
   private constructor(input: EntityInput<TaskDTO>, isNew: boolean) {
     super(TaskSchema, input, isNew, TaskPublicSchema)
   }
+
 }
 ```
 
@@ -160,20 +163,26 @@ Cada campo del schema público tiene que estar en el principal, o el constructor
 Un pedido guarda el id de su cliente, `customerId`, y cada una de sus líneas el id de su producto, `productId`. Decláralos como las referencias del pedido, junto a su schema, cada uno con el DTO de la entidad que nombra:
 
 ```ts title="order.schema.ts"
-import type { Resolved } from '@newt-js/core'
+import type { Resolved }    from '@newt-js/core'
+// --------------------------------------------------------
+import type { ProductDTO }  from '../../catalog'
 import type { CustomerDTO } from '../../customers'
-import type { ProductDTO } from '../../catalog'
 
 export const OrderSchema = z.object({
   id: OrderId.schema,
   customerId: CustomerId.schema,
-  lines: z.array(z.object({ productId: ProductId.schema, quantity: z.number().int().positive() })).min(1),
+  lines: z.array(z.object({
+    productId: ProductId.schema,
+    quantity: z.number().int().positive(),
+  })).min(1),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
 
-/** What an order references: under each id it keeps, the DTO of the entity that id names. */
-export type OrderReferences = { customerId: CustomerDTO, lines: { productId: ProductDTO } }
+export type OrderReferences = {
+  customerId: CustomerDTO,
+  lines: { productId: ProductDTO },
+}
 
 /** { id, customer, lines: { product, quantity }[], createdAt, updatedAt } */
 export type OrderDTO = Resolved<z.infer<typeof OrderSchema>, OrderReferences>
@@ -184,10 +193,18 @@ Una referencia es un campo llamado `<nombre>Id`, y la entidad lo enseña como `<
 La entidad recibe sus referencias como su tercer tipo:
 
 ```ts title="order.ts"
-export type OrderCreateProps = { customer: CustomerDTO, lines: { product: ProductDTO, quantity: number }[] }
+export type OrderCreateProps = {
+  customer: CustomerDTO,
+  lines: { product: ProductDTO, quantity: number }[],
+}
 export type OrderChangeCustomerProps = { customer: CustomerDTO }
 
-export class Order extends Entity<typeof OrderSchema, typeof OrderSchema, OrderReferences> {
+export class Order extends Entity<
+  typeof OrderSchema,
+  typeof OrderSchema,
+  OrderReferences
+> {
+
   private constructor(input: EntityInput<OrderDTO>, isNew: boolean) {
     super(OrderSchema, input, isNew)
   }
@@ -203,6 +220,7 @@ export class Order extends Entity<typeof OrderSchema, typeof OrderSchema, OrderR
   changeCustomer({ customer }: OrderChangeCustomerProps): void {
     this.change({ customer })
   }
+
 }
 ```
 

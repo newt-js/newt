@@ -5,7 +5,7 @@ import type { FilesKind }    from '../../stores/store-files'
 import { STORE_FILES }       from '../../stores/store-files'
 
 /** The line of <ctx>.context.ts that hands the context to run. */
-export const contextToRun = ({ type }: ContextNames) => `return { context: ${type}_Context.initialize(base, router), router, host }`
+export const CONTEXT_TO_RUN = 'return { context, router, host }'
 
 export type ContextStores = { database: DatabaseKind, files: FilesKind }
 
@@ -22,10 +22,11 @@ import { authenticate } from '../../auth'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
-/** ${folder}: its features, each one reached as ${camel}.<feature>. */
 export class ${type}_Context extends BoundedContext {
-  /** Builds its features, each after those it uses. */
-  static initialize(base: ContextBase, router: HttpRouter): ${type}_Context {
+  static initialize(
+    base: ContextBase,
+    router: HttpRouter,
+  ): ${type}_Context {
     return new ${type}_Context(base, {})
   }
 
@@ -36,7 +37,10 @@ export class ${type}_Context extends BoundedContext {
     super('${folder}', base, features)
   }
 
-  static async open(platform: Platform, place: DataPlace): Promise<ContextToRun> {
+  static async open(
+    platform: Platform,
+    place: DataPlace,
+  ): Promise<ContextToRun> {
     const router = new HttpRouter({ prefix: '/${folder}/api' })
     router.authenticateWith(authenticate)
     const host = Bun.env.${env}_HOST
@@ -47,8 +51,14 @@ export class ${type}_Context extends BoundedContext {
       place,
       host,
     })
-    const base = new ContextBase({ name: '${folder}', platform, database, storage })
-    ${contextToRun(names)}
+    const base = new ContextBase({
+      name: '${folder}',
+      platform,
+      database,
+      storage,
+    })
+    const context = ${type}_Context.initialize(base, router)
+    ${CONTEXT_TO_RUN}
   }
 }
 `

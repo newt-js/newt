@@ -17,7 +17,7 @@ describe('newt add value-object', () => {
   test('a value object, its error and its test of a good value and a bad one, whose lint, types and tests pass', async () => {
     const backend = await moduleProject()
     expect((await addValueObject(['sales/orders/order', 'shipping-code'], backend)).code).toBe(0)
-    expect(await Bun.file(join(backend, ORDER_MODULE, 'value-objects/shipping-code.ts')).text()).toContain("export const ShippingCode = defineValueObject(z.string().trim().min(1).max(100).brand<'ShippingCode'>(), text => new InvalidShippingCode(text))")
+    expect(await Bun.file(join(backend, ORDER_MODULE, 'value-objects/shipping-code.ts')).text()).toContain("export const ShippingCode = defineValueObject(\n  z.string().trim().min(1).max(100).brand<'ShippingCode'>(),\n  text => new InvalidShippingCode(text),\n)")
     expect(await Bun.file(join(backend, ORDER_MODULE, 'errors/invalid-shipping-code.ts')).text()).toContain("readonly code = 'orders[order].invalid_shipping_code'")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
@@ -29,12 +29,15 @@ describe('newt add value-object', () => {
     const output = await addValueObject(['sales/orders/order', 'customer-id'], backend)
     expect(output.text).toBe(`  created  ${ORDER_MODULE}/value-objects/customer-id.ts\n\nNext steps:\n  keep it in the module's schema, CustomerId.schema, and give it as it is to the use cases of customers`)
     expect(await Bun.file(join(backend, ORDER_MODULE, 'value-objects/customer-id.ts')).text()).toContain("export const CustomerId = uuidFactory('CustomerId')")
-    await Bun.write(join(backend, ORDER_MODULE, 'customer-id.test.ts'), `import { expect, test } from 'bun:test'
+    await Bun.write(join(backend, ORDER_MODULE, 'customer-id.test.ts'), `import { expect }                 from 'bun:test'
+import { test }                   from 'bun:test'
+// --------------------------------------------------------
 import type { Customers_Feature } from '../../customers'
-import { CustomerId } from './value-objects/customer-id'
+import { CustomerId }             from './value-objects/customer-id'
 
 test("customers' use cases take the id order keeps", () => {
-  const read = (customers: Customers_Feature) => customers.customer.get(CustomerId.from(Bun.randomUUIDv7()))
+  const read = (customers: Customers_Feature) =>
+    customers.customer.get(CustomerId.from(Bun.randomUUIDv7()))
   expect(read).toBeFunction()
 })
 `)

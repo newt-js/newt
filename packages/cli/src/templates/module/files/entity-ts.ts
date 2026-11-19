@@ -5,7 +5,6 @@ export function entityTs({ folder, module, type }: ModuleNames): string {
 import { ${type}_Created } from './events/${folder}-created'
 import { ${type}Schema, type ${type}DTO } from './${folder}.schema'
 
-/** What \`create\` takes, already checked: the entity's own words, never a DTO. */
 export type ${type}CreateProps = { name: string }
 
 export class ${type} extends Entity<typeof ${type}Schema> {
@@ -19,7 +18,8 @@ export class ${type} extends Entity<typeof ${type}Schema> {
 
   static create(props: ${type}CreateProps): ${type} {
     const ${module} = new ${type}(props, true)
-    ${module}.trackEvent(new ${type}_Created({ id: ${module}.id, name: ${module}.data.name }))
+    const { id, data } = ${module}
+    ${module}.trackEvent(new ${type}_Created({ id, name: data.name }))
     return ${module}
   }
 }

@@ -57,7 +57,8 @@ Three functions from `@newt-js/core`:
 Use `currentActor()` inside a use case that needs someone signed in:
 
 ```ts title="src/contexts/tasks/modules/task/task.module.ts"
-import { currentActor, UseCase } from '@newt-js/core'
+import { UseCase }      from '@newt-js/core'
+import { currentActor } from '@newt-js/core'
 
 @UseCase()
 async create(input: TaskCreateDTO): Promise<TaskDTO> {
@@ -182,6 +183,7 @@ To scope it, name the field and how to read its current value:
 import { team } from '../../team'
 
 export class Task_Repository extends Repository<Task, TaskRow> {
+
   constructor(base: ContextBase) {
     super(base, base.database.records<TaskRow>('task'), {
       scope: {
@@ -194,6 +196,7 @@ export class Task_Repository extends Repository<Task, TaskRow> {
       },
     })
   }
+
 }
 ```
 

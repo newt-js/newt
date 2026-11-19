@@ -11,9 +11,9 @@ function namesIn(source: ts.SourceFile): Name[] {
     const bindings = clause?.namedBindings
     const from = (declaration.moduleSpecifier as ts.StringLiteral).text
     const whole = clause?.isTypeOnly ?? false
-    const name = (text: string, node?: ts.ImportSpecifier): Name => ({ name: text, imported: node?.propertyName?.text ?? text, from, typeOnly: whole || (node?.isTypeOnly ?? false), node, declaration })
+    const name = (text: string, node?: ts.ImportSpecifier, imported = node?.propertyName?.text ?? text): Name => ({ name: text, imported, from, typeOnly: whole || (node?.isTypeOnly ?? false), node, declaration })
     return [
-      ...clause?.name ? [name(clause.name.text)] : [],
+      ...clause?.name ? [name(clause.name.text, undefined, 'default')] : [],
       ...bindings && ts.isNamedImports(bindings) ? bindings.elements.map(element => name(element.name.text, element)) : [],
       ...bindings && ts.isNamespaceImport(bindings) ? [name(bindings.name.text)] : [],
     ]

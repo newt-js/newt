@@ -15,11 +15,13 @@ Existe para que las reglas de tu app digan *qué* salió mal sin saber nada de H
 import { NotFoundError } from '@newt-js/core'
 
 export class TaskNotFound extends NotFoundError {
+
   readonly code = 'task.not_found'
 
   constructor() {
     super('There is no such task')
   }
+
 }
 ```
 
@@ -52,11 +54,13 @@ Su constructor recibe el mensaje y los params: `super(message, params?)`.
 import { ValidationError } from '@newt-js/core'
 
 export class InvalidPriority extends ValidationError<{ value: string }> {
+
   readonly code = 'task.invalid_priority'
 
   constructor(value: string) {
     super(`'${value}' is not a valid priority`, { value })
   }
+
 }
 ```
 
@@ -231,10 +235,12 @@ Escribe `errors/already-done.ts`, un `ConflictError` con el código `task.alread
 import { ConflictError } from '@newt-js/core'
 
 export class AlreadyDone extends ConflictError {
+
   readonly code = 'task.already_done'
 
   constructor() {
     super('Already done')
   }
+
 }
 ```

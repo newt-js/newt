@@ -24,3 +24,8 @@ test('after the comment of the last property, which stays its own', () => {
 test('before the close, when the object closes on its last line', () => {
   expect(added('const o = { a,\n  c }\n')).toBe('const o = { a,\n  c,\n  b }\n')
 })
+
+test('on lines of its own, when its line would pass 80 characters', () => {
+  const long = `const o = { ${'a'.repeat(60)}, ${'c'.repeat(10)} }\n`
+  expect(added(long)).toBe(`const o = {\n  ${'a'.repeat(60)},\n  ${'c'.repeat(10)},\n  b,\n}\n`)
+})

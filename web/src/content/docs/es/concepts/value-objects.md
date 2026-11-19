@@ -13,8 +13,9 @@ Una función que recibe un `TaskId` no puede recibir por error el id de un proye
 
 ```ts title="src/contexts/tasks/modules/task/value-objects/priority.ts"
 import { defineValueObject } from '@newt-js/core'
-import { z } from 'zod'
-import { InvalidPriority } from '../errors/invalid-priority'
+import { z }                 from 'zod'
+// --------------------------------------------------------
+import { InvalidPriority }   from '../errors/invalid-priority'
 
 export const Priority = defineValueObject(
   z.string().trim().min(1).max(100).brand<'Priority'>(),
@@ -80,7 +81,8 @@ Haz que el error sea un `ValidationError` (`newt add value-object` lo hace). As�
 Cada módulo tiene su propio tipo de id:
 
 ```ts title="src/contexts/tasks/modules/task/value-objects/task-id.ts"
-import { uuidFactory, type Uuid } from '@newt-js/core'
+import type { Uuid }   from '@newt-js/core'
+import { uuidFactory } from '@newt-js/core'
 
 export const TaskId = uuidFactory('TaskId')
 export type TaskId = Uuid<'TaskId'>

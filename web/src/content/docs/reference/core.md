@@ -31,9 +31,11 @@ The base class of an entity: data checked by a zod schema, with an id, a version
 
 ```ts title="src/contexts/tasks/modules/task/task.ts"
 export class Task extends Entity<typeof TaskSchema> {
+
   private constructor(input: EntityInput<TaskDTO>, isNew: boolean) {
     super(TaskSchema, input, isNew)
   }
+
 }
 ```
 
@@ -176,6 +178,7 @@ Reads and saves one kind of entity in one table.
 
 ```ts title="src/contexts/tasks/modules/task/task.repository.ts"
 export class Task_Repository extends Repository<Task, TaskRow> {
+
   constructor(base: ContextBase) {
     super(base, base.database.records<TaskRow>('task'), { scope: 'none' })
   }
@@ -183,6 +186,7 @@ export class Task_Repository extends Repository<Task, TaskRow> {
   protected toEntity(row: ResolvedRow<TaskRow, Task>): Task {
     return Task.fromDTO(row)
   }
+
 }
 ```
 
@@ -401,11 +405,13 @@ The base of every error a client may see.
 
 ```ts title="src/contexts/tasks/modules/task/errors/already-done.ts"
 export class AlreadyDone extends ConflictError {
+
   readonly code = 'task.already_done'
 
   constructor() {
     super('Already done')
   }
+
 }
 ```
 

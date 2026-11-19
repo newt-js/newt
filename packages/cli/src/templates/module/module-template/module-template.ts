@@ -24,8 +24,9 @@ function initializedLine({ module, type }: ModuleNames, deps = ''): string {
 }
 
 /** The line of the feature's index.ts that lets the other features use a module's DTOs. */
-function dtosLine({ type, folder }: ModuleNames): string {
-  return `export type { ${type}CreateDTO, ${type}DTO, ${type}FilterDTO, ${type}SortDTO } from './${folder}/${folder}.schema'`
+function dtosLines({ type, folder }: ModuleNames): string[] {
+  const dtos = ['CreateDTO', 'DTO', 'FilterDTO', 'SortDTO']
+  return dtos.map(dto => `export type { ${type}${dto} } from './${folder}/${folder}.schema'`)
 }
 
 /** A module of a feature: its files, its table's migration in its context's, its place in <feature>.feature.ts and its DTOs in the feature's index.ts. */
@@ -62,6 +63,6 @@ export function moduleTemplate({ backend, context, names, database, migration }:
       declaration: initializedLine(names),
       imports: [`import { ${names.type}_Module } from './${names.folder}/${names.folder}.module'`],
     },
-    { action: 'ensure-lines', path: join(featureFolder, 'index.ts'), lines: [dtosLine(names)] },
+    { action: 'ensure-lines', path: join(featureFolder, 'index.ts'), lines: dtosLines(names) },
   ]
 }

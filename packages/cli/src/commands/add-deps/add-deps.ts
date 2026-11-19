@@ -79,7 +79,7 @@ async function anotherFeature(found: FoundModule, used: FeatureNames, cwd: strin
   const changes: FileChange[] = [
     ...moduleChanges(found, { key: used.camel, type: usedClass, from: `../../${used.folder}` }),
     { action: 'replace-line', path: entry, line: initializeHead(feature, false), with: initializeHead(feature, true), imports: [] },
-    ...text.includes(usesHead(feature)) ? [] : [{ action: 'insert-lines' as const, path: entry, anchor: classHead(feature), position: 'before' as const, lines: usesTs(feature, context.folder), imports: [] }],
+    ...text.includes(usesHead(feature)) ? [] : [{ action: 'insert-lines' as const, path: entry, anchor: classHead(feature), position: 'before' as const, lines: usesTs(feature), imports: [] }],
     { action: 'insert-lines', path: entry, anchor: usesHead(feature), position: 'after', lines: [`  ${used.camel}: ${usedClass}`], imports: [`import type { ${usedClass} } from '../${used.folder}'`] },
     { action: 'add-object-property', path: entry, call: `${module.type}_Module.initialize`, argument: 2, key: used.camel, value: `uses.${used.camel}`, imports: [], createArgument: true },
     { action: 'add-object-property', path: contextFile, call: `${featureClass(feature)}.initialize`, argument: 2, key: used.camel, value: used.camel, imports: [], createArgument: true },

@@ -4,9 +4,9 @@ import type { ModuleNames } from '../../../names/module-names/module-names'
 export function moduleLines({ name, type, plural }: ModuleNames, withDeps: boolean) {
   const deps = (text: string) => withDeps ? text : ''
   return {
-    initialize: `  static initialize(base: ContextBase, router: HttpRouter${deps(`, deps: ${type}_Deps`)}): ${type}_Module {`,
-    created: `    const module = new ${type}_Module(base, new ${type}_Repository(base), router${deps(', deps')})`,
-    constructor: `  private constructor(base: ContextBase, private readonly ${plural}: ${type}_Repository, router: HttpRouter${deps(`, private readonly deps: ${type}_Deps`)}) {`,
+    initialize: `  static initialize(\n    base: ContextBase,\n    router: HttpRouter,\n${deps(`    deps: ${type}_Deps,\n`)}  ): ${type}_Module {`,
+    created: `    const ${plural} = new ${type}_Repository(base)\n    const module = new ${type}_Module(base, ${plural}, router${deps(', deps')})`,
+    constructor: `  private constructor(\n    base: ContextBase,\n    private readonly ${plural}: ${type}_Repository,\n    router: HttpRouter,\n${deps(`    private readonly deps: ${type}_Deps,\n`)}  ) {`,
     super: `    super('${name}', base.useCaseRunner${deps(', deps')})`,
     routes: `    this.routes = register${type}Routes(router, this${deps(', deps')})`,
   }

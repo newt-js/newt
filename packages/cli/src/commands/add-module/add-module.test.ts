@@ -35,7 +35,14 @@ describe('newt add module', () => {
     expect(await read(join(backend, 'src/contexts/sales/migrations/00001_orders__order_up.sql'))).toStartWith('CREATE TABLE "orders$order" (')
     expect(await read(join(backend, 'src/contexts/sales/sales.context.ts'))).toContain('    const orders = Orders_Feature.initialize(base, router)\n    return new Sales_Context(base, { orders })')
     expect(await read(join(backend, 'src/contexts/sales/features/orders/orders.feature.ts'))).toContain("    const order = Order_Module.initialize(base, router)\n    return new Orders_Feature(base, { order })\n  }\n\n  public readonly order: Order_Module\n\n  private constructor(\n    base: ContextBase,\n    modules: {\n      order: Order_Module,\n    },\n  ) {\n    super('orders', base, modules)\n    this.order = modules.order\n  }")
-    expect(await read(join(backend, 'src/contexts/sales/features/orders/index.ts'))).toBe("export { Orders_Feature } from './orders.feature'\nexport type { OrderCreateDTO, OrderDTO, OrderFilterDTO, OrderSortDTO } from './order/order.schema'\n")
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/index.ts'))).toBe([
+      "export type { OrderCreateDTO } from './order/order.schema'",
+      "export type { OrderDTO }       from './order/order.schema'",
+      "export type { OrderFilterDTO } from './order/order.schema'",
+      "export type { OrderSortDTO }   from './order/order.schema'",
+      "export { Orders_Feature }      from './orders.feature'",
+      '',
+    ].join('\n'))
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -106,7 +113,7 @@ describe('newt add module', () => {
     await run(ADD_MODULE, ['sales/orders/person'], backend)
     expect(await read(join(backend, 'src/contexts/sales/features/orders/person/person.routes.ts'))).toContain("router.get('/orders/people'")
     expect((await run(ADD_MODULE, ['sales/orders/cactus', '--plural', 'cacti'], backend)).code).toBe(0)
-    expect(await read(join(backend, 'src/contexts/sales/features/orders/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(router: HttpRouter, cacti: Cactus_Module) {')
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(\n  router: HttpRouter,\n  cacti: Cactus_Module,\n) {')
     expect((await run(ADD_USE_CASE, ['sales/orders/cactus', 'water'], backend)).code).toBe(0)
     expect((await run(ADD_ROUTE, ['sales/orders/cactus', 'water'], backend)).code).toBe(0)
     expect(await read(join(backend, 'src/contexts/sales/features/orders/cactus/cactus.routes.ts'))).toContain("router.post('/orders/cacti/:id/water', async request => Response.json(await cacti.water(")

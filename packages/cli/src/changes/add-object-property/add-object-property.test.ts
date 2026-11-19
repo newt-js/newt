@@ -19,7 +19,7 @@ async function edited(content: string, change = CHANGE): Promise<string> {
 
 describe('addObjectProperty', () => {
   test('on one line', async () => {
-    expect(await edited('this.events = eventsOf(base.bus, { created: Order_Created })\n')).toBe("import { Order_Shipped } from './events/order-shipped'\n\nthis.events = eventsOf(base.bus, { created: Order_Created, shipped: Order_Shipped })\n")
+    expect(await edited('x = eventsOf(bus, { created: Order_Created })\n')).toBe("import { Order_Shipped } from './events/order-shipped'\n\nx = eventsOf(bus, { created: Order_Created, shipped: Order_Shipped })\n")
   })
 
   test('on lines of their own, with or without a last comma', async () => {
@@ -31,10 +31,10 @@ describe('addObjectProperty', () => {
     expect(await edited('x = eventsOf(bus, {})\n', { ...CHANGE, imports: [] })).toBe('x = eventsOf(bus, { shipped: Order_Shipped })\n')
   })
 
-  test('a new argument goes after the last one, before a last comma', async () => {
+  test('a new argument goes after the last one, before a last comma, on lines of its own', async () => {
     const change = { ...CHANGE, call: 'M.initialize', argument: 2, key: 'supplier', value: 'supplier', imports: [], createArgument: true }
-    expect(await edited('M.initialize(base, router)\n', change)).toBe('M.initialize(base, router, { supplier })\n')
-    expect(await edited('M.initialize(\n  base,\n  router,\n)\n', change)).toBe('M.initialize(\n  base,\n  router, { supplier },\n)\n')
+    expect(await edited('M.initialize(base, router)\n', change)).toBe('M.initialize(base, router, {\n  supplier,\n})\n')
+    expect(await edited('M.initialize(\n  base,\n  router,\n)\n', change)).toBe('M.initialize(\n  base,\n  router, {\n    supplier,\n  },\n)\n')
   })
 
   test('a key it has already is left alone', async () => {

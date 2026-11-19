@@ -45,10 +45,12 @@ export const importsAndExports: Rule.RuleModule = {
       const lines: Line[] = []
       for (const specifier of statement.specifiers) {
         if (specifier.type === 'ImportNamespaceSpecifier') return null
-        const name = specifier.type === 'ImportDefaultSpecifier'
+        const text = specifier.type === 'ImportDefaultSpecifier'
           ? `default as ${specifier.local.name}`
           : code.getText(specifier as Rule.Node)
-        lines.push({ kind, head: `${kind}${isType ? ' type' : ''} { ${name} }`, tail, path, name })
+        const name = text.replace(/^type\s+/, '')
+        const typed = isType || name !== text
+        lines.push({ kind, head: `${kind}${typed ? ' type' : ''} { ${name} }`, tail, path, name })
       }
       return lines
     }

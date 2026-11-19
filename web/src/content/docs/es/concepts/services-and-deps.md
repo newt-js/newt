@@ -163,7 +163,10 @@ Si `folder` cambia su URL, sus notas se mueven con ella. Su caso de uso lee la c
 
 ```ts title="src/contexts/notes/modules/note/note.module.ts"
 @UseCase()
-async paginateInFolder(folderId: FolderId, page: PageRequest): Promise<Page<NoteDTO>> {
+async paginateInFolder(
+  folderId: FolderId,
+  page: PageRequest,
+): Promise<Page<NoteDTO>> {
   await this.deps.folder.get({ id: folderId })
   return this.paginate({ folderId }, page)
 }
@@ -174,7 +177,10 @@ async paginateInFolder(folderId: FolderId, page: PageRequest): Promise<Page<Note
 Borrar una carpeta debería borrar sus notas. `folder` borra la carpeta y emite `folder.deleted`; `note` se suscribe a él a través de sus deps, que su `initialize` pasa a `registerNoteWorkers(module, deps)`, y borra las notas de la carpeta en un job:
 
 ```ts title="src/contexts/notes/modules/note/note.workers.ts"
-export function registerNoteWorkers(notes: Note_Module, { folder }: Note_Deps): void {
+export function registerNoteWorkers(
+  notes: Note_Module,
+  { folder }: Note_Deps,
+): void {
   notes.on(folder.events.deleted, 'deleteInFolder', deleted => [deleted.id])
 }
 ```
