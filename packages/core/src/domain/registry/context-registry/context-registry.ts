@@ -4,7 +4,6 @@ import type { RegisteredSubscription } from '../registered-subscription'
 export class ContextRegistry {
 
   private readonly modules = new Map<string, RegisteredModule>()
-  private readonly features = new Map<string, string[]>()
   private readonly cronOf = new Map<string, string>()
   private readonly subscribed = new Set<RegisteredSubscription>()
 
@@ -12,11 +11,6 @@ export class ContextRegistry {
 
   module(instance: { readonly name: string }, deps?: object): void {
     this.modules.set(instance.name, { instance, className: instance.constructor.name, deps, useCases: new Map() })
-  }
-
-  /** A feature, by its name, with its modules' own names: defined again, it takes the place of the one before. */
-  feature(name: string, modules: string[]): void {
-    this.features.set(name, modules)
   }
 
   useCase(instance: { readonly name: string }, name: string, options: object = {}): void {
@@ -44,11 +38,6 @@ export class ContextRegistry {
 
   get registeredModules(): RegisteredModule[] {
     return [...this.modules.values()]
-  }
-
-  /** Each feature defined, with its modules' own names. */
-  get registeredFeatures(): { name: string, modules: string[] }[] {
-    return [...this.features].map(([name, modules]) => ({ name, modules }))
   }
 
   cron(event: string): string | undefined {

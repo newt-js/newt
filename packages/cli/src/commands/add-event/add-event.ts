@@ -6,7 +6,7 @@ import { eventTs }       from '../../templates/pieces/event-ts'
 import { defineCommand } from '../command'
 import { CommandError }  from '../command-error/command-error'
 
-const USAGE = 'newt add event takes the module and the event, as in newt add event sales/orders/order shipped'
+const USAGE = 'newt add event takes the module and the event, as in newt add event sales/order shipped'
 
 /** What a module's own classes and types are called after it: Order_Module, Order_Repository, Order_Deps. */
 const MODULE_TYPES = ['Module', 'Repository', 'Deps']
@@ -14,7 +14,7 @@ const MODULE_TYPES = ['Module', 'Repository', 'Deps']
 export const ADD_EVENT = defineCommand({
   name: 'add event',
   summary: 'Adds an event to a module, in its events/ folder',
-  args: '<context>/<feature>/<module> <event>',
+  args: '<context>/<module> <event>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },

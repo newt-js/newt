@@ -16,5 +16,5 @@ export function describeApplication(contexts: readonly (ContextBase | BoundedCon
       }
     }
   }
-  return { version: 2, contexts: registries.map(registry => describeContext(registry, owners)) }
+  return { version: 3, contexts: registries.map(registry => describeContext(registry, owners)) }
 }

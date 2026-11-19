@@ -16,7 +16,7 @@ class Counter extends Module {
   runs = 0
 
   constructor(private conflicts: number) {
-    super('shop[counter]', new UseCaseRunner({ context: 'shop', conflictRetries: { backoffMs: 0 } }))
+    super('counter', new UseCaseRunner({ context: 'shop', conflictRetries: { backoffMs: 0 } }))
   }
 
   @UseCase()
@@ -66,7 +66,7 @@ describe('@UseCase', () => {
   test('registers each use case of the instance, with its options, once its base class gave it its runner', () => {
     const counter = new Counter(0)
 
-    expect(counter.useCaseRunner.registry.isUseCase('shop[counter].increase')).toBe(true)
+    expect(counter.useCaseRunner.registry.isUseCase('counter.increase')).toBe(true)
     expect(counter.useCaseRunner.registry.registeredModules[0]?.useCases.get('set')).toEqual({ retryOnConflict: false })
   })
 })

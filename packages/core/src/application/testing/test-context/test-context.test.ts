@@ -33,8 +33,8 @@ describe('testContext', () => {
     shop.base.bus.subscribe('user.created', async () => {
       ran.push('welcome')
       await shop.base.bus.publish({ name: 'mail.sent', payload: {}, occurredAt: '' } as DomainEvent)
-    }, { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
-    shop.base.bus.subscribe('mail.sent', () => void ran.push('counted'), { strategy: 'handler', queue: 'stats[counter].count_on_mail.sent' })
+    }, { strategy: 'handler', queue: 'mailer.sendWelcome_on_user.created' })
+    shop.base.bus.subscribe('mail.sent', () => void ran.push('counted'), { strategy: 'handler', queue: 'counter.count_on_mail.sent' })
 
     await shop.base.bus.publish(created)
     await shop.settle()
@@ -48,7 +48,7 @@ describe('testContext', () => {
     unscopedLogs.useLogger({ write: line => void outside.push(line.message) })
     try {
       shop = testContext({ name: 'shop', database: new MemoryDatabase(), cluster: new MemoryCluster() })
-      shop.base.bus.subscribe('user.created', () => log.info('as a job'), { strategy: 'handler', queue: 'mail[mailer].sendWelcome_on_user.created' })
+      shop.base.bus.subscribe('user.created', () => log.info('as a job'), { strategy: 'handler', queue: 'mailer.sendWelcome_on_user.created' })
 
       await shop.base.bus.publish(created)
       await shop.settle()
@@ -81,7 +81,7 @@ describe('testContext', () => {
       order.push('schedules stopped')
     }
     shop = testContext({ name: 'other', database: new MemoryDatabase(), cluster: new MemoryCluster() })
-    schedules.define('reports[report].daily', '* * * * *')
+    schedules.define('report.daily', '* * * * *')
     worker.start()
     schedules.start()
 

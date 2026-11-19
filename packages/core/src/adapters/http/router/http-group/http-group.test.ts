@@ -77,10 +77,10 @@ describe('HttpGroup', () => {
 
   test('rateLimit: false leaves out its router\'s limits, for its routes and the limits they add', async () => {
     const limits = new RateLimits(new MemoryCluster(), 'shop', systemClock)
-    const router = new HttpRouter({ public: true, rateLimit: { limit: limits.define('shop[api].calls', { limit: 1, windowMs: 60_000 }), by: 'ip' } })
+    const router = new HttpRouter({ public: true, rateLimit: { limit: limits.define('api.calls', { limit: 1, windowMs: 60_000 }), by: 'ip' } })
     const open = router.group('/open', { rateLimit: false })
     open.get('/free', () => Response.json('free'))
-    open.get('/own', () => Response.json('own'), { rateLimit: { limit: limits.define('shop[own].calls', { limit: 2, windowMs: 60_000 }), by: 'ip' } })
+    open.get('/own', () => Response.json('own'), { rateLimit: { limit: limits.define('own.calls', { limit: 2, windowMs: 60_000 }), by: 'ip' } })
 
     expect([(await call(router, '/api/open/free')).status, (await call(router, '/api/open/free')).status]).toEqual([200, 200])
     expect([(await call(router, '/api/open/own')).status, (await call(router, '/api/open/own')).status, (await call(router, '/api/open/own')).status]).toEqual([200, 200, 429])
@@ -88,7 +88,7 @@ describe('HttpGroup', () => {
 
   test('without rateLimit, its routes take its router\'s limits', async () => {
     const limits = new RateLimits(new MemoryCluster(), 'shop', systemClock)
-    const router = new HttpRouter({ public: true, rateLimit: { limit: limits.define('shop[api].calls', { limit: 1, windowMs: 60_000 }), by: 'ip' } })
+    const router = new HttpRouter({ public: true, rateLimit: { limit: limits.define('api.calls', { limit: 1, windowMs: 60_000 }), by: 'ip' } })
     router.group('/shops').get('/menu', () => Response.json('menu'))
 
     expect([(await call(router, '/api/shops/menu')).status, (await call(router, '/api/shops/menu')).status]).toEqual([200, 429])

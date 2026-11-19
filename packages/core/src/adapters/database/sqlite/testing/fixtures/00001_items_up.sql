@@ -27,7 +27,7 @@ CREATE TABLE pair (
 
 CREATE UNIQUE INDEX pair_email_unique ON pair (email);
 
-CREATE TABLE "campaigns$template" (
+CREATE TABLE "email_template" (
   id TEXT PRIMARY KEY,
   version INTEGER NOT NULL,
   name TEXT NOT NULL UNIQUE,

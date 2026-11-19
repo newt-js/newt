@@ -13,7 +13,6 @@ import type { Uses }               from './rules/context-imports/context-imports
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
-import { featureImports }          from './rules/feature-imports/feature-imports'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
 import { importsAndExports }       from './rules/imports-and-exports/imports-and-exports'
 import { moduleEntity }            from './rules/module-entity/module-entity'
@@ -24,6 +23,7 @@ import { modulePlace }             from './rules/module-place/module-place'
 import { moduleTransactions }      from './rules/module-transactions/module-transactions'
 import { keepNoDisable }           from './rules/no-disable/keep-no-disable'
 import { noDisable }               from './rules/no-disable/no-disable'
+import { publishedModules }        from './rules/published-modules/published-modules'
 import { reactionQueue }           from './rules/reaction-queue/reaction-queue'
 import { repositoryPublicMethods } from './rules/repository-public-methods/repository-public-methods'
 import { routeBodyUnchecked }      from './rules/route-body-unchecked/route-body-unchecked'
@@ -42,7 +42,6 @@ export const plugin = {
   rules: {
     'context-imports': contextImports,
     'entity-method-params': entityMethodParams,
-    'feature-imports': featureImports,
     'module-place': modulePlace,
     'framework-tables': frameworkTables,
     'imports-and-exports': importsAndExports,
@@ -53,6 +52,7 @@ export const plugin = {
     'module-names': moduleNames,
     'module-transactions': moduleTransactions,
     'no-disable': noDisable,
+    'published-modules': publishedModules,
     'reaction-queue': reactionQueue,
     'repository-public-methods': repositoryPublicMethods,
     'route-body-unchecked': routeBodyUnchecked,
@@ -74,8 +74,8 @@ export const parser = tseslint.parser
 /** The typescript-eslint this package carries: an app that wants its configs takes them from here, since ESLint refuses two plugins under one name. */
 export { tseslint }
 
-/** Where a module's files are: anything under a folder of a feature's, `features/<feature>/<module>/`. */
-const MODULES = '**/features/*/*/**/*.ts'
+/** Where a module's files are: anything under a folder of a context's `modules/`. */
+const MODULES = '**/modules/*/**/*.ts'
 
 /**
  * newt's style, which no rule of its own says: braces on every `if`, `else` and loop,
@@ -107,8 +107,8 @@ export type NewtLintOptions = {
 }
 
 /**
- * The lint of an application built with newt. A module is a folder of a feature's,
- * `<context>/features/<feature>/<module>/`. What it checks keeps every module
+ * The lint of an application built with newt. A module is a folder of a context's
+ * `modules/`, `<context>/modules/<module>/`. What it checks keeps every module
  * the same, whoever writes it, a person or an agent.
  *
  * ```ts
@@ -129,7 +129,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     files: inContexts,
     rules: {
       'newt/context-imports': ['error', { folder: given, ...contexts.uses ? { uses: contexts.uses } : {} }],
-      'newt/feature-imports': ['error', { folder: given }],
+      'newt/published-modules': ['error', { folder: given }],
       'newt/module-place': ['error', { folder: given }],
       'newt/route-context': ['error', { folder: given }],
     },
@@ -166,7 +166,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         ...OTHERS,
         'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
         'newt/imports-and-exports': 'error',
-        // By the file's name, wherever it is: a module out of its feature's folder, one every context shares, too.
+        // By the file's name, wherever it is: a module out of its context's folder, one every context shares, too.
         'newt/use-case-public-methods': 'error',
         'newt/use-case-params': 'error',
         'newt/use-case-reads': 'error',

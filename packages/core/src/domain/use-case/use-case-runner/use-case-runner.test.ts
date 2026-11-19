@@ -308,11 +308,11 @@ class KeptInbox implements Inbox {
 }
 
 describe('the inbox', () => {
-  const reaction = (): ReactionRun => ({ event: 'e1', queue: 'billing[invoice].invoice_on_order.placed', received: false })
+  const reaction = (): ReactionRun => ({ event: 'e1', queue: 'invoice.invoice_on_order.placed', received: false })
 
   test('a use case run as a reaction already received does not run: it says so', async () => {
     const inbox = new KeptInbox()
-    inbox.kept.add('e1 billing[invoice].invoice_on_order.placed')
+    inbox.kept.add('e1 invoice.invoice_on_order.placed')
     const runner = new UseCaseRunner({ context: 'billing', inbox })
     let ran = false
 
@@ -331,7 +331,7 @@ describe('the inbox', () => {
     const value = await reactionScope.run(reaction(), () => runner.run('billing.invoice', () => runner.run('tax.add', async () => 'done')))
 
     expect(value).toBe('done')
-    expect(inbox.asked).toEqual(['e1 billing[invoice].invoice_on_order.placed'])
+    expect(inbox.asked).toEqual(['e1 invoice.invoice_on_order.placed'])
   })
 
   test('receive puts the reaction in the inbox once a run, and refuses one received by another run', async () => {

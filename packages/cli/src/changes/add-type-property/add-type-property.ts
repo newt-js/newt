@@ -12,13 +12,6 @@ function typeIn(source: ts.SourceFile, name: string): ts.TypeLiteralNode | undef
   return alias && ts.isTypeLiteralNode(alias.type) ? alias.type : undefined
 }
 
-/** The type under `key` of `type`, `auth: { … }`; `undefined` when it has no such key, `null` when that key holds another kind of type. */
-function typeUnder(type: ts.TypeLiteralNode, key: string): ts.TypeLiteralNode | undefined | null {
-  const member = type.members.find(each => keyOf(each) === key)
-  if (!member) return undefined
-  return ts.isPropertySignature(member) && member.type && ts.isTypeLiteralNode(member.type) ? member.type : null
-}
-
 /** `text` with a member added at the end of a type, on its line, `{ a: A, b: B }`, or on one of its own, as the type is written. */
 function withMember(text: string, source: ts.SourceFile, type: ts.TypeLiteralNode, member: string): string {
   const start = type.getStart(source)
@@ -40,23 +33,18 @@ function withMember(text: string, source: ts.SourceFile, type: ts.TypeLiteralNod
   return `${text.slice(0, start)}{\n${members.map(each => `${indent}  ${each}\n`).join('')}${indent}}${text.slice(end)}`
 }
 
-/** Adds a member to a type, `type X = { … }`, or to the one under `in` of it, with its imports; a key it has already is left alone. */
+/** Adds a member to a type, `type X = { … }`, with its imports; a key it has already is left alone. */
 export async function addTypeProperty(change: AddTypePropertyChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const { path, key, value, imports } = change
   const text = await files.read(path)
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)
   const type = typeIn(source, change.type)
-  const inner = type && change.in !== undefined ? typeUnder(type, change.in) : undefined
-  if (text === null || !type || inner === null) {
-    const shown = change.in === undefined ? `${key}: ${value}` : `${change.in}: { ${key}: ${value} }`
-    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} has no type ${change.type} = { … }, so newt did not change it: add ${shown} to it`] }
+  if (text === null || !type) {
+    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} has no type ${change.type} = { … }, so newt did not change it: add ${key}: ${value} to it`] }
   }
-  const target = inner ?? type
-  const targetKey = inner || change.in === undefined ? key : change.in
-  if (target.members.some(each => keyOf(each) === targetKey)) {
+  if (type.members.some(each => keyOf(each) === key)) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
-  const member = change.in !== undefined && !inner ? `${change.in}: { ${key}: ${value} }` : `${key}: ${value}`
-  await files.write(path, addedImports(withMember(text, source, target, member), imports))
+  await files.write(path, addedImports(withMember(text, source, type, `${key}: ${value}`), imports))
   return { status: 'updated', warnings: [] }
 }

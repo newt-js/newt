@@ -10,7 +10,7 @@ import { clientIps }     from '../../request/client-ip/client-ips'
 import { withParams }    from '../../request/with-params/with-params'
 import { whoIs }         from './who-is'
 
-const limit = new RateLimits(new MemoryCluster(), 'shop', systemClock).define('shop[api].calls', { limit: 5, windowMs: 60_000 })
+const limit = new RateLimits(new MemoryCluster(), 'shop', systemClock).define('api.calls', { limit: 5, windowMs: 60_000 })
 
 function from(ip: string | null) {
   const request = withParams(new Request('http://shop.test/api/things', { headers: { 'x-key': 'abc' } }), {})

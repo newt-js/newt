@@ -32,7 +32,7 @@ describe('MemoryDatabase', () => {
 
     await database.run(async () => {
       await database.records<ContractRow>('things').insert({ id: 'a', name: 'a', size: 1, tag: null })
-      await database.outbox.add([{ id: 'j', queue: 'f[a].b_on_c', event: '{}', status: 'pending', attempts: 0, runAfter: now, lockedBy: null, lockedUntil: null, lastError: null, createdAt: now, updatedAt: now }])
+      await database.outbox.add([{ id: 'j', queue: 'a.b_on_c', event: '{}', status: 'pending', attempts: 0, runAfter: now, lockedBy: null, lockedUntil: null, lastError: null, createdAt: now, updatedAt: now }])
       throw new Error('later step failed')
     }).catch(() => {})
 

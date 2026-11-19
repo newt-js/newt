@@ -5,8 +5,8 @@ import { RateLimitCounter }   from '../rate-limit-counter/rate-limit-counter'
 import type { RateLimitRule } from '../rate-limit-rule'
 import { RateLimit }          from '../rate-limit/rate-limit'
 
-/** `<feature>[<module>].<name>`. */
-const NAME = /^[a-z][A-Za-z0-9]*\[[a-z][A-Za-z0-9]*\]\.[a-z][A-Za-z0-9]*$/
+/** `<module>.<name>`. */
+const NAME = /^[a-z][A-Za-z0-9]*\.[a-z][A-Za-z0-9]*$/
 
 export class RateLimits {
 
@@ -19,7 +19,7 @@ export class RateLimits {
 
   define(name: string, rule: RateLimitRule): RateLimit {
     if (!NAME.test(name)) {
-      throw new Error(`A rate limit is named <feature>[<module>].<name>, as auth[session].signIn: ${name}`)
+      throw new Error(`A rate limit is named <module>.<name>, as session.signIn: ${name}`)
     }
     if (this.limits.has(name)) {
       throw new Error(`Rate limit ${name} is defined twice`)

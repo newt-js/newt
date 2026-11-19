@@ -16,8 +16,8 @@ class Report_Module extends Module {
   readonly nightly
 
   constructor(base: ContextBase, deps: object) {
-    super('reports[report]', base.useCaseRunner, deps)
-    this.nightly = base.schedules.define('reports[report].nightly', '0 3 * * *')
+    super('report', base.useCaseRunner, deps)
+    this.nightly = base.schedules.define('report.nightly', '0 3 * * *')
   }
 
   @UseCase()
@@ -34,36 +34,16 @@ describe('describeModule', () => {
     const { registry } = shop.useCaseRunner
 
     expect(describeModule(registry, registry.registeredModules[0]!, new Map())).toEqual({
-      id: 'shop/reports[report]',
+      id: 'shop/report',
       context: 'shop',
-      name: 'reports[report]',
-      feature: 'reports',
+      name: 'report',
       className: 'Report_Module',
       useCases: [
-        { id: 'shop/reports[report].build', name: 'reports[report].build', retryOnConflict: true },
-        { id: 'shop/reports[report].send', name: 'reports[report].send', retryOnConflict: false },
+        { id: 'shop/report.build', name: 'report.build', retryOnConflict: true },
+        { id: 'shop/report.send', name: 'report.send', retryOnConflict: false },
       ],
-      events: [{ id: 'shop/reports[report].nightly', name: 'reports[report].nightly', schedule: { cron: '0 3 * * *' } }],
+      events: [{ id: 'shop/report.nightly', name: 'report.nightly', schedule: { cron: '0 3 * * *' } }],
       deps: [{ name: 'mailer', kind: 'port', target: null }],
     })
-  })
-
-  test('tells the feature of a module of a feature', () => {
-    class Template_Module extends Module {
-      constructor(base: ContextBase) {
-        super('campaigns[template]', base.useCaseRunner)
-      }
-
-      @UseCase()
-      async get() {}
-    }
-    const engagement = new ContextBase({ name: 'engagement', platform, database: new MemoryDatabase() })
-    new Template_Module(engagement)
-    const { registry } = engagement.useCaseRunner
-
-    const described = describeModule(registry, registry.registeredModules[0]!, new Map())
-
-    expect(described).toMatchObject({ id: 'engagement/campaigns[template]', name: 'campaigns[template]', feature: 'campaigns' })
-    expect(described.useCases).toEqual([{ id: 'engagement/campaigns[template].get', name: 'campaigns[template].get', retryOnConflict: true }])
   })
 })

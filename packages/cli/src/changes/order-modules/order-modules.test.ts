@@ -24,11 +24,11 @@ test('in order already, nothing changes', async () => {
   expect(await ordered(text)).toBe(text)
 })
 
-test('each feature after the ones it uses, and a module given a used feature is not held by it', async () => {
-  const text = 'class Sales_Context {\n  static initialize(base, router) {\n    const campaigns = Campaigns_Feature.initialize(base, router, { contacts })\n    const contacts = Contacts_Feature.initialize(base, router)\n    return new Sales_Context(base, campaigns, contacts)\n  }\n}\n'
-  expect(await ordered(text)).toBe('class Sales_Context {\n  static initialize(base, router) {\n    const contacts = Contacts_Feature.initialize(base, router)\n    const campaigns = Campaigns_Feature.initialize(base, router, { contacts })\n    return new Sales_Context(base, campaigns, contacts)\n  }\n}\n')
-  const feature = 'class Campaigns_Feature {\n  static initialize(base, router, uses) {\n    const campaign = Campaign_Module.initialize(base, router, { contacts: uses.contacts })\n    const template = Template_Module.initialize(base, router)\n    return new Campaigns_Feature(base, campaign, template)\n  }\n}\n'
-  expect(await ordered(feature)).toBe(feature)
+test('each module after the ones it uses, and one given another context is not held by it', async () => {
+  const text = 'class Sales_Context {\n  static initialize(base, router, uses) {\n    const campaign = Campaign_Module.initialize(base, router, { contact, auth: uses.auth })\n    const contact = Contact_Module.initialize(base, router)\n    return new Sales_Context(base, { campaign, contact })\n  }\n}\n'
+  expect(await ordered(text)).toBe('class Sales_Context {\n  static initialize(base, router, uses) {\n    const contact = Contact_Module.initialize(base, router)\n    const campaign = Campaign_Module.initialize(base, router, { contact, auth: uses.auth })\n    return new Sales_Context(base, { campaign, contact })\n  }\n}\n')
+  const given = 'class Sales_Context {\n  static initialize(base, router, uses) {\n    const campaign = Campaign_Module.initialize(base, router, { auth: uses.auth })\n    const template = Template_Module.initialize(base, router)\n    return new Sales_Context(base, { campaign, template })\n  }\n}\n'
+  expect(await ordered(given)).toBe(given)
 })
 
 test('each context after the ones it is opened with', async () => {

@@ -1,28 +1,19 @@
 export type ApplicationDescription = {
-  version: 2
+  version: 3
   contexts: ContextDescription[]
 }
 
 export type ContextDescription = {
   name: string
   uses: string[]
-  features: FeatureDescription[]
   modules: ModuleDescription[]
   subscriptions: SubscriptionDescription[]
-}
-
-/** A feature of a context: the ids of its modules. */
-export type FeatureDescription = {
-  id: string
-  name: string
-  modules: string[]
 }
 
 export type ModuleDescription = {
   id: string
   context: string
   name: string
-  feature: string
   className: string
   useCases: UseCaseDescription[]
   events: EventDescription[]
@@ -43,7 +34,7 @@ export type EventDescription = {
 
 export type ModuleDependency =
   | { name: string, kind: 'module', target: string }
-  | { name: string, kind: 'feature', target: string }
+  | { name: string, kind: 'context', target: string }
   | { name: string, kind: 'events', target: string | null, events: string[] }
   | { name: string, kind: 'port', target: null }
 

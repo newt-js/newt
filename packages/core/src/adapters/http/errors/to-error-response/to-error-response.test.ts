@@ -36,7 +36,7 @@ describe('toErrorResponse', () => {
   })
 
   test('one who ran into a rate limit is a 429 that says when to try again, in whole seconds', async () => {
-    const response = toErrorResponse(new TooManyRequests('auth[session].signIn', 1500))
+    const response = toErrorResponse(new TooManyRequests('session.signIn', 1500))
 
     expect(response.status).toBe(429)
     expect(response.headers.get('retry-after')).toBe('2')

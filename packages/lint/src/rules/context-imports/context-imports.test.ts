@@ -28,8 +28,8 @@ const CONTEXT = `${process.cwd()}/src/contexts`
 tester.run('context-imports', asRule(contextImports), {
   valid: [
     { code: "import { x } from '../auth/auth.context'", filename: `${CONTEXT}/shop/shop.context.ts`, options: [CONTEXTS] },
-    { code: "import { x } from '../shop/shop.module'", filename: `${CONTEXT}/auth/features/users/user/user.module.ts`, options: [CONTEXTS] },
-    { code: "import { x } from './features/users/user/user.module'", filename: `${CONTEXT}/auth/auth.context.ts`, options: [CONTEXTS] },
+    { code: "import { x } from '../shop/shop.module'", filename: `${CONTEXT}/auth/modules/user/user.module.ts`, options: [CONTEXTS] },
+    { code: "import { x } from './modules/user/user.module'", filename: `${CONTEXT}/auth/auth.context.ts`, options: [CONTEXTS] },
   ],
   invalid: [
     ...["'../shop/shop.context'", "'./../shop/shop.context'", "'../../contexts/shop/shop.context'", "'../shop'"]
@@ -68,20 +68,20 @@ const DECLARED = join(PROJECT, 'declared')
 write(DECLARED, {
   'auth/auth.context.ts': 'export class Auth_Context {}\n',
   'boards/boards.context.ts': "import type { Auth_Context } from '../auth/auth.context'\nexport type Uses = Auth_Context\n",
-  'boards/features/boards/card/card.module.ts': '',
-  'notes/features/notes/note/note.module.ts': '',
+  'boards/modules/card/card.module.ts': '',
+  'notes/modules/note/note.module.ts': '',
 })
 const CYCLE = join(PROJECT, 'cycle')
 write(CYCLE, { 'a/a.context.ts': "import '../b/b.context'\n", 'b/b.context.ts': "import '../a/a.context'\n" })
 
 tester.run('context-imports, with what each context file imports', asRule(contextImports), {
   valid: [
-    { code: "import { x } from '../../../../auth/auth.context'", filename: join(DECLARED, 'boards/features/boards/card/card.module.ts'), options: [{ folder: DECLARED }] },
+    { code: "import { x } from '../../../auth/auth.context'", filename: join(DECLARED, 'boards/modules/card/card.module.ts'), options: [{ folder: DECLARED }] },
   ],
   invalid: [
     { code: "import { x } from '../boards/boards.context'", filename: join(DECLARED, 'auth/auth.context.ts'), options: [{ folder: DECLARED }], errors: [{ messageId: 'declared', data: { path: '../boards/boards.context', other: 'boards', context: 'auth', uses: 'no other context' } }] },
     // A context with no context file uses none.
-    { code: "import { x } from '../../../../auth/auth.context'", filename: join(DECLARED, 'notes/features/notes/note/note.module.ts'), options: [{ folder: DECLARED }], errors: [{ messageId: 'declared' }] },
+    { code: "import { x } from '../../../auth/auth.context'", filename: join(DECLARED, 'notes/modules/note/note.module.ts'), options: [{ folder: DECLARED }], errors: [{ messageId: 'declared' }] },
     { code: '', filename: join(CYCLE, 'a/a.context.ts'), options: [{ folder: CYCLE }], errors: [{ messageId: 'tree', data: { problem: '@newt-js/lint: contexts never use each other in a cycle, and `uses` says a → b → a.' } }] },
   ],
 })

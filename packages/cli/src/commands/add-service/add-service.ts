@@ -8,12 +8,12 @@ import { serviceTs }          from '../../templates/pieces/service-ts'
 import { defineCommand }      from '../command'
 import { CommandError }       from '../command-error/command-error'
 
-const USAGE = 'newt add service takes the module and the service, as in newt add service sales/orders/order price-rounding'
+const USAGE = 'newt add service takes the module and the service, as in newt add service sales/order price-rounding'
 
 export const ADD_SERVICE = defineCommand({
   name: 'add service',
   summary: 'Adds a service to a module: logic its use cases share',
-  args: '<context>/<feature>/<module> <service>',
+  args: '<context>/<module> <service>',
   options: {
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },
   },

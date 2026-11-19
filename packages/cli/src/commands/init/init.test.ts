@@ -184,7 +184,7 @@ describe('newt init', () => {
       await runCommand(ADD_CONTEXT, ['sales'], { cwd: folder, ask: null })
       const context = await Bun.file(join(folder, 'src/contexts/sales/sales.context.ts')).text()
       expect(context).toContain(`database: { adapter: ${STORE_DATABASES[db as DatabaseKind].adapter}(), migrations: MIGRATIONS_FOLDER },\n      files: ${STORE_FILES[files as FilesKind].adapter}(),`)
-      await runCommand(ADD_MODULE, ['sales/orders/order'], { cwd: folder, ask: null })
+      await runCommand(ADD_MODULE, ['sales/order'], { cwd: folder, ask: null })
       expect(await checkGenerated(folder)).toEqual([])
     }, 30_000)
   }

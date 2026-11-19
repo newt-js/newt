@@ -6,7 +6,6 @@ import type { ModuleDescription }   from '../application-description'
 import { dependenciesOf }           from '../dependencies-of/dependencies-of'
 import { emittersOf }               from '../emitters-of/emitters-of'
 import { eventId }                  from '../event-id/event-id'
-import { featureOfModule }          from '../feature-of-module/feature-of-module'
 import { moduleId }                 from '../module-id/module-id'
 
 export function describeModule(registry: ContextRegistry, module: RegisteredModule, owners: Map<BrandedEventEmitter, string>): ModuleDescription {
@@ -16,7 +15,6 @@ export function describeModule(registry: ContextRegistry, module: RegisteredModu
     id: moduleId(context, name),
     context,
     name,
-    feature: featureOfModule(name),
     className: module.className,
     useCases: [...module.useCases].map(([useCase, options]) => ({
       id: `${context}/${name}.${useCase}`,

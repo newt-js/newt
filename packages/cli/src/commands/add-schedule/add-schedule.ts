@@ -13,12 +13,12 @@ import type { FileChange }  from '../command'
 import { defineCommand }    from '../command'
 import { CommandError }     from '../command-error/command-error'
 
-const USAGE = 'newt add schedule takes the module, the use case it runs and --cron, as in newt add schedule sales/orders/order purge-expired --cron "0 3 * * *"'
+const USAGE = 'newt add schedule takes the module, the use case it runs and --cron, as in newt add schedule sales/order purge-expired --cron "0 3 * * *"'
 
 export const ADD_SCHEDULE = defineCommand({
   name: 'add schedule',
   summary: 'Runs a use case of a module on a cron: the schedule, the use case and its worker',
-  args: '<context>/<feature>/<module> <use-case>',
+  args: '<context>/<module> <use-case>',
   options: {
     cron: { type: 'string', value: 'cron', description: 'When it runs, in five fields and in UTC: "0 3 * * *" is every day at 3:00 UTC' },
     backend: { type: 'string', value: 'folder', description: 'The backend, in a monorepo with several' },

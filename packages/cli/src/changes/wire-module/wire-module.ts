@@ -83,7 +83,7 @@ function memberEdits(text: string, parameter: Holder['parameter'], member: strin
   return [...separated ? [] : [{ at: last.getEnd(), text: ',' }], lineAfter(text, last, `${member},`)]
 }
 
-/** `public readonly name: Type` after the class's fields, or before its constructor when it has none. */
+/** `private readonly name: Type` after the class's fields, or before its constructor when it has none. */
 function fieldEdit(text: string, fields: ts.PropertyDeclaration[], constructor: ts.ConstructorDeclaration, field: string): Edit {
   const last = fields.at(-1)
   if (last) return lineAfter(text, last, field)
@@ -92,16 +92,16 @@ function fieldEdit(text: string, fields: ts.PropertyDeclaration[], constructor: 
 }
 
 /**
- * Wires a module into its feature's class (a feature into its context's): declares it in its initialize,
- * before what it returns, gives it by name to the `new` it returns, types it in its constructor's last
- * parameter and holds it in a `public readonly` field the constructor sets: all of it, or nothing.
+ * Wires a module into its context's class: declares it in its initialize, before what it returns,
+ * gives it by name to the `new` it returns, types it in its constructor's last parameter and holds
+ * it in a `private readonly` field the constructor sets, unpublished: all of it, or nothing.
  */
 export async function wireModule({ path, className, name, type, declaration, imports }: WireModuleChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const text = await files.read(path)
   const source = ts.createSourceFile(path, text ?? '', ts.ScriptTarget.Latest, true)
   const found = text === null ? undefined : holderIn(source, className)
   if (text === null || !found) {
-    const what = [...imports, declaration.trim(), `${name} in the object the new ${className}(…) its initialize returns is given`, `public readonly ${name}: ${type}`, `${name}: ${type} in the type of its constructor's last parameter`, `this.${name} = <that parameter>.${name}`].join('; ')
+    const what = [...imports, declaration.trim(), `${name} in the object the new ${className}(…) its initialize returns is given`, `private readonly ${name}: ${type}`, `${name}: ${type} in the type of its constructor's last parameter`, `this.${name} = <that parameter>.${name}`].join('; ')
     return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} is not as newt wrote it, so newt did not change it: add ${what}`] }
   }
   const { initialize, returned, given, fields, constructor, parameter, superCall } = found
@@ -113,7 +113,7 @@ export async function wireModule({ path, className, name, type, declaration, imp
     edits.push(givenEdit(given, name))
   }
   if (!fields.some(each => isNamed(each.name, name))) {
-    edits.push(fieldEdit(text, fields, constructor, `public readonly ${name}: ${type}`))
+    edits.push(fieldEdit(text, fields, constructor, `private readonly ${name}: ${type}`))
   }
   if (!parameter.type.members.some(each => each.name !== undefined && isNamed(each.name, name))) {
     edits.push(...memberEdits(text, parameter, `${name}: ${type}`))
