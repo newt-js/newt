@@ -13,8 +13,7 @@ export type UserCreateProps = {
   name: string,
 }
 
-export class User
-  extends Entity<typeof UserSchema, typeof UserSchema, UserReferences> {
+export class User extends Entity<typeof UserSchema, typeof UserSchema, UserReferences> {
 
   private constructor(input: EntityInput<UserDTO>, isNew: boolean) {
     super(UserSchema, input, isNew)

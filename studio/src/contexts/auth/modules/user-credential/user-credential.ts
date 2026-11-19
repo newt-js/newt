@@ -13,10 +13,7 @@ export type UserCredentialPasswordProps = {
   secretHash: string,
 }
 
-export class UserCredential extends Entity<
-  typeof UserCredentialSchema,
-  typeof UserCredentialPublicSchema
-> {
+export class UserCredential extends Entity<typeof UserCredentialSchema, typeof UserCredentialPublicSchema> {
 
   private constructor(
     input: EntityInput<UserCredentialFields>,
