@@ -4,6 +4,8 @@ import type { FileChange }   from '../../../commands/command'
 import type { ContextNames } from '../../../names/context-names/context-names'
 import type { ModuleNames }  from '../../../names/module-names/module-names'
 import { CONTEXTS_FOLDER }   from '../../../project/backend-contexts/backend-contexts'
+import { fittedCall }        from '../../fitted-call/fitted-call'
+import { fitting }           from '../../fitted-call/fitted-call'
 import type { DatabaseKind } from '../../stores/store-databases'
 import { entityTs }          from '../files/entity-ts'
 import { errorNotFoundTs }   from '../files/error-not-found-ts'
@@ -20,7 +22,11 @@ export type ModuleTemplateOptions = { backend: string, context: ContextNames, na
 
 /** The line of <ctx>.context.ts that initializes a module. */
 function initializedLine({ module, type }: ModuleNames): string {
-  return `    const ${module} = ${type}_Module.initialize(base, router)`
+  return fitting(
+    `    const ${module} = ${type}_Module.initialize(base, router)`,
+    `    const ${module} =\n      ${type}_Module.initialize(base, router)`,
+    fittedCall('    ', `const ${module} = ${type}_Module.initialize`, ['base', 'router']),
+  )
 }
 
 /** A module of a context: its files, its table's migration in its context's, and its place, unpublished, in <ctx>.context.ts. */

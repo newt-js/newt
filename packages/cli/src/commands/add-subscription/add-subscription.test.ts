@@ -28,7 +28,7 @@ describe('newt add subscription', () => {
     expect((await run(ADD_SUBSCRIPTION, ['sales/order', 'mark-paid', '--on', 'created'], backend)).code).toBe(0)
     expect(await read(backend, 'order.workers.ts')).toContain("  orders.on(orders.events.created, 'markPaid', created => [{ id: created.id }])")
     expect(await read(backend, 'order.module.ts')).toContain('    registerOrderWorkers(module)\n    return module')
-    expect(await read(backend, 'order.module.test.ts')).toContain("each.queue === 'order.markPaid_on_order.created')?.status).toBe('done')")
+    expect(await read(backend, 'order.module.test.ts')).toContain("const queue = 'order.markPaid_on_order.created'")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -73,8 +73,8 @@ describe('newt add subscription', () => {
     expect(await read(backend, 'order.module.ts')).toContain('    registerOrderWorkers(module, deps)\n    return module')
     const test = await read(backend, 'order.module.test.ts')
     expect(test).toContain("  await composed['customer'].create({ name: 'First' })")
-    expect(test).toContain("each.queue === 'order.purge_on_customer.created')?.status).toBe('done')")
-    expect(test).toContain("each.queue === 'order.purge_on_invoice.created')?.status).toBe('done')")
+    expect(test).toContain("const queue = 'order.purge_on_customer.created'")
+    expect(test).toContain("const queue = 'order.purge_on_invoice.created'")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -89,7 +89,7 @@ describe('newt add subscription', () => {
     await run(PUBLISH, ['auth/user'], backend)
     const output = await run(ADD_SUBSCRIPTION, ['sales/order', 'welcome', '--on', 'auth/user/created'], backend)
     expect(output.text).toContain("welcome is given the id of user's entity as its id: change what it takes from created, in order.workers.ts")
-    expect(await read(backend, 'order.workers.ts')).toContain("  orders.on(deps.auth.user.events.created, 'welcome', created => [{ id: created.id }])")
+    expect(await read(backend, 'order.workers.ts')).toContain("  orders.on(\n    deps.auth.user.events.created,\n    'welcome',\n    created => [{ id: created.id }],\n  )")
     expect((await run(ADD_SUBSCRIPTION, ['sales/order', 'welcome', '--on', 'auth/user/paid'], backend)).text).toBe('user has no event paid')
     expect((await run(ADD_SUBSCRIPTION, ['sales/order', 'welcome', '--on', 'payment/created'], backend)).text).toStartWith('sales has no module payment')
     expect((await run(ADD_SUBSCRIPTION, ['sales/order', 'welcome', '--on', 'order/created'], backend)).text).toBe("order's own events go by their name alone: --on <event>")

@@ -19,6 +19,20 @@ function saysNothing(type: TSESTree.TypeNode): boolean {
 
 const PARSES = new Set(['parse', 'safeParse', 'parseAsync', 'safeParseAsync'])
 
+/** A filter's methods that parse with its schemas: `XFilter.toCriteria(c)` parses `c` with `XFilter.schema`. */
+const FILTER_PARSES: Record<string, string[]> = {
+  schema: ['parse', 'toCriteria'],
+  sortSchema: ['parseSort', 'toOrder'],
+}
+
+/** Whether calling `method` on `object` parses with `schema`: the schema's own parse, or its filter's. */
+function parsesWith(object: string, method: string, schema: string): boolean {
+  if (PARSES.has(method) && object === schema) return true
+  const dot = schema.lastIndexOf('.')
+  const parsing = FILTER_PARSES[schema.slice(dot + 1)] ?? []
+  return dot > 0 && schema.slice(0, dot) === object && parsing.includes(method)
+}
+
 /**
  * The schema a DTO is the input of, by what TypeScript says of its alias:
  * `type BoardCreateDTO = z.input<typeof BoardCreateSchema>` gives `BoardCreateSchema`.
@@ -72,7 +86,7 @@ export const useCaseParams: TSESLint.RuleModule<'nothing' | 'inline' | 'unparsed
         const { object, property } = node.callee
         const hands = node.arguments.findIndex(argument => argument.type === 'Identifier' && argument.name === name)
         if (hands < 0 || property.type !== 'Identifier') continue
-        if (PARSES.has(property.name) && text(object) === schema) return true
+        if (parsesWith(text(object), property.name, schema)) return true
         const method = object.type === 'ThisExpression' ? methods.get(property.name) : undefined
         if (!method || seen.has(property.name)) continue
         const param = method.value.params[hands]

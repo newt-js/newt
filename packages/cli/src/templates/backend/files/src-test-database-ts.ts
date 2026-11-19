@@ -1,8 +1,8 @@
 import type { DatabaseKind } from '../../stores/store-databases'
 
 const SERVERS = {
-  postgres: { className: 'PostgresDatabase', module: 'postgres', create: '`CREATE DATABASE "${name}"`', drop: '`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`' },
-  mysql: { className: 'MysqlDatabase', module: 'mysql', create: '`CREATE DATABASE \\`${name}\\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin`', drop: '`DROP DATABASE IF EXISTS \\`${name}\\``' },
+  postgres: { constants: '', className: 'PostgresDatabase', module: 'postgres', create: '`CREATE DATABASE "${name}"`', drop: '`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`' },
+  mysql: { constants: "const COLLATED = 'CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin'\n", className: 'MysqlDatabase', module: 'mysql', create: '`CREATE DATABASE \\`${name}\\` ${COLLATED}`', drop: '`DROP DATABASE IF EXISTS \\`${name}\\``' },
 }
 
 /** src/test-database.ts: a module test's database, in memory, or a new one on TEST_DATABASE_URL's server with the context's migrations. */
@@ -14,7 +14,7 @@ import type { Database } from '@newt-js/core/application'
 import { MemoryDatabase } from '@newt-js/core/database/memory'
 import { ${server.className} } from '@newt-js/core/database/${server.module}'
 
-const serverUrl = Bun.env.TEST_DATABASE_URL
+${server.constants}const serverUrl = Bun.env.TEST_DATABASE_URL
 
 type TestDatabase = { database: Database, drop: () => Promise<void> }
 

@@ -49,7 +49,7 @@ describe('newt add use-case', () => {
       ['constructor', "'constructor' cannot name a use case"],
       ['on', "'on' cannot name a use case"],
       ['deps', "'deps' cannot name a use case"],
-      ['orders', 'Order_Module has orders already'],
+      ['repository', 'Order_Module has repository already'],
       ['use-case-runner', "'use-case-runner' cannot name a use case"],
       ['filter', "'filter' cannot name a use case: order.schema.ts has OrderFilterDTO already"],
       ['sort', "'sort' cannot name a use case: order.schema.ts has OrderSortDTO already"],
