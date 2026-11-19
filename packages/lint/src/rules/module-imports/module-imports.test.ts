@@ -33,6 +33,8 @@ tester.run('module-imports', asRule(moduleImports), {
     { code: "export type * from './product/product.module'", filename: '/repo/src/contexts/ws/features/prices/prices.feature.ts' },
     { code: "export type { ProductDTO } from './product/product.schema'", filename: '/repo/src/contexts/ws/features/prices/index.ts' },
     { code: "export { ProductNotFound } from './product/errors/product-not-found'", filename: '/repo/src/contexts/ws/features/prices/index.ts' },
+    // Its index.ts re-exports the feature's class, which is no module.
+    { code: "export { Prices_Feature } from './prices.feature'", filename: '/repo/src/contexts/ws/features/prices/index.ts' },
     { code: "import { Product_Repository } from './product/product.repository'", filename: '/repo/src/contexts/ws/features/prices/prices.feature.ts' },
     // A feature's composition builds its modules: it imports them as values.
     { code: "import { Product_Module } from './product/product.module'", filename: '/repo/src/contexts/ws/features/prices/prices.feature.ts' },

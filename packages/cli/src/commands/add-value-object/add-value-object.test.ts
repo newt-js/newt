@@ -29,14 +29,12 @@ describe('newt add value-object', () => {
     const output = await addValueObject(['sales/orders/order', 'customer-id'], backend)
     expect(output.text).toBe(`  created  ${ORDER_MODULE}/value-objects/customer-id.ts\n\nNext steps:\n  keep it in the module's schema, CustomerId.schema, and give it as it is to the use cases of customers`)
     expect(await Bun.file(join(backend, ORDER_MODULE, 'value-objects/customer-id.ts')).text()).toContain("export const CustomerId = uuidFactory('CustomerId')")
-    const customer = join(backend, 'src/contexts/sales/features/customers/customer/customer.module.ts')
-    await Bun.write(customer, (await Bun.file(customer).text()).replace('exposes = { useCases: [], events: [] } as const', "exposes = { useCases: ['get'], events: [] } as const"))
     await Bun.write(join(backend, ORDER_MODULE, 'customer-id.test.ts'), `import { expect, test } from 'bun:test'
-import type { CustomersFeature } from '../../customers/customers.feature'
+import type { Customers_Feature } from '../../customers'
 import { CustomerId } from './value-objects/customer-id'
 
 test("customers' use cases take the id order keeps", () => {
-  const read = (customers: CustomersFeature) => customers.customer.get({ id: CustomerId.from(Bun.randomUUIDv7()) })
+  const read = (customers: Customers_Feature) => customers.customer.get({ id: CustomerId.from(Bun.randomUUIDv7()) })
   expect(read).toBeFunction()
 })
 `)

@@ -25,8 +25,8 @@ test('in order already, nothing changes', async () => {
 })
 
 test('each feature after the ones it uses, and a module given a used feature is not held by it', async () => {
-  const text = 'export function salesFeatures(base, router) {\n  const campaigns = campaignsFeature(base, router, { contacts })\n  const contacts = contactsFeature(base, router)\n  return { campaigns, contacts }\n}\n'
-  expect(await ordered(text)).toBe('export function salesFeatures(base, router) {\n  const contacts = contactsFeature(base, router)\n  const campaigns = campaignsFeature(base, router, { contacts })\n  return { campaigns, contacts }\n}\n')
-  const feature = 'export function campaignsFeature(base, router, uses) {\n  const campaign = Campaign_Module.initialize(base, router, { contacts: uses.contacts })\n  const template = Template_Module.initialize(base, router)\n  return defineFeature(\'campaigns\', base, { campaign, template })\n}\n'
+  const text = 'class Sales_Context {\n  static initialize(base, router) {\n    const campaigns = Campaigns_Feature.initialize(base, router, { contacts })\n    const contacts = Contacts_Feature.initialize(base, router)\n    return new Sales_Context(base, campaigns, contacts)\n  }\n}\n'
+  expect(await ordered(text)).toBe('class Sales_Context {\n  static initialize(base, router) {\n    const contacts = Contacts_Feature.initialize(base, router)\n    const campaigns = Campaigns_Feature.initialize(base, router, { contacts })\n    return new Sales_Context(base, campaigns, contacts)\n  }\n}\n')
+  const feature = 'class Campaigns_Feature {\n  static initialize(base, router, uses) {\n    const campaign = Campaign_Module.initialize(base, router, { contacts: uses.contacts })\n    const template = Template_Module.initialize(base, router)\n    return new Campaigns_Feature(base, campaign, template)\n  }\n}\n'
   expect(await ordered(feature)).toBe(feature)
 })

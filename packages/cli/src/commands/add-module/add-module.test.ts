@@ -31,8 +31,9 @@ describe('newt add module', () => {
     const output = await run(ADD_MODULE, ['sales/orders/order'], backend)
     expect(output.code).toBe(0)
     expect(await read(join(backend, 'src/contexts/sales/migrations/00001_orders__order_up.sql'))).toStartWith('CREATE TABLE "orders$order" (')
-    expect(await read(join(backend, 'src/contexts/sales/sales-features.ts'))).toContain('  const orders = ordersFeature(base, router)\n  return {\n    orders,\n  }')
-    expect(await read(join(backend, 'src/contexts/sales/features/orders/orders.feature.ts'))).toContain("  const order = Order_Module.initialize(base, router)\n  return defineFeature('orders', base, {\n    order,\n  })")
+    expect(await read(join(backend, 'src/contexts/sales/sales.context.ts'))).toContain('    const orders = Orders_Feature.initialize(base, router)\n    return new Sales_Context(base, orders)')
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/orders.feature.ts'))).toContain("    const order = Order_Module.initialize(base, router)\n    return new Orders_Feature(base, order)\n  }\n\n  private constructor(\n    base: ContextBase,\n    readonly order: Order_Module,\n  ) {\n    super('orders', base, [order])")
+    expect(await read(join(backend, 'src/contexts/sales/features/orders/index.ts'))).toBe("export { Orders_Feature } from './orders.feature'\nexport type { OrderCreateDTO, OrderDTO, OrderFilterDTO, OrderSortDTO } from './order/order.schema'\n")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -42,7 +43,8 @@ describe('newt add module', () => {
     await run(ADD_MODULE, ['sales/orders/price-change'], backend)
     expect(await Bun.file(join(backend, 'src/contexts/sales/migrations/00002_orders__price_change_up.sql')).exists()).toBe(true)
     const modules = await read(join(backend, 'src/contexts/sales/features/orders/orders.feature.ts'))
-    expect(modules).toContain("  const order = Order_Module.initialize(base, router)\n  const priceChange = PriceChange_Module.initialize(base, router)\n  return defineFeature('orders', base, {\n    order,\n    priceChange,\n  })")
+    expect(modules).toContain("    const order = Order_Module.initialize(base, router)\n    const priceChange = PriceChange_Module.initialize(base, router)\n    return new Orders_Feature(base, order, priceChange)")
+    expect(modules).toContain("super('orders', base, [order, priceChange])")
     expect(modules).toContain("import { PriceChange_Module } from './price-change/price-change.module'")
     expect(await read(join(backend, 'src/contexts/sales/features/orders/price-change/price-change.routes.ts'))).toContain("router.post('/orders/price-changes'")
     expect(await checkGenerated(backend)).toEqual([])
@@ -134,7 +136,7 @@ describe('newt add module', () => {
 
   test('says what to do next, and that its routes ask for a session', async () => {
     const output = await run(ADD_MODULE, ['sales/orders/order', '--dry-run'], await backendWithContext())
-    expect(output.text).toEndWith("Next steps:\n  bun test src/contexts/sales/features/orders/order\n  let other features use it: list its use cases and events in exposes, in order.module.ts\n  its routes ask for a session: write authenticate in src/auth.ts to call them from outside the tests")
+    expect(output.text).toEndWith("Next steps:\n  bun test src/contexts/sales/features/orders/order\n  its routes ask for a session: write authenticate in src/auth.ts to call them from outside the tests")
   })
 
   test("from another folder, points at the backend's own src/auth.ts", async () => {

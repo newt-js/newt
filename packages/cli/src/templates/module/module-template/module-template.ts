@@ -20,10 +20,15 @@ export type ModuleTemplateOptions = { backend: string, context: ContextNames, na
 
 /** The line of <feature>.feature.ts that initializes a module. */
 function initializedLine({ module, type }: ModuleNames, deps = ''): string {
-  return `  const ${module} = ${type}_Module.initialize(base, router${deps})`
+  return `    const ${module} = ${type}_Module.initialize(base, router${deps})`
 }
 
-/** A module of a feature: its files, its table's migration in its context's, and its place in <feature>.feature.ts. */
+/** The line of the feature's index.ts that lets the other features use a module's DTOs. */
+function dtosLine({ type, folder }: ModuleNames): string {
+  return `export type { ${type}CreateDTO, ${type}DTO, ${type}FilterDTO, ${type}SortDTO } from './${folder}/${folder}.schema'`
+}
+
+/** A module of a feature: its files, its table's migration in its context's, its place in <feature>.feature.ts and its DTOs in the feature's index.ts. */
 export function moduleTemplate({ backend, context, names, database, migration }: ModuleTemplateOptions): FileChange[] {
   const contextFolder = join(backend, CONTEXTS_FOLDER, context.folder)
   const featureFolder = join(contextFolder, 'features', names.feature.folder)
@@ -50,10 +55,12 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     {
       action: 'wire-module',
       path: entry,
-      functionName: `${names.feature.camel}Feature`,
-      module: names.module,
+      className: `${names.feature.type}_Feature`,
+      name: names.module,
+      type: `${names.type}_Module`,
       declaration: initializedLine(names),
       imports: [`import { ${names.type}_Module } from './${names.folder}/${names.folder}.module'`],
     },
+    { action: 'ensure-lines', path: join(featureFolder, 'index.ts'), lines: [dtosLine(names)] },
   ]
 }
