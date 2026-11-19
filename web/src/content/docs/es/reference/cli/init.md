@@ -30,8 +30,8 @@ Sin nombre, en una terminal interactiva, `newt init` lo pregunta (sugiere `my-ap
 | `--files <storage>` | `local` | `local`, `s3` o `memory` |
 | `--cluster <cluster>` | `memory` | `memory` o `valkey`: lo que comparten las instancias del backend |
 | `--port <port>` | `3000` | El puerto en el que sirve, de 1 a 65535 |
-| `--monorepo` | no | Crea un monorepo, con el backend en `apps/api` |
-| `--backend <folder>` | `apps/api` | La carpeta del primer backend; solo con `--monorepo` |
+| `--monorepo` | no | Crea un monorepo, vacío salvo que des `--backend` |
+| `--backend <folder>` | ninguno | La carpeta del primer backend, como `apps/api`; solo con `--monorepo` |
 
 También acepta los [flags globales](/es/reference/cli/overview/#flags-globales).
 
@@ -81,7 +81,7 @@ Next steps:
 
 Para qué sirve cada fichero: [Estructura de un proyecto](/es/start/project-structure/). Todas las variables: [Configuración](/es/reference/configuration/).
 
-Con `--monorepo`, escribe además el `package.json`, `AGENTS.md`, `.gitignore` y `CLAUDE.md` de la raíz, y pone el backend en `apps/api` (o en `--backend`).
+Con `--monorepo`, escribe además el `package.json`, `AGENTS.md`, `.gitignore` y `CLAUDE.md` de la raíz, y pone el backend en `--backend`, si lo das; sin él, el monorepo queda vacío, con sus workspaces en `apps/`.
 
 ### En una carpeta con ficheros
 

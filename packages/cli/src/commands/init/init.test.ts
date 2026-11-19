@@ -104,10 +104,19 @@ describe('newt init', () => {
     expect((await Bun.file(join(folder, 'package.json')).json()).module).toBe('index.ts')
   })
 
-  test('--monorepo makes a root whose workspaces take apps/api, and a backend there whose lint, types and tests pass', async () => {
-    const root = join(await generate(INIT, ['shop', '--monorepo']), 'shop')
+  test('--monorepo makes an empty root whose workspaces take apps/, and says how to add a backend', async () => {
+    const folder = await emptyFolder()
+    const output = await runCommand(INIT, ['shop', '--monorepo'], { cwd: folder, ask: null })
+    const root = join(folder, 'shop')
     expect(await Bun.file(join(root, 'package.json')).json()).toMatchObject({ name: 'shop', private: true, workspaces: ['apps/*'], scripts: { test: "bun run --filter '*' test" } })
     expect(await Bun.file(join(root, '.gitignore')).text()).toBe('node_modules\n')
+    expect(await Bun.file(join(root, 'apps/api/package.json')).exists()).toBe(false)
+    expect(output.text).toEndWith('Next steps:\n  cd shop\n  bun install\n  bunx newt add backend apps/<name>')
+  })
+
+  test('--monorepo --backend apps/api makes a backend there whose lint, types and tests pass', async () => {
+    const root = join(await generate(INIT, ['shop', '--monorepo', '--backend', 'apps/api']), 'shop')
+    expect((await Bun.file(join(root, 'package.json')).json()).workspaces).toEqual(['apps/*'])
     expect((await Bun.file(join(root, 'apps/api/package.json')).json()).name).toBe('api')
     expect(await checkGenerated(join(root, 'apps/api'))).toEqual([])
   }, 30_000)
@@ -136,17 +145,25 @@ describe('newt init', () => {
     expect(output).toEqual({ code: 1, text: '--backend says where a monorepo has its first backend: add --monorepo', json: false })
   })
 
-  test('asked from scratch in a terminal, asks the name and then whether a backend or a monorepo', async () => {
+  test('asked from scratch in a terminal, asks the name, whether a backend or a monorepo, and its first backend', async () => {
     const questions: string[] = []
+    const answers = ['shop', 'monorepo', 'billing']
     const output = await runCommand(INIT, ['--dry-run'], {
       cwd: await emptyFolder(),
       ask: async question => {
         questions.push(question)
-        return questions.length === 1 ? 'shop' : 'monorepo'
+        return answers[questions.length - 1]!
       },
     })
-    expect(questions).toEqual(['What is your project named?', 'A backend or a monorepo?'])
-    expect(output.text).toContain('will create  shop/apps/api/src/index.ts')
+    expect(questions).toEqual(['What is your project named?', 'A backend or a monorepo?', "Its first backend's name, or none?"])
+    expect(output.text).toContain('will create  shop/apps/billing/src/index.ts')
+  })
+
+  test('asked in a terminal, none makes an empty monorepo', async () => {
+    const answers = ['shop', 'monorepo', 'none']
+    const output = await runCommand(INIT, ['--dry-run'], { cwd: await emptyFolder(), ask: async () => answers.shift()! })
+    expect(output.text).toContain('will create  shop/package.json')
+    expect(output.text).not.toContain('shop/apps/')
   })
 
   test('given a name, it never asks whether a backend or a monorepo', async () => {
@@ -176,7 +193,7 @@ describe('newt init', () => {
     const root = await monorepoProject(['apps/*'])
     await mkdir(join(root, 'apps'))
     expect((await runCommand(INIT, ['api'], { cwd: join(root, 'apps'), ask: null })).text).toBe('api is inside the monorepo at ..: add the backend to it with newt add backend api')
-    const made = join(await generate(INIT, ['acme', '--monorepo']), 'acme')
+    const made = join(await generate(INIT, ['acme', '--monorepo', '--backend', 'apps/api']), 'acme')
     expect((await runCommand(INIT, ['.', '--monorepo'], { cwd: made, ask: null })).code).toBe(0)
     expect((await runCommand(INIT, ['.'], { cwd: join(made, 'apps/api'), ask: null })).text).toBe('. is inside the monorepo at ../..: add the backend to it with newt add backend .')
     expect((await runCommand(INIT, ['.'], { cwd: made, ask: null })).text).toBe('. is a monorepo already: add a backend to it with newt add backend apps/<name>')

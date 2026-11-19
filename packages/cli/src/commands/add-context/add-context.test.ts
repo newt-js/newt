@@ -122,7 +122,7 @@ describe('newt add context', () => {
   })
 
   test("from a monorepo's root, in its only backend; with several, --backend says which", async () => {
-    const root = join(await generate(INIT, ['acme', '--monorepo']), 'acme')
+    const root = join(await generate(INIT, ['acme', '--monorepo', '--backend', 'apps/api']), 'acme')
     expect((await addContext(['sales'], root)).code).toBe(0)
     expect(await Bun.file(join(root, 'apps/api/src/contexts/sales/sales.context.ts')).exists()).toBe(true)
     await runCommand(ADD_BACKEND, ['apps/web'], { cwd: root, ask: null })

@@ -15,20 +15,20 @@ import { monorepoTemplate }   from '../../templates/monorepo/monorepo-template/m
 import { templateVersions }   from '../../templates/template-versions/template-versions'
 import { defineCommand }      from '../command'
 import { CommandError }       from '../command-error/command-error'
-import { DEFAULT_BACKEND }    from './backend-in-root/backend-in-root'
 import { backendInRoot }      from './backend-in-root/backend-in-root'
+import { askFirstBackend }    from './first-backend/first-backend'
 import { keptChoices }        from './kept-choices/kept-choices'
 import { projectFolder }      from './project-folder/project-folder'
 import { askProjectKind }     from './project-kind/project-kind'
 
 export const INIT = defineCommand({
   name: 'init',
-  summary: 'Creates a backend, or a monorepo with a first backend, in a new folder or in this one with .',
+  summary: 'Creates a backend, or a monorepo, in a new folder or in this one with .',
   args: '[name]',
   options: {
     ...BACKEND_OPTIONS,
-    monorepo: { type: 'boolean', description: `A monorepo, its first backend in ${DEFAULT_BACKEND}` },
-    backend: { type: 'string', value: 'folder', description: `The monorepo's first backend, ${DEFAULT_BACKEND} by default` },
+    monorepo: { type: 'boolean', description: 'A monorepo, empty unless --backend gives its first backend' },
+    backend: { type: 'string', value: 'folder', description: "The monorepo's first backend, as apps/api" },
   },
   run: async ({ args, cwd, options, ask }) => {
     const interactive = args.length === 0 && ask !== null
@@ -51,18 +51,24 @@ export const INIT = defineCommand({
     if (kind === 'monorepo' && await isBackend(target)) {
       throw new CommandError(`${folder} is a backend: a monorepo goes in a folder of its own, with this backend moved into it by hand`)
     }
+    const backend = kind === 'backend' ? undefined
+      : options.backend !== undefined ? backendInRoot(options.backend)
+        : interactive && ask ? await askFirstBackend(ask) : undefined
+    const backendFolder = kind === 'backend' ? folder : backend && join(folder, backend)
     const port = portOf(options.port)
     const versions = await templateVersions()
-    const backendFolder = kind === 'monorepo' ? join(folder, backendInRoot(options.backend)) : folder
-    const kept = await keptChoices(join(cwd, backendFolder), backendFolder, options, storesOf(options))
+    const kept = backendFolder === undefined
+      ? { stores: storesOf(options), warnings: [] }
+      : await keptChoices(join(cwd, backendFolder), backendFolder, options, storesOf(options))
     const stores = kept.stores
     const changes = kind === 'monorepo'
-      ? monorepoTemplate({ folder, name, backend: backendInRoot(options.backend), port, stores, versions })
+      ? monorepoTemplate({ folder, name, backend, port, stores, versions })
       : backendTemplate({ folder, name, port, stores, versions })
     const warnings = [
       ...kept.warnings,
-      ...(await otherEslintConfigs(join(cwd, backendFolder))).map(other => eslintWarning(join(backendFolder, other))),
+      ...backendFolder === undefined ? [] : (await otherEslintConfigs(join(cwd, backendFolder))).map(other => eslintWarning(join(backendFolder, other))),
     ]
-    return { changes, warnings, nextSteps: [...folder === '.' ? [] : [`cd ${folder}`], 'bun install', 'bun run dev'] }
+    const run = backendFolder === undefined ? 'bunx newt add backend apps/<name>' : 'bun run dev'
+    return { changes, warnings, nextSteps: [...folder === '.' ? [] : [`cd ${folder}`], 'bun install', run] }
   },
 })

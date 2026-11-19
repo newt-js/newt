@@ -1,13 +1,7 @@
-import { expect }          from 'bun:test'
-import { test }            from 'bun:test'
+import { expect }        from 'bun:test'
+import { test }          from 'bun:test'
 // --------------------------------------------------------
-import { DEFAULT_BACKEND } from './backend-in-root'
-import { backendInRoot }   from './backend-in-root'
-
-test('apps/api when none is given', () => {
-  expect(backendInRoot(undefined)).toBe(DEFAULT_BACKEND)
-  expect(DEFAULT_BACKEND).toBe('apps/api')
-})
+import { backendInRoot } from './backend-in-root'
 
 test('the folder given, tidied', () => {
   expect(backendInRoot('services/billing/')).toBe('services/billing')

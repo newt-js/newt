@@ -12,7 +12,7 @@ Un monorepo es un repositorio que contiene varios paquetes. Con newt, cada backe
 ## Crea uno
 
 ```sh
-newt init newthub --monorepo
+newt init newthub --monorepo --backend apps/api
 ```
 
 ```txt
@@ -42,15 +42,17 @@ Next steps:
   bun run dev
 ```
 
-`bun create newt newthub --monorepo` hace lo mismo. Sin nombre, en un terminal, `newt init` te pregunta si quieres un backend o un monorepo.
+`bun create newt newthub --monorepo --backend apps/api` hace lo mismo. Sin nombre, en un terminal, `newt init` te pregunta si quieres un backend o un monorepo, y para un monorepo el nombre de su primer backend, que va en `apps/`. Responde `none` para uno vacío.
 
-El primer backend va en `apps/api`. Elige otra carpeta con `--backend`:
+Sin `--backend`, el monorepo queda vacío, y sus workspaces toman `apps/`. Añade los backends después con [`newt add backend`](/es/reference/cli/add-backend/):
 
 ```sh
-newt init newthub --monorepo --backend apps/core
+newt init newthub --monorepo
+cd newthub
+bunx newt add backend apps/api
 ```
 
-`--port`, `--db`, `--files` y `--cluster` se aplican a ese primer backend, como en un `newt init` normal. Consulta [instalación](/es/start/installation/#opciones-de-newt-init).
+`--port`, `--db`, `--files` y `--cluster` se aplican al primer backend, como en un `newt init` normal. Consulta [instalación](/es/start/installation/#opciones-de-newt-init).
 
 ## La distribución
 

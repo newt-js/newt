@@ -30,8 +30,8 @@ Without a name, in an interactive terminal, `newt init` asks for it (suggesting 
 | `--files <storage>` | `local` | `local`, `s3` or `memory` |
 | `--cluster <cluster>` | `memory` | `memory` or `valkey`: what the backend's instances share |
 | `--port <port>` | `3000` | The port it serves on, 1 to 65535 |
-| `--monorepo` | off | Makes a monorepo, with the backend in `apps/api` |
-| `--backend <folder>` | `apps/api` | The first backend's folder, with `--monorepo` only |
+| `--monorepo` | off | Makes a monorepo, empty unless `--backend` is given |
+| `--backend <folder>` | none | The first backend's folder, as `apps/api`; with `--monorepo` only |
 
 It also takes the [global flags](/reference/cli/overview/#global-flags).
 
@@ -81,7 +81,7 @@ Next steps:
 
 What each file is for: [Project structure](/start/project-structure/). Every variable: [Configuration](/reference/configuration/).
 
-With `--monorepo`, it also writes the root's `package.json`, `AGENTS.md`, `.gitignore` and `CLAUDE.md`, and puts the backend in `apps/api` (or `--backend`).
+With `--monorepo`, it also writes the root's `package.json`, `AGENTS.md`, `.gitignore` and `CLAUDE.md`, and puts the backend in `--backend`, if given; without it, the monorepo is empty, its workspaces taking `apps/`.
 
 ### In a folder that has files
 

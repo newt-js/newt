@@ -12,7 +12,7 @@ Use one when you run more than one backend, such as the Newthub API and an admin
 ## Create one
 
 ```sh
-newt init newthub --monorepo
+newt init newthub --monorepo --backend apps/api
 ```
 
 ```txt
@@ -42,15 +42,17 @@ Next steps:
   bun run dev
 ```
 
-`bun create newt newthub --monorepo` does the same. Without a name, in a terminal, `newt init` asks whether you want a backend or a monorepo.
+`bun create newt newthub --monorepo --backend apps/api` does the same. Without a name, in a terminal, `newt init` asks whether you want a backend or a monorepo, and for a monorepo the name of its first backend, which goes in `apps/`. Answer `none` for an empty one.
 
-The first backend goes in `apps/api`. Pick another folder with `--backend`:
+Without `--backend`, the monorepo is empty, and its workspaces take `apps/`. Add the backends later with [`newt add backend`](/reference/cli/add-backend/):
 
 ```sh
-newt init newthub --monorepo --backend apps/core
+newt init newthub --monorepo
+cd newthub
+bunx newt add backend apps/api
 ```
 
-`--port`, `--db`, `--files` and `--cluster` apply to that first backend, as in a plain `newt init`. See [installation](/start/installation/#options-of-newt-init).
+`--port`, `--db`, `--files` and `--cluster` apply to the first backend, as in a plain `newt init`. See [installation](/start/installation/#options-of-newt-init).
 
 ## The layout
 

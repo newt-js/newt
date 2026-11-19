@@ -24,7 +24,7 @@ test('creates a backend in a folder of the name given, as newt init does', async
 })
 
 test('passes on what it is given: a monorepo', async () => {
-  const { cwd } = await create(['acme', '--monorepo'])
+  const { cwd } = await create(['acme', '--monorepo', '--backend', 'apps/api'])
   expect(await Bun.file(join(cwd, 'acme/apps/api/package.json')).exists()).toBe(true)
 })
 
