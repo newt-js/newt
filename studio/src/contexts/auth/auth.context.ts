@@ -9,7 +9,7 @@ import { HttpRouter }        from '@newt-js/core/http'
 import { openData }          from '@newt-js/core/http'
 import { join }              from 'node:path'
 // --------------------------------------------------------
-import { authenticate }      from '../../auth'
+import { authenticate }      from './authenticate'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 

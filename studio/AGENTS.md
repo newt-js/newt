@@ -7,7 +7,6 @@ A backend built with newt (@newt-js/core), on Bun.
 - `src/index.ts`: the backend, `startBackend`: opens the contexts and serves them, with `GET /health-check`;
   run as `bun src/index.ts`, it starts on `PORT` (from `.env`).
   Tests start it with `startBackend(0, { data: 'memory' })`: databases, files and cluster in memory, sqlite with its migrations.
-- `src/auth.ts`: `authenticate`, who calls the backend, for every context's router.
 - `src/contexts/contexts.ts`: the list of contexts the backend opens.
 - `src/contexts/<context>/`: one folder per bounded context. Its `<context>.context.ts` opens its own data with
   `openData`, its database (`sqlite()`, `postgres()`…) and its files (`localFiles()`…) as `.env` says, and its `initialize`
@@ -19,7 +18,8 @@ A backend built with newt (@newt-js/core), on Bun.
 ## Sign-in
 
 Every route is private: without a session it answers 401, and a route takes `{ public: true }` to need none.
-`src/auth.ts` says who is calling, for every context; it signs no one in until it is written.
+Each context says who is calling in its own `authenticate.ts`, next to its `<context>.context.ts`: contexts sign in
+in different ways, and one never accepts another's session. It signs no one in until it is written.
 Read a session cookie or a bearer token there and return `{ userId }`, or `null`:
 `@newt-js/core/http` has `bearerAuthenticator`, `setSessionCookie` and `clearSessionCookie`.
 
