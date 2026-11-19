@@ -52,7 +52,7 @@ describe('newt add context', () => {
     expect(context).toContain('router, host }')
     expect(context).toContain('    router.authenticateWith(authenticate)\n')
     expect(await read(join(backend, 'src/auth.ts'))).toContain('export const authenticate: Authenticator = async () => null')
-    expect(await read(join(backend, 'src/contexts/contexts.ts'))).toContain('  contexts.push(await Sales_Context.open(platform, place))\n  return contexts')
+    expect(await read(join(backend, 'src/contexts/contexts.ts'))).toContain('  const sales = await Sales_Context.open(platform, place)\n  return [sales]')
     expect(await read(join(backend, '.env'))).toEndWith('\nSALES_DATABASE=data/databases/sales/sales.sqlite\nSALES_FILES=data/files/sales\n')
     expect(await Bun.file(join(backend, '.env.test')).exists()).toBe(false)
     expect(await checkGenerated(backend)).toEqual([])
@@ -71,7 +71,7 @@ describe('newt add context', () => {
     await addContext(['web-session'], backend)
     const contexts = await read(join(backend, 'src/contexts/contexts.ts'))
     expect(contexts).toContain("import { WebSession_Context } from './web-session/web-session.context'")
-    expect(contexts).toContain('  contexts.push(await Sales_Context.open(platform, place))\n  contexts.push(await WebSession_Context.open(platform, place))\n  return contexts')
+    expect(contexts).toContain('  const sales = await Sales_Context.open(platform, place)\n  const webSession = await WebSession_Context.open(platform, place)\n  return [sales, webSession]')
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
@@ -136,7 +136,7 @@ describe('newt add context', () => {
     await Bun.write(join(backend, 'src/contexts/contexts.ts'), 'export const openContexts = async () => []\n')
     const output = await addContext(['sales', '--json'], backend)
     expect(output.code).toBe(1)
-    expect((JSON.parse(output.text) as { error: string }).error).toBe("newt wrote nothing, since its changes go together and some cannot be made:\n- src/contexts/contexts.ts is not as newt wrote it, so newt did not change it: add import { Sales_Context } from './sales/sales.context'; contexts.push(await Sales_Context.open(platform, place))")
+    expect((JSON.parse(output.text) as { error: string }).error).toBe("newt wrote nothing, since its changes go together and some cannot be made:\n- src/contexts/contexts.ts is not as newt wrote it, so newt did not change it: add import { Sales_Context } from './sales/sales.context'; const sales = await Sales_Context.open(platform, place)\n- src/contexts/contexts.ts has no function openContexts that returns a list, so newt did not change it: add sales to the list it returns")
     expect(await Bun.file(join(backend, 'src/contexts/sales/sales.context.ts')).exists()).toBe(false)
   })
 

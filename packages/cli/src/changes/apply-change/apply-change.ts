@@ -2,6 +2,8 @@ import type { FileChange }         from '../../commands/command'
 import { addClassMember }          from '../add-class-member/add-class-member'
 import { addConstructorStatement } from '../add-constructor-statement/add-constructor-statement'
 import { addObjectProperty }       from '../add-object-property/add-object-property'
+import { addReturnedItem }         from '../add-returned-item/add-returned-item'
+import { addTypeProperty }         from '../add-type-property/add-type-property'
 import { appendBlock }             from '../append-block/append-block'
 import type { ChangeOutcome }      from '../change-outcome'
 import { completeEnv }             from '../complete-env/complete-env'
@@ -9,6 +11,7 @@ import { completeJson }            from '../complete-json/complete-json'
 import { createFile }              from '../create-file/create-file'
 import { ensureLines }             from '../ensure-lines/ensure-lines'
 import { insertLines }             from '../insert-lines/insert-lines'
+import { openUsedContexts }        from '../open-used-contexts/open-used-contexts'
 import { orderModules }            from '../order-modules/order-modules'
 import { removeJsonKey }           from '../remove-json-key/remove-json-key'
 import { removeUnchanged }         from '../remove-unchanged/remove-unchanged'
@@ -32,5 +35,8 @@ export function applyChange(change: FileChange, files: VirtualFiles): Promise<Ch
     case 'order-modules': return orderModules(change.path, files)
     case 'wire-module': return wireModule(change, files)
     case 'add-constructor-statement': return addConstructorStatement(change, files)
+    case 'add-type-property': return addTypeProperty(change, files)
+    case 'add-returned-item': return addReturnedItem(change, files)
+    case 'open-used-contexts': return openUsedContexts(change, files)
   }
 }

@@ -23,7 +23,14 @@ function callIn(source: ts.SourceFile, call: string, argument: number): Found | 
   return found
 }
 
-/** Adds a property to the object a call is given, `eventsOf(bus, { … })`, with its imports; a key it has already is left alone. */
+/** The object under `key` of `object`, `auth: { … }`; `undefined` when it has no such key, `null` when that key holds something else. */
+function objectUnder(object: ts.ObjectLiteralExpression, key: string): ts.ObjectLiteralExpression | undefined | null {
+  const property = object.properties.find(each => propertyKey(each) === key)
+  if (!property) return undefined
+  return ts.isPropertyAssignment(property) && ts.isObjectLiteralExpression(property.initializer) ? property.initializer : null
+}
+
+/** Adds a property to the object a call is given, `eventsOf(bus, { … })`, or to the one under `in` of it, with its imports; a key it has already is left alone. */
 export async function addObjectProperty(change: AddObjectPropertyChange, files: VirtualFiles): Promise<ChangeOutcome> {
   const { path, call, argument, key, value, imports, createArgument } = change
   const text = await files.read(path)
@@ -31,18 +38,23 @@ export async function addObjectProperty(change: AddObjectPropertyChange, files: 
   const found = callIn(source, call, argument)
   const object = found?.object
   const creatable = found && !object && createArgument && found.call.arguments.length === argument
-  if (text === null || (!object && !creatable)) {
-    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} calls no ${call} with an object, so newt did not change it: add ${key}: ${value} to it`] }
+  const inner = object && change.in !== undefined ? objectUnder(object, change.in) : undefined
+  const shown = change.in === undefined ? `${key}: ${value}` : `${change.in}: { ${key}: ${value} }`
+  if (text === null || (!object && !creatable) || inner === null) {
+    return { status: 'skipped', note: 'not as newt wrote it', failed: true, warnings: [`${path} calls no ${call} with an object, so newt did not change it: add ${shown} to it`] }
   }
-  const property = key === value ? key : `${key}: ${value}`
-  if (object?.properties.some(each => propertyKey(each) === key)) {
+  const own = key === value ? key : `${key}: ${value}`
+  const property = change.in !== undefined && !inner ? `${change.in}: { ${own} }` : own
+  const target = inner ?? object
+  const targetKey = inner || change.in === undefined ? key : change.in
+  if (target?.properties.some(each => propertyKey(each) === targetKey)) {
     return { status: 'skipped', note: 'up to date', warnings: [] }
   }
   const last = found!.call.arguments.at(-1)
   const at = last ? last.getEnd() : found!.call.getEnd() - 1
   const indent = /^[ \t]*/.exec(text.slice(text.lastIndexOf('\n', at) + 1))![0]
   const created = `{\n${indent}  ${property},\n${indent}}`
-  const edited = object ? withProperty(text, source, object, property) : `${text.slice(0, at)}${last ? ', ' : ''}${created}${text.slice(at)}`
+  const edited = target ? withProperty(text, source, target, property) : `${text.slice(0, at)}${last ? ', ' : ''}${created}${text.slice(at)}`
   await files.write(path, addedImports(edited, imports))
   return { status: 'updated', warnings: [] }
 }

@@ -30,3 +30,8 @@ test('each feature after the ones it uses, and a module given a used feature is 
   const feature = 'class Campaigns_Feature {\n  static initialize(base, router, uses) {\n    const campaign = Campaign_Module.initialize(base, router, { contacts: uses.contacts })\n    const template = Template_Module.initialize(base, router)\n    return new Campaigns_Feature(base, campaign, template)\n  }\n}\n'
   expect(await ordered(feature)).toBe(feature)
 })
+
+test('each context after the ones it is opened with', async () => {
+  const text = 'async function openContexts(platform, place) {\n  const panel = await Panel_Context.open(platform, place, {\n    auth: auth.context,\n  })\n  const auth = await Auth_Context.open(platform, place)\n  return [auth, panel]\n}\n'
+  expect(await ordered(text)).toBe('async function openContexts(platform, place) {\n  const auth = await Auth_Context.open(platform, place)\n  const panel = await Panel_Context.open(platform, place, {\n    auth: auth.context,\n  })\n  return [auth, panel]\n}\n')
+})

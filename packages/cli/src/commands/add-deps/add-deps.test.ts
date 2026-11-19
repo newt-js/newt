@@ -6,6 +6,7 @@ import { join }           from 'node:path'
 import { runCommand }     from '../../run/run-command/run-command'
 import { checkGenerated } from '../../testing/check-generated/check-generated'
 import { moduleProject }  from '../../testing/module-project/module-project'
+import { ADD_CONTEXT }    from '../add-context/add-context'
 import { ADD_MODULE }     from '../add-module/add-module'
 import type { Command }   from '../command'
 import { ADD_DEPS }       from './add-deps'
@@ -144,14 +145,59 @@ test('GET /orders/invoices/:invoiceId/orders answers from order, under invoice',
     expect((await run(ADD_DEPS, ['sales/carts/cart', 'orders'], backend)).text).toBe('carts → orders → customers → carts would be a cycle: features never use each other, even through others')
   })
 
-  test('refuses a module the context has not, itself, a cycle, or another context', async () => {
+  test('refuses a module the context has not, itself, a cycle, or a context it has not', async () => {
     const backend = await withInvoice()
     expect((await run(ADD_DEPS, ['sales/orders/order', 'customer'], backend)).text).toBe('Neither sales/orders has a module customer nor sales a feature customer: add the module with newt add module sales/orders/customer, or the feature with newt add feature sales/customer')
     expect((await run(ADD_DEPS, ['sales/orders/order', 'order'], backend)).text).toBe('order cannot use itself')
     await run(ADD_DEPS, ['sales/orders/order', 'invoice'], backend)
     expect((await run(ADD_DEPS, ['sales/orders/invoice', 'order'], backend)).text).toBe('invoice → order → invoice would be a cycle: modules never use each other, even through others')
-    expect((await run(ADD_DEPS, ['sales/orders/order', 'billing/invoice'], backend)).text).toStartWith("A module uses another context's modules")
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'billing/invoice'], backend)).text).toBe('The backend has no context billing: add it with newt add context billing')
     await run(ADD_MODULE, ['sales/customers/customer'], backend)
     expect((await run(ADD_DEPS, ['sales/orders/order', 'customers/customer'], backend)).text).toBe("A module uses another feature whole, by the feature's name alone: newt add deps sales/orders/order customers")
+  })
+})
+
+describe('newt add deps, of another context', () => {
+  async function withAuth(): Promise<string> {
+    const backend = await moduleProject()
+    await run(ADD_CONTEXT, ['auth'], backend)
+    await run(ADD_MODULE, ['auth/users/user'], backend)
+    return backend
+  }
+
+  test('order uses auth/users: under auth in its deps and its feature, given by sales.context.ts, opened with auth by contexts.ts', async () => {
+    const backend = await withAuth()
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'auth/users'], backend)).code).toBe(0)
+    expect(await read(backend, 'features/orders/order/order.deps.ts')).toBe("import type { Users_Feature } from '../../../../auth/features/users'\n\nexport type Order_Deps = {\n  auth: { users: Users_Feature }\n}\n")
+    const feature = await read(backend, 'features/orders/orders.feature.ts')
+    expect(feature).toContain('export type Orders_Uses = {\n  auth: { users: Users_Feature }\n}')
+    expect(feature).toContain('Order_Module.initialize(base, router, {\n      auth: { users: uses.auth.users },\n    })')
+    const context = await read(backend, 'sales.context.ts')
+    expect(context).toContain('export type Sales_Uses = {\n  auth: Auth_Context\n}')
+    expect(context).toContain('    uses: Sales_Uses,\n  ): Sales_Context {')
+    expect(context).toContain('    uses: Sales_Uses,\n  ): Promise<ContextToRun & { context: Sales_Context }> {')
+    expect(context).toContain('Orders_Feature.initialize(base, router, {\n      auth: { users: uses.auth.users },\n    })')
+    expect(context).toContain('Sales_Context.initialize(base, router, uses)')
+    const contexts = await Bun.file(join(backend, 'src/contexts/contexts.ts')).text()
+    expect(contexts).toContain('  const auth = await Auth_Context.open(platform, place)\n  const sales = await Sales_Context.open(platform, place, {\n    auth: auth.context,\n  })\n  return [sales, auth]')
+    expect(await read(backend, 'features/orders/order/order.module.test.ts')).toContain("  const auth = await Auth_Context.open(platform, 'memory')\n  used = [auth]")
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 60_000)
+
+  test('run again, it changes nothing', async () => {
+    const backend = await withAuth()
+    await run(ADD_DEPS, ['sales/orders/order', 'auth/users'], backend)
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'auth/users'], backend)).text).not.toContain('updated')
+  })
+
+  test('refuses its own context, a feature the other has not, a cycle of contexts, and a name taken twice', async () => {
+    const backend = await withAuth()
+    await run(ADD_MODULE, ['sales/customers/customer'], backend)
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'sales/customers'], backend)).text).toBe('customers is a feature of sales, the context of order: it uses it by its name alone, as in newt add deps sales/orders/order customers')
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'auth/roles'], backend)).text).toBe('The context auth has no feature roles: add it with newt add feature auth/roles')
+    await run(ADD_DEPS, ['sales/orders/order', 'auth/users'], backend)
+    expect((await run(ADD_DEPS, ['auth/users/user', 'sales/orders'], backend)).text).toBe('auth → sales → auth would be a cycle: contexts never use each other, even through others')
+    await run(ADD_MODULE, ['sales/orders/auth'], backend)
+    expect((await run(ADD_DEPS, ['sales/orders/order', 'auth'], backend)).text).toBe('order uses the context auth already, by that name: a module of its feature or a feature of its context cannot take it too')
   })
 })

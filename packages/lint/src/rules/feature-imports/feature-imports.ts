@@ -20,7 +20,8 @@ const declared = new Map<string, { stamp: string, uses: Record<string, string[]>
 
 /**
  * What each feature of the context in `folder` (absolute) uses: the other features whose
- * entry points its class, `features/<f>/<f>.feature.ts`, imports. Read again
+ * entry points its class, `features/<f>/<f>.feature.ts`, imports; those of its context by
+ * their name, `contacts`, those of another as `<context>/<feature>`, `auth/users`. Read again
  * whenever one of those files changes.
  */
 export function declaredFeatureUses(folder: string, contexts: string): Record<string, string[]> {
@@ -38,8 +39,10 @@ export function declaredFeatureUses(folder: string, contexts: string): Record<st
     const file = files[at]!
     const text = statSync(file, { throwIfNoEntry: false })?.isFile() ? readFileSync(file, 'utf8') : ''
     const imported = ts.preProcessFile(text, true, true).importedFiles.map(each => each.fileName).filter(specifier => specifier.startsWith('.'))
-    const others = imported.map(specifier => featurePlace(target(file, specifier), contexts)).filter(other => other !== null && other.feature !== name)
-    uses[name] = [...new Set(others.map(other => other!.feature))].sort()
+    const own = posix.basename(real(folder))
+    const places = imported.map(specifier => featurePlace(target(file, specifier), contexts))
+    const others = places.filter(other => other !== null && !(other.context === own && other.feature === name))
+    uses[name] = [...new Set(others.map(other => other!.context === own ? other!.feature : `${other!.context}/${other!.feature}`))].sort()
   })
   declared.set(folder, { stamp, uses })
   return uses
@@ -69,15 +72,17 @@ const declaresUses = (inside: string, feature: string) => inside.replace(/\.[cm]
  * from outside it only through its entry point, `features/<feature>/index.ts`: its class,
  * and the types and errors another feature may name of it. Its modules are its own, so
  * they can be merged or split without breaking another feature. The files of the context
- * outside its features (its composition) import the entry points alone too.
+ * outside its features (its composition) import the entry points alone too. A feature of
+ * another context is used the same way: its class imports it, under that context's name.
  */
-export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'cycle', [FeatureImportsOptions]> = {
+export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'undeclaredOther' | 'cycle', [FeatureImportsOptions]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
   meta: {
     type: 'problem',
     docs: { description: 'Another feature is reached only through its entry point, its index.ts, and features never use each other in a cycle.' },
     messages: {
       undeclared: "'{{path}}' is the entry point of {{feature}}, which {{own}} does not use: {{own}}.feature.ts imports {{uses}}. If {{own}} needs it, take it in the `uses` of its initialize in {{own}}.feature.ts and pass it to this module's deps (newt add deps does both).",
+      undeclaredOther: "'{{path}}' is the entry point of {{feature}}, of the context {{context}}, which {{own}} does not use: {{own}}.feature.ts imports {{uses}}. If {{own}} needs it, take it under {{context}} in the `uses` of its initialize in {{own}}.feature.ts, `{{context}}: { {{feature}} }`, and pass it to this module's deps (newt add deps {{context}}/{{feature}} does both).",
       cycle: "{{cycle}}: features never use each other in a cycle. Keep one direction and drop the import that closes it; where the feature that lost it called the other, it emits an event instead, and the other reacts to it.",
       inside: "'{{path}}' is inside the feature {{feature}}: from outside it, import only its entry point, features/{{feature}}/index.ts, and reach its modules through its class ({{feature}}.<module>.<use case>). A type or an error another feature needs, its index.ts exports.",
     },
@@ -99,9 +104,17 @@ export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'cycl
         context.report({ node, messageId: 'inside', data: { path: specifier, feature: imported.feature } })
         return
       }
-      if (!own || own.context !== imported.context) return
+      if (!own) return
       const uses = declaredFeatureUses(posix.join(folder, own.context), folder)
       const allowed = uses[own.feature] ?? []
+      if (own.context !== imported.context) {
+        // Which contexts it may know, context-imports says; which of their features, its class.
+        if (!allowed.includes(`${imported.context}/${imported.feature}`) && !declaresUses(own.inside, own.feature)) {
+          const data = { path: specifier, feature: imported.feature, context: imported.context, own: own.feature, uses: allowed.length ? allowed.join(', ') : 'no other feature' }
+          context.report({ node, messageId: 'undeclaredOther', data })
+        }
+        return
+      }
       // A feature's class imports what it uses: one through an alias it is not read with is not judged.
       if (!allowed.includes(imported.feature) && !declaresUses(own.inside, own.feature)) {
         const data = { path: specifier, feature: imported.feature, own: own.feature, uses: allowed.length ? allowed.join(', ') : 'no other feature' }
