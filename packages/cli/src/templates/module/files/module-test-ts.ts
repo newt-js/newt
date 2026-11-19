@@ -1,6 +1,6 @@
 import type { ContextNames } from '../../../names/context-names/context-names'
 import type { ModuleNames }  from '../../../names/module-names/module-names'
-import { withArticle }       from '../../../names/with-article/with-article'
+import { fitting }           from '../../fitted-call/fitted-call'
 import type { DatabaseKind } from '../../stores/store-databases'
 
 /** On sqlite, the context's own migrations on a database in memory; on a server, src/test-database.ts's, real when TEST_DATABASE_URL is set. */
@@ -60,8 +60,8 @@ function call(method: string, path: string, body?: unknown) {
   return router.answer(new Request(url, init))
 }
 
-test('creates ${withArticle(words)} and reads it back', async () => {
-  const created = await ${plural}.create({ name: ' First ' })
+test('creates one and reads it back', async () => {
+${fitting(`  const created = await ${plural}.create({ name: ' First ' })`, `  const created = await ${plural}.create({\n    name: ' First ',\n  })`)}
 
   const read = await ${plural}.get(created.id)
   expect(read).toMatchObject({ id: created.id, name: 'First' })
@@ -81,18 +81,20 @@ test('keeps each one apart, and finds them by their name', async () => {
   const found = await ${plural}.find({ name: 'First' })
   const ids = found.map(each => each.id).sort()
   expect(ids).toEqual([first.id, another.id].sort())
-  const page = await ${plural}.paginate({ name: 'Second' }, { size: 10 })
+${fitting(`  const page = await ${plural}.paginate({ name: 'Second' }, { size: 10 })`, `  const page = await ${plural}.paginate(\n    { name: 'Second' },\n    { size: 10 },\n  )`)}
   expect(page).toMatchObject({ items: [{ id: second.id }], total: 1 })
   const all = await ${plural}.paginate({}, { size: 10 })
   expect(all.total).toBe(3)
 })
 
 test('refuses a name it cannot keep', async () => {
-  await expect(${plural}.create({ name: '  ' })).rejects.toThrow()
+  const created = ${plural}.create({ name: '  ' })
+  await expect(created).rejects.toThrow()
 })
 
-test('says there is no ${words} with an id it does not have', async () => {
-  const response = await call('GET', \`/${path}/\${Bun.randomUUIDv7()}\`)
+test('has no ${words} with an unknown id', async () => {
+  const unknown = \`/${path}/\${Bun.randomUUIDv7()}\`
+  const response = await call('GET', unknown)
   expect(response?.status).toBe(404)
 })
 
@@ -107,7 +109,7 @@ test.each([
 })
 
 test('creates one by its route and reads it by another', async () => {
-  const posted = await call('POST', '/${path}', { name: 'Second' })
+${fitting(`  const posted = await call('POST', '/${path}', { name: 'Second' })`, `  const posted = await call('POST', '/${path}', {\n    name: 'Second',\n  })`)}
   expect(posted?.status).toBe(201)
   const { id } = await posted!.json() as { id: string }
 

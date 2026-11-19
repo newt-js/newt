@@ -21,7 +21,8 @@ type Holder = {
   superCall: ts.ExpressionStatement
 }
 
-type Edit = { at: number, text: string }
+/** `text` put at `at`, in place of the `length` characters there, if any. */
+type Edit = { at: number, text: string, length?: number }
 
 const isNamed = (node: ts.Node, name: string) => ts.isIdentifier(node) && node.text === name
 
@@ -65,9 +66,18 @@ const indentOf = (text: string, node: ts.Node) => text.slice(lineStartOf(text, n
 const lineAfter = (text: string, after: ts.Node, line: string): Edit => ({ at: lineEndOf(text, after.getEnd()), text: `${indentOf(text, after)}${line}\n` })
 
 /** The shorthand `name` in the object the `new` is given: `{ a, name }`. */
-function givenEdit(given: ts.ObjectLiteralExpression, name: string): Edit {
+function givenEdit(text: string, given: ts.ObjectLiteralExpression, name: string): Edit {
   const last = given.properties.at(-1)
-  return last ? { at: last.getEnd(), text: `, ${name}` } : { at: given.getStart() + 1, text: ` ${name} ` }
+  const edit = last ? { at: last.getEnd(), text: `, ${name}` } : { at: given.getStart() + 1, text: ` ${name} ` }
+  const start = lineStartOf(text, given.getStart())
+  const line = text.slice(start, lineEndOf(text, given.getEnd()) - 1)
+  const onOneLine = !text.slice(given.getStart(), given.getEnd()).includes('\n')
+  if (!onOneLine || line.length + edit.text.length <= 80) return edit
+  // Too long for one line: a name on each.
+  const indent = /^[ \t]*/.exec(line)![0]
+  const names = [...given.properties.map(each => each.getText()), name]
+  const each = names.map(one => `${indent}  ${one},\n`).join('')
+  return { at: given.getStart(), length: given.getEnd() - given.getStart(), text: `{\n${each}${indent}}` }
 }
 
 /** `name: Type,` in the type literal of the constructor's parameter, on its own line. */
@@ -110,10 +120,12 @@ export async function wireModule({ path, className, name, type, declaration, imp
     edits.push({ at: lineStartOf(text, returned.getStart()), text: `${indentOf(text, returned)}${declaration.trim()}\n` })
   }
   if (!given.properties.some(each => each.name !== undefined && isNamed(each.name, name))) {
-    edits.push(givenEdit(given, name))
+    edits.push(givenEdit(text, given, name))
   }
   if (!fields.some(each => isNamed(each.name, name))) {
-    edits.push(fieldEdit(text, fields, constructor, `private readonly ${name}: ${type}`))
+    const field = `private readonly ${name}: ${type}`
+    const fits = `  ${field}`.length <= 80
+    edits.push(fieldEdit(text, fields, constructor, fits ? field : `private readonly ${name}:\n    ${type}`))
   }
   if (!parameter.type.members.some(each => each.name !== undefined && isNamed(each.name, name))) {
     edits.push(...memberEdits(text, parameter, `${name}: ${type}`))
@@ -127,7 +139,7 @@ export async function wireModule({ path, className, name, type, declaration, imp
   }
   const edited = edits
     .sort((one, other) => other.at - one.at)
-    .reduce((current, edit) => `${current.slice(0, edit.at)}${edit.text}${current.slice(edit.at)}`, text)
+    .reduce((current, edit) => `${current.slice(0, edit.at)}${edit.text}${current.slice(edit.at + (edit.length ?? 0))}`, text)
   await files.write(path, addedImports(edited, imports))
   return { status: 'updated', warnings: [] }
 }

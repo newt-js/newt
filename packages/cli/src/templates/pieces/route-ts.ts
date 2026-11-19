@@ -11,7 +11,9 @@ export function routeLine({ type, plural }: ModuleNames, useCase: PieceNames, { 
   const read = !takesInput ? [] : byId ? (takesId ? [] : [`const id = ${type}Id.from(request.params.id)`]) : ['const body = await bodyOf(request)']
   const input = !takesInput ? '' : byId ? (takesId ? 'request.params.id' : '{ id }') : 'body'
   const call = `await ${plural}.${useCase.camel}(${input})`
-  const answer = returnsNothing ? [call, 'return new Response(null, { status: 204 })'] : [`return Response.json(${call})`]
+  const fits = `    return Response.json(${call})`.length <= 80
+  const answer = returnsNothing ? [call, 'return new Response(null, { status: 204 })']
+    : fits ? [`return Response.json(${call})`] : [`const answer = ${call}`, 'return Response.json(answer)']
   const uses = takesInput ? 'request' : '()'
   const body = [...read, ...answer].map(line => `    ${line}`).join('\n')
   return `  router.${method}(${quoted(path)}, async ${uses} => {\n${body}\n  })`

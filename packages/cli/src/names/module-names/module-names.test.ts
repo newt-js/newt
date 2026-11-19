@@ -29,5 +29,7 @@ test('plurals English makes otherwise, and one given', () => {
 
 test('refuses a name that is not lowercase words joined by -', () => {
   expect(() => moduleNames('Order')).toThrow("'Order' cannot name a module")
+  expect(moduleNames('customer-account-statement-line').type).toBe('CustomerAccountStatementLine')
+  expect(() => moduleNames('customer-account-statement-lines')).toThrow('of more than 28 characters')
   expect(() => moduleNames('sales/order')).toThrow("'sales/order' cannot name a module")
 })

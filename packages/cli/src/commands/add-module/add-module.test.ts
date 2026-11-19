@@ -40,6 +40,12 @@ describe('newt add module', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test.each(['sqlite', 'postgres', 'mysql', 'memory'])('a module of the longest name keeps its lines to 80 on %s, and its lint, types and tests pass', async db => {
+    const backend = await backendWithContext(db)
+    expect((await run(ADD_MODULE, ['sales/customer-account-statement-line'], backend)).code).toBe(0)
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
   test('a second module takes the next migration, and both are initialized', async () => {
     const backend = await backendWithContext()
     await run(ADD_MODULE, ['sales/order'], backend)
