@@ -6,7 +6,7 @@ import { featureNames }                 from '../../names/feature-names/feature-
 import { moduleNames }                  from '../../names/module-names/module-names'
 import { CONTEXTS_FOLDER }              from '../../project/backend-contexts/backend-contexts'
 import { backendContexts }              from '../../project/backend-contexts/backend-contexts'
-import { backendStores }                from '../../project/backend-stores/backend-stores'
+import { contextDatabase }              from '../../project/backend-stores/backend-stores'
 import { findBackend }                  from '../../project/find-backend/find-backend'
 import { refuseFeatureNamedLikeModule } from '../../project/new-feature/new-feature'
 import { nextMigration }                from '../../project/next-migration/next-migration'
@@ -42,9 +42,9 @@ export const ADD_MODULE = defineCommand({
     if (found.features.some(each => each.name === module)) {
       throw new CommandError(`'${module}' cannot name a module of ${context}: it is the name of one of its features; name the module by the one thing it holds`)
     }
-    const { database } = await backendStores(backend)
+    const database = await contextDatabase(backend, context)
     if (database === undefined) {
-      throw new CommandError(`The backend's src/stores.ts opens no database of newt's, so newt cannot tell in which SQL to write the table of ${module}`)
+      throw new CommandError(`${context}.context.ts opens no database of newt's, so newt cannot tell in which SQL to write the table of ${module}`)
     }
     const migration = await nextMigration(join(backend, CONTEXTS_FOLDER, context, 'migrations'), names.migration)
     const newFeature = !found.features.some(each => each.name === feature)

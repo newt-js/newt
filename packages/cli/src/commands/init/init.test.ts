@@ -7,6 +7,10 @@ import { tmpdir }              from 'node:os'
 import { join }                from 'node:path'
 // --------------------------------------------------------
 import { runCommand }          from '../../run/run-command/run-command'
+import type { DatabaseKind }   from '../../templates/stores/store-databases'
+import { STORE_DATABASES }     from '../../templates/stores/store-databases'
+import type { FilesKind }      from '../../templates/stores/store-files'
+import { STORE_FILES }         from '../../templates/stores/store-files'
 import { writeBunInitProject } from '../../testing/bun-init-project/bun-init-project'
 import { checkGenerated }      from '../../testing/check-generated/check-generated'
 import { generate }            from '../../testing/generate/generate'
@@ -159,10 +163,10 @@ describe('newt init', () => {
   for (const { db, files } of COMBINATIONS) {
     test(`--db ${db} --files ${files}: with a context and a module, its lint, types and tests pass, in memory where a service is needed`, async () => {
       const folder = join(await generate(INIT, ['shop', '--db', db, '--files', files]), 'shop')
-      const stores = await Bun.file(join(folder, 'src/stores.ts')).text()
-      expect(stores).toContain('export async function openDatabase(context: string, migrations: string, stores: Stores): Promise<Database> {')
-      expect(stores).toContain('export async function openStorage(context: string, router: HttpRouter, stores: Stores, host: string | undefined): Promise<StorageOptions> {')
+      expect((await Bun.file(join(folder, 'package.json')).json() as { newt: unknown }).newt).toEqual({ database: db, files })
       await runCommand(ADD_CONTEXT, ['sales'], { cwd: folder, ask: null })
+      const context = await Bun.file(join(folder, 'src/contexts/sales/sales.context.ts')).text()
+      expect(context).toContain(`database: { adapter: ${STORE_DATABASES[db as DatabaseKind].adapter}(), migrations: MIGRATIONS_FOLDER },\n      files: ${STORE_FILES[files as FilesKind].adapter}(),`)
       await runCommand(ADD_MODULE, ['sales/orders/order'], { cwd: folder, ask: null })
       expect(await checkGenerated(folder)).toEqual([])
     }, 30_000)
@@ -231,8 +235,8 @@ describe('newt init', () => {
     const env = await Bun.file(join(folder, 'shop/.env')).text()
     const report = JSON.parse((await runCommand(INIT, ['shop', '--db', 'postgres', '--files', 's3', '--cluster', 'valkey', '--port', '4000', '--json'], { cwd: folder, ask: null })).text) as { warnings: string[] }
     expect(report.warnings).toEqual([
-      'shop/src/stores.ts opens sqlite, and newt kept it: change it by hand to open postgres',
-      'shop/src/stores.ts keeps files in local, and newt kept it: change it by hand to keep them in s3',
+      "shop/package.json gives its contexts sqlite, and newt kept it: change it by hand to postgres, and each context's adapter",
+      "shop/package.json keeps its contexts' files in local, and newt kept it: change it by hand to s3, and each context's adapter",
       'shop/src/index.ts runs on the memory cluster, and newt kept it: change it by hand to run on valkey',
       'shop/.env has PORT=3000, and newt kept it: write PORT=4000 in it',
     ])

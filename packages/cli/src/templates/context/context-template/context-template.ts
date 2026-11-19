@@ -23,7 +23,7 @@ export function contextTemplate({ backend, packageName, names, stores }: Context
   const folder = at(join(CONTEXTS_FOLDER, names.folder))
   const variables = { ...database.contextEnv(names.env, names.folder, packageName), ...files.contextEnv(names.env, names.folder, packageName) }
   return [
-    { action: 'create', path: join(folder, `${names.folder}.context.ts`), content: contextTs(names) },
+    { action: 'create', path: join(folder, `${names.folder}.context.ts`), content: contextTs(names, stores) },
     { action: 'create', path: join(folder, `${names.folder}-features.ts`), content: contextFeaturesTs(names) },
     { action: 'create', path: join(folder, 'migrations/.gitkeep'), content: '' },
     { action: 'create', path: at('src/auth.ts'), content: SRC_AUTH_TS, kept: AUTH_KEPT },
@@ -34,7 +34,7 @@ export function contextTemplate({ backend, packageName, names, stores }: Context
       path: at('src/contexts/contexts.ts'),
       anchor: RETURN_CONTEXTS,
       position: 'before',
-      lines: [`  contexts.push(await ${names.type}_Context.open(platform, stores))`],
+      lines: [`  contexts.push(await ${names.type}_Context.open(platform, place))`],
       imports: [`import { ${names.type}_Context } from './${names.folder}/${names.folder}.context'`],
     },
   ]
