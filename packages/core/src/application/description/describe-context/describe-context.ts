@@ -11,13 +11,11 @@ export function describeContext(registry: ContextRegistry, owners: Map<BrandedEv
   const { context } = registry
   const modules = registry.registeredModules.map(module => describeModule(registry, module, owners))
   const uses = new Set(modules.flatMap(module => module.deps.map(dep => dep.target?.split('/')[0])).filter(each => each !== undefined && each !== context))
-  const shown = new Map(registry.registeredFeatures.map(({ name, modules }) => [name, modules.map(each => moduleId(context, `${name}[${each}]`))]))
-  const names = [...new Set([...modules.flatMap(module => module.feature), ...shown.keys()])]
+  const names = [...new Set([...modules.flatMap(module => module.feature), ...registry.registeredFeatures.map(each => each.name)])]
   const features = names.map((name): FeatureDescription => ({
     id: moduleId(context, name),
     name,
     modules: modules.filter(module => module.feature === name).map(module => module.id),
-    shows: shown.get(name) ?? [],
   }))
   return {
     name: context,

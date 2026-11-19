@@ -15,12 +15,12 @@ import { target }        from '../../paths/paths'
 
 export type FeatureImportsOptions = { folder: string }
 
-/** What each feature of a context folder uses, kept while their entry points are as they were read. */
+/** What each feature of a context folder uses, kept while their classes are as they were read. */
 const declared = new Map<string, { stamp: string, uses: Record<string, string[]> }>()
 
 /**
  * What each feature of the context in `folder` (absolute) uses: the other features whose
- * entry points its own entry point, `features/<f>/<f>.feature.ts`, imports. Read again
+ * entry points its class, `features/<f>/<f>.feature.ts`, imports. Read again
  * whenever one of those files changes.
  */
 export function declaredFeatureUses(folder: string, contexts: string): Record<string, string[]> {
@@ -57,8 +57,8 @@ function pathOf(uses: Record<string, string[]>, from: string, to: string, seen =
   return null
 }
 
-/** That a path inside a feature, as an import names it, is its entry point: its folder, or its index.ts; or, as features used to be written, its <feature>.feature.ts. */
-const isEntryPoint = (inside: string, feature: string) => ['', 'index', `${feature}.feature`].includes(inside.replace(/\.[cm]?[jt]sx?$/, ''))
+/** That a path inside a feature, as an import names it, is its entry point: its folder, or its index.ts. */
+const isEntryPoint = (inside: string) => ['', 'index'].includes(inside.replace(/\.[cm]?[jt]sx?$/, ''))
 
 /** That a path inside a feature is the file that says what it uses, its class: `<feature>.feature.ts`. */
 const declaresUses = (inside: string, feature: string) => inside.replace(/\.[cm]?[jt]sx?$/, '') === `${feature}.feature`
@@ -95,7 +95,7 @@ export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'cycl
       const path = resolved(context, specifier)
       const imported = path && featurePlace(path, folder)
       if (!imported || (own && own.context === imported.context && own.feature === imported.feature)) return
-      if (!isEntryPoint(imported.inside, imported.feature)) {
+      if (!isEntryPoint(imported.inside)) {
         context.report({ node, messageId: 'inside', data: { path: specifier, feature: imported.feature } })
         return
       }

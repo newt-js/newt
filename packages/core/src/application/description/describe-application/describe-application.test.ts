@@ -111,7 +111,7 @@ describe('describeApplication', () => {
   test('says it in the same bytes as before: a monitor takes a new version of a structure whose hash changed', () => {
     const json = JSON.stringify(describeApplication(Object.values(contexts())))
 
-    expect(new Bun.CryptoHasher('sha256').update(json).digest('hex')).toBe('638e1c0b6c008b588389b8f6dab572d0175bcea428b3bce6ff9253fc424dff07')
+    expect(new Bun.CryptoHasher('sha256').update(json).digest('hex')).toBe('04d3dc191afda98a747b19f041fb0934ba686a79bbe0c21947bcf65c284a3ea6')
   })
 
   test('finds modules and events however deep its deps hold them, and keeps a port of plain objects one port', () => {
