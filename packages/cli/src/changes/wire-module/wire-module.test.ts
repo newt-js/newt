@@ -92,6 +92,17 @@ export class Shop_Feature extends Feature {
     expect(text).toContain("super('shop', base)\n")
   })
 
+  test('a last parameter on its own line without its comma takes one', async () => {
+    const { text } = await edited(EMPTY.replace('    base: ContextBase,\n', '    base: ContextBase\n'))
+    expect(text).toContain('    base: ContextBase,\n    readonly box: Box_Module,\n  ) {')
+  })
+
+  test('with a constructor that takes nothing, changes nothing and says what to add', async () => {
+    const result = await edited(EMPTY.replace('(\n    base: ContextBase,\n  )', '()'))
+    expect(result.status).toBe('skipped')
+    expect(result.warnings[0]).toStartWith('m.ts is not as newt wrote it, so newt did not change it: add')
+  })
+
   test('without the class as newt writes it, changes nothing and says what to add', async () => {
     const result = await edited('export const modules = []\n')
     expect(result.text).toBe('export const modules = []\n')

@@ -25,7 +25,7 @@ function holderIn(source: ts.SourceFile, className: string): Holder | undefined 
   const constructor = declared?.members.find((each): each is ts.ConstructorDeclaration => ts.isConstructorDeclaration(each) && each.body !== undefined)
   const returned = initialize?.body.statements.find(ts.isReturnStatement)
   const built = returned?.expression
-  if (!initialize || !constructor || !returned || !built || !ts.isNewExpression(built) || !isNamed(built.expression, className) || !built.arguments?.length) {
+  if (!initialize || !constructor?.parameters.length || !returned || !built || !ts.isNewExpression(built) || !isNamed(built.expression, className) || !built.arguments?.length) {
     return undefined
   }
   const superCall = constructor.body?.statements
@@ -38,15 +38,17 @@ const declares = (statement: ts.Statement, name: string) =>
   ts.isVariableStatement(statement) && statement.declarationList.declarations.some(each => isNamed(each.name, name))
 
 /** The edits that give the constructor a `readonly` parameter, on its own line when its parameters are each on one. */
-function parameterEdit(text: string, constructor: ts.ConstructorDeclaration, parameter: string): Edit {
+function parameterEdits(text: string, constructor: ts.ConstructorDeclaration, parameter: string): Edit[] {
   const last = constructor.parameters.at(-1)!
   const opening = text.indexOf('(', constructor.getStart())
   const oneEach = text.slice(opening, constructor.parameters[0]!.getStart()).includes('\n')
-  if (!oneEach) return { at: last.getEnd(), text: `, ${parameter}` }
+  if (!oneEach) return [{ at: last.getEnd(), text: `, ${parameter}` }]
   const lineEnd = text.indexOf('\n', last.getEnd()) + 1
   const lineStart = text.lastIndexOf('\n', last.getStart()) + 1
   const indent = text.slice(lineStart, last.getStart())
-  return { at: lineEnd, text: `${indent}${parameter},\n` }
+  // The last one without its comma, as some formatters leave it, takes one before the new one comes.
+  const hasComma = text.slice(last.getEnd(), lineEnd).trimStart().startsWith(',')
+  return [...hasComma ? [] : [{ at: last.getEnd(), text: ',' }], { at: lineEnd, text: `${indent}${parameter},\n` }]
 }
 
 /**
@@ -72,7 +74,7 @@ export async function wireModule({ path, className, name, type, declaration, imp
     edits.push({ at: built.arguments.at(-1)!.getEnd(), text: `, ${name}` })
   }
   if (!constructor.parameters.some(each => isNamed(each.name, name))) {
-    edits.push(parameterEdit(text, constructor, `readonly ${name}: ${type}`))
+    edits.push(...parameterEdits(text, constructor, `readonly ${name}: ${type}`))
   }
   if (list && !list.elements.some(each => isNamed(each, name))) {
     edits.push(list.elements.length === 0 ? { at: list.getStart(source) + 1, text: name } : { at: list.elements.at(-1)!.getEnd(), text: `, ${name}` })

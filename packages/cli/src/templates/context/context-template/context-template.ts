@@ -10,12 +10,12 @@ import { STORE_DATABASES }    from '../../stores/store-databases'
 import { STORE_FILES }        from '../../stores/store-files'
 import { contextTs }          from '../files/context-ts'
 
-export type ContextTemplateOptions = { backend: string, packageName: string, names: ContextNames, stores: Required<{ [K in keyof BackendStores]: NonNullable<BackendStores[K]> }> }
+export type ContextTemplateOptions = { backend: string, packageName: string, names: ContextNames, stores: Required<{ [K in keyof BackendStores]: NonNullable<BackendStores[K]> }>, migrated?: boolean }
 
 const RETURN_CONTEXTS = '  return contexts'
 
 /** A context in `backend`, on the backend's stores: its folder, its variables, and its place in src/contexts/contexts.ts. */
-export function contextTemplate({ backend, packageName, names, stores }: ContextTemplateOptions): FileChange[] {
+export function contextTemplate({ backend, packageName, names, stores, migrated = false }: ContextTemplateOptions): FileChange[] {
   const database = STORE_DATABASES[stores.database]
   const files = STORE_FILES[stores.files]
   const at = (path: string) => join(backend, path)
@@ -23,7 +23,8 @@ export function contextTemplate({ backend, packageName, names, stores }: Context
   const variables = { ...database.contextEnv(names.env, names.folder, packageName), ...files.contextEnv(names.env, names.folder, packageName) }
   return [
     { action: 'create', path: join(folder, `${names.folder}.context.ts`), content: contextTs(names, stores) },
-    { action: 'create', path: join(folder, 'migrations/.gitkeep'), content: '' },
+    // Once it has a migration, add module removed it: the folder needs it no more.
+    ...migrated ? [] : [{ action: 'create' as const, path: join(folder, 'migrations/.gitkeep'), content: '' }],
     { action: 'create', path: at('src/auth.ts'), content: SRC_AUTH_TS, kept: AUTH_KEPT },
     { action: 'complete-env', path: at('.env'), variables },
     { action: 'complete-env', path: at('.env.example'), variables },

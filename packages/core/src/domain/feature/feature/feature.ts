@@ -25,7 +25,8 @@ export abstract class Feature {
       if (module.useCaseRunner.registry !== registry) {
         throw new Error(`The feature ${name}: ${module.name} is a module of another context than ${registry.context}'s`)
       }
-      const [, feature, ownName] = /^(.*)\[(.*)\]$/.exec(module.name) ?? []
+      // Module refuses any name but `<feature>[<module>]`.
+      const [, feature, ownName] = /^(.*)\[(.*)\]$/.exec(module.name)!
       if (feature !== name) {
         throw new Error(`The feature ${name}: ${module.name} is a module of the feature ${feature}: a feature holds only its own modules, ${name}[<module>]`)
       }

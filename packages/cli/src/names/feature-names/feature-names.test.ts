@@ -12,6 +12,8 @@ test.each([
   ['Campaigns', 'lowercase words joined by -'],
   ['delete', 'a word JavaScript keeps'],
   ['router', "a name newt's generated code uses"],
+  ['start', "already one of a context's"],
+  ['stop-worker', "already one of a context's"],
   ['files', "where the context's files are served"],
   ['newt-jobs', "those tables are newt's own"],
 ])('refuses %s', (name, why) => {

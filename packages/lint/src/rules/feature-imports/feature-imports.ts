@@ -102,7 +102,7 @@ export const featureImports: TSESLint.RuleModule<'inside' | 'undeclared' | 'cycl
       if (!own || own.context !== imported.context) return
       const uses = declaredFeatureUses(posix.join(folder, own.context), folder)
       const allowed = uses[own.feature] ?? []
-      // An entry point's own imports are what it uses: one through an alias it is not read with is not judged.
+      // A feature's class imports what it uses: one through an alias it is not read with is not judged.
       if (!allowed.includes(imported.feature) && !declaresUses(own.inside, own.feature)) {
         const data = { path: specifier, feature: imported.feature, own: own.feature, uses: allowed.length ? allowed.join(', ') : 'no other feature' }
         context.report({ node, messageId: 'undeclared', data })
