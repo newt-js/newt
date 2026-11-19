@@ -57,7 +57,7 @@ try {
   const app = join(work, 'shop')
   await fromTarballs(app, tarballs)
   await $`bun install`.cwd(app).quiet()
-  for (const args of [['add', 'context', 'sales'], ['add', 'module', 'sales/order'], ['add', 'use-case', 'sales/order', 'mark-paid']]) {
+  for (const args of [['add', 'context', 'sales'], ['add', 'module', 'sales/orders/order'], ['add', 'use-case', 'sales/orders/order', 'mark-paid']]) {
     await $`bunx newt ${args}`.cwd(app).quiet()
   }
   await topTypescriptIs7(app)
