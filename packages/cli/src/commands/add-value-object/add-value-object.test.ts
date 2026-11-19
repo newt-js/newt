@@ -34,7 +34,7 @@ import type { Customers_Feature } from '../../customers'
 import { CustomerId } from './value-objects/customer-id'
 
 test("customers' use cases take the id order keeps", () => {
-  const read = (customers: Customers_Feature) => customers.customer.get({ id: CustomerId.from(Bun.randomUUIDv7()) })
+  const read = (customers: Customers_Feature) => customers.customer.get(CustomerId.from(Bun.randomUUIDv7()))
   expect(read).toBeFunction()
 })
 `)

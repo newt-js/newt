@@ -54,7 +54,7 @@ export const ADD_ROUTE = defineCommand({
       throw new CommandError(`${useCase.camel} takes ${parameters} inputs, and a route gives one: write its route by hand in ${module.folder}.routes.ts`)
     }
     const hasId = params.includes(':id')
-    const shape = { method, path, takesInput: parameters === 1, returnsNothing: found.returnsNothing }
+    const shape = { method, path, takesInput: parameters === 1, takesId: found.input === 'string', returnsNothing: found.returnsNothing }
     if (shape.takesInput && !hasId && ['get', 'delete'].includes(method)) {
       throw new CommandError(`${useCase.camel} takes an input, and a ${method.toUpperCase()} has no body to give it: put :id in --path, or use post, put or patch`)
     }
@@ -69,7 +69,7 @@ export const ADD_ROUTE = defineCommand({
         anchor: routesStart(module),
         position: 'after',
         lines: routeLine(module, useCase, shape).split('\n'),
-        imports: [`import { ${module.type}Id } from './value-objects/${module.folder}-id'`],
+        imports: shape.takesInput && hasId && !shape.takesId ? [`import { ${module.type}Id } from './value-objects/${module.folder}-id'`] : [],
       } satisfies FileChange],
       ...testable ? [{ action: 'append-block' as const, path: file('.module.test.ts'), block: routeTest(module, useCase, shape), imports: ["import { spyOn } from 'bun:test'"] }] : [],
     ]

@@ -200,13 +200,13 @@ Why: `@UseCase` is what runs a method as a use case (write rule, retry on confli
 
 ### newt/use-case-params
 
-A use case's parameters are value objects or DTOs of the module's schema, and each input DTO is parsed with its schema.
+A use case's parameters are attributes (a `string`, a `number`, a value object) or DTOs of the module's schema, and each input DTO is parsed with its schema.
 
-Refused: `unknown` or `any`, an object type written in place, a bare `string`, `number`, `boolean` or `bigint` (also in a union or array), and an input DTO (`z.input<typeof XSchema>`) that nothing parses with `XSchema.parse` (in the use case or in a private method it hands it to).
+Refused: `unknown` or `any`, an object type written in place, and an input DTO (`z.input<typeof XSchema>`) that nothing parses with `XSchema.parse` (in the use case or in a private method it hands it to).
 
 ```ts
 @UseCase()
-async completeTask(id: string) { /* ... */ }       // wrong: bare string
+async completeTask(input: { id: string }) { /* ... */ } // wrong: object written in place
 
 @UseCase()
 async completeTask(input: TaskCompleteTaskDTO): Promise<TaskDTO> {
@@ -219,14 +219,14 @@ Why: a type checks nothing at run time; the schema does.
 
 ### newt/use-case-reads
 
-In a `*.module.ts`, `find`, `get` and `paginate` read by criteria, never by text; `search` takes exactly `(text, page)`.
+In a `*.module.ts`, `find` and `paginate` read by criteria and `get` by id, never by text; `search` takes exactly `(text, page)`.
 
 ```ts
 async find(text: SearchText) { /* ... */ }                      // wrong
 async search(text: SearchText, page: PageRequest) { /* ... */ } // right
 ```
 
-Why: every module reads the same four ways: `find(criteria, sort?)`, `get(criteria)`, `paginate(criteria, page, sort?)`, `search(text, page)`.
+Why: every module reads the same four ways: `find(criteria, sort?)`, `get(id)`, `paginate(criteria, page, sort?)`, `search(text, page)`.
 
 ### newt/use-case-files
 

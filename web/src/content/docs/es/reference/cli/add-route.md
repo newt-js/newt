@@ -68,6 +68,7 @@ Cómo llama la ruta al caso de uso:
 | El caso de uso | La ruta |
 |---|---|
 | Recibe una entrada, la ruta tiene `:id` | Le pasa `{ id }` de la ruta |
+| Recibe el id de la entidad tal cual (`get(id: string)`), la ruta tiene `:id` | Le pasa el id de la ruta |
 | Recibe una entrada, sin `:id` | Le pasa el cuerpo de la petición |
 | No recibe entrada | Lo llama sin nada |
 | No devuelve nada | Responde `204` sin cuerpo |

@@ -81,7 +81,7 @@ A use case then calls the other module's use cases:
 @UseCase()
 async moveToProject(input: TaskMoveToProjectDTO): Promise<TaskDTO> {
   const { id, projectId } = TaskMoveToProjectSchema.parse(input)
-  const project = await this.deps.project.get({ id: projectId })
+  const project = await this.deps.project.get(projectId)
   // ...
 }
 ```

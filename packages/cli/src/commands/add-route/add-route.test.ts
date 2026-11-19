@@ -26,13 +26,21 @@ describe('newt add route', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test('a use case that takes the id itself, as get does, is given the id of its path, and its lint, types and tests pass', async () => {
+    const backend = await moduleProject()
+    expect((await run(ADD_ROUTE, ['sales/orders/order', 'get', '--method', 'get', '--path', '/orders/orders/:id/again'], backend)).code).toBe(0)
+    expect(await read(backend, 'order.routes.ts')).toContain("  router.get('/orders/orders/:id/again', async request => Response.json(await orders.get(request.params.id)))")
+    expect(await read(backend, 'order.module.test.ts')).toContain('expect(called).toHaveBeenCalledWith(created.id)')
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
   test('its tests fail when the route calls another use case, or is public', async () => {
     const backend = await moduleProject()
     await run(ADD_USE_CASE, ['sales/orders/order', 'mark-paid'], backend)
     await run(ADD_ROUTE, ['sales/orders/order', 'mark-paid'], backend)
     const routes = join(backend, ORDER_MODULE, 'order.routes.ts')
     const written = await Bun.file(routes).text()
-    await Bun.write(routes, written.replace('await orders.markPaid({', 'await orders.get({'))
+    await Bun.write(routes, written.replace('await orders.markPaid({', 'await orders.find({'))
     expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /orders/orders/:id/mark-paid calls markPaid')
     await Bun.write(routes, written.replace("OrderId.from(request.params.id) })))", "OrderId.from(request.params.id) })), { public: true })"))
     expect((await checkGenerated(backend, { lint: false })).join('')).toContain('POST /orders/orders/:id/mark-paid answers 401 to who has not signed in')

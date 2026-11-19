@@ -53,7 +53,7 @@ ${opened.drop ? 'afterEach(async () => {\n  await context.close()\n  await dropD
 test('creates ${withArticle(words)} and reads it back', async () => {
   const created = await ${plural}.create({ name: ' First ' })
 
-  expect(await ${plural}.get({ id: created.id })).toMatchObject({ id: created.id, name: 'First' })
+  expect(await ${plural}.get(created.id)).toMatchObject({ id: created.id, name: 'First' })
   expect(await ${plural}.find({ name: 'First' })).toMatchObject([{ id: created.id }])
   expect(await ${plural}.paginate({}, { size: 10 })).toMatchObject({ items: [{ id: created.id }], total: 1 })
 })
@@ -63,7 +63,7 @@ test('keeps each one apart, and finds them by their name', async () => {
   const second = await ${plural}.create({ name: 'Second' })
   const another = await ${plural}.create({ name: 'First' })
 
-  expect(await ${plural}.get({ id: second.id })).toMatchObject({ id: second.id, name: 'Second' })
+  expect(await ${plural}.get(second.id)).toMatchObject({ id: second.id, name: 'Second' })
   expect((await ${plural}.find({ name: 'First' })).map(each => each.id).sort()).toEqual([first.id, another.id].sort())
   expect(await ${plural}.paginate({ name: 'Second' }, { size: 10 })).toMatchObject({ items: [{ id: second.id }], total: 1 })
   expect((await ${plural}.paginate({}, { size: 10 })).total).toBe(3)

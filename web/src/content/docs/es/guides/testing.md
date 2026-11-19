@@ -89,7 +89,7 @@ afterEach(() => context.close())
 test('creates a task and reads it back', async () => {
   const created = await tasks.create({ name: ' First ' })
 
-  expect(await tasks.get({ id: created.id })).toMatchObject({
+  expect(await tasks.get(created.id)).toMatchObject({
     id: created.id,
     name: 'First',
   })

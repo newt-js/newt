@@ -41,7 +41,7 @@ export function registerTaskRoutes(
   )
   router.get('/tasks/:id', async request =>
     Response.json(
-      await tasks.get({ id: TaskId.from(request.params.id) }),
+      await tasks.get(request.params.id),
     ),
   )
   return { one: router.group('/tasks/:taskId') }

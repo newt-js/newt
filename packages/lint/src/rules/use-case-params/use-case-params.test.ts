@@ -16,6 +16,8 @@ const moduleClass = (body: string) => `class Order_Module extends Module {\n${bo
 tester.run('use-case-params', asRule(useCaseParams), {
   valid: [
     { code: moduleClass("@UseCase() async place(input: OrderPlaceDTO, page: PageRequest, id: OrderId, actorId: UserId | null, kind: 'a' | 'b') {}"), filename: ORDER_MODULE },
+    // A single attribute: a plain string or number.
+    ...['string', 'number', 'string | undefined'].map(type => ({ code: moduleClass(`@UseCase() async get(id: ${type}) {}`), filename: ORDER_MODULE })),
     // A private method, a field, another class: no use case.
     { code: moduleClass('private read(input: unknown) {}\nprivate check(input: { id: string }) {}'), filename: ORDER_MODULE },
     { code: 'class Order_Helper { @UseCase() place(input: unknown) {} }', filename: ORDER_MODULE },
@@ -26,7 +28,6 @@ tester.run('use-case-params', asRule(useCaseParams), {
     { code: moduleClass('@UseCase() async place(input) {}'), filename: ORDER_MODULE, errors: [{ messageId: 'nothing' }] },
     { code: moduleClass('@UseCase() async place(id: OrderId, input = {}) {}'), filename: ORDER_MODULE, errors: [{ messageId: 'nothing' }] },
     { code: moduleClass('@UseCase() async place(input: { total: number }) {}'), filename: ORDER_MODULE, errors: [{ messageId: 'inline' }] },
-    ...['string', 'number', 'boolean', 'bigint', 'string | undefined', 'string | null', 'string[]'].map(type => ({ code: moduleClass(`@UseCase() async place(id: ${type}) {}`), filename: ORDER_MODULE, errors: [{ messageId: 'bare' }] })),
   ],
 })
 

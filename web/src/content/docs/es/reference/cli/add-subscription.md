@@ -58,7 +58,7 @@ export function registerTaskWorkers(tasks: Task_Module): void {
 
 - `<module>.workers.ts` se crea si no existe, y recibe la línea que suscribe el caso de uso.
 - `<module>.module.ts` recibe el evento en `eventsOf` y una llamada a `register<Module>Workers(module)`.
-- Si el caso de uso recibe una entrada, le llega `{ id }` desde el evento. Si no recibe ninguna, se llama sin nada.
+- Si el caso de uso recibe una entrada, le llega `{ id }` desde el evento, o el id tal cual si su entrada es el id de la entidad (`TaskId`). Si no recibe ninguna, se llama sin nada.
 - Con el evento `created`, newt también escribe un test que crea una entidad y comprueba que el job se ha ejecutado. Con otros eventos, avisa en su lugar.
 
 ## Siguientes pasos
