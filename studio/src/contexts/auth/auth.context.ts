@@ -12,6 +12,7 @@ import { join }                     from 'node:path'
 import { authenticate }             from './authenticate'
 import { ApplicationClient_Module } from './modules/application-client/application-client.module'
 import { Application_Module }       from './modules/application/application.module'
+import { OauthSigningKey_Module }   from './modules/oauth-signing-key/oauth-signing-key.module'
 import { SignInAttempt_Module }     from './modules/sign-in-attempt/sign-in-attempt.module'
 import { SignInSession_Module }     from './modules/sign-in-session/sign-in-session.module'
 import { UserCredential_Module }    from './modules/user-credential/user-credential.module'
@@ -50,6 +51,7 @@ export class Auth_Context extends BoundedContext {
     const applicationClient = ApplicationClient_Module.initialize(base, router, {
       application,
     })
+    const oauthSigningKey = OauthSigningKey_Module.initialize(base, router)
     return new Auth_Context(base, {
       application,
       user,
@@ -58,6 +60,7 @@ export class Auth_Context extends BoundedContext {
       signInSession,
       applicationClient,
       userEmailLink,
+      oauthSigningKey,
     })
   }
 
@@ -68,6 +71,7 @@ export class Auth_Context extends BoundedContext {
   private readonly signInSession: SignInSession_Module
   private readonly applicationClient: ApplicationClient_Module
   private readonly userEmailLink: UserEmailLink_Module
+  private readonly oauthSigningKey: OauthSigningKey_Module
 
   private constructor(
     base: ContextBase,
@@ -79,6 +83,7 @@ export class Auth_Context extends BoundedContext {
       signInSession: SignInSession_Module,
       applicationClient: ApplicationClient_Module,
       userEmailLink: UserEmailLink_Module,
+      oauthSigningKey: OauthSigningKey_Module,
     },
   ) {
     super('auth', base, modules)
@@ -89,6 +94,7 @@ export class Auth_Context extends BoundedContext {
     this.signInSession = modules.signInSession
     this.applicationClient = modules.applicationClient
     this.userEmailLink = modules.userEmailLink
+    this.oauthSigningKey = modules.oauthSigningKey
   }
 
   static async open(
@@ -111,6 +117,8 @@ export class Auth_Context extends BoundedContext {
       storage,
     })
     const context = Auth_Context.initialize(base, router)
+    // Tokens are signed by a key made here, once: signing one never writes.
+    await context.oauthSigningKey.ensureActiveKey()
     router.authenticateWith(authenticate(context.signInSession))
     return { context, router, host }
   }
