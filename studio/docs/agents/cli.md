@@ -35,6 +35,10 @@ you are not sure, then without it. `bunx newt <command> --help` has the options.
 - It edits files only where they look as it wrote them. Keep `initialize` as it writes it,
   `const module = new X_Module(…)` then `return module`: with `return new UserCredential_Module(…)`
   (`user-credential.module.ts`), `newt add subscription` writes nothing and asks you to wire the workers by hand.
+- `newt add use-case <ctx>/<m> get` is refused ("get is one of the reads newt's lint shapes"): write
+  `get(id: string)` by hand, as in `user.module.ts`.
+- `newt add deps` writes nothing for a module that already has deps or whose repository takes them
+  (`user-credential`, `sign-in-session`): add the field to `<m>.deps.ts` and the context's `initialize` by hand.
 - It refuses a cycle between modules before writing anything: `newt add deps auth/user user-credential` fails,
   since `userCredential` uses `user`.
 - `newt publish auth/<module>` would run, but `auth` publishes nothing: no context uses it.

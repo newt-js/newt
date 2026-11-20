@@ -15,7 +15,8 @@ of your task in `docs/agents/` before writing code. Each guide gives the rule, w
   Modules that belong together share a prefix in their name: `oauth-authorization`, `oauth-signing-key`.
   A context holds each module in a field: `private` by default, `public` once it publishes it (`newt publish`);
   another context reaches only the modules it publishes.
-- Contexts today: `auth` (modules `application`, `user`, `userCredential`), `panel` and `backoffice` (empty).
+- Contexts today: `auth` (modules `application`, `user`, `userCredential`, `signInAttempt`, `signInSession`), `panel` and
+  `backoffice` (empty).
 
 ## Sign-in
 
@@ -45,6 +46,9 @@ The rules the lint cannot see, each explained in its guide:
 - Read with `find` and a filter before adding a read use case or a repository method; one `find` with the whole
   criteria before several. ([reading](docs/agents/reading.md))
 - A use case returns other entities resolved, never their ids. ([reading](docs/agents/reading.md))
+- A route's path is its module's name in plural (`/sign-in-attempts`). ([routes](docs/agents/routes.md))
+- An entity has no getter only to read a field: use `toDTO()`. ([modules](docs/agents/modules.md))
+- A guard's key is `<context>.<module>.<name>`: keys are shared by the whole database. ([modules](docs/agents/modules.md))
 - An enum is a value object. A schema with a secret has a public schema without it, used by `toDTO` and events.
   ([modules](docs/agents/modules.md))
 - Never rewrite a migration that exists: a change is a new migration. ([migrations](docs/agents/migrations.md))

@@ -43,7 +43,8 @@ Why: anyone who opens a module knows where everything is.
   export const UserCredential_Created = defineEvent('userCredential.created', UserCredentialPublicSchema)
   ```
 
-  The entity reads the secret through a getter of its own (`get secretHash()`), for its module only.
+  The entity reads the secret through a getter of its own (`get secretHash()`), for its module only: `toDTO()` has
+  no secret to give.
 
 ## Value objects
 
@@ -73,6 +74,16 @@ Why: anyone who opens a module knows where everything is.
 - Its methods take `<Entity><Verb>Props` declared beside it, never a DTO nor an inline object
   (lint `entity-method-params`): `UserCreateProps`, `UserCredentialPasswordProps`. Why: the entity speaks its own
   words; the DTO is the use case's contract.
+- **No getter only to read a field.** The module reads a field through `toDTO()`, slower but the entity stays clean;
+  getters are for domain rules (`isLocked`, `nextStep` in `sign-in-attempt.ts`) and secrets.
+
+  ```ts
+  // sign-in-attempt.module.ts
+  const failedTries = recent.reduce((sum, each) => sum + each.toDTO().failedTries, 0)
+  ```
+
+  `get userId()` in `sign-in-attempt.ts` and `sign-in-session.ts`, and `get application()` in `sign-in-session.ts`,
+  are from before this rule: do not copy them.
 - It changes through `this.change({...})` in a method with a domain name (`changeSecret`), and tells what happened
   with `this.trackEvent(new X_Created(...))` in that method or factory.
 - An entity that references another is given the whole entity, not its id: see [reading](reading.md#references).
@@ -101,6 +112,14 @@ Why: anyone who opens a module knows where everything is.
 
 - It returns DTOs (`toDTO()`), with other entities resolved ([reading](reading.md)).
 - It writes through `this.repository.persist(entity)`, never a transaction of its own (lint `module-transactions`).
+- A `guard` makes saves with the same key wait for each other, one at a time; a read inside the save (`after`) needs
+  one, or core throws `[guard rule]` (`use-case-runner.ts`). Its key is `<context>.<module>.<name>`, else core refuses
+  the save (`base-repository.ts`): keys are shared by the whole database, so two modules with one key would block each other.
+
+  ```ts
+  // user.module.ts
+  await this.repository.persist(admin, { guard: ['auth.user.setup'], after: async () => { … } })
+  ```
 - Keep a case's rule in its use case, not in a generic piece: scoping an email to an application belongs to the
   sign-in use case, not to `UserFilter` (a `required` field added there was removed).
 - Logic several use cases share goes in `services/` (`newt add service`); a single expression stays inline.
