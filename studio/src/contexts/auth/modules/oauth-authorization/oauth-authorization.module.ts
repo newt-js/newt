@@ -1,29 +1,32 @@
-import { Module }                              from '@newt-js/core'
-import { StaleVersion }                        from '@newt-js/core'
-import { UseCase }                             from '@newt-js/core'
-import { eventsOf }                            from '@newt-js/core'
-import type { ContextBase }                    from '@newt-js/core/application'
-import type { HttpRouter }                     from '@newt-js/core/http'
+import { Module }                               from '@newt-js/core'
+import { StaleVersion }                         from '@newt-js/core'
+import { UseCase }                              from '@newt-js/core'
+import { eventsOf }                             from '@newt-js/core'
+import type { ContextBase }                     from '@newt-js/core/application'
+import type { HttpRouter }                      from '@newt-js/core/http'
 // --------------------------------------------------------
-import type { ApplicationClientDTO }           from '../application-client/application-client.schema'
-import { InvalidAuthorizationRequest }         from './errors/invalid-authorization-request'
-import { InvalidClient }                       from './errors/invalid-client'
-import { InvalidGrant }                        from './errors/invalid-grant'
-import { UnsupportedGrantType }                from './errors/unsupported-grant-type'
-import { OauthAuthorization_Created }          from './events/oauth-authorization-created'
-import { OauthAuthorization }                  from './oauth-authorization'
-import type { OauthAuthorization_Deps }        from './oauth-authorization.deps'
-import { OauthAuthorization_Repository }       from './oauth-authorization.repository'
-import { registerOauthAuthorizationRoutes }    from './oauth-authorization.routes'
-import type { OauthAuthorizationAuthorizeDTO } from './oauth-authorization.schema'
-import { OauthAuthorizationAuthorizeSchema }   from './oauth-authorization.schema'
-import type { OauthAuthorizationDTO }          from './oauth-authorization.schema'
-import type { OauthAuthorizationExchangeDTO }  from './oauth-authorization.schema'
-import { OauthAuthorizationExchangeSchema }    from './oauth-authorization.schema'
-import type { OauthAuthorizationRedirectDTO }  from './oauth-authorization.schema'
-import type { OauthDiscoveryDTO }              from './oauth-authorization.schema'
-import type { OauthTokensDTO }                 from './oauth-authorization.schema'
-import { ApplicationClientId }                 from './value-objects/application-client-id'
+import type { ApplicationClientDTO }            from '../application-client/application-client.schema'
+import { InvalidAuthorizationRequest }          from './errors/invalid-authorization-request'
+import { InvalidClient }                        from './errors/invalid-client'
+import { InvalidGrant }                         from './errors/invalid-grant'
+import { UnsupportedGrantType }                 from './errors/unsupported-grant-type'
+import { OauthAuthorization_Created }           from './events/oauth-authorization-created'
+import { OauthAuthorization }                   from './oauth-authorization'
+import type { OauthAuthorization_Deps }         from './oauth-authorization.deps'
+import { OauthAuthorization_Repository }        from './oauth-authorization.repository'
+import { registerOauthAuthorizationRoutes }     from './oauth-authorization.routes'
+import type { OauthAuthorizationAuthorizeDTO }  from './oauth-authorization.schema'
+import { OauthAuthorizationAuthorizeSchema }    from './oauth-authorization.schema'
+import type { OauthAuthorizationDTO }           from './oauth-authorization.schema'
+import type { OauthAuthorizationEndSessionDTO } from './oauth-authorization.schema'
+import { OauthAuthorizationEndSessionSchema }   from './oauth-authorization.schema'
+import type { OauthAuthorizationExchangeDTO }   from './oauth-authorization.schema'
+import { OauthAuthorizationExchangeSchema }     from './oauth-authorization.schema'
+import type { OauthAuthorizationRedirectDTO }   from './oauth-authorization.schema'
+import type { OauthDiscoveryDTO }               from './oauth-authorization.schema'
+import type { OauthEndSessionDTO }              from './oauth-authorization.schema'
+import type { OauthTokensDTO }                  from './oauth-authorization.schema'
+import { ApplicationClientId }                  from './value-objects/application-client-id'
 
 /** Codes are long and random: SHA-256 is enough, as for the tokens of sessions. */
 function hashOf(code: string): string {
@@ -98,7 +101,7 @@ export class OauthAuthorization_Module extends Module {
     this.events = eventsOf(base.bus, {
       created: OauthAuthorization_Created,
     })
-    this.routes = registerOauthAuthorizationRoutes(router, this, base.rateLimits)
+    this.routes = registerOauthAuthorizationRoutes(router, this, { rateLimits: base.rateLimits, signInSessions: deps.signInSession })
   }
 
   /** The OpenID configuration of the application at a host: each one has its own issuer. */
@@ -199,6 +202,36 @@ export class OauthAuthorization_Module extends Module {
       throw error instanceof StaleVersion ? new InvalidGrant() : error
     }
     return this.tokensOf(authorization.toDTO(), { issuer: `${url}${this.prefix}`, audience: url, now })
+  }
+
+  /**
+   * Checks a request to end_session (RP-Initiated Logout): it goes back only to a post_logout_redirect_uri of the client,
+   * known by client_id or by the id_token_hint this auth signed. It ends nothing: this module never writes sessions.
+   */
+  @UseCase()
+  async endSession(input: OauthAuthorizationEndSessionDTO): Promise<OauthEndSessionDTO> {
+    const { host, query } = OauthAuthorizationEndSessionSchema.parse(input)
+    const { application, url } = await this.deps.application.fromHost(host)
+    const hint = query.id_token_hint === undefined
+      ? null
+      : await this.deps.oauthSigningKey.verify({ token: query.id_token_hint, issuer: `${url}${this.prefix}` })
+    if (query.id_token_hint !== undefined && hint === null) {
+      throw new InvalidAuthorizationRequest()
+    }
+    const back = query.post_logout_redirect_uri
+    if (back === undefined) {
+      return { applicationSlug: application.slug, redirectTo: null }
+    }
+    const hinted = typeof hint?.aud === 'string' ? hint.aud : undefined
+    if (query.client_id !== undefined && hinted !== undefined && query.client_id !== hinted) {
+      throw new InvalidAuthorizationRequest()
+    }
+    const client = await this.clientOf(query.client_id ?? hinted)
+    if (client.application.id !== application.id || !client.postLogoutRedirectUris.some(each => each === back)) {
+      throw new InvalidAuthorizationRequest()
+    }
+    const state: Record<string, string> = query.state === undefined ? {} : { state: query.state }
+    return { applicationSlug: application.slug, redirectTo: withQuery(back, state) }
   }
 
   /** The id_token, for the client, and the access token, for the application (RFC 9068): both short, and signed. */

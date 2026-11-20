@@ -340,3 +340,69 @@ test('a client that cannot prove itself, or of another client or application, ge
   // None of those spent the code.
   expect((await exchange(form, client))?.status).toBe(200)
 })
+
+/** Abel signed in to backoffice through its client, and the id_token it got. */
+async function abelWithIdToken() {
+  const client = await backofficeClient()
+  const { cookie } = await abelSignedIn()
+  const { verifier, challenge } = pkce()
+  const { location } = await authorize(authorizeQuery(client.id, challenge), cookie)
+  const tokens = await (await exchange(exchangeForm(location!.searchParams.get('code')!, verifier), client))!.json() as OauthTokensDTO
+  return { client, cookie, idToken: tokens.id_token }
+}
+
+function endSession(query: Record<string, string>, cookie: string) {
+  return get(`${ISSUER}/oauth-authorizations/end-session?${new URLSearchParams(query)}`, { cookie })
+}
+
+async function isSignedIn(clientId: string, cookie: string): Promise<boolean> {
+  const { location } = await authorize(authorizeQuery(clientId, pkce().challenge), cookie)
+  return location!.searchParams.has('code')
+}
+
+test('signing out ends the session of the application, and goes back to a registered address', async () => {
+  const { client, cookie, idToken } = await abelWithIdToken()
+
+  const query = { id_token_hint: idToken, post_logout_redirect_uri: 'http://localhost:4000/', state: 'bye' }
+  const response = await endSession(query, cookie)
+
+  expect(response?.status).toBe(302)
+  expect(response?.headers.get('location')).toBe('http://localhost:4000/?state=bye')
+  expect(await isSignedIn(client.id, cookie)).toBe(false)
+})
+
+test('without an address to go back to, it signs out and stays', async () => {
+  const { client, cookie } = await abelWithIdToken()
+
+  const response = await endSession({}, cookie)
+
+  expect(response?.status).toBe(200)
+  expect(await isSignedIn(client.id, cookie)).toBe(false)
+})
+
+test('an address the client does not have, or a hint this auth never signed, is refused, and nothing ends', async () => {
+  const { client, cookie, idToken } = await abelWithIdToken()
+  const forged = `${idToken.slice(0, -4)}AAAA`
+  const refused: Record<string, string>[] = [
+    { id_token_hint: idToken, post_logout_redirect_uri: 'https://evil.test/' },
+    { client_id: client.id, post_logout_redirect_uri: CALLBACK },
+    { post_logout_redirect_uri: 'http://localhost:4000/' },
+    { id_token_hint: forged },
+    { id_token_hint: idToken, client_id: Bun.randomUUIDv7(), post_logout_redirect_uri: 'http://localhost:4000/' },
+  ]
+
+  for (const query of refused) {
+    const response = await endSession(query, cookie)
+    expect(response?.status).toBe(400)
+    expect(response?.headers.get('location')).toBeNull()
+  }
+  expect(await isSignedIn(client.id, cookie)).toBe(true)
+})
+
+test('an id_token_hint of another application is no hint here', async () => {
+  const { cookie, idToken } = await abelWithIdToken()
+
+  const response = await get(`http://auth.auth.test/auth/api/oauth-authorizations/end-session?id_token_hint=${idToken}`, { cookie })
+
+  expect(response?.status).toBe(400)
+})

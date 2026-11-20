@@ -55,6 +55,15 @@ export type OauthTokensDTO = {
   scope: string,
 }
 
+/** A request to end_session, as it came: the host says the application, the query where to go back. */
+export const OauthAuthorizationEndSessionSchema = z.object({
+  host: z.string(),
+  query: z.record(z.string(), z.string()),
+})
+
+/** Whose session to end, and where to send the browser then: a registered address, or nowhere. */
+export type OauthEndSessionDTO = { applicationSlug: string, redirectTo: string | null }
+
 /** Where /authorize sends the browser: back to the client with a code or an error, or to sign in first. */
 export type OauthAuthorizationRedirectDTO = { redirectTo: string }
 
@@ -75,4 +84,5 @@ export type OauthAuthorizationFields = z.infer<typeof OauthAuthorizationSchema>
 export type OauthAuthorizationDTO =
   Resolved<z.infer<typeof OauthAuthorizationPublicSchema>, OauthAuthorizationReferences>
 export type OauthAuthorizationExchangeDTO = z.input<typeof OauthAuthorizationExchangeSchema>
+export type OauthAuthorizationEndSessionDTO = z.input<typeof OauthAuthorizationEndSessionSchema>
 export type OauthAuthorizationAuthorizeDTO = z.input<typeof OauthAuthorizationAuthorizeSchema>

@@ -3,6 +3,7 @@ import type { HttpRouter }                from '@newt-js/core/http'
 import { requestHost }                    from '@newt-js/core/http'
 import { toOauthErrorResponse }           from '@newt-js/core/http'
 // --------------------------------------------------------
+import type { SignInSession_Module }      from '../sign-in-session/sign-in-session.module'
 import type { OauthAuthorization_Module } from './oauth-authorization.module'
 
 /** The host a request came to, which says the application. */
@@ -53,7 +54,7 @@ function oauthErrorOf(error: unknown): Response {
 export function registerOauthAuthorizationRoutes(
   router: HttpRouter,
   oauthAuthorizations: OauthAuthorization_Module,
-  rateLimits: ContextBase['rateLimits'],
+  { rateLimits, signInSessions }: { rateLimits: ContextBase['rateLimits'], signInSessions: SignInSession_Module },
 ) {
   const tokens = rateLimits.define('oauthAuthorization.tokens', { limit: 60, windowMs: 60_000 })
   // Its path is fixed by OpenID Connect Discovery: the issuer and this.
@@ -72,5 +73,15 @@ export function registerOauthAuthorizationRoutes(
     const exchanged = await oauthAuthorizations.exchange({ host: hostOf(request), ...clientCredentialsOf(request, form), form })
     return Response.json(exchanged, { headers: { 'cache-control': 'no-store', 'pragma': 'no-cache' } })
   }, { public: true, crossOrigin: true, rateLimit: { limit: tokens, by: 'ip' }, onError: oauthErrorOf })
+  // OpenID's RP-Initiated Logout: this module checks where to go back, and the session is ended by its own module.
+  router.get('/oauth-authorizations/end-session', async request => {
+    const query = Object.fromEntries(new URL(request.url).searchParams)
+    const { applicationSlug, redirectTo } = await oauthAuthorizations.endSession({ host: hostOf(request), query })
+    await signInSessions.endCurrent({ cookies: Object.fromEntries(request.cookies.entries()), applicationSlug })
+    if (redirectTo === null) {
+      return Response.json({ signedOut: true }, { headers: { 'cache-control': 'no-store' } })
+    }
+    return new Response(null, { status: 302, headers: { 'location': redirectTo, 'cache-control': 'no-store' } })
+  }, { public: true, onError: error => toOauthErrorResponse(error, 'invalid_request') })
   return { one: router.group('/oauth-authorizations/:oauthAuthorizationId') }
 }
