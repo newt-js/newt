@@ -28,6 +28,9 @@ import { UserId }                        from './value-objects/user-id'
 const POLICY = [SignInStep.password]
 /** Whom an attempt checks the password of when no user has its email: no one, as slowly. */
 const NOBODY = UserId.generate()
+/** Wrong answers a user takes, across all its attempts, before its sign-in locks for a while. */
+const MOST_FAILED_TRIES_OF_A_USER = 10
+const USER_LOCK_WINDOW_MS = 15 * 60 * 1000
 
 /** Signing in step by step. It never tells whether an email exists: both ways answer the same. */
 export class SignInAttempt_Module extends Module {
@@ -50,7 +53,7 @@ export class SignInAttempt_Module extends Module {
     this.events = eventsOf(base.bus, {
       completed: SignInAttempt_Completed,
     })
-    this.routes = registerSignInAttemptRoutes(router, this)
+    this.routes = registerSignInAttemptRoutes(router, this, base.rateLimits)
   }
 
   @UseCase()
@@ -73,7 +76,10 @@ export class SignInAttempt_Module extends Module {
     return attempt.toDTO()
   }
 
-  /** Checks the answer to the next step. A wrong one counts towards locking the attempt. */
+  /**
+   * Checks the answer to the next step. A wrong one counts towards locking the attempt, and its user.
+   * A locked user answers as a wrong password does, so a lock never tells that an email exists.
+   */
   @UseCase()
   async answerStep(input: SignInAttemptAnswerDTO): Promise<SignInAttemptProgressDTO> {
     const { attemptId, step, answer } = SignInAttemptAnswerSchema.parse(input)
@@ -91,7 +97,7 @@ export class SignInAttempt_Module extends Module {
     if (attempt.nextStep !== step) {
       throw new UnexpectedSignInStep()
     }
-    const userId = attempt.userId ?? NOBODY
+    const userId = attempt.userId && !await this.isUserLocked(attempt.userId, now) ? attempt.userId : NOBODY
     const passed = await this.deps.userCredential.verify({ userId, password: answer })
     if (passed) {
       attempt.pass(now)
@@ -103,6 +109,14 @@ export class SignInAttempt_Module extends Module {
       throw new WrongCredentials()
     }
     return attempt.progress
+  }
+
+  /** Whether the user failed too many times lately, whatever attempts it started. */
+  private async isUserLocked(userId: UserId, now: Date): Promise<boolean> {
+    const since = new Date(now.getTime() - USER_LOCK_WINDOW_MS).toISOString()
+    const recent = await this.repository.find({ userId, createdAt: { gte: since } })
+    const failedTries = recent.reduce((sum, each) => sum + each.toDTO().failedTries, 0)
+    return failedTries >= MOST_FAILED_TRIES_OF_A_USER
   }
 
 }

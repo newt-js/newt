@@ -67,7 +67,7 @@ export class User_Module extends Module {
     const admin = User.create({ application: auth!, email, name })
     // Two setups at once: the guard lines them up, and the second finds the first and leaves.
     await this.repository.persist(admin, {
-      guard: ['user.setup'],
+      guard: ['auth.user.setup'],
       after: async () => {
         if ((await this.repository.find(ofAuth, { limit: 2 })).length > 1) {
           throw new SetupClosed()

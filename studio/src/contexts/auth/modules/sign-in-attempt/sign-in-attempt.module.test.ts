@@ -135,3 +135,34 @@ test('signs in by its routes, before having a session', async () => {
   const right = await call('POST', steps, { step: 'password', answer: PASSWORD })
   expect(await right?.json()).toMatchObject({ completed: true })
 })
+
+async function failTwice(email: string) {
+  const attempt = await startAs(email)
+  for (const _ of [1, 2]) {
+    await expect(answer(attempt.id, 'wrong pass phrase')).rejects.toThrow(WrongCredentials)
+  }
+}
+
+test('ten wrong answers across attempts lock the user for fifteen minutes, as a wrong password', async () => {
+  for (const _ of [1, 2, 3, 4, 5]) {
+    await failTwice(ADMIN.email)
+  }
+
+  const locked = await startAs(ADMIN.email)
+  await expect(answer(locked.id, PASSWORD)).rejects.toThrow(WrongCredentials)
+  context.clock.advance(15 * 60 * 1000 + 1)
+  const later = await startAs(ADMIN.email)
+  expect(await answer(later.id, PASSWORD)).toMatchObject({ completed: true })
+})
+
+test('each address starts a few attempts a minute', async () => {
+  signedIn = false
+  const start = () => call('POST', '/sign-in-attempts', { applicationId: AUTH, email: ADMIN.email })
+  for (let each = 0; each < 20; each++) {
+    expect((await start())?.status).toBe(201)
+  }
+
+  const over = await start()
+  expect(over?.status).toBe(429)
+  expect(over?.headers.get('retry-after')).not.toBeNull()
+})

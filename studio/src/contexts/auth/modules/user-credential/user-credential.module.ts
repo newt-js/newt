@@ -88,7 +88,7 @@ export class UserCredential_Module extends Module {
     const secretHash = await Bun.password.hash(password)
     // Two passwords at once: the guard lines them up, and the second finds the first and leaves.
     await this.repository.persist(UserCredential.password({ userId, secretHash }), {
-      guard: ['userCredential.setup'],
+      guard: ['auth.userCredential.setup'],
       after: async () => {
         if ((await this.repository.find(ofAdmins, { limit: 2 })).length > 1) {
           throw new SetupClosed()
