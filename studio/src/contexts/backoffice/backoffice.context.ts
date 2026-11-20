@@ -1,15 +1,16 @@
-import { BoundedContext }    from '@newt-js/core/application'
-import { ContextBase }       from '@newt-js/core/application'
-import type { DataPlace }    from '@newt-js/core/application'
-import type { Platform }     from '@newt-js/core/application'
-import { sqlite }            from '@newt-js/core/database/sqlite'
-import { localFiles }        from '@newt-js/core/files/local'
-import type { ContextToRun } from '@newt-js/core/http'
-import { HttpRouter }        from '@newt-js/core/http'
-import { openData }          from '@newt-js/core/http'
-import { join }              from 'node:path'
+import { BoundedContext }       from '@newt-js/core/application'
+import { ContextBase }          from '@newt-js/core/application'
+import type { DataPlace }       from '@newt-js/core/application'
+import type { Platform }        from '@newt-js/core/application'
+import { sqlite }               from '@newt-js/core/database/sqlite'
+import { localFiles }           from '@newt-js/core/files/local'
+import type { ContextToRun }    from '@newt-js/core/http'
+import { HttpRouter }           from '@newt-js/core/http'
+import { openData }             from '@newt-js/core/http'
+import { join }                 from 'node:path'
 // --------------------------------------------------------
-import { authenticate }      from './authenticate'
+import { authenticate }         from './authenticate'
+import { SignInAttempt_Module } from './modules/sign-in-attempt/sign-in-attempt.module'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
@@ -19,14 +20,20 @@ export class Backoffice_Context extends BoundedContext {
     base: ContextBase,
     router: HttpRouter,
   ): Backoffice_Context {
-    return new Backoffice_Context(base, {})
+    const signInAttempt = SignInAttempt_Module.initialize(base, router)
+    return new Backoffice_Context(base, { signInAttempt })
   }
+
+  private readonly signInAttempt: SignInAttempt_Module
 
   private constructor(
     base: ContextBase,
-    modules: {},
+    modules: {
+      signInAttempt: SignInAttempt_Module,
+    },
   ) {
     super('backoffice', base, modules)
+    this.signInAttempt = modules.signInAttempt
   }
 
   static async open(
