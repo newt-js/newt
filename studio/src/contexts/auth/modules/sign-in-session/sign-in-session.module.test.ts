@@ -171,3 +171,31 @@ test('a cookie no session could have is no one, and signing out still clears it'
   expect(out?.status).toBe(204)
   expect(out?.headers.get('set-cookie')).toMatch(/^session_auth=;.*Max-Age=0/)
 })
+
+/** A user of another application with a password, as a row of user's table: users of others are born in a later step. */
+async function userOf(applicationId: string, email: string): Promise<string> {
+  const id = Bun.randomUUIDv7()
+  const now = new Date().toISOString()
+  const row = { id, applicationId, email, emailVerified: false, name: 'Abel', createdAt: now, updatedAt: now }
+  await context.base.database.records('user').insert(row)
+  await composed['userCredential'].setPassword({ userId: id, password: PASSWORD })
+  return id
+}
+
+test('only users of auth manage auth: a session of another application opens none of its routes', async () => {
+  const backoffice = await composed['application'].create({ name: 'Backoffice' })
+  await userOf(backoffice.id, 'abel@example.com')
+  const started = await call('POST', '/sign-in-attempts', { applicationId: backoffice.id, email: 'abel@example.com' })
+  const { id } = await started!.json() as { id: string }
+  await call('POST', `/sign-in-attempts/${id}/steps`, { step: 'password', answer: PASSWORD })
+
+  const opened = await call('POST', '/sign-in-sessions', { attemptId: id })
+
+  const cookie = opened!.headers.get('set-cookie')!.split(';')[0]!
+  expect(cookie).toMatch(/^session_backoffice=/)
+  const asAuth = cookie.replace('session_backoffice', 'session_auth')
+  for (const path of ['/users', '/applications']) {
+    expect((await call('GET', path, undefined, cookie))?.status).toBe(401)
+    expect((await call('GET', path, undefined, asAuth))?.status).toBe(401)
+  }
+})
