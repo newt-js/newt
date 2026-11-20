@@ -29,9 +29,17 @@ export const SignInSessionPublicSchema = SignInSessionSchema.omit({
   attemptId: true,
 })
 
+/** The completed attempt a session is opened from. */
+export const SignInSessionOpenSchema = z.object({
+  attemptId: SignInAttemptId.schema,
+})
+
+/** The token of a session's cookie, as the browser sends it. */
+export const SignInSessionTokenSchema = z.string().max(100)
+
 /** Who is calling, by the token of its cookie, and to which application it signed in. */
 export const SignInSessionActorOfSchema = z.object({
-  token: z.string().max(100),
+  token: SignInSessionTokenSchema,
   applicationSlug: z.string(),
 })
 
@@ -41,6 +49,7 @@ export type SignInSessionReferences = { applicationId: ApplicationDTO, userId: U
 export type SignInSessionFields = z.infer<typeof SignInSessionSchema>
 export type SignInSessionDTO =
   Resolved<z.infer<typeof SignInSessionPublicSchema>, SignInSessionReferences>
+export type SignInSessionOpenDTO = z.input<typeof SignInSessionOpenSchema>
 export type SignInSessionActorOfDTO = z.input<typeof SignInSessionActorOfSchema>
 /** A session just opened, with the token for its cookie: the only time the token is seen. */
 export type SignInSessionOpenedDTO = { session: SignInSessionDTO, token: string }

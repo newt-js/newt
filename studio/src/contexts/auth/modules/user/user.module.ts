@@ -59,15 +59,21 @@ export class User_Module extends Module {
   async createFirstAdmin(input: UserFirstAdminDTO): Promise<UserDTO> {
     const { email, name } = UserFirstAdminSchema.parse(input)
     const [auth] = await this.deps.application.find({ slug: AUTH_SLUG })
-    const [anyone] = await this.repository.find(
-      { applicationId: ApplicationId.from(auth!.id) },
-      { limit: 1 },
-    )
+    const ofAuth = { applicationId: ApplicationId.from(auth!.id) }
+    const [anyone] = await this.repository.find(ofAuth, { limit: 1 })
     if (anyone) {
       throw new SetupClosed()
     }
     const admin = User.create({ application: auth!, email, name })
-    await this.repository.persist(admin)
+    // Two setups at once: the guard lines them up, and the second finds the first and leaves.
+    await this.repository.persist(admin, {
+      guard: ['user.setup'],
+      after: async () => {
+        if ((await this.repository.find(ofAuth, { limit: 2 })).length > 1) {
+          throw new SetupClosed()
+        }
+      },
+    })
     return admin.toDTO()
   }
 

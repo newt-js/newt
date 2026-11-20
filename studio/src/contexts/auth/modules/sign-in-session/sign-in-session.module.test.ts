@@ -73,7 +73,7 @@ test('a completed attempt opens a session: who, where and how, and a token never
     told.push(event.payload)
   })
 
-  const { session, token } = await signInSessions.open(await attempt())
+  const { session, token } = await signInSessions.open({ attemptId: await attempt() })
 
   expect(session).toMatchObject({
     application: { id: AUTH, slug: 'auth' },
@@ -89,26 +89,26 @@ test('a completed attempt opens a session: who, where and how, and a token never
 })
 
 test('an attempt still to complete opens none', async () => {
-  const opening = signInSessions.open(await attempt({ completed: false }))
+  const opening = signInSessions.open({ attemptId: await attempt({ completed: false }) })
   await expect(opening).rejects.toThrow(SignInNotCompleted)
 })
 
 test('an attempt opens one session, never two', async () => {
   const attemptId = await attempt()
-  await signInSessions.open(attemptId)
+  await signInSessions.open({ attemptId })
 
-  await expect(signInSessions.open(attemptId)).rejects.toThrow(DuplicateValue)
+  await expect(signInSessions.open({ attemptId })).rejects.toThrow(DuplicateValue)
 })
 
 test('an attempt left too long opens none', async () => {
   const attemptId = await attempt()
   context.clock.advance(ELEVEN_MINUTES)
 
-  await expect(signInSessions.open(attemptId)).rejects.toThrow(SignInAttemptExpired)
+  await expect(signInSessions.open({ attemptId })).rejects.toThrow(SignInAttemptExpired)
 })
 
 test('a token is of its user while its session lives, and only in its application', async () => {
-  const { token } = await signInSessions.open(await attempt())
+  const { token } = await signInSessions.open({ attemptId: await attempt() })
 
   expect(await signInSessions.actorOf({ token, applicationSlug: 'auth' })).toEqual({ userId: adminId })
   expect(await signInSessions.actorOf({ token: 'not a token', applicationSlug: 'auth' })).toBeNull()
@@ -133,4 +133,41 @@ test('signs in by the routes, and the cookie opens auth', async () => {
   const session = cookie.split(';')[0]!
   expect((await call('GET', '/users', undefined, session))?.status).toBe(200)
   expect((await call('GET', '/users', undefined, 'session_auth=forged'))?.status).toBe(401)
+})
+
+test('signing out ends the session, once and for all', async () => {
+  const { token } = await signInSessions.open({ attemptId: await attempt() })
+
+  await signInSessions.end(token)
+
+  expect(await signInSessions.actorOf({ token, applicationSlug: 'auth' })).toBeNull()
+  await signInSessions.end(token)
+  await signInSessions.end('not a token')
+})
+
+test('signs out by its route: the cookie no longer opens auth, and goes', async () => {
+  const { token } = await signInSessions.open({ attemptId: await attempt() })
+  const session = `session_auth=${token}`
+
+  const out = await call('DELETE', '/sign-in-sessions/current', undefined, session)
+
+  expect(out?.status).toBe(204)
+  expect(out?.headers.get('set-cookie')).toMatch(/^session_auth=;.*Max-Age=0/)
+  expect((await call('GET', '/users', undefined, session))?.status).toBe(401)
+  const without = await call('DELETE', '/sign-in-sessions/current')
+  expect(without?.status).toBe(204)
+})
+
+test('a body with no attempt is refused as such, never a fault', async () => {
+  expect((await call('POST', '/sign-in-sessions', null))?.status).toBe(400)
+  expect((await call('POST', '/sign-in-sessions', {}))?.status).toBe(400)
+})
+
+test('a cookie no session could have is no one, and signing out still clears it', async () => {
+  const forged = `session_auth=${'a'.repeat(200)}`
+
+  expect((await call('GET', '/users', undefined, forged))?.status).toBe(401)
+  const out = await call('DELETE', '/sign-in-sessions/current', undefined, forged)
+  expect(out?.status).toBe(204)
+  expect(out?.headers.get('set-cookie')).toMatch(/^session_auth=;.*Max-Age=0/)
 })

@@ -91,6 +91,16 @@ test('the setup creates the first admin of auth, and only the first', async () =
   await expect(again).rejects.toThrow(SetupClosed)
 })
 
+test('several setups at once leave a single admin', async () => {
+  const emails = ['ana@example.com', 'abel@example.com', 'eva@example.com']
+  const setups = emails.map(email => users.createFirstAdmin({ ...ADMIN, email }))
+
+  const done = await Promise.allSettled(setups)
+
+  expect(done.filter(each => each.status === 'fulfilled')).toHaveLength(1)
+  expect(await users.find({ applicationId: AUTH })).toHaveLength(1)
+})
+
 test('the first admin signs in by its email, so it needs one', async () => {
   const nameless = users.createFirstAdmin({ email: null as never, name: 'A' })
   await expect(nameless).rejects.toThrow(ZodError)

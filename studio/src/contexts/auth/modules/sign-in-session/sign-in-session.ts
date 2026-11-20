@@ -58,4 +58,8 @@ export class SignInSession
     return this.data.endedAt === null && now < new Date(this.data.expiresAt)
   }
 
+  end(now: Date): void {
+    this.change({ endedAt: now.toISOString() })
+  }
+
 }

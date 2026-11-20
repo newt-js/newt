@@ -20,10 +20,10 @@ import { UserId }                         from './value-objects/user-id'
 /** A hash no password matches: checked when there is no credential, as slow. */
 const NO_PASSWORD = Bun.password.hash(crypto.randomUUID())
 
-/** How users prove who they are. Only the setup reaches it by a route; sign-in, from within. */
 /** The slug of auth's own application: its users are its admins. */
 const AUTH_SLUG = 'auth'
 
+/** How users prove who they are. Only the setup reaches it by a route; sign-in, from within. */
 export class UserCredential_Module extends Module {
 
   static initialize(
@@ -80,15 +80,21 @@ export class UserCredential_Module extends Module {
     const admins = await this.deps.user.find({
       applicationId: user.application.id,
     })
-    const [withPassword] = await this.repository.find(
-      { userId: { in: admins.map(each => UserId.from(each.id)) } },
-      { limit: 1 },
-    )
+    const ofAdmins = { userId: { in: admins.map(each => UserId.from(each.id)) } }
+    const [withPassword] = await this.repository.find(ofAdmins, { limit: 1 })
     if (withPassword) {
       throw new SetupClosed()
     }
     const secretHash = await Bun.password.hash(password)
-    await this.repository.persist(UserCredential.password({ userId, secretHash }))
+    // Two passwords at once: the guard lines them up, and the second finds the first and leaves.
+    await this.repository.persist(UserCredential.password({ userId, secretHash }), {
+      guard: ['userCredential.setup'],
+      after: async () => {
+        if ((await this.repository.find(ofAdmins, { limit: 2 })).length > 1) {
+          throw new SetupClosed()
+        }
+      },
+    })
   }
 
   /** Whether the password is the user's: false too for a user without one. */

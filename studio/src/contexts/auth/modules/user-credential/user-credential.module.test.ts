@@ -177,6 +177,15 @@ test('the setup closes once an admin of auth has a password', async () => {
   await expect(closed).rejects.toThrow(SetupClosed)
 })
 
+test('two setups at once give a password to a single admin', async () => {
+  const another = await savedUser(AUTH, 'eva@example.com')
+  const setups = [userId, another].map(each => credentials.setFirstAdminPassword({ userId: each, password: PASSWORD }))
+
+  const done = await Promise.allSettled(setups)
+
+  expect(done.filter(each => each.status === 'fulfilled')).toHaveLength(1)
+})
+
 test('no route reaches the credentials', async () => {
   const url = 'http://backend.test/auth/api/user-credentials'
   const response = await router.answer(new Request(url))
