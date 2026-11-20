@@ -25,7 +25,7 @@ const TEXT = { contentType: 'text/plain', expiresIn: 60 }
 
 test('sales keeps a file uploaded to its signed address', async () => {
   const router = new HttpRouter({ prefix: '/sales/api' })
-  const opened = { router, host: undefined, place: 'configured' as const }
+  const opened = { router, place: 'configured' as const }
   const storage = (await localFiles().open('sales', opened)).private!
   const sized = { ...TEXT, size: 5 }
   const upload = await storage.uploadUrl('notes/hello.txt', sized)
@@ -40,9 +40,8 @@ test('sales keeps a file uploaded to its signed address', async () => {
 })
 
 test('at a host, its files are signed at that host', async () => {
-  const router = new HttpRouter({ prefix: '/sales/api' })
-  const host = 'sales.midominio.com'
-  const opened = { router, host, place: 'configured' as const }
+  const router = new HttpRouter({ prefix: '/sales/api', host: 'sales.midominio.com' })
+  const opened = { router, place: 'configured' as const }
   const storage = (await localFiles().open('sales', opened)).private!
   const download = new URL(await storage.signedUrl('notes/hello.txt', TEXT))
   expect(download.host).toBe('sales.midominio.com')
