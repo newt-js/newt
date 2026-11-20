@@ -101,7 +101,7 @@ export class OauthSigningKey_Module extends Module {
       .sign(privateKey)
   }
 
-  /** The claims of an id_token signed by one of these keys for that issuer, even expired; of any other token, null. */
+  /** The claims of a token of that type signed by one of these keys for that issuer, even expired; of any other, null. */
   @UseCase()
   async verify(input: OauthSigningKeyVerifyDTO): Promise<JWTPayload | null> {
     const parsed = OauthSigningKeyVerifySchema.safeParse(input)
@@ -111,8 +111,8 @@ export class OauthSigningKey_Module extends Module {
     try {
       const verified = await compactVerify(parsed.data.token, createLocalJWKSet(await this.jwks()), { algorithms: [ALGORITHM] })
       const claims = decodeJwt(parsed.data.token)
-      // An access token (at+jwt) is no id_token.
-      return verified.protectedHeader.typ === 'JWT' && claims.iss === parsed.data.issuer ? claims : null
+      // An access token is no id_token, nor the other way round.
+      return verified.protectedHeader.typ === parsed.data.type && claims.iss === parsed.data.issuer ? claims : null
     } catch {
       return null
     }

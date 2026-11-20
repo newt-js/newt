@@ -64,6 +64,15 @@ export const OauthAuthorizationEndSessionSchema = z.object({
 /** Whose session to end, in which application, and where to send the browser then: a registered address, or nowhere. */
 export type OauthEndSessionDTO = { applicationSlug: string, userId: string, redirectTo: string | null }
 
+/** A request to UserInfo: the host says the application, the bearer access token who asks. */
+export const OauthAuthorizationUserInfoSchema = z.object({
+  host: z.string(),
+  accessToken: z.string(),
+})
+
+/** What UserInfo answers: the user's id, and what the token's scopes let it know. */
+export type OauthUserInfoDTO = { sub: string, [claim: string]: unknown }
+
 /** Where /authorize sends the browser: back to the client with a code or an error, or to sign in first. */
 export type OauthAuthorizationRedirectDTO = { redirectTo: string }
 
@@ -85,4 +94,5 @@ export type OauthAuthorizationDTO =
   Resolved<z.infer<typeof OauthAuthorizationPublicSchema>, OauthAuthorizationReferences>
 export type OauthAuthorizationExchangeDTO = z.input<typeof OauthAuthorizationExchangeSchema>
 export type OauthAuthorizationEndSessionDTO = z.input<typeof OauthAuthorizationEndSessionSchema>
+export type OauthAuthorizationUserInfoDTO = z.input<typeof OauthAuthorizationUserInfoSchema>
 export type OauthAuthorizationAuthorizeDTO = z.input<typeof OauthAuthorizationAuthorizeSchema>

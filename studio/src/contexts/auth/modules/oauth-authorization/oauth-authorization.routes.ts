@@ -77,6 +77,15 @@ function oauthErrorOf(error: unknown): Response {
   return response
 }
 
+/** An error of a bearer token, as RFC 6750 §3 tells it. */
+function bearerErrorOf(error: unknown): Response {
+  const response = toOauthErrorResponse(error, 'invalid_request', { 'oauthAuthorization.invalid_token': 'invalid_token' })
+  if (response.status === 401) {
+    response.headers.set('www-authenticate', 'Bearer error="invalid_token"')
+  }
+  return response
+}
+
 /** OpenID's endpoints: public, since they are how one signs in. */
 export function registerOauthAuthorizationRoutes(
   router: HttpRouter,
@@ -100,6 +109,15 @@ export function registerOauthAuthorizationRoutes(
     const exchanged = await oauthAuthorizations.exchange({ host: hostOf(request), ...clientCredentialsOf(request, form), form })
     return Response.json(exchanged, { headers: { 'cache-control': 'no-store', 'pragma': 'no-cache' } })
   }, { public: true, crossOrigin: true, rateLimit: { limit: tokens, by: 'ip' }, onError: oauthErrorOf })
+  // OpenID's UserInfo, by GET or POST, with the access token as a bearer (RFC 6750).
+  const userInfo = async (request: Request) => {
+    const [scheme, accessToken = ''] = (request.headers.get('authorization') ?? '').split(' ')
+    const told = await oauthAuthorizations.userInfo({ host: hostOf(request), accessToken: scheme?.toLowerCase() === 'bearer' ? accessToken : '' })
+    return Response.json(told, { headers: { 'cache-control': 'no-store' } })
+  }
+  const userInfoOptions = { public: true, crossOrigin: true, onError: bearerErrorOf }
+  router.get('/oauth-authorizations/userinfo', userInfo, userInfoOptions)
+  router.post('/oauth-authorizations/userinfo', userInfo, userInfoOptions)
   // OpenID's RP-Initiated Logout: this module checks where to go back, and the session is ended by its own module.
   router.get('/oauth-authorizations/end-session', async request => {
     const query = queryOf(request)

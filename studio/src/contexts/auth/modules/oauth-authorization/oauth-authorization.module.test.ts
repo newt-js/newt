@@ -466,3 +466,35 @@ test('an id_token_hint of another application is no hint here', async () => {
 
   expect(response?.status).toBe(400)
 })
+
+function userInfo(accessToken: string, issuer = ISSUER) {
+  return router.answer(new Request(`${issuer}/oauth-authorizations/userinfo`, { headers: { authorization: `Bearer ${accessToken}` } }))
+}
+
+test('UserInfo tells who the access token is of, by its scopes', async () => {
+  const { client, abelId, verifier, code } = await codeForAbel('openid email')
+  const tokens = await (await exchange(exchangeForm(code, verifier), client))!.json() as OauthTokensDTO
+
+  const response = await userInfo(tokens.access_token)
+
+  expect(response?.status).toBe(200)
+  expect(await response!.json()).toEqual({ sub: abelId, email: 'abel@example.com', email_verified: false })
+  const discovery = await (await get(`${ISSUER}/.well-known/openid-configuration`))!.json() as OauthDiscoveryDTO
+  expect(discovery.userinfo_endpoint).toBe(`${ISSUER}/oauth-authorizations/userinfo`)
+})
+
+test('UserInfo refuses an id_token, an expired token, a token of another application, and none', async () => {
+  const { client, verifier, code } = await codeForAbel()
+  const tokens = await (await exchange(exchangeForm(code, verifier), client))!.json() as OauthTokensDTO
+
+  for (const refused of [
+    await userInfo(tokens.id_token),
+    await userInfo(tokens.access_token, 'http://auth.auth.test/auth/api'),
+    await userInfo(''),
+  ]) {
+    expect(refused?.status).toBe(401)
+    expect(refused?.headers.get('www-authenticate')).toContain('invalid_token')
+  }
+  context.clock.advance(5 * 60 * 1000)
+  expect((await userInfo(tokens.access_token))?.status).toBe(401)
+})

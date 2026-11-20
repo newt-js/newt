@@ -33,10 +33,11 @@ export const OauthSigningKeySignSchema = z.object({
   type: z.enum(['JWT', 'at+jwt']),
 })
 
-/** A token this auth signed, and the issuer it must be of. */
+/** A token this auth signed, the issuer it must be of, and its type: an id_token (`JWT`) or an access token (`at+jwt`). */
 export const OauthSigningKeyVerifySchema = z.object({
   token: z.string().max(10_000),
   issuer: z.string(),
+  type: OauthSigningKeySignSchema.shape.type,
 })
 
 export type OauthSigningKeyFields = z.infer<typeof OauthSigningKeySchema>

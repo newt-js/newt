@@ -6,9 +6,11 @@ import type { ContextBase }                     from '@newt-js/core/application'
 import type { HttpRouter }                      from '@newt-js/core/http'
 // --------------------------------------------------------
 import type { ApplicationClientDTO }            from '../application-client/application-client.schema'
+import type { UserDTO }                         from '../user/user.schema'
 import { InvalidAuthorizationRequest }          from './errors/invalid-authorization-request'
 import { InvalidClient }                        from './errors/invalid-client'
 import { InvalidGrant }                         from './errors/invalid-grant'
+import { InvalidToken }                         from './errors/invalid-token'
 import { UnsupportedGrantType }                 from './errors/unsupported-grant-type'
 import { OauthAuthorization_Created }           from './events/oauth-authorization-created'
 import { OauthAuthorization }                   from './oauth-authorization'
@@ -23,10 +25,14 @@ import { OauthAuthorizationEndSessionSchema }   from './oauth-authorization.sche
 import type { OauthAuthorizationExchangeDTO }   from './oauth-authorization.schema'
 import { OauthAuthorizationExchangeSchema }     from './oauth-authorization.schema'
 import type { OauthAuthorizationRedirectDTO }   from './oauth-authorization.schema'
+import type { OauthAuthorizationUserInfoDTO }   from './oauth-authorization.schema'
+import { OauthAuthorizationUserInfoSchema }     from './oauth-authorization.schema'
 import type { OauthDiscoveryDTO }               from './oauth-authorization.schema'
 import type { OauthEndSessionDTO }              from './oauth-authorization.schema'
 import type { OauthTokensDTO }                  from './oauth-authorization.schema'
+import type { OauthUserInfoDTO }                from './oauth-authorization.schema'
 import { ApplicationClientId }                  from './value-objects/application-client-id'
+import { UserId }                               from './value-objects/user-id'
 
 /** Codes are long and random: SHA-256 is enough, as for the tokens of sessions. */
 function hashOf(code: string): string {
@@ -130,6 +136,7 @@ export class OauthAuthorization_Module extends Module {
       token_endpoint: `${issuer}/oauth-authorizations/token`,
       jwks_uri: `${issuer}/oauth-signing-keys`,
       end_session_endpoint: `${issuer}/oauth-authorizations/end-session`,
+      userinfo_endpoint: `${issuer}/oauth-authorizations/userinfo`,
       response_types_supported: ['code'],
       response_modes_supported: ['query'],
       grant_types_supported: ['authorization_code'],
@@ -237,7 +244,7 @@ export class OauthAuthorization_Module extends Module {
     const { application, url } = await this.deps.application.fromHost(host)
     const hint = query.id_token_hint === undefined
       ? null
-      : await this.deps.oauthSigningKey.verify({ token: query.id_token_hint, issuer: `${url}${this.prefix}` })
+      : await this.deps.oauthSigningKey.verify({ token: query.id_token_hint, issuer: `${url}${this.prefix}`, type: 'JWT' })
     if (typeof hint?.sub !== 'string') {
       throw new InvalidAuthorizationRequest()
     }
@@ -258,6 +265,34 @@ export class OauthAuthorization_Module extends Module {
     return { ...ending, redirectTo: withQuery(back, state) }
   }
 
+  /**
+   * What an access token tells of its user (OpenID's UserInfo), by the scopes it was given. Only a live access token of
+   * the application at that host: an id_token, an expired token or one of another application, `InvalidToken`.
+   */
+  @UseCase()
+  async userInfo(input: OauthAuthorizationUserInfoDTO): Promise<OauthUserInfoDTO> {
+    const { host, accessToken } = OauthAuthorizationUserInfoSchema.parse(input)
+    const { url } = await this.deps.application.fromHost(host)
+    const claims = await this.deps.oauthSigningKey.verify({ token: accessToken, issuer: `${url}${this.prefix}`, type: 'at+jwt' })
+    const now = Math.floor(this.base.clock.now().getTime() / 1000)
+    if (!claims || claims.aud !== url || (claims.exp ?? 0) <= now || typeof claims.sub !== 'string') {
+      throw new InvalidToken()
+    }
+    const [user] = await this.deps.user.find({ id: UserId.from(claims.sub) })
+    if (!user) {
+      throw new InvalidToken()
+    }
+    const scopes = typeof claims.scope === 'string' ? claims.scope.split(' ') : []
+    return { sub: user.id, ...this.claimsOf(user, scopes) }
+  }
+
+  /** What the scopes let a client know of a user, besides its id. */
+  private claimsOf(user: UserDTO, scopes: string[]): Record<string, unknown> {
+    const email = scopes.includes('email') ? { email: user.email, email_verified: user.emailVerified } : {}
+    const profile = scopes.includes('profile') ? { name: user.name } : {}
+    return { ...email, ...profile }
+  }
+
   /** The id_token, for the client, and the access token, for the application (RFC 9068): both short, and signed. */
   private async tokensOf(
     { client, user, scopes, nonce, amr, authTime }: OauthAuthorizationDTO,
@@ -265,9 +300,7 @@ export class OauthAuthorization_Module extends Module {
   ): Promise<OauthTokensDTO> {
     const iat = Math.floor(now.getTime() / 1000)
     const common = { iss: issuer, sub: user.id, iat, exp: iat + TOKEN_LIFETIME_S, auth_time: Math.floor(Date.parse(authTime) / 1000), amr }
-    const email = scopes.includes('email') ? { email: user.email, email_verified: user.emailVerified } : {}
-    const profile = scopes.includes('profile') ? { name: user.name } : {}
-    const idClaims = { ...common, aud: client.id, azp: client.id, ...nonce === null ? {} : { nonce }, ...email, ...profile }
+    const idClaims = { ...common, aud: client.id, azp: client.id, ...nonce === null ? {} : { nonce }, ...this.claimsOf(user, scopes) }
     const accessClaims = { ...common, aud: audience, client_id: client.id, jti: Bun.randomUUIDv7(), scope: scopes.join(' ') }
     return {
       access_token: await this.deps.oauthSigningKey.sign({ claims: accessClaims, type: 'at+jwt' }),
