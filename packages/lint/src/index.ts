@@ -27,6 +27,7 @@ import { publishedModules }        from './rules/published-modules/published-mod
 import { reactionQueue }           from './rules/reaction-queue/reaction-queue'
 import { repositoryPublicMethods } from './rules/repository-public-methods/repository-public-methods'
 import { routeBodyUnchecked }      from './rules/route-body-unchecked/route-body-unchecked'
+import { routePublicRateLimit } from './rules/route-public-rate-limit/route-public-rate-limit'
 import { routeContext }            from './rules/route-context/route-context'
 import { schemaImports }           from './rules/schema-imports/schema-imports'
 import { useCaseBatched }          from './rules/use-case-batched/use-case-batched'
@@ -56,6 +57,7 @@ export const plugin = {
     'reaction-queue': reactionQueue,
     'repository-public-methods': repositoryPublicMethods,
     'route-body-unchecked': routeBodyUnchecked,
+    'route-public-rate-limit': routePublicRateLimit,
     'route-context': routeContext,
     'schema-imports': schemaImports,
     'use-case-files': useCaseFiles,
@@ -175,6 +177,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/use-case-resolved': 'error',
         'newt/use-case-batched': 'error',
         'newt/route-body-unchecked': 'error',
+        'newt/route-public-rate-limit': 'error',
         'newt/framework-tables': 'error',
         'newt/repository-public-methods': 'error',
       },
