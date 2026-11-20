@@ -7,12 +7,14 @@ import { HttpRouter }                 from '@newt-js/core/http'
 import { afterEach }                  from 'bun:test'
 import { beforeEach }                 from 'bun:test'
 import { expect }                     from 'bun:test'
+import { spyOn }                      from 'bun:test'
 import { test }                       from 'bun:test'
 import { join }                       from 'node:path'
 import { ZodError }                   from 'zod'
 // --------------------------------------------------------
 import { Auth_Context }               from '../../auth.context'
 import type { Application_Module }    from '../application/application.module'
+import { InvalidUserEmailLink }       from '../user-email-link/errors/invalid-user-email-link'
 import { UserNotFound }               from '../user/errors/user-not-found'
 import { SetupClosed }                from './errors/setup-closed'
 import { UserCredential }             from './user-credential'
@@ -29,6 +31,7 @@ let context: TestContext
 let router: HttpRouter
 let credentials: UserCredential_Module
 let applications: Application_Module
+let composed: Auth_Context
 let stored: UserCredential_Repository
 let userId: UserId
 
@@ -41,7 +44,7 @@ beforeEach(async () => {
   context = testContext({ name: 'auth', cluster, database })
   router = new HttpRouter({ prefix: '/auth/api', database })
   router.authenticateWith(async () => ({ userId: 'tester' }))
-  const composed = Auth_Context.initialize(context.base, router)
+  composed = Auth_Context.initialize(context.base, router)
   credentials = composed['userCredential']
   applications = composed['application']
   stored = new UserCredential_Repository(context.base)
@@ -186,8 +189,73 @@ test('two setups at once give a password to a single admin', async () => {
   expect(done.filter(each => each.status === 'fulfilled')).toHaveLength(1)
 })
 
-test('no route reaches the credentials', async () => {
+test('no route reads the credentials: the one there only sets a password from a link', async () => {
   const url = 'http://backend.test/auth/api/user-credentials'
   const response = await router.answer(new Request(url))
-  expect(response?.status).toBe(404)
+  expect(response?.status).toBe(405)
+})
+
+/** Abel, given access to backoffice, and the token of the link in its email. */
+async function abelWithLink(): Promise<{ abelId: string, token: string }> {
+  const emails: string[] = []
+  spyOn(console, 'log').mockImplementation((text: string) => void emails.push(text))
+  const backoffice = await applications.create({ name: 'Backoffice' })
+  const abel = await composed['user'].grantAccess({ applicationId: backoffice.id, email: 'abel@example.com', name: 'Abel' })
+  await context.settle()
+  return { abelId: abel.id, token: emails[0]!.split('#token=')[1]! }
+}
+
+function setFromLink(token: string, password = PASSWORD) {
+  return router.answer(new Request('http://backend.test/auth/api/user-credentials', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  }))
+}
+
+test('the link of an access email sets the first password, and proves the email', async () => {
+  const { abelId, token } = await abelWithLink()
+
+  expect((await setFromLink(token))?.status).toBe(204)
+  await context.settle()
+
+  expect(await credentials.verify({ userId: abelId, password: PASSWORD })).toBe(true)
+  expect(await composed['user'].get(abelId)).toMatchObject({ emailVerified: true })
+})
+
+test('the link works once: the second time, whoever has it, it is refused', async () => {
+  const { abelId, token } = await abelWithLink()
+  await setFromLink(token)
+  await context.settle()
+
+  expect((await setFromLink(token, 'another pass phrase'))?.status).toBe(400)
+  const again = credentials.setPasswordFromEmailLink({ token, password: 'another pass phrase' })
+  await expect(again).rejects.toThrow(InvalidUserEmailLink)
+  expect(await credentials.verify({ userId: abelId, password: PASSWORD })).toBe(true)
+})
+
+test('two tries at once with one link set a single password', async () => {
+  const { abelId, token } = await abelWithLink()
+
+  const tries = ['first pass phrase', 'second pass phrase'].map(password => credentials.setPasswordFromEmailLink({ token, password }))
+  const done = await Promise.allSettled(tries)
+
+  expect(done.filter(each => each.status === 'fulfilled')).toHaveLength(1)
+  expect(await passwordsOf(UserId.from(abelId))).toHaveLength(1)
+})
+
+test('a link expires in three days, and a wrong one tells nothing', async () => {
+  const { token } = await abelWithLink()
+
+  expect((await setFromLink('not a token'))?.status).toBe(400)
+  expect((await setFromLink('a'.repeat(500)))?.status).toBe(400)
+  context.clock.advance(3 * 24 * 60 * 60 * 1000)
+  expect((await setFromLink(token))?.status).toBe(400)
+})
+
+test('a password too short spends no link', async () => {
+  const { token } = await abelWithLink()
+
+  expect((await setFromLink(token, 'short'))?.status).toBe(400)
+  expect((await setFromLink(token))?.status).toBe(204)
 })

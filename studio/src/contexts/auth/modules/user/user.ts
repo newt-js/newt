@@ -32,6 +32,11 @@ export class User extends Entity<typeof UserSchema, typeof UserSchema, UserRefer
     return user
   }
 
+  /** Its email is its own: it opened a link sent there. */
+  verifyEmail(): void {
+    this.change({ emailVerified: true })
+  }
+
   /** A user an admin lets in, with no password: it sets one from the email it gets. */
   static grantAccess(props: UserCreateProps): User {
     const user = User.create(props)

@@ -68,6 +68,17 @@ export class User_Module extends Module {
     return user.toDTO()
   }
 
+  /** The user proved the email is its own. Verifying twice changes nothing. */
+  @UseCase()
+  async verifyEmail(id: string): Promise<void> {
+    const [user] = await this.repository.find({ id: UserId.from(id) }, { limit: 1 })
+    if (!user) {
+      throw new UserNotFound()
+    }
+    user.verifyEmail()
+    await this.repository.persist(user)
+  }
+
   /** The setup: the first user of auth, open while auth has none. */
   @UseCase()
   async createFirstAdmin(input: UserFirstAdminDTO): Promise<UserDTO> {

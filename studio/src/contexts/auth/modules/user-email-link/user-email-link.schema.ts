@@ -21,6 +21,9 @@ export const UserEmailLinkSchema = z.object({
 /** What a link shows: never its token's hash. */
 export const UserEmailLinkPublicSchema = UserEmailLinkSchema.omit({ tokenHash: true })
 
+/** The token of a link, as it came in its email. */
+export const UserEmailLinkTokenSchema = z.string().max(100)
+
 /** The user a link is of, shown whole in its DTO. */
 export type UserEmailLinkReferences = { userId: UserDTO }
 

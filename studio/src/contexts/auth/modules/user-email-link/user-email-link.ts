@@ -40,4 +40,15 @@ export class UserEmailLink
     return link
   }
 
+  isUsable(now: Date): boolean {
+    return this.data.usedAt === null && now < new Date(this.data.expiresAt)
+  }
+
+  /** Spent: it never works again. Using it twice changes nothing. */
+  use(now: Date): void {
+    if (this.data.usedAt === null) {
+      this.change({ usedAt: now.toISOString() })
+    }
+  }
+
 }

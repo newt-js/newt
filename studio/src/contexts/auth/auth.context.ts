@@ -30,8 +30,12 @@ export class Auth_Context extends BoundedContext {
     const user = User_Module.initialize(base, router, {
       application,
     })
+    const userEmailLink = UserEmailLink_Module.initialize(base, router, {
+      user,
+    })
     const userCredential = UserCredential_Module.initialize(base, router, {
       user,
+      userEmailLink,
     })
     const signInAttempt = SignInAttempt_Module.initialize(base, router, {
       application,
@@ -45,9 +49,6 @@ export class Auth_Context extends BoundedContext {
     })
     const applicationClient = ApplicationClient_Module.initialize(base, router, {
       application,
-    })
-    const userEmailLink = UserEmailLink_Module.initialize(base, router, {
-      user,
     })
     return new Auth_Context(base, {
       application,
