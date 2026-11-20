@@ -30,5 +30,9 @@ export function registerSignInSessionRoutes(
     setSessionCookie(request, SESSION_COOKIE, token, { secure: SECURE, maxAgeSeconds })
     return new Response(null, { status: 302, headers: { 'location': SIGNED_IN_PATH, 'cache-control': 'no-store' } })
   }, { public: true })
+  // Who is signed in: the front asks it to know whether to start signing in.
+  router.get('/sign-in-sessions/current', async request => {
+    return Response.json(await signInSessions.current(request.cookies.get(SESSION_COOKIE) ?? ''))
+  })
   return { one: router.group('/sign-in-sessions/:signInSessionId') }
 }

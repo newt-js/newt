@@ -16,6 +16,7 @@ let site: string
 /** The backend at backoffice's subdomain, where auth serves the backoffice application. */
 let backofficeAtAuth: string
 let backofficeId: string
+let abelId: string
 const emails: string[] = []
 
 /** A browser: one jar of cookies per host, following no redirect, so each step is seen. */
@@ -89,7 +90,8 @@ async function prepareAuth() {
   Bun.env.BACKOFFICE_AUTH_ISSUER = `${backofficeAtAuth}/auth/api`
   Bun.env.BACKOFFICE_AUTH_CLIENT_ID = client.id
   Bun.env.BACKOFFICE_AUTH_CLIENT_SECRET = secret
-  await admin.post(`${site}/auth/api/users`, { applicationId: backofficeId, email: 'abel@example.com', name: 'Abel' })
+  const granted = await admin.post(`${site}/auth/api/users`, { applicationId: backofficeId, email: 'abel@example.com', name: 'Abel' })
+  abelId = (await granted.json() as { id: string }).id
   // The access email goes out from a worker, after the answer.
   for (let tries = 0; emails.length === 0 && tries < 100; tries++) {
     await Bun.sleep(20)
@@ -182,4 +184,32 @@ test('an answer of auth that is not its own, or an error, finishes nothing', asy
     expect((await browser.go(address.toString())).status).toBe(400)
   }
   expect(browser.cookie(site, 'backoffice_session')).toBeUndefined()
+})
+
+/** Abel, signed in to backoffice. */
+async function abelSignedIn(): Promise<Browser> {
+  const browser = new Browser()
+  await browser.go(await abelComesBack(browser))
+  return browser
+}
+
+test('backoffice knows who calls by its own cookie: Abel, as auth told it', async () => {
+  const browser = await abelSignedIn()
+
+  const current = await browser.go(`${site}/backoffice/api/sign-in-sessions/current`)
+
+  expect(current.status).toBe(200)
+  expect(await current.json()).toMatchObject({ userId: abelId, endedAt: null })
+  expect((await new Browser().go(`${site}/backoffice/api/sign-in-sessions/current`)).status).toBe(401)
+})
+
+test("auth's session never opens backoffice, though it is of the backoffice application", async () => {
+  const browser = await abelSignedIn()
+  const atAuth = browser.cookie(backofficeAtAuth, 'session_backoffice')!
+
+  const asked = await fetch(`${site}/backoffice/api/sign-in-sessions/current`, {
+    headers: { cookie: `session_backoffice=${atAuth}; backoffice_session=${atAuth}` },
+  })
+
+  expect(asked.status).toBe(401)
 })

@@ -35,4 +35,8 @@ export class SignInSession extends Entity<typeof SignInSessionSchema, typeof Sig
     return session
   }
 
+  isAlive(now: Date): boolean {
+    return this.data.endedAt === null && now < new Date(this.data.expiresAt)
+  }
+
 }

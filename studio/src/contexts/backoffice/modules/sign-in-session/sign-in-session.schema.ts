@@ -26,6 +26,9 @@ export const SignInSessionOpenSchema = z.object({
   attemptId: SignInAttemptId.schema,
 })
 
+/** The token of a session's cookie, as the browser sends it. */
+export const SignInSessionTokenSchema = z.string().max(100)
+
 export type SignInSessionFields = z.infer<typeof SignInSessionSchema>
 export type SignInSessionDTO = z.infer<typeof SignInSessionPublicSchema>
 export type SignInSessionOpenDTO = z.input<typeof SignInSessionOpenSchema>

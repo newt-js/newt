@@ -10,9 +10,11 @@ import { SignInSession }               from './sign-in-session'
 import type { SignInSession_Deps }     from './sign-in-session.deps'
 import { SignInSession_Repository }    from './sign-in-session.repository'
 import { registerSignInSessionRoutes } from './sign-in-session.routes'
+import type { SignInSessionDTO }       from './sign-in-session.schema'
 import type { SignInSessionOpenDTO }   from './sign-in-session.schema'
 import { SignInSessionOpenSchema }     from './sign-in-session.schema'
 import type { SignInSessionOpenedDTO } from './sign-in-session.schema'
+import { SignInSessionTokenSchema }    from './sign-in-session.schema'
 import { SignInAttemptId }             from './value-objects/sign-in-attempt-id'
 
 /** Only the hash of a token is kept: a leaked table opens no session. */
@@ -66,6 +68,29 @@ export class SignInSession_Module extends Module {
     })
     await this.repository.persist(session)
     return { session: session.toDTO(), token }
+  }
+
+  /** The session of a cookie's token, while it lives; otherwise none. */
+  @UseCase()
+  async current(token: string): Promise<SignInSessionDTO | null> {
+    return (await this.aliveSession(token))?.toDTO() ?? null
+  }
+
+  /** Who a cookie's token is of, while its session lives; otherwise no one. */
+  @UseCase()
+  async actorOf(token: string): Promise<{ userId: string } | null> {
+    const session = await this.aliveSession(token)
+    return session ? { userId: session.toDTO().userId } : null
+  }
+
+  private async aliveSession(token: string): Promise<SignInSession | undefined> {
+    // A cookie no session could have, a forged one too long: no one, never an error.
+    const parsed = SignInSessionTokenSchema.safeParse(token)
+    if (!parsed.success) {
+      return undefined
+    }
+    const [session] = await this.repository.find({ tokenHash: hashOf(parsed.data) }, { limit: 1 })
+    return session?.isAlive(this.base.clock.now()) ? session : undefined
   }
 
 }
