@@ -11,6 +11,7 @@ import { join }                  from 'node:path'
 // --------------------------------------------------------
 import { authenticate }          from './authenticate'
 import { Application_Module }    from './modules/application/application.module'
+import { SignInAttempt_Module }  from './modules/sign-in-attempt/sign-in-attempt.module'
 import { UserCredential_Module } from './modules/user-credential/user-credential.module'
 import { User_Module }           from './modules/user/user.module'
 
@@ -29,12 +30,23 @@ export class Auth_Context extends BoundedContext {
     const userCredential = UserCredential_Module.initialize(base, router, {
       user,
     })
-    return new Auth_Context(base, { application, user, userCredential })
+    const signInAttempt = SignInAttempt_Module.initialize(base, router, {
+      application,
+      user,
+      userCredential,
+    })
+    return new Auth_Context(base, {
+      application,
+      user,
+      userCredential,
+      signInAttempt,
+    })
   }
 
   private readonly application: Application_Module
   private readonly user: User_Module
   private readonly userCredential: UserCredential_Module
+  private readonly signInAttempt: SignInAttempt_Module
 
   private constructor(
     base: ContextBase,
@@ -42,12 +54,14 @@ export class Auth_Context extends BoundedContext {
       application: Application_Module,
       user: User_Module,
       userCredential: UserCredential_Module,
+      signInAttempt: SignInAttempt_Module,
     },
   ) {
     super('auth', base, modules)
     this.application = modules.application
     this.user = modules.user
     this.userCredential = modules.userCredential
+    this.signInAttempt = modules.signInAttempt
   }
 
   static async open(
