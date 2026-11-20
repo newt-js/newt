@@ -53,7 +53,7 @@ export class SignInSession_Module extends Module {
     this.events = eventsOf(base.bus, {
       created: SignInSession_Created,
     })
-    this.routes = registerSignInSessionRoutes(router, this)
+    this.routes = registerSignInSessionRoutes(router, this, base.rateLimits)
   }
 
   /** Opens the session of a completed attempt, once: the token it gives back is never seen again. */

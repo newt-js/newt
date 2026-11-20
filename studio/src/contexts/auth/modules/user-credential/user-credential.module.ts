@@ -58,7 +58,7 @@ export class UserCredential_Module extends Module {
       created: UserCredential_Created,
       setFromEmailLink: UserCredential_SetFromEmailLink,
     })
-    this.routes = registerUserCredentialRoutes(router, this)
+    this.routes = registerUserCredentialRoutes(router, this, base.rateLimits)
   }
 
   /** Sets the user's password, or changes the one it has. */

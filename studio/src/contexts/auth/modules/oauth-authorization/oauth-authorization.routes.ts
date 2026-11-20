@@ -115,7 +115,8 @@ export function registerOauthAuthorizationRoutes(
     const told = await oauthAuthorizations.userInfo({ host: hostOf(request), accessToken: scheme?.toLowerCase() === 'bearer' ? accessToken : '' })
     return Response.json(told, { headers: { 'cache-control': 'no-store' } })
   }
-  const userInfoOptions = { public: true, crossOrigin: true, onError: bearerErrorOf }
+  const userInfos = rateLimits.define('oauthAuthorization.userInfos', { limit: 60, windowMs: 60_000 })
+  const userInfoOptions = { public: true, crossOrigin: true, rateLimit: { limit: userInfos, by: 'ip' as const }, onError: bearerErrorOf }
   router.get('/oauth-authorizations/userinfo', userInfo, userInfoOptions)
   router.post('/oauth-authorizations/userinfo', userInfo, userInfoOptions)
   // OpenID's RP-Initiated Logout: this module checks where to go back, and the session is ended by its own module.
