@@ -15,8 +15,9 @@ of your task in `docs/agents/` before writing code. Each guide gives the rule, w
   Modules that belong together share a prefix in their name: `oauth-authorization`, `oauth-signing-key`.
   A context holds each module in a field: `private` by default, `public` once it publishes it (`newt publish`);
   another context reaches only the modules it publishes.
-- Contexts today: `auth` (modules `application`, `user`, `userCredential`, `signInAttempt`, `signInSession`), `panel` and
-  `backoffice` (empty).
+- Contexts today: `auth` (modules `application`, `applicationClient`, `user`, `userCredential`, `userEmailLink`,
+  `signInAttempt`, `signInSession`, `oauthSigningKey`, `oauthAuthorization`), `backoffice` (modules `signInAttempt`,
+  `signInSession`: it signs in through auth) and `panel` (empty).
 
 ## Sign-in
 

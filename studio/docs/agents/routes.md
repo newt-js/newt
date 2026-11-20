@@ -41,8 +41,9 @@
 
 - Every route needs a session, else 401. `{ public: true }` as the route's last argument opens it:
   `/setup` and `/setup/password` are public, since nobody can sign in before the first admin exists.
-- Each context reads its own session in `<ctx>/authenticate.ts`, given to its router with
-  `router.authenticateWith(authenticate)`; it returns `{ userId }` or `null`. `auth` reads its `session_auth` cookie
-  through `signInSession.actorOf` (`auth/authenticate.ts`); `panel` and `backoffice` still return `null`.
+- Each context reads its own session in `<ctx>/authenticate.ts`, given to its router in `<ctx>.context.ts`'s `open`
+  with `router.authenticateWith(authenticate(context.signInSession))`; it returns `{ userId }` or `null`.
+  `auth` reads its `session_auth` cookie (`auth/authenticate.ts`), `backoffice` its `__Host-backoffice_session` cookie
+  (`backoffice/authenticate.ts`), both through their `signInSession.actorOf`; `panel` still returns `null`.
 - A context never accepts another context's session. Other contexts sign in through `auth` over OAuth; see
   [auth-context](auth-context.md).
