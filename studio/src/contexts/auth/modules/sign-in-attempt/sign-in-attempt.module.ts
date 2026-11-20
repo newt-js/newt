@@ -16,9 +16,11 @@ import { SignInAttempt_Repository }      from './sign-in-attempt.repository'
 import { registerSignInAttemptRoutes }   from './sign-in-attempt.routes'
 import type { SignInAttemptAnswerDTO }   from './sign-in-attempt.schema'
 import { SignInAttemptAnswerSchema }     from './sign-in-attempt.schema'
+import type { SignInAttemptDTO }         from './sign-in-attempt.schema'
 import type { SignInAttemptProgressDTO } from './sign-in-attempt.schema'
 import type { SignInAttemptStartDTO }    from './sign-in-attempt.schema'
 import { SignInAttemptStartSchema }      from './sign-in-attempt.schema'
+import { SignInAttemptId }               from './value-objects/sign-in-attempt-id'
 import { SignInStep }                    from './value-objects/sign-in-step'
 import { UserId }                        from './value-objects/user-id'
 
@@ -31,7 +33,7 @@ const NOBODY = UserId.generate()
 export class SignInAttempt_Module extends Module {
 
   static initialize(base: ContextBase, router: HttpRouter, deps: SignInAttempt_Deps): SignInAttempt_Module {
-    const repository = new SignInAttempt_Repository(base)
+    const repository = new SignInAttempt_Repository(base, deps)
     return new SignInAttempt_Module(base, repository, router, deps)
   }
 
@@ -54,13 +56,21 @@ export class SignInAttempt_Module extends Module {
   @UseCase()
   async start(input: SignInAttemptStartDTO): Promise<SignInAttemptProgressDTO> {
     const { applicationId, email } = SignInAttemptStartSchema.parse(input)
-    await this.deps.application.get(applicationId)
+    const application = await this.deps.application.get(applicationId)
     const [user] = await this.deps.user.find({ applicationId, email })
-    const userId = user ? UserId.from(user.id) : null
     const now = this.base.clock.now()
-    const attempt = SignInAttempt.start({ applicationId, userId, steps: POLICY, now })
+    const attempt = SignInAttempt.start({ application, user: user ?? null, steps: POLICY, now })
     await this.repository.persist(attempt)
     return attempt.progress
+  }
+
+  @UseCase()
+  async get(id: string): Promise<SignInAttemptDTO> {
+    const [attempt] = await this.repository.find({ id: SignInAttemptId.from(id) }, { limit: 1 })
+    if (!attempt) {
+      throw new SignInAttemptNotFound()
+    }
+    return attempt.toDTO()
   }
 
   /** Checks the answer to the next step. A wrong one counts towards locking the attempt. */

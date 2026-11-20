@@ -12,6 +12,7 @@ import { join }                  from 'node:path'
 import { authenticate }          from './authenticate'
 import { Application_Module }    from './modules/application/application.module'
 import { SignInAttempt_Module }  from './modules/sign-in-attempt/sign-in-attempt.module'
+import { SignInSession_Module }  from './modules/sign-in-session/sign-in-session.module'
 import { UserCredential_Module } from './modules/user-credential/user-credential.module'
 import { User_Module }           from './modules/user/user.module'
 
@@ -35,11 +36,17 @@ export class Auth_Context extends BoundedContext {
       user,
       userCredential,
     })
+    const signInSession = SignInSession_Module.initialize(base, router, {
+      signInAttempt,
+      application,
+      user,
+    })
     return new Auth_Context(base, {
       application,
       user,
       userCredential,
       signInAttempt,
+      signInSession,
     })
   }
 
@@ -47,6 +54,7 @@ export class Auth_Context extends BoundedContext {
   private readonly user: User_Module
   private readonly userCredential: UserCredential_Module
   private readonly signInAttempt: SignInAttempt_Module
+  private readonly signInSession: SignInSession_Module
 
   private constructor(
     base: ContextBase,
@@ -55,6 +63,7 @@ export class Auth_Context extends BoundedContext {
       user: User_Module,
       userCredential: UserCredential_Module,
       signInAttempt: SignInAttempt_Module,
+      signInSession: SignInSession_Module,
     },
   ) {
     super('auth', base, modules)
@@ -62,6 +71,7 @@ export class Auth_Context extends BoundedContext {
     this.user = modules.user
     this.userCredential = modules.userCredential
     this.signInAttempt = modules.signInAttempt
+    this.signInSession = modules.signInSession
   }
 
   static async open(
@@ -69,7 +79,6 @@ export class Auth_Context extends BoundedContext {
     place: DataPlace,
   ): Promise<ContextToRun & { context: Auth_Context }> {
     const router = new HttpRouter({ prefix: '/auth/api' })
-    router.authenticateWith(authenticate)
     const host = Bun.env.AUTH_HOST
     const { database, storage } = await openData('auth', {
       database: { adapter: sqlite(), migrations: MIGRATIONS_FOLDER },
@@ -85,6 +94,7 @@ export class Auth_Context extends BoundedContext {
       storage,
     })
     const context = Auth_Context.initialize(base, router)
+    router.authenticateWith(authenticate(context.signInSession))
     return { context, router, host }
   }
 

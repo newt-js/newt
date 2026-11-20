@@ -2,7 +2,7 @@
 
 Angel reads every line as a reviewer: write for that reader first.
 
-- Lines up to 120 characters (lint `@stylistic/max-len`; imports, URLs and regular expressions may run longer).
+- Lines up to 160 characters (lint `@stylistic/max-len`; imports, URLs and regular expressions may run longer).
   Do not break lines to fit 80: that was tried and wasted time.
 - Imports, then exports; packages, then local files, split by `// ----…`; one name per line, sorted and aligned at
   `from` (lint `imports-and-exports`, fixed by `bun run lint --fix`).

@@ -1,9 +1,12 @@
-import { z }               from 'zod'
+import type { Resolved }       from '@newt-js/core'
+import { z }                   from 'zod'
 // --------------------------------------------------------
-import { ApplicationId }   from './value-objects/application-id'
-import { SignInAttemptId } from './value-objects/sign-in-attempt-id'
-import { SignInStep }      from './value-objects/sign-in-step'
-import { UserId }          from './value-objects/user-id'
+import type { ApplicationDTO } from '../application/application.schema'
+import type { UserDTO }        from '../user/user.schema'
+import { ApplicationId }       from './value-objects/application-id'
+import { SignInAttemptId }     from './value-objects/sign-in-attempt-id'
+import { SignInStep }          from './value-objects/sign-in-step'
+import { UserId }              from './value-objects/user-id'
 
 /** Long enough for a pass phrase: as userCredential takes it. */
 const LONGEST_ANSWER = 256
@@ -43,7 +46,10 @@ export const SignInAttemptProgressSchema = z.object({
   expiresAt: z.string(),
 })
 
-export type SignInAttemptDTO = z.infer<typeof SignInAttemptSchema>
+/** The application and the user an attempt is of, shown whole: no user when the email was unknown. */
+export type SignInAttemptReferences = { applicationId: ApplicationDTO, userId: UserDTO }
+
+export type SignInAttemptDTO = Resolved<z.infer<typeof SignInAttemptSchema>, SignInAttemptReferences>
 export type SignInAttemptStartDTO = z.input<typeof SignInAttemptStartSchema>
 export type SignInAttemptAnswerDTO = z.input<typeof SignInAttemptAnswerSchema>
 export type SignInAttemptProgressDTO = z.infer<typeof SignInAttemptProgressSchema>

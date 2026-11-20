@@ -1,11 +1,13 @@
 import { Entity }                        from '@newt-js/core'
 import type { EntityInput }              from '@newt-js/core'
 // --------------------------------------------------------
+import type { ApplicationDTO }           from '../application/application.schema'
+import type { UserDTO }                  from '../user/user.schema'
 import { SignInAttempt_Completed }       from './events/sign-in-attempt-completed'
 import type { SignInAttemptDTO }         from './sign-in-attempt.schema'
 import type { SignInAttemptProgressDTO } from './sign-in-attempt.schema'
+import type { SignInAttemptReferences }  from './sign-in-attempt.schema'
 import { SignInAttemptSchema }           from './sign-in-attempt.schema'
-import type { ApplicationId }            from './value-objects/application-id'
 import type { SignInStep }               from './value-objects/sign-in-step'
 import type { UserId }                   from './value-objects/user-id'
 
@@ -15,13 +17,13 @@ const LIFETIME_MS = 10 * 60 * 1000
 const MOST_FAILED_TRIES = 5
 
 export type SignInAttemptStartProps = {
-  applicationId: ApplicationId,
-  userId: UserId | null,
+  application: ApplicationDTO,
+  user: UserDTO | null,
   steps: SignInStep[],
   now: Date,
 }
 
-export class SignInAttempt extends Entity<typeof SignInAttemptSchema> {
+export class SignInAttempt extends Entity<typeof SignInAttemptSchema, typeof SignInAttemptSchema, SignInAttemptReferences> {
 
   private constructor(input: EntityInput<SignInAttemptDTO>, isNew: boolean) {
     super(SignInAttemptSchema, input, isNew)
@@ -32,10 +34,10 @@ export class SignInAttempt extends Entity<typeof SignInAttemptSchema> {
   }
 
   /** An attempt with every step of the policy to do, whether its user exists or not. */
-  static start({ applicationId, userId, steps, now }: SignInAttemptStartProps): SignInAttempt {
+  static start({ application, user, steps, now }: SignInAttemptStartProps): SignInAttempt {
     const expiresAt = new Date(now.getTime() + LIFETIME_MS).toISOString()
     const progress = { pendingSteps: steps, doneSteps: [], failedTries: 0, expiresAt, completedAt: null }
-    return new SignInAttempt({ applicationId, userId, ...progress }, true)
+    return new SignInAttempt({ application, user, ...progress }, true)
   }
 
   get userId(): UserId | null {

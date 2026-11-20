@@ -48,7 +48,7 @@ The rules the lint cannot see, each explained in its guide:
 - An enum is a value object. A schema with a secret has a public schema without it, used by `toDTO` and events.
   ([modules](docs/agents/modules.md))
 - Never rewrite a migration that exists: a change is a new migration. ([migrations](docs/agents/migrations.md))
-- Lines up to 120 characters. ([style](docs/agents/style.md))
+- Lines up to 160 characters. ([style](docs/agents/style.md))
 
 ## Guides
 
