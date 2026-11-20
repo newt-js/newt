@@ -74,3 +74,23 @@ test('no route reaches the links', async () => {
   const response = await router.answer(new Request('http://backend.test/auth/api/user-email-links'))
   expect(response?.status).toBe(404)
 })
+
+test('an email that fails to go is sent again, and only the link that went is kept', async () => {
+  let tries = 0
+  spyOn(console, 'log').mockImplementation((text: string) => {
+    tries++
+    if (tries === 1) {
+throw new Error('mail down for a moment')
+}
+    emails.push(text)
+  })
+
+  const abel = await grantAbel()
+  for (let each = 0; each < 5; each++) {
+    context.clock.advance(10 * 60 * 1000)
+    await context.settle()
+  }
+
+  expect(emails).toHaveLength(1)
+  expect(await linksOf(abel.id)).toHaveLength(1)
+})

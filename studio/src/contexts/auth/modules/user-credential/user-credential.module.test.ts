@@ -259,3 +259,25 @@ test('a password too short spends no link', async () => {
   expect((await setFromLink(token, 'short'))?.status).toBe(400)
   expect((await setFromLink(token))?.status).toBe(204)
 })
+
+test('the email is verified even if verifying fails once: the link is spent by a worker of its own', async () => {
+  const { abelId, token } = await abelWithLink()
+  const users = composed['user']
+  const verifyEmail = users.verifyEmail.bind(users)
+  let tries = 0
+  spyOn(users, 'verifyEmail').mockImplementation(async id => {
+    tries++
+    if (tries === 1) {
+throw new Error('down for a moment')
+}
+    return verifyEmail(id)
+  })
+
+  await credentials.setPasswordFromEmailLink({ token, password: PASSWORD })
+  for (let each = 0; each < 5; each++) {
+    await context.settle()
+    context.clock.advance(10 * 60 * 1000)
+  }
+
+  expect(await users.get(abelId)).toMatchObject({ emailVerified: true })
+})

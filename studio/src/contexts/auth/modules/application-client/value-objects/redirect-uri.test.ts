@@ -12,7 +12,7 @@ test('a redirect uri is kept exactly as given', () => {
 })
 
 test('refuses what is not absolute, has a fragment, or is http away from this machine', () => {
-  for (const text of ['', '/callback', 'https://example.com/callback#done', 'https://example.com/#', 'http://example.com/callback', 'javascript:alert(1)']) {
+  for (const text of ['', '/callback', 'https://example.com/callback#done', 'https://example.com/#', 'http://example.com/callback', 'javascript:alert(1)', ' https://example.com/cb', 'https://example.com/c\tb', 'https://example.com/cb\n', 'https://user:pw@example.com/cb', 'HTTPS://Example.com/cb']) {
     expect(() => RedirectUri.from(text)).toThrow(InvalidRedirectUri)
   }
 })

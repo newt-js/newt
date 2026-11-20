@@ -1,20 +1,21 @@
-import { Module }                       from '@newt-js/core'
-import { UseCase }                      from '@newt-js/core'
-import { eventsOf }                     from '@newt-js/core'
-import type { ContextBase }             from '@newt-js/core/application'
-import type { HttpRouter }              from '@newt-js/core/http'
+import { Module }                          from '@newt-js/core'
+import { UseCase }                         from '@newt-js/core'
+import { eventsOf }                        from '@newt-js/core'
+import type { ContextBase }                from '@newt-js/core/application'
+import type { HttpRouter }                 from '@newt-js/core/http'
 // --------------------------------------------------------
-import { InvalidUserEmailLink }         from './errors/invalid-user-email-link'
-import { UserEmailLink_Created }        from './events/user-email-link-created'
-import { sendEmail }                    from './services/email-sender'
-import { UserEmailLink }                from './user-email-link'
-import type { UserEmailLink_Deps }      from './user-email-link.deps'
-import { UserEmailLink_Repository }     from './user-email-link.repository'
-import { registerUserEmailLinkRoutes }  from './user-email-link.routes'
-import type { UserEmailLinkDTO }        from './user-email-link.schema'
-import { UserEmailLinkTokenSchema }     from './user-email-link.schema'
-import { registerUserEmailLinkWorkers } from './user-email-link.workers'
-import { UserEmailLinkId }              from './value-objects/user-email-link-id'
+import { InvalidUserEmailLink }            from './errors/invalid-user-email-link'
+import { UserEmailLink_Created }           from './events/user-email-link-created'
+import { sendEmail }                       from './services/email-sender'
+import { UserEmailLink }                   from './user-email-link'
+import type { UserEmailLink_Deps }         from './user-email-link.deps'
+import { UserEmailLink_Repository }        from './user-email-link.repository'
+import { registerUserEmailLinkRoutes }     from './user-email-link.routes'
+import type { UserEmailLinkDTO }           from './user-email-link.schema'
+import type { UserEmailLinkRedeemableDTO } from './user-email-link.schema'
+import { UserEmailLinkRedeemableSchema }   from './user-email-link.schema'
+import { registerUserEmailLinkWorkers }    from './user-email-link.workers'
+import { UserEmailLinkId }                 from './value-objects/user-email-link-id'
 
 /** Where auth's pages are: the link takes its token in the fragment, which browsers never send to a server. */
 const PUBLIC_URL = Bun.env.PUBLIC_URL ?? 'http://localhost:3000'
@@ -60,20 +61,23 @@ export class UserEmailLink_Module extends Module {
     const user = await this.deps.user.get(userId)
     const token = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url')
     const link = UserEmailLink.access({ user, tokenHash: hashOf(token), now: this.base.clock.now() })
-    await this.repository.persist(link)
-    // Its application's name is its template, for now: templates per application are still to come.
+    // Sent before the link is saved: a worker's first save takes its event as received, so a send that failed
+    // after it would never be retried. A save that fails after sending is retried with a new link; the sent one never works.
     sendEmail({
       to: user.email!,
       subject: `You have access to ${user.application.name}`,
       text: `Set your password to sign in to ${user.application.name}: ${PUBLIC_URL}/access#token=${token}`,
     })
+    await this.repository.persist(link)
   }
 
-  /** The link of a token while it works: unused and in time. Any other token, `InvalidUserEmailLink`. */
+  /** The link of a token while it works: for that purpose, unused and in time. Any other token, `InvalidUserEmailLink`. */
   @UseCase()
-  async redeemable(token: string): Promise<UserEmailLinkDTO> {
-    const parsed = UserEmailLinkTokenSchema.safeParse(token)
-    const [link] = parsed.success ? await this.repository.find({ tokenHash: hashOf(parsed.data) }, { limit: 1 }) : []
+  async redeemable(input: UserEmailLinkRedeemableDTO): Promise<UserEmailLinkDTO> {
+    const parsed = UserEmailLinkRedeemableSchema.safeParse(input)
+    const [link] = parsed.success
+      ? await this.repository.find({ tokenHash: hashOf(parsed.data.token), purpose: parsed.data.purpose }, { limit: 1 })
+      : []
     if (!link?.isUsable(this.base.clock.now())) {
       throw new InvalidUserEmailLink()
     }

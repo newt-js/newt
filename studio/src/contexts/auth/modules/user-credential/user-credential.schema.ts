@@ -52,6 +52,5 @@ export type UserCredentialDTO = z.infer<typeof UserCredentialPublicSchema>
 export type UserCredentialPasswordDTO =
   z.input<typeof UserCredentialPasswordSchema>
 export type UserCredentialFromEmailLinkDTO = z.input<typeof UserCredentialFromEmailLinkSchema>
-export type UserCredentialSetFromEmailLinkDTO = z.input<typeof UserCredentialSetFromEmailLinkSchema>
 export type UserCredentialVerifyDTO =
   z.input<typeof UserCredentialVerifySchema>

@@ -21,11 +21,15 @@ export const UserEmailLinkSchema = z.object({
 /** What a link shows: never its token's hash. */
 export const UserEmailLinkPublicSchema = UserEmailLinkSchema.omit({ tokenHash: true })
 
-/** The token of a link, as it came in its email. */
-export const UserEmailLinkTokenSchema = z.string().max(100)
+/** The token of a link, as it came in its email, and what it is used for: a link works only for its purpose. */
+export const UserEmailLinkRedeemableSchema = z.object({
+  token: z.string().max(100),
+  purpose: UserEmailLinkPurpose.schema,
+})
 
 /** The user a link is of, shown whole in its DTO. */
 export type UserEmailLinkReferences = { userId: UserDTO }
 
 export type UserEmailLinkFields = z.infer<typeof UserEmailLinkSchema>
+export type UserEmailLinkRedeemableDTO = z.input<typeof UserEmailLinkRedeemableSchema>
 export type UserEmailLinkDTO = Resolved<z.infer<typeof UserEmailLinkPublicSchema>, UserEmailLinkReferences>

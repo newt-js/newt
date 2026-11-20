@@ -5,7 +5,12 @@ export function registerUserCredentialWorkers(
 ): void {
   credentials.on(
     credentials.events.setFromEmailLink,
-    'closeEmailLink',
-    ({ userId, emailLinkId }) => [{ userId, emailLinkId }],
+    'spendEmailLink',
+    ({ emailLinkId }) => [emailLinkId],
+  )
+  credentials.on(
+    credentials.events.setFromEmailLink,
+    'verifyEmailOfLink',
+    ({ userId }) => [userId],
   )
 }

@@ -1,30 +1,28 @@
-import { DuplicateValue }                         from '@newt-js/core'
-import { Module }                                 from '@newt-js/core'
-import { UseCase }                                from '@newt-js/core'
-import { eventsOf }                               from '@newt-js/core'
-import type { ContextBase }                       from '@newt-js/core/application'
-import type { HttpRouter }                        from '@newt-js/core/http'
+import { DuplicateValue }                      from '@newt-js/core'
+import { Module }                              from '@newt-js/core'
+import { UseCase }                             from '@newt-js/core'
+import { eventsOf }                            from '@newt-js/core'
+import type { ContextBase }                    from '@newt-js/core/application'
+import type { HttpRouter }                     from '@newt-js/core/http'
 // --------------------------------------------------------
-import { InvalidUserEmailLink }                   from '../user-email-link/errors/invalid-user-email-link'
-import { SetupClosed }                            from './errors/setup-closed'
-import { UserCredential_Created }                 from './events/user-credential-created'
-import { UserCredential_SetFromEmailLink }        from './events/user-credential-set-from-email-link'
-import { UserCredential }                         from './user-credential'
-import type { UserCredential_Deps }               from './user-credential.deps'
-import { UserCredential_Repository }              from './user-credential.repository'
-import { registerUserCredentialRoutes }           from './user-credential.routes'
-import type { UserCredentialFromEmailLinkDTO }    from './user-credential.schema'
-import { UserCredentialFromEmailLinkSchema }      from './user-credential.schema'
-import type { UserCredentialPasswordDTO }         from './user-credential.schema'
-import { UserCredentialPasswordSchema }           from './user-credential.schema'
-import type { UserCredentialSetFromEmailLinkDTO } from './user-credential.schema'
-import { UserCredentialSetFromEmailLinkSchema }   from './user-credential.schema'
-import type { UserCredentialVerifyDTO }           from './user-credential.schema'
-import { UserCredentialVerifySchema }             from './user-credential.schema'
-import { registerUserCredentialWorkers }          from './user-credential.workers'
-import { UserCredentialKind }                     from './value-objects/user-credential-kind'
-import { UserEmailLinkId }                        from './value-objects/user-email-link-id'
-import { UserId }                                 from './value-objects/user-id'
+import { InvalidUserEmailLink }                from '../user-email-link/errors/invalid-user-email-link'
+import { SetupClosed }                         from './errors/setup-closed'
+import { UserCredential_Created }              from './events/user-credential-created'
+import { UserCredential_SetFromEmailLink }     from './events/user-credential-set-from-email-link'
+import { UserCredential }                      from './user-credential'
+import type { UserCredential_Deps }            from './user-credential.deps'
+import { UserCredential_Repository }           from './user-credential.repository'
+import { registerUserCredentialRoutes }        from './user-credential.routes'
+import type { UserCredentialFromEmailLinkDTO } from './user-credential.schema'
+import { UserCredentialFromEmailLinkSchema }   from './user-credential.schema'
+import type { UserCredentialPasswordDTO }      from './user-credential.schema'
+import { UserCredentialPasswordSchema }        from './user-credential.schema'
+import type { UserCredentialVerifyDTO }        from './user-credential.schema'
+import { UserCredentialVerifySchema }          from './user-credential.schema'
+import { registerUserCredentialWorkers }       from './user-credential.workers'
+import { UserCredentialKind }                  from './value-objects/user-credential-kind'
+import { UserEmailLinkId }                     from './value-objects/user-email-link-id'
+import { UserId }                              from './value-objects/user-id'
 
 /** A hash no password matches: checked when there is no credential, as slow. */
 const NO_PASSWORD = Bun.password.hash(crypto.randomUUID())
@@ -116,7 +114,7 @@ export class UserCredential_Module extends Module {
   @UseCase()
   async setPasswordFromEmailLink(input: UserCredentialFromEmailLinkDTO): Promise<void> {
     const { token, password } = UserCredentialFromEmailLinkSchema.parse(input)
-    const link = await this.deps.userEmailLink.redeemable(token)
+    const link = await this.deps.userEmailLink.redeemable({ token, purpose: 'access' })
     const secretHash = await Bun.password.hash(password)
     const userId = UserId.from(link.user.id)
     const credential = UserCredential.passwordFromEmailLink({ userId, secretHash, emailLinkId: UserEmailLinkId.from(link.id) })
@@ -127,11 +125,18 @@ export class UserCredential_Module extends Module {
     }
   }
 
-  /** Once a password is set from a link: the link is spent, and the user's email is verified. */
+  /**
+   * Once a password is set from a link, the link is spent. One write per worker: a worker's first save takes its event
+   * as received, so a second write that failed after it would never be retried.
+   */
   @UseCase()
-  async closeEmailLink(input: UserCredentialSetFromEmailLinkDTO): Promise<void> {
-    const { userId, emailLinkId } = UserCredentialSetFromEmailLinkSchema.parse(input)
+  async spendEmailLink(emailLinkId: string): Promise<void> {
     await this.deps.userEmailLink.markUsed(emailLinkId)
+  }
+
+  /** Once a password is set from a link, the email it was sent to is the user's. */
+  @UseCase()
+  async verifyEmailOfLink(userId: string): Promise<void> {
     await this.deps.user.verifyEmail(userId)
   }
 

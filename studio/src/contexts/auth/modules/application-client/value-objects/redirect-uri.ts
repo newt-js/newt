@@ -6,10 +6,10 @@ import { InvalidRedirectUri } from '../errors/invalid-redirect-uri'
 /** Where a browser may be sent with a code, http only on this machine (OAuth 2.1 §2.3.1 and §8.4.2). */
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]'])
 
-/** Absolute, never with a fragment, and https but on the loopback. */
+/** Absolute, written as a browser writes it (no spaces, no user), never with a fragment, and https but on the loopback. */
 function isRedirectUri(text: string): boolean {
   const url = URL.parse(text)
-  if (!url || url.hash !== '' || text.includes('#')) {
+  if (!url || url.href !== text || url.username !== '' || url.password !== '' || text.includes('#')) {
     return false
   }
   return url.protocol === 'https:' || (url.protocol === 'http:' && LOOPBACK.has(url.hostname))
