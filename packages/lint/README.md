@@ -79,6 +79,7 @@ Everything else is its own: its schemas as values (another module never parses, 
 | `newt/repository-public-methods` | A repository declares no public method of its own: `persist`, `find`, `count`, `paginate` and `purge` are all it has. |
 | `newt/route-context` | No route a context's files register, on its router or a group of it, starts with the context: the router already serves them under `/<context>/api`, so `/shop/orders` would answer at `/shop/api/shop/orders`. Paths are read through consts, templates and a group's prefix; one it cannot read is let be. |
 | `newt/route-body-unchecked` | A route passes the body to a use case as it came, never asserting its type. |
+| `newt/route-public-rate-limit` | A public route that writes (POST, PUT, PATCH, DELETE) takes a `rateLimit`. |
 | `newt/reaction-queue` | A reaction's queue names the module that reacts, the use case it calls and the event: `<module>.<use case>_on_<event>`, the event by its whole name (`delivery.prepare_on_order.placed`). |
 | `newt/module-transactions` | A module never runs a transaction of its own from its base's `transactions`: it writes through its repository's `persist`. A field of its own named `transactions` is no transaction. |
 | `newt/framework-tables` | An application never names a table `newt_…`, to `records('…')` or in SQL. |

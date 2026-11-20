@@ -55,7 +55,7 @@ export class User_Module extends Module {
       created: User_Created,
       accessGranted: User_AccessGranted,
     })
-    this.routes = registerUserRoutes(router, this, deps)
+    this.routes = registerUserRoutes(router, this, deps, base.rateLimits)
   }
 
   /** An admin lets someone into an application. Its email is unique there: giving access twice is refused. */

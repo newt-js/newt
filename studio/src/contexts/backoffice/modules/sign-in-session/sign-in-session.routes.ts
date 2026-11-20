@@ -1,3 +1,4 @@
+import type { ContextBase }          from '@newt-js/core/application'
 import type { HttpRouter }           from '@newt-js/core/http'
 import { clearSessionCookie }        from '@newt-js/core/http'
 import { setSessionCookie }          from '@newt-js/core/http'
@@ -18,7 +19,9 @@ export function registerSignInSessionRoutes(
   router: HttpRouter,
   signInSessions: SignInSession_Module,
   { signInAttempt: signInAttempts }: SignInSession_Deps,
+  rateLimits: ContextBase['rateLimits'],
 ) {
+  const ends = rateLimits.define('signInSession.ends', { limit: 20, windowMs: 60_000 })
   // Public: auth sends the browser here with its code. The attempt is finished by its module, and the session opened here.
   router.get('/sign-in-sessions/callback', async request => {
     const query = Object.fromEntries(new URL(request.url).searchParams)
@@ -39,6 +42,6 @@ export function registerSignInSessionRoutes(
     const ended = await signInSessions.end(request.cookies.get(SESSION_COOKIE) ?? '')
     clearSessionCookie(request, SESSION_COOKIE, { secure: SECURE })
     return Response.json(ended, { headers: { 'cache-control': 'no-store' } })
-  }, { public: true })
+  }, { public: true, rateLimit: { limit: ends, by: 'ip' } })
   return { one: router.group('/sign-in-sessions/:signInSessionId') }
 }
