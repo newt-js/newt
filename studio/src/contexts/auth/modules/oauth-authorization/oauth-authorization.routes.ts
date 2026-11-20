@@ -4,6 +4,7 @@ import { requestHost }                    from '@newt-js/core/http'
 import { toOauthErrorResponse }           from '@newt-js/core/http'
 // --------------------------------------------------------
 import type { SignInSession_Module }      from '../sign-in-session/sign-in-session.module'
+import { MalformedOauthRequest }          from './errors/malformed-oauth-request'
 import type { OauthAuthorization_Module } from './oauth-authorization.module'
 
 /** The host a request came to, which says the application. */
@@ -16,6 +17,7 @@ const OAUTH_ERRORS = {
   'oauthAuthorization.invalid_client': 'invalid_client',
   'oauthAuthorization.invalid_grant': 'invalid_grant',
   'oauthAuthorization.unsupported_grant_type': 'unsupported_grant_type',
+  'oauthAuthorization.malformed_oauth_request': 'invalid_request',
 }
 
 /** A client's id and secret: in a Basic header (client_secret_basic), or else in the form (client_secret_post). */
@@ -23,6 +25,10 @@ function clientCredentialsOf(request: Request, form: Record<string, string>): { 
   const [scheme, encoded = ''] = (request.headers.get('authorization') ?? '').split(' ')
   if (scheme?.toLowerCase() !== 'basic') {
     return { clientId: form.client_id ?? '', clientSecret: form.client_secret ?? '' }
+  }
+  // One way to prove itself per request (RFC 6749 §2.3).
+  if (form.client_secret !== undefined) {
+    throw new MalformedOauthRequest()
   }
   const decoded = Buffer.from(encoded, 'base64').toString()
   const colon = decoded.indexOf(':')
@@ -35,10 +41,27 @@ function clientCredentialsOf(request: Request, form: Record<string, string>): { 
   }
 }
 
+/** Parameters by name; one that comes twice is refused, as OAuth says (RFC 6749 §3.1). */
+function singleParams(entries: Iterable<[string, unknown]>): Record<string, string> {
+  const params: Record<string, string> = {}
+  for (const [name, value] of entries) {
+    if (name in params) {
+      throw new MalformedOauthRequest()
+    }
+    if (typeof value === 'string') {
+      params[name] = value
+    }
+  }
+  return params
+}
+
+function queryOf(request: Request): Record<string, string> {
+  return singleParams(new URL(request.url).searchParams.entries())
+}
+
 /** The form of a request, its text fields only. */
 async function formOf(request: Request): Promise<Record<string, string>> {
-  const fields = [...(await request.formData()).entries()]
-  return Object.fromEntries(fields.filter((field): field is [string, string] => typeof field[1] === 'string'))
+  return singleParams((await request.formData()).entries())
 }
 
 /** An OAuth error; a client that failed to prove itself is told how to (RFC 6749 §5.2). */
@@ -62,7 +85,7 @@ export function registerOauthAuthorizationRoutes(
     return Response.json(await oauthAuthorizations.discovery(hostOf(request)))
   }, { public: true })
   router.get('/oauth-authorizations/authorize', async request => {
-    const query = Object.fromEntries(new URL(request.url).searchParams)
+    const query = queryOf(request)
     const cookies = Object.fromEntries(request.cookies.entries())
     const { redirectTo } = await oauthAuthorizations.authorize({ host: hostOf(request), cookies, query })
     return new Response(null, { status: 302, headers: { 'location': redirectTo, 'cache-control': 'no-store' } })
@@ -75,9 +98,9 @@ export function registerOauthAuthorizationRoutes(
   }, { public: true, crossOrigin: true, rateLimit: { limit: tokens, by: 'ip' }, onError: oauthErrorOf })
   // OpenID's RP-Initiated Logout: this module checks where to go back, and the session is ended by its own module.
   router.get('/oauth-authorizations/end-session', async request => {
-    const query = Object.fromEntries(new URL(request.url).searchParams)
-    const { applicationSlug, redirectTo } = await oauthAuthorizations.endSession({ host: hostOf(request), query })
-    await signInSessions.endCurrent({ cookies: Object.fromEntries(request.cookies.entries()), applicationSlug })
+    const query = queryOf(request)
+    const { applicationSlug, userId, redirectTo } = await oauthAuthorizations.endSession({ host: hostOf(request), query })
+    await signInSessions.endCurrent({ cookies: Object.fromEntries(request.cookies.entries()), applicationSlug, userId })
     if (redirectTo === null) {
       return Response.json({ signedOut: true }, { headers: { 'cache-control': 'no-store' } })
     }

@@ -60,7 +60,10 @@ export class OauthSigningKey_Module extends Module {
   /** Makes the first key if there is none. Run when auth starts: signing a token never writes. */
   @UseCase()
   async ensureActiveKey(): Promise<void> {
-    if (await this.activeKey()) {
+    const active = await this.activeKey()
+    if (active) {
+      // A wrong AUTH_SIGNING_KEYS_SECRET stops auth here, not at the first token.
+      await decryptPrivateKey(active.privateKeyEncrypted)
       return
     }
     const { publicKey, privateKey } = await generateKeyPair(ALGORITHM, { extractable: true })
@@ -98,7 +101,7 @@ export class OauthSigningKey_Module extends Module {
       .sign(privateKey)
   }
 
-  /** The claims of a token signed by one of these keys for that issuer, even expired; of any other, null. */
+  /** The claims of an id_token signed by one of these keys for that issuer, even expired; of any other token, null. */
   @UseCase()
   async verify(input: OauthSigningKeyVerifyDTO): Promise<JWTPayload | null> {
     const parsed = OauthSigningKeyVerifySchema.safeParse(input)
@@ -106,9 +109,10 @@ export class OauthSigningKey_Module extends Module {
       return null
     }
     try {
-      await compactVerify(parsed.data.token, createLocalJWKSet(await this.jwks()), { algorithms: [ALGORITHM] })
+      const verified = await compactVerify(parsed.data.token, createLocalJWKSet(await this.jwks()), { algorithms: [ALGORITHM] })
       const claims = decodeJwt(parsed.data.token)
-      return claims.iss === parsed.data.issuer ? claims : null
+      // An access token (at+jwt) is no id_token.
+      return verified.protectedHeader.typ === 'JWT' && claims.iss === parsed.data.issuer ? claims : null
     } catch {
       return null
     }

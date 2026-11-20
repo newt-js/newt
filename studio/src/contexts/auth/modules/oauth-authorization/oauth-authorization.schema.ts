@@ -61,8 +61,8 @@ export const OauthAuthorizationEndSessionSchema = z.object({
   query: z.record(z.string(), z.string()),
 })
 
-/** Whose session to end, and where to send the browser then: a registered address, or nowhere. */
-export type OauthEndSessionDTO = { applicationSlug: string, redirectTo: string | null }
+/** Whose session to end, in which application, and where to send the browser then: a registered address, or nowhere. */
+export type OauthEndSessionDTO = { applicationSlug: string, userId: string, redirectTo: string | null }
 
 /** Where /authorize sends the browser: back to the client with a code or an error, or to sign in first. */
 export type OauthAuthorizationRedirectDTO = { redirectTo: string }

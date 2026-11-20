@@ -372,12 +372,71 @@ test('signing out ends the session of the application, and goes back to a regist
 })
 
 test('without an address to go back to, it signs out and stays', async () => {
-  const { client, cookie } = await abelWithIdToken()
+  const { client, cookie, idToken } = await abelWithIdToken()
 
-  const response = await endSession({}, cookie)
+  const response = await endSession({ id_token_hint: idToken }, cookie)
 
   expect(response?.status).toBe(200)
   expect(await isSignedIn(client.id, cookie)).toBe(false)
+})
+
+test('a link from anywhere signs no one out: without a hint, or with an access token, or with the hint of someone else', async () => {
+  const { client, cookie, idToken } = await abelWithIdToken()
+  const access = await (async () => {
+    const { verifier, challenge } = pkce()
+    const { location } = await authorize(authorizeQuery(client.id, challenge), cookie)
+    const tokens = await exchange(exchangeForm(location!.searchParams.get('code')!, verifier), client)
+    return (await tokens!.json() as OauthTokensDTO).access_token
+  })()
+  const eva = await composed['user'].grantAccess({ applicationId: backofficeId, email: 'eva@example.com', name: 'Eva' })
+  const evasHint = await composed['oauthSigningKey'].sign({ claims: { iss: ISSUER, sub: eva.id, aud: client.id }, type: 'JWT' })
+
+  expect((await endSession({}, cookie))?.status).toBe(400)
+  expect((await endSession({ id_token_hint: access }, cookie))?.status).toBe(400)
+  expect((await endSession({ id_token_hint: evasHint }, cookie))?.status).toBe(200)
+
+  expect(await isSignedIn(client.id, cookie)).toBe(true)
+  expect((await endSession({ id_token_hint: idToken }, cookie))?.status).toBe(200)
+  expect(await isSignedIn(client.id, cookie)).toBe(false)
+})
+
+test('prompt=login, or a session older than max_age, signs in again, and comes back without asking it twice', async () => {
+  const client = await backofficeClient()
+  const { cookie } = await abelSignedIn()
+  context.clock.advance(10 * 60 * 1000)
+  const { challenge } = pkce()
+
+  for (const overrides of [{ prompt: 'login' }, { max_age: '60' }]) {
+    const { location } = await authorize(authorizeQuery(client.id, challenge, overrides), cookie)
+    expect(location!.pathname).toBe('/sign-in')
+    const back = new URL(location!.searchParams.get('return_to')!)
+    expect(back.searchParams.has('prompt') || back.searchParams.has('max_age')).toBe(false)
+  }
+  const fresh = await authorize(authorizeQuery(client.id, challenge, { max_age: '3600' }), cookie)
+  expect(fresh.location!.searchParams.has('code')).toBe(true)
+  const silent = await authorize(authorizeQuery(client.id, challenge, { prompt: 'none', max_age: '60' }), cookie)
+  expect(silent.location!.searchParams.get('error')).toBe('login_required')
+})
+
+test('a parameter twice, or a client proving itself twice, is refused', async () => {
+  const { client, verifier, code } = await codeForAbel()
+
+  const twice = await authorize(`${authorizeQuery(client.id, pkce().challenge)}&redirect_uri=${encodeURIComponent(CALLBACK)}`)
+  expect(twice.status).toBe(400)
+  const both = await exchange(exchangeForm(code, verifier, { client_secret: 'wrong' }), client)
+  expect(both?.status).toBe(400)
+  expect(await both!.json()).toMatchObject({ error: 'invalid_request' })
+})
+
+test('request objects are not supported, and an overlong state is never echoed', async () => {
+  const client = await backofficeClient()
+  const { challenge } = pkce()
+
+  const request = await authorize(authorizeQuery(client.id, challenge, { request: 'a.b.c' }))
+  expect(request.location!.searchParams.get('error')).toBe('request_not_supported')
+  const long = await authorize(authorizeQuery(client.id, challenge, { state: 'x'.repeat(501) }))
+  expect(long.location!.searchParams.get('error')).toBe('invalid_request')
+  expect(long.location!.searchParams.has('state')).toBe(false)
 })
 
 test('an address the client does not have, or a hint this auth never signed, is refused, and nothing ends', async () => {

@@ -67,11 +67,12 @@ test('the JWKS and the table never show a private key in clear', async () => {
   expect(row!.privateKeyEncrypted).not.toContain('"d"')
 })
 
-test('a key made with another secret of .env signs nothing', async () => {
+test('a key made with another secret of .env signs nothing, and stops auth from starting', async () => {
   await oauthSigningKeys.ensureActiveKey()
   Bun.env.AUTH_SIGNING_KEYS_SECRET = Buffer.alloc(32, 8).toString('base64url')
 
   await expect(oauthSigningKeys.sign({ claims: {}, type: 'JWT' })).rejects.toThrow()
+  await expect(oauthSigningKeys.ensureActiveKey()).rejects.toThrow()
 })
 
 test('starting again, or twice at once, keeps a single key', async () => {
@@ -89,4 +90,6 @@ test('verifies its own tokens, even expired, for their issuer only', async () =>
   expect(await oauthSigningKeys.verify({ token: expired, issuer: 'http://panel.auth.test/auth/api' })).toBeNull()
   expect(await oauthSigningKeys.verify({ token: `${expired.slice(0, -4)}AAAA`, issuer: ISSUER })).toBeNull()
   expect(await oauthSigningKeys.verify({ token: 'not a token', issuer: ISSUER })).toBeNull()
+  const access = await oauthSigningKeys.sign({ claims: { iss: ISSUER }, type: 'at+jwt' })
+  expect(await oauthSigningKeys.verify({ token: access, issuer: ISSUER })).toBeNull()
 })

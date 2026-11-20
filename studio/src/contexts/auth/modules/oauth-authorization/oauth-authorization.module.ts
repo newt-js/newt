@@ -46,6 +46,16 @@ function scopesOf(scope: string): string[] {
 /** A PKCE challenge: the base64url SHA-256 of the verifier the client keeps. */
 const CODE_CHALLENGE = /^[\w-]{43}$/
 
+/** The longest state echoed back. */
+const MOST_STATE_LENGTH = 500
+
+/** Whether the client asks to sign in again: with prompt=login, or by max_age when the session is older. */
+function mustSignInAgain(query: Record<string, string>, signedInAt: string, now: Date): boolean {
+  const maxAge = /^\d+$/.test(query.max_age ?? '') ? Number(query.max_age) : null
+  const ageSeconds = (now.getTime() - Date.parse(signedInAt)) / 1000
+  return (query.prompt ?? '').split(' ').includes('login') || (maxAge !== null && ageSeconds > maxAge)
+}
+
 /** What is wrong with a request once its client is known, as an OAuth error; nothing when it can go on. */
 function problemOf(query: Record<string, string>): { error: string, error_description: string } | null {
   const invalid = (error_description: string) => ({ error: 'invalid_request', error_description })
@@ -58,10 +68,16 @@ function problemOf(query: Record<string, string>): { error: string, error_descri
   if (query.code_challenge_method !== 'S256' || !CODE_CHALLENGE.test(query.code_challenge ?? '')) {
     return invalid('PKCE is required: a code_challenge with code_challenge_method=S256')
   }
-  if (!query.state || query.state.length > 500) {
+  if (query.request !== undefined) {
+    return { error: 'request_not_supported', error_description: 'Request objects are not supported' }
+  }
+  if (query.request_uri !== undefined) {
+    return { error: 'request_uri_not_supported', error_description: 'request_uri is not supported' }
+  }
+  if (!query.state || query.state.length > MOST_STATE_LENGTH) {
     return invalid('A state is required')
   }
-  if ((query.nonce ?? '').length > 500) {
+  if ((query.nonce ?? '').length > MOST_STATE_LENGTH) {
     return invalid('The nonce is too long')
   }
   return null
@@ -142,18 +158,22 @@ export class OauthAuthorization_Module extends Module {
     if (client.application.id !== application.id || !client.redirectUris.some(each => each === redirectUri)) {
       throw new InvalidAuthorizationRequest()
     }
-    const back = (params: Record<string, string>) => ({ redirectTo: withQuery(redirectUri, { ...params, iss: issuer }) })
-    const state = query.state
+    // A state too long is not echoed: it goes back only as the client sent it, and valid.
+    const state: Record<string, string> = query.state !== undefined && query.state.length <= MOST_STATE_LENGTH ? { state: query.state } : {}
+    const back = (params: Record<string, string>) => ({ redirectTo: withQuery(redirectUri, { ...params, ...state, iss: issuer }) })
     const problem = problemOf(query)
     if (problem) {
-      return back({ ...problem, ...state === undefined ? {} : { state } })
+      return back(problem)
     }
     const session = await this.deps.signInSession.current({ cookies, applicationSlug: application.slug })
-    if (!session) {
+    const now = this.base.clock.now()
+    if (!session || mustSignInAgain(query, session.createdAt, now)) {
       if (query.prompt === 'none') {
-        return back({ error: 'login_required', error_description: 'No one is signed in', state: state! })
+        return back({ error: 'login_required', error_description: 'Signing in is needed' })
       }
-      const returnTo = withQuery(`${issuer}/oauth-authorizations/authorize`, query)
+      // Without prompt and max_age, so that signing in, which makes a new session, brings it back once.
+      const { prompt: _prompt, max_age: _maxAge, ...again } = query
+      const returnTo = withQuery(`${issuer}/oauth-authorizations/authorize`, again)
       return { redirectTo: withQuery(`${url}/sign-in`, { return_to: returnTo }) }
     }
     const code = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url')
@@ -167,10 +187,10 @@ export class OauthAuthorization_Module extends Module {
       amr: session.amr,
       authTime: session.createdAt,
       codeHash: hashOf(code),
-      now: this.base.clock.now(),
+      now,
     })
     await this.repository.persist(authorization)
-    return back({ code, state: state! })
+    return back({ code })
   }
 
   /**
@@ -194,6 +214,8 @@ export class OauthAuthorization_Module extends Module {
     if (!authorization?.canBeExchanged(exchange)) {
       throw new InvalidGrant()
     }
+    // Signed before the code is spent: a key that cannot sign leaves the code for another try.
+    const tokens = await this.tokensOf(authorization.toDTO(), { issuer: `${url}${this.prefix}`, audience: url, now })
     authorization.use(now)
     try {
       await this.repository.persist(authorization)
@@ -201,12 +223,13 @@ export class OauthAuthorization_Module extends Module {
       // Exchanged twice at once: the other one got it.
       throw error instanceof StaleVersion ? new InvalidGrant() : error
     }
-    return this.tokensOf(authorization.toDTO(), { issuer: `${url}${this.prefix}`, audience: url, now })
+    return tokens
   }
 
   /**
    * Checks a request to end_session (RP-Initiated Logout): it goes back only to a post_logout_redirect_uri of the client,
-   * known by client_id or by the id_token_hint this auth signed. It ends nothing: this module never writes sessions.
+   * known by client_id or by the id_token_hint this auth signed. The hint is required, and says whose session ends: a
+   * link from anywhere signs no one out. It ends nothing: this module never writes sessions.
    */
   @UseCase()
   async endSession(input: OauthAuthorizationEndSessionDTO): Promise<OauthEndSessionDTO> {
@@ -215,14 +238,15 @@ export class OauthAuthorization_Module extends Module {
     const hint = query.id_token_hint === undefined
       ? null
       : await this.deps.oauthSigningKey.verify({ token: query.id_token_hint, issuer: `${url}${this.prefix}` })
-    if (query.id_token_hint !== undefined && hint === null) {
+    if (typeof hint?.sub !== 'string') {
       throw new InvalidAuthorizationRequest()
     }
+    const ending = { applicationSlug: application.slug, userId: hint.sub }
     const back = query.post_logout_redirect_uri
     if (back === undefined) {
-      return { applicationSlug: application.slug, redirectTo: null }
+      return { ...ending, redirectTo: null }
     }
-    const hinted = typeof hint?.aud === 'string' ? hint.aud : undefined
+    const hinted = typeof hint.aud === 'string' ? hint.aud : undefined
     if (query.client_id !== undefined && hinted !== undefined && query.client_id !== hinted) {
       throw new InvalidAuthorizationRequest()
     }
@@ -231,7 +255,7 @@ export class OauthAuthorization_Module extends Module {
       throw new InvalidAuthorizationRequest()
     }
     const state: Record<string, string> = query.state === undefined ? {} : { state: query.state }
-    return { applicationSlug: application.slug, redirectTo: withQuery(back, state) }
+    return { ...ending, redirectTo: withQuery(back, state) }
   }
 
   /** The id_token, for the client, and the access token, for the application (RFC 9068): both short, and signed. */
