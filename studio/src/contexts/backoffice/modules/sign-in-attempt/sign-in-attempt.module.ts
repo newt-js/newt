@@ -136,19 +136,20 @@ export class SignInAttempt_Module extends Module {
     if (!attempt?.idToken) {
       throw new SignInAttemptNotFound()
     }
-    const { issuer, clientId, publicUrl } = providerSettings()
+    const { issuer, clientId } = providerSettings()
     const { end_session_endpoint } = await metadataOf(issuer)
     const query = new URLSearchParams({
       id_token_hint: attempt.idToken,
       client_id: clientId,
-      post_logout_redirect_uri: `${publicUrl}/`,
+      // backoffice's front, at the origin its routes answer from.
+      post_logout_redirect_uri: `${new URL(this.router.publicUrl()).origin}/`,
     })
     return `${end_session_endpoint}?${query}`
   }
 
   /** Where auth sends the browser back: the route of signInSession that finishes the attempt and opens the session. */
   private callbackUrl(): string {
-    return `${providerSettings().publicUrl}${this.router.prefix}/sign-in-sessions/callback`
+    return `${this.router.publicUrl()}/sign-in-sessions/callback`
   }
 
 }
