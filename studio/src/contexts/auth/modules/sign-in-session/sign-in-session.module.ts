@@ -11,8 +11,12 @@ import { SignInSession }                from './sign-in-session'
 import type { SignInSession_Deps }      from './sign-in-session.deps'
 import { SignInSession_Repository }     from './sign-in-session.repository'
 import { registerSignInSessionRoutes }  from './sign-in-session.routes'
+import { sessionCookieOf }              from './sign-in-session.routes'
 import type { SignInSessionActorOfDTO } from './sign-in-session.schema'
 import { SignInSessionActorOfSchema }   from './sign-in-session.schema'
+import type { SignInSessionCurrentDTO } from './sign-in-session.schema'
+import { SignInSessionCurrentSchema }   from './sign-in-session.schema'
+import type { SignInSessionDTO }        from './sign-in-session.schema'
 import type { SignInSessionOpenDTO }    from './sign-in-session.schema'
 import { SignInSessionOpenSchema }      from './sign-in-session.schema'
 import type { SignInSessionOpenedDTO }  from './sign-in-session.schema'
@@ -75,20 +79,19 @@ export class SignInSession_Module extends Module {
     return { session: session.toDTO(), token }
   }
 
+  /** The session in the cookie of an application, among a request's cookies, while it lives; otherwise none. */
+  @UseCase()
+  async current(input: SignInSessionCurrentDTO): Promise<SignInSessionDTO | null> {
+    const { cookies, applicationSlug } = SignInSessionCurrentSchema.parse(input)
+    const token = cookies[sessionCookieOf(applicationSlug)]
+    return token === undefined ? null : (await this.aliveSession({ token, applicationSlug }))?.toDTO() ?? null
+  }
+
   /** Who a token is of, while its session lives and is of that application; otherwise no one. */
   @UseCase()
   async actorOf(input: SignInSessionActorOfDTO): Promise<{ userId: string } | null> {
-    // A cookie no session could have, a forged one too long: no one, never an error.
-    const parsed = SignInSessionActorOfSchema.safeParse(input)
-    if (!parsed.success) {
-      return null
-    }
-    const { token, applicationSlug } = parsed.data
-    const [session] = await this.repository.find({ tokenHash: hashOf(token) }, { limit: 1 })
-    if (!session?.isAlive(this.base.clock.now()) || session.application.slug !== applicationSlug) {
-      return null
-    }
-    return { userId: session.userId }
+    const session = await this.aliveSession(input)
+    return session ? { userId: session.userId } : null
   }
 
   /** Ends the session of a token, if it lives: signing out twice, or with no session, does nothing. */
@@ -104,6 +107,18 @@ export class SignInSession_Module extends Module {
       session.end(now)
       await this.repository.persist(session)
     }
+  }
+
+  private async aliveSession(input: SignInSessionActorOfDTO): Promise<SignInSession | undefined> {
+    // A cookie no session could have, a forged one too long: no one, never an error.
+    const parsed = SignInSessionActorOfSchema.safeParse(input)
+    if (!parsed.success) {
+      return undefined
+    }
+    const { token, applicationSlug } = parsed.data
+    const [session] = await this.repository.find({ tokenHash: hashOf(token) }, { limit: 1 })
+    const alive = session?.isAlive(this.base.clock.now()) && session.application.slug === applicationSlug
+    return alive ? session : undefined
   }
 
 }
