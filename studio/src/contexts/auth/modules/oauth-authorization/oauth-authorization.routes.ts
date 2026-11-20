@@ -1,11 +1,15 @@
 import type { ContextBase }               from '@newt-js/core/application'
 import type { HttpRouter }                from '@newt-js/core/http'
+import { clearSessionCookie }             from '@newt-js/core/http'
 import { requestHost }                    from '@newt-js/core/http'
 import { toOauthErrorResponse }           from '@newt-js/core/http'
 // --------------------------------------------------------
 import type { SignInSession_Module }      from '../sign-in-session/sign-in-session.module'
 import { MalformedOauthRequest }          from './errors/malformed-oauth-request'
 import type { OauthAuthorization_Module } from './oauth-authorization.module'
+
+/** Secure unless `.env` says otherwise, as the cookies of sessions are set. */
+const SECURE = Bun.env.AUTH_COOKIE_SECURE !== 'false'
 
 /** The host a request came to, which says the application. */
 export function hostOf(request: Request): string {
@@ -100,7 +104,11 @@ export function registerOauthAuthorizationRoutes(
   router.get('/oauth-authorizations/end-session', async request => {
     const query = queryOf(request)
     const { applicationSlug, userId, redirectTo } = await oauthAuthorizations.endSession({ host: hostOf(request), query })
-    await signInSessions.endCurrent({ cookies: Object.fromEntries(request.cookies.entries()), applicationSlug, userId })
+    const cookies = Object.fromEntries(request.cookies.entries())
+    const { endedCookie } = await signInSessions.endCurrent({ cookies, applicationSlug, userId })
+    if (endedCookie !== null) {
+      clearSessionCookie(request, endedCookie, { secure: SECURE })
+    }
     if (redirectTo === null) {
       return Response.json({ signedOut: true }, { headers: { 'cache-control': 'no-store' } })
     }

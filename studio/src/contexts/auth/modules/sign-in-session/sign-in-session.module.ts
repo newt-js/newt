@@ -96,16 +96,21 @@ export class SignInSession_Module extends Module {
     return session ? { userId: session.userId } : null
   }
 
-  /** Ends the session in the cookie of an application, among a request's cookies, if it lives and is of that user. */
+  /**
+   * Ends the session in the cookie of an application, among a request's cookies, if it lives and is of that user.
+   * Gives the name of the cookie to clear when it ended one: the cookie is this module's to name.
+   */
   @UseCase()
-  async endCurrent(input: SignInSessionEndCurrentDTO): Promise<void> {
+  async endCurrent(input: SignInSessionEndCurrentDTO): Promise<{ endedCookie: string | null }> {
     const { cookies, applicationSlug, userId } = SignInSessionEndCurrentSchema.parse(input)
     const token = cookies[sessionCookieOf(applicationSlug)]
     const session = token === undefined ? undefined : await this.aliveSession({ token, applicationSlug })
-    if (session?.userId === userId) {
-      session.end(this.base.clock.now())
-      await this.repository.persist(session)
+    if (session?.userId !== userId) {
+      return { endedCookie: null }
     }
+    session.end(this.base.clock.now())
+    await this.repository.persist(session)
+    return { endedCookie: sessionCookieOf(applicationSlug) }
   }
 
   /** Ends the session of a token, if it lives: signing out twice, or with no session, does nothing. */

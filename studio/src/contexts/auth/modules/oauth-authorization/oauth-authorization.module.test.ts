@@ -368,6 +368,7 @@ test('signing out ends the session of the application, and goes back to a regist
 
   expect(response?.status).toBe(302)
   expect(response?.headers.get('location')).toBe('http://localhost:4000/?state=bye')
+  expect(response?.headers.get('set-cookie')).toMatch(/^session_backoffice=;.*Max-Age=0/i)
   expect(await isSignedIn(client.id, cookie)).toBe(false)
 })
 
