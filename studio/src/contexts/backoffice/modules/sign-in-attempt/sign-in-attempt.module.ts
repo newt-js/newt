@@ -125,6 +125,26 @@ export class SignInAttempt_Module extends Module {
     return attempt.toDTO()
   }
 
+  /**
+   * Where to send the browser to sign out of auth too: its end_session, with the id_token of this attempt as the hint
+   * of who signs out, and backoffice's front to come back to.
+   */
+  @UseCase()
+  async signOutAddress(id: string): Promise<string> {
+    const [attempt] = await this.repository.find({ id: SignInAttemptId.from(id) }, { limit: 1 })
+    if (!attempt?.idToken) {
+      throw new SignInAttemptNotFound()
+    }
+    const { issuer, clientId, publicUrl } = providerSettings()
+    const { end_session_endpoint } = await metadataOf(issuer)
+    const query = new URLSearchParams({
+      id_token_hint: attempt.idToken,
+      client_id: clientId,
+      post_logout_redirect_uri: `${publicUrl}/`,
+    })
+    return `${end_session_endpoint}?${query}`
+  }
+
   /** Where auth sends the browser back: the route of signInSession that finishes the attempt and opens the session. */
   private callbackUrl(): string {
     return `${providerSettings().publicUrl}${this.router.prefix}/sign-in-sessions/callback`

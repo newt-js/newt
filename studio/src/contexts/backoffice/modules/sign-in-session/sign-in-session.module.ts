@@ -83,6 +83,25 @@ export class SignInSession_Module extends Module {
     return session ? { userId: session.toDTO().userId } : null
   }
 
+  /**
+   * Ends the session of a token, if it lives, and says where to send the browser to sign out of auth too.
+   * An ended or expired session still says it: auth's may live longer. No session, nowhere.
+   */
+  @UseCase()
+  async end(token: string): Promise<{ redirectTo: string | null }> {
+    const parsed = SignInSessionTokenSchema.safeParse(token)
+    const [session] = parsed.success ? await this.repository.find({ tokenHash: hashOf(parsed.data) }, { limit: 1 }) : []
+    if (!session) {
+      return { redirectTo: null }
+    }
+    const now = this.base.clock.now()
+    if (session.isAlive(now)) {
+      session.end(now)
+      await this.repository.persist(session)
+    }
+    return { redirectTo: await this.deps.signInAttempt.signOutAddress(session.attemptId) }
+  }
+
   private async aliveSession(token: string): Promise<SignInSession | undefined> {
     // A cookie no session could have, a forged one too long: no one, never an error.
     const parsed = SignInSessionTokenSchema.safeParse(token)

@@ -34,5 +34,11 @@ export function registerSignInSessionRoutes(
   router.get('/sign-in-sessions/current', async request => {
     return Response.json(await signInSessions.current(request.cookies.get(SESSION_COOKIE) ?? ''))
   })
+  // Public: an expired session still signs out, and its cookie goes. The front sends the browser on to redirectTo.
+  router.delete('/sign-in-sessions/current', async request => {
+    const ended = await signInSessions.end(request.cookies.get(SESSION_COOKIE) ?? '')
+    clearSessionCookie(request, SESSION_COOKIE, { secure: SECURE })
+    return Response.json(ended, { headers: { 'cache-control': 'no-store' } })
+  }, { public: true })
   return { one: router.group('/sign-in-sessions/:signInSessionId') }
 }

@@ -213,3 +213,29 @@ test("auth's session never opens backoffice, though it is of the backoffice appl
 
   expect(asked.status).toBe(401)
 })
+
+test('signing out ends both sessions: backoffice its own, and auth the one of the hint', async () => {
+  const browser = await abelSignedIn()
+
+  const signedOut = await browser.go(`${site}/backoffice/api/sign-in-sessions/current`, { method: 'DELETE' })
+  const { redirectTo } = await signedOut.json() as { redirectTo: string }
+  expect(new URL(redirectTo).pathname).toBe('/auth/api/oauth-authorizations/end-session')
+  expect(locationOf(await browser.go(redirectTo))).toBe(`${site}/`)
+
+  expect(browser.cookie(site, 'backoffice_session')).toBeUndefined()
+  expect(browser.cookie(backofficeAtAuth, 'session_backoffice')).toBeUndefined()
+  expect((await browser.go(`${site}/backoffice/api/sign-in-sessions/current`)).status).toBe(401)
+  // Signing in again goes through auth's sign-in: its session ended.
+  const started = await browser.post(`${site}/backoffice/api/sign-in-attempts`, {})
+  const { redirectTo: authorize } = await started.json() as { redirectTo: string }
+  expect(new URL(locationOf(await browser.go(authorize))).pathname).toBe('/sign-in')
+})
+
+test('signing out with no session ends nothing and goes nowhere', async () => {
+  const browser = new Browser()
+
+  const signedOut = await browser.go(`${site}/backoffice/api/sign-in-sessions/current`, { method: 'DELETE' })
+
+  expect(signedOut.status).toBe(200)
+  expect(await signedOut.json()).toEqual({ redirectTo: null })
+})

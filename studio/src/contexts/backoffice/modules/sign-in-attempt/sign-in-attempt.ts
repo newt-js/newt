@@ -56,6 +56,11 @@ export class SignInAttempt extends Entity<typeof SignInAttemptSchema, typeof Sig
     return this.data.nonce
   }
 
+  /** The hint of who signs out of auth, once finished. */
+  get idToken(): string | null {
+    return this.data.idToken
+  }
+
   /** The PKCE secret: its hash goes to /authorize, and itself to /token. */
   get codeVerifier(): string {
     return this.data.codeVerifier
