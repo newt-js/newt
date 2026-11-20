@@ -137,7 +137,7 @@ async function world(options: RepositoryOptions<ThingRow> = { scope: 'none' }, r
 
     saveUnlessStale(entities: Thing[], stale: () => boolean) {
       return this.save(entities, entity => this.write(entity), {
-        guard: ['things'],
+        guard: ['shop.thing.all'],
         after: () => {
           if (stale()) {
             throw new StaleVersion()
@@ -415,13 +415,13 @@ describe('save with hooks', () => {
     const { log, repo } = await world()
 
     await repo.saveWith([Thing.create('one')], {
-      guard: ['stock:p1', 'stock:p2'],
+      guard: ['shop.thing.stock:p1', 'shop.thing.stock:p2'],
       before: () => void log.push('before'),
       after: () => void log.push('after'),
     })
 
     expect(log.map(line => line.split(' ')[0])).toEqual(['checkWrite', 'begin', 'guard', 'before', 'insert', 'after', 'publish', 'commit'])
-    expect(log[2]).toBe('guard stock:p1,stock:p2')
+    expect(log[2]).toBe('guard shop.thing.stock:p1,shop.thing.stock:p2')
   })
 
   test('a conflict from after, for a row it holds no version of, rolls it all back for the use case to run again', async () => {
@@ -430,7 +430,7 @@ describe('save with hooks', () => {
     await expect(repo.saveUnlessStale([Thing.create('one')], () => true)).rejects.toBeInstanceOf(ConcurrencyConflict)
     await repo.saveUnlessStale([Thing.create('two')], () => false)
 
-    expect(log.filter(line => !line.startsWith('insert'))).toEqual(['checkWrite', 'begin', 'guard things', 'rollback', 'checkWrite', 'begin', 'guard things', 'publish thing.created', 'commit'])
+    expect(log.filter(line => !line.startsWith('insert'))).toEqual(['checkWrite', 'begin', 'guard shop.thing.all', 'rollback', 'checkWrite', 'begin', 'guard shop.thing.all', 'publish thing.created', 'commit'])
   })
 
   test('guards nothing when it names nothing', async () => {
@@ -439,6 +439,15 @@ describe('save with hooks', () => {
     await repo.saveWith([Thing.create('one')], { guard: [] })
 
     expect(log.some(line => line.startsWith('guard'))).toBe(false)
+  })
+
+  test('a guard says whose it is, <context>.<module>.<name>, or nothing is saved', async () => {
+    const { log, repo } = await world()
+
+    for (const key of ['stock:p1', 'thing.stock', 'Shop.thing.stock', 'shop.thing.']) {
+      await expect(repo.saveWith([Thing.create('one')], { guard: [key] })).rejects.toThrow('<context>.<module>.<name>')
+    }
+    expect(log.some(line => line.startsWith('insert'))).toBe(false)
   })
 
   test('an after names what it guards, even if it is nothing', () => {
@@ -455,10 +464,10 @@ describe('saveRows', () => {
   test('writes rows as a save does: under the write rule, in a transaction, guarding what it names', async () => {
     const { log, repo } = await world()
 
-    await repo.stamp(['index:t1'])
+    await repo.stamp(['shop.thing.index:t1'])
 
     expect(log.map(line => line.split(' ')[0])).toEqual(['checkWrite', 'begin', 'guard', 'insert', 'commit'])
-    expect(log[2]).toBe('guard index:t1')
+    expect(log[2]).toBe('guard shop.thing.index:t1')
   })
 
   test('guards nothing when it names nothing', async () => {

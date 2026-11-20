@@ -1,4 +1,5 @@
 import type { HttpRouter }  from '@newt-js/core/http'
+import { bodyOf }           from '@newt-js/core/http'
 import { pageRequestFrom }  from '@newt-js/core/http'
 // --------------------------------------------------------
 import type { User_Deps }   from './user.deps'
@@ -9,6 +10,11 @@ export function registerUserRoutes(
   users: User_Module,
   deps: User_Deps,
 ) {
+  router.post('/setup', async request => {
+    const body = await bodyOf(request)
+    const admin = await users.createFirstAdmin(body)
+    return Response.json(admin, { status: 201 })
+  }, { public: true })
   router.get('/users', async request => {
     const page = pageRequestFrom(request)
     return Response.json(await users.paginate({}, page))

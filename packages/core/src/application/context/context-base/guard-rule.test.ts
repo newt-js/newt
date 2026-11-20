@@ -46,7 +46,7 @@ class Columns extends Repository<Column, ColumnRow> {
 
   async persistGuarded(column: Column) {
     await this.save([column], each => this.write(each), {
-      guard: [`columns:${column.boardId}`],
+      guard: [`board.column.board:${column.boardId}`],
       after: async () => {
         if (await this.count({ boardId: column.boardId }) > MAX) {
           throw new Error('too many')

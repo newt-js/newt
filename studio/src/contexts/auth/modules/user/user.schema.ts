@@ -20,6 +20,12 @@ export const UserSchema = z.object({
   updatedAt: z.string(),
 })
 
+/** The first admin of auth: it signs in by its email, so it has one. */
+export const UserFirstAdminSchema = z.object({
+  email: EMAIL,
+  name: UserSchema.shape.name,
+})
+
 export const UserFilter = defineFilter({
   id: { field: 'id', value: UserId.schema, ops: ['eq', 'in'] },
   applicationId: {
@@ -35,5 +41,6 @@ export const UserFilter = defineFilter({
 export type UserReferences = { applicationId: ApplicationDTO }
 
 export type UserDTO = Resolved<z.infer<typeof UserSchema>, UserReferences>
+export type UserFirstAdminDTO = z.input<typeof UserFirstAdminSchema>
 export type UserFilterDTO = z.input<typeof UserFilter.schema>
 export type UserSortDTO = z.input<typeof UserFilter.sortSchema>
