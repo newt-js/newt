@@ -26,6 +26,16 @@ export const UserFirstAdminSchema = z.object({
   name: UserSchema.shape.name,
 })
 
+/** Someone given access to an application by an admin: it signs in by its email, so it has one. */
+export const UserGrantAccessSchema = z.object({
+  applicationId: ApplicationId.schema,
+  email: EMAIL,
+  name: UserSchema.shape.name,
+})
+
+/** Who was given access, and to what: ids only, the email is read from the user. */
+export const UserAccessGrantedSchema = UserSchema.pick({ id: true, applicationId: true })
+
 export const UserFilter = defineFilter({
   id: { field: 'id', value: UserId.schema, ops: ['eq', 'in'] },
   applicationId: {
@@ -42,5 +52,6 @@ export type UserReferences = { applicationId: ApplicationDTO }
 
 export type UserDTO = Resolved<z.infer<typeof UserSchema>, UserReferences>
 export type UserFirstAdminDTO = z.input<typeof UserFirstAdminSchema>
+export type UserGrantAccessDTO = z.input<typeof UserGrantAccessSchema>
 export type UserFilterDTO = z.input<typeof UserFilter.schema>
 export type UserSortDTO = z.input<typeof UserFilter.sortSchema>

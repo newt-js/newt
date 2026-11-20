@@ -15,6 +15,10 @@ export function registerUserRoutes(
     const admin = await users.createFirstAdmin(body)
     return Response.json(admin, { status: 201 })
   }, { public: true })
+  router.post('/users', async request => {
+    const granted = await users.grantAccess(await bodyOf(request))
+    return Response.json(granted, { status: 201 })
+  })
   router.get('/users', async request => {
     const page = pageRequestFrom(request)
     return Response.json(await users.paginate({}, page))

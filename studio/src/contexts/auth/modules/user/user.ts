@@ -2,6 +2,7 @@ import { Entity }              from '@newt-js/core'
 import type { EntityInput }    from '@newt-js/core'
 // --------------------------------------------------------
 import type { ApplicationDTO } from '../application/application.schema'
+import { User_AccessGranted }  from './events/user-access-granted'
 import { User_Created }        from './events/user-created'
 import type { UserDTO }        from './user.schema'
 import type { UserReferences } from './user.schema'
@@ -28,6 +29,13 @@ export class User extends Entity<typeof UserSchema, typeof UserSchema, UserRefer
     const user = new User({ ...props, emailVerified: false }, true)
     // What it keeps, the application by its id: events carry ids.
     user.trackEvent(new User_Created(user.data))
+    return user
+  }
+
+  /** A user an admin lets in, with no password: it sets one from the email it gets. */
+  static grantAccess(props: UserCreateProps): User {
+    const user = User.create(props)
+    user.trackEvent(new User_AccessGranted(user.data))
     return user
   }
 

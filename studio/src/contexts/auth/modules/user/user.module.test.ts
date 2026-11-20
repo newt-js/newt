@@ -1,5 +1,6 @@
 import { DuplicateValue }          from '@newt-js/core'
 import { InvalidEntity }           from '@newt-js/core'
+import { NotFoundError }           from '@newt-js/core'
 import type { TestContext }        from '@newt-js/core/application/testing'
 import { testContext }             from '@newt-js/core/application/testing'
 import { MemoryCluster }           from '@newt-js/core/cluster/memory'
@@ -210,4 +211,40 @@ test('reads one by its route', async () => {
 
   const read = await call('GET', `/users/${ana.id}`)
   expect(await read?.json()).toMatchObject({ id: ana.id, email: ana.email })
+})
+
+test('an admin grants someone access to an application, with no password, and it is told', async () => {
+  const told: unknown[] = []
+  context.base.bus.subscribe('user.accessGranted', event => {
+    told.push(event.payload)
+  })
+  const backoffice = await anotherApplication()
+
+  const abel = await users.grantAccess({ applicationId: backoffice, email: ' Abel@Example.com ', name: 'Abel' })
+  await context.settle()
+
+  expect(abel).toMatchObject({ application: { id: backoffice }, email: 'abel@example.com', emailVerified: false })
+  expect(told).toEqual([{ id: abel.id, applicationId: backoffice }])
+})
+
+test('access is granted once per email and application, and to an application that exists', async () => {
+  const backoffice = await anotherApplication()
+  const abel = { applicationId: backoffice, email: 'abel@example.com', name: 'Abel' }
+  await users.grantAccess(abel)
+
+  await expect(users.grantAccess({ ...abel, email: 'ABEL@example.com' })).rejects.toThrow(DuplicateValue)
+  await expect(users.grantAccess({ ...abel, email: null as never })).rejects.toThrow(ZodError)
+  await expect(users.grantAccess({ ...abel, applicationId: Bun.randomUUIDv7() })).rejects.toThrow(NotFoundError)
+  expect(await users.grantAccess({ ...abel, applicationId: AUTH })).toMatchObject({ application: { slug: 'auth' } })
+})
+
+test('the admin grants access by its route', async () => {
+  const backoffice = await anotherApplication()
+
+  const granted = await call('POST', '/users', { applicationId: backoffice, email: 'abel@example.com', name: 'Abel' })
+
+  expect(granted?.status).toBe(201)
+  expect(await granted!.json()).toMatchObject({ email: 'abel@example.com' })
+  signedIn = false
+  expect((await call('POST', '/users', { applicationId: backoffice, email: 'eva@example.com', name: 'Eva' }))?.status).toBe(401)
 })
