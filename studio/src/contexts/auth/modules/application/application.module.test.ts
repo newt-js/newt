@@ -12,6 +12,7 @@ import { ZodError }                from 'zod'
 // --------------------------------------------------------
 import { Auth_Context }            from '../../auth.context'
 import type { Application_Module } from './application.module'
+import { ApplicationNotFound }     from './errors/application-not-found'
 import { SlugTaken }               from './errors/slug-taken'
 
 const MIGRATIONS = join(import.meta.dir, '../../migrations')
@@ -154,4 +155,27 @@ test('answers 409 to a slug that is taken', async () => {
   const taken = { slug: 'auth', name: 'Other' }
   const posted = await call('POST', '/applications', taken)
   expect(posted?.status).toBe(409)
+})
+
+test('an application is found by its subdomain, and is at that address', async () => {
+  Bun.env.AUTH_APPLICATIONS_URL = 'http://auth.test:3000'
+  const backoffice = await applications.create({ name: 'Backoffice' })
+
+  const found = await applications.fromHost('Backoffice.Auth.Test:3000')
+
+  expect(found).toEqual({ application: backoffice, url: 'http://backoffice.auth.test:3000' })
+})
+
+test.each([
+  'auth.test:3000',
+  'panel.auth.test:3000',
+  'backoffice.auth.test',
+  'backoffice.auth.test:3000.evil.test',
+  'a.backoffice.auth.test:3000',
+  'backoffice.evil.test:3000',
+])('no application is at %s', async host => {
+  Bun.env.AUTH_APPLICATIONS_URL = 'http://auth.test:3000'
+  await applications.create({ name: 'Backoffice' })
+
+  await expect(applications.fromHost(host)).rejects.toThrow(ApplicationNotFound)
 })
