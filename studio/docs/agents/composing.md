@@ -39,6 +39,14 @@ writes is not, outside a worker.
 
   The queue is `<module>.<use case>_on_<event>`; `on` names it, so leave `queue` out (lint `reaction-queue`).
 - A payload carries ids and no secret ([modules](modules.md#errors-and-events)).
+- **One write per worker.** A worker's first save takes its event as received: a second write, or an email sent after
+  it, that fails is never retried. Two writes are two subscriptions; an email goes before the save
+  (`user-email-link.module.ts`, `sendAccess`).
+- **The exception: the emitter's worker writes the other module.** When the module that should react already is used
+  by the one that emits, it cannot subscribe without a cycle. Then a worker of the emitting module calls the other
+  module's use case, one write per worker. `userCredential` uses `userEmailLink` and `user`, so on its own
+  `setFromEmailLink` its workers call `userEmailLink.markUsed` and `user.verifyEmail` (`user-credential.workers.ts`).
+  Only then: when the reacting module can use the emitter, its own worker reacts.
 
 ## Contexts
 

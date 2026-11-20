@@ -1,20 +1,22 @@
-import { BoundedContext }        from '@newt-js/core/application'
-import { ContextBase }           from '@newt-js/core/application'
-import type { DataPlace }        from '@newt-js/core/application'
-import type { Platform }         from '@newt-js/core/application'
-import { sqlite }                from '@newt-js/core/database/sqlite'
-import { localFiles }            from '@newt-js/core/files/local'
-import type { ContextToRun }     from '@newt-js/core/http'
-import { HttpRouter }            from '@newt-js/core/http'
-import { openData }              from '@newt-js/core/http'
-import { join }                  from 'node:path'
+import { BoundedContext }           from '@newt-js/core/application'
+import { ContextBase }              from '@newt-js/core/application'
+import type { DataPlace }           from '@newt-js/core/application'
+import type { Platform }            from '@newt-js/core/application'
+import { sqlite }                   from '@newt-js/core/database/sqlite'
+import { localFiles }               from '@newt-js/core/files/local'
+import type { ContextToRun }        from '@newt-js/core/http'
+import { HttpRouter }               from '@newt-js/core/http'
+import { openData }                 from '@newt-js/core/http'
+import { join }                     from 'node:path'
 // --------------------------------------------------------
-import { authenticate }          from './authenticate'
-import { Application_Module }    from './modules/application/application.module'
-import { SignInAttempt_Module }  from './modules/sign-in-attempt/sign-in-attempt.module'
-import { SignInSession_Module }  from './modules/sign-in-session/sign-in-session.module'
-import { UserCredential_Module } from './modules/user-credential/user-credential.module'
-import { User_Module }           from './modules/user/user.module'
+import { authenticate }             from './authenticate'
+import { ApplicationClient_Module } from './modules/application-client/application-client.module'
+import { Application_Module }       from './modules/application/application.module'
+import { SignInAttempt_Module }     from './modules/sign-in-attempt/sign-in-attempt.module'
+import { SignInSession_Module }     from './modules/sign-in-session/sign-in-session.module'
+import { UserCredential_Module }    from './modules/user-credential/user-credential.module'
+import { UserEmailLink_Module }     from './modules/user-email-link/user-email-link.module'
+import { User_Module }              from './modules/user/user.module'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
@@ -28,8 +30,12 @@ export class Auth_Context extends BoundedContext {
     const user = User_Module.initialize(base, router, {
       application,
     })
+    const userEmailLink = UserEmailLink_Module.initialize(base, router, {
+      user,
+    })
     const userCredential = UserCredential_Module.initialize(base, router, {
       user,
+      userEmailLink,
     })
     const signInAttempt = SignInAttempt_Module.initialize(base, router, {
       application,
@@ -41,12 +47,17 @@ export class Auth_Context extends BoundedContext {
       application,
       user,
     })
+    const applicationClient = ApplicationClient_Module.initialize(base, router, {
+      application,
+    })
     return new Auth_Context(base, {
       application,
       user,
       userCredential,
       signInAttempt,
       signInSession,
+      applicationClient,
+      userEmailLink,
     })
   }
 
@@ -55,6 +66,8 @@ export class Auth_Context extends BoundedContext {
   private readonly userCredential: UserCredential_Module
   private readonly signInAttempt: SignInAttempt_Module
   private readonly signInSession: SignInSession_Module
+  private readonly applicationClient: ApplicationClient_Module
+  private readonly userEmailLink: UserEmailLink_Module
 
   private constructor(
     base: ContextBase,
@@ -64,6 +77,8 @@ export class Auth_Context extends BoundedContext {
       userCredential: UserCredential_Module,
       signInAttempt: SignInAttempt_Module,
       signInSession: SignInSession_Module,
+      applicationClient: ApplicationClient_Module,
+      userEmailLink: UserEmailLink_Module,
     },
   ) {
     super('auth', base, modules)
@@ -72,6 +87,8 @@ export class Auth_Context extends BoundedContext {
     this.userCredential = modules.userCredential
     this.signInAttempt = modules.signInAttempt
     this.signInSession = modules.signInSession
+    this.applicationClient = modules.applicationClient
+    this.userEmailLink = modules.userEmailLink
   }
 
   static async open(
