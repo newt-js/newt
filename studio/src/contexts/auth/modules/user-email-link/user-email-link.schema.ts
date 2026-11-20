@@ -27,9 +27,15 @@ export const UserEmailLinkRedeemableSchema = z.object({
   purpose: UserEmailLinkPurpose.schema,
 })
 
+/** Whom an admin sends a new access email to. */
+export const UserEmailLinkResendAccessSchema = z.object({
+  userId: UserId.schema,
+})
+
 /** The user a link is of, shown whole in its DTO. */
 export type UserEmailLinkReferences = { userId: UserDTO }
 
 export type UserEmailLinkFields = z.infer<typeof UserEmailLinkSchema>
+export type UserEmailLinkResendAccessDTO = z.input<typeof UserEmailLinkResendAccessSchema>
 export type UserEmailLinkRedeemableDTO = z.input<typeof UserEmailLinkRedeemableSchema>
 export type UserEmailLinkDTO = Resolved<z.infer<typeof UserEmailLinkPublicSchema>, UserEmailLinkReferences>

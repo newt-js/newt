@@ -40,7 +40,7 @@ The tests run them.
 The rules the lint cannot see, each explained in its guide:
 
 - A use case writes only its own module; another module is written from a worker reacting to an event,
-  and one module per transaction. ([composing](docs/agents/composing.md))
+  one write per worker, and one module per transaction. ([composing](docs/agents/composing.md))
 - From another module, import only types of its module, schema and events, and its errors: no values, no constants.
   ([composing](docs/agents/composing.md))
 - Read with `find` and a filter before adding a read use case or a repository method; one `find` with the whole

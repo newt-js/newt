@@ -11,6 +11,7 @@ import { test }                  from 'bun:test'
 import { join }                  from 'node:path'
 // --------------------------------------------------------
 import { Auth_Context }          from '../../auth.context'
+import { InvalidUserEmailLink }  from './errors/invalid-user-email-link'
 import type { UserEmailLinkRow } from './user-email-link.repository'
 import { UserId }                from './value-objects/user-id'
 
@@ -23,6 +24,8 @@ let composed: Auth_Context
 let emails: string[]
 
 beforeEach(async () => {
+  // These tests read the link of the email they get.
+  Bun.env.AUTH_LOG_EMAIL_LINKS = 'true'
   const database = await SqliteDatabase.open({
     path: ':memory:',
     migrations: MIGRATIONS,
@@ -70,9 +73,9 @@ test('the link is kept only as a hash, and lasts three days', async () => {
   expect(Date.parse(link!.expiresAt) - Date.parse(link!.createdAt)).toBe(THREE_DAYS)
 })
 
-test('no route reaches the links', async () => {
+test('no route reads the links', async () => {
   const response = await router.answer(new Request('http://backend.test/auth/api/user-email-links'))
-  expect(response?.status).toBe(404)
+  expect(response?.status).toBe(405)
 })
 
 test('an email that fails to go is sent again, and only the link that went is kept', async () => {
@@ -93,4 +96,54 @@ throw new Error('mail down for a moment')
 
   expect(emails).toHaveLength(1)
   expect(await linksOf(abel.id)).toHaveLength(1)
+})
+
+function resend(userId: string) {
+  return router.answer(new Request('http://backend.test/auth/api/user-email-links', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  }))
+}
+
+test('an admin sends a new access email once the link expired, and only the new link works', async () => {
+  const abel = await grantAbel()
+  const first = emails[0]!.split('#token=')[1]!
+  context.clock.advance(THREE_DAYS)
+
+  expect((await resend(abel.id))?.status).toBe(204)
+
+  expect(emails).toHaveLength(2)
+  const second = emails[1]!.split('#token=')[1]!
+  const links = composed['userEmailLink']
+  await expect(links.redeemable({ token: first, purpose: 'access' })).rejects.toThrow(InvalidUserEmailLink)
+  expect(await links.redeemable({ token: second, purpose: 'access' })).toMatchObject({ user: { id: abel.id } })
+})
+
+test('a new access email spends the link sent before, even if it still works', async () => {
+  const abel = await grantAbel()
+  const first = emails[0]!.split('#token=')[1]!
+
+  await composed['userEmailLink'].resendAccess({ userId: abel.id })
+
+  await expect(composed['userEmailLink'].redeemable({ token: first, purpose: 'access' })).rejects.toThrow(InvalidUserEmailLink)
+})
+
+test('there is nothing to resend once the user proved its email, nor to whom does not exist', async () => {
+  const abel = await grantAbel()
+  const token = emails[0]!.split('#token=')[1]!
+  await composed['userCredential'].setPasswordFromEmailLink({ token, password: 'correct horse battery staple' })
+  await context.settle()
+
+  expect((await resend(abel.id))?.status).toBe(409)
+  expect((await resend(Bun.randomUUIDv7()))?.status).toBe(404)
+  expect(emails).toHaveLength(1)
+})
+
+test('the token of a link is hidden in what is logged, unless told to show it', async () => {
+  Bun.env.AUTH_LOG_EMAIL_LINKS = 'false'
+
+  await grantAbel()
+
+  expect(emails[0]).toMatch(/\/access#token=[\w-]{4}…$/)
 })

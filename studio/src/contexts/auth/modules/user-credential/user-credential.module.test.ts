@@ -36,6 +36,8 @@ let stored: UserCredential_Repository
 let userId: UserId
 
 beforeEach(async () => {
+  // These tests read the link of the email they get.
+  Bun.env.AUTH_LOG_EMAIL_LINKS = 'true'
   const database = await SqliteDatabase.open({
     path: ':memory:',
     migrations: MIGRATIONS,
