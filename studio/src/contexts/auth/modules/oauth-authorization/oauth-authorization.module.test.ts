@@ -7,11 +7,15 @@ import { afterEach }                  from 'bun:test'
 import { beforeEach }                 from 'bun:test'
 import { expect }                     from 'bun:test'
 import { test }                       from 'bun:test'
+import type { JSONWebKeySet }         from 'jose'
+import { createLocalJWKSet }          from 'jose'
+import { jwtVerify }                  from 'jose'
 import { join }                       from 'node:path'
 // --------------------------------------------------------
 import { Auth_Context }               from '../../auth.context'
 import type { OauthAuthorizationRow } from './oauth-authorization.repository'
 import type { OauthDiscoveryDTO }     from './oauth-authorization.schema'
+import type { OauthTokensDTO }        from './oauth-authorization.schema'
 
 const MIGRATIONS = join(import.meta.dir, '../../migrations')
 const BACKOFFICE = 'http://backoffice.auth.test'
@@ -214,4 +218,125 @@ test('a request without a state goes back with an error, and prompt=none without
   const silent = await authorize(authorizeQuery(client.id, challenge, { prompt: 'none' }))
   expect(silent.location!.searchParams.get('error')).toBe('login_required')
   expect(silent.location!.searchParams.get('state')).toBe('the state')
+})
+
+/** A code for Abel, given to backoffice's client, and what the client keeps to exchange it. */
+async function codeForAbel(scope = 'openid email') {
+  const client = await backofficeClient()
+  const { abelId, cookie } = await abelSignedIn()
+  const { verifier, challenge } = pkce()
+  const { location } = await authorize(authorizeQuery(client.id, challenge, { scope }), cookie)
+  return { client, abelId, verifier, code: location!.searchParams.get('code')! }
+}
+
+function exchange(form: Record<string, string>, client?: { id: string, secret: string }, issuer = ISSUER) {
+  const headers: Record<string, string> = { 'content-type': 'application/x-www-form-urlencoded' }
+  if (client) {
+    headers.authorization = `Basic ${btoa(`${client.id}:${client.secret}`)}`
+  }
+  return router.answer(new Request(`${issuer}/oauth-authorizations/token`, {
+    method: 'POST',
+    headers,
+    body: new URLSearchParams(form).toString(),
+  }))
+}
+
+function exchangeForm(code: string, verifier: string, overrides: Record<string, string> = {}) {
+  return { grant_type: 'authorization_code', code, redirect_uri: CALLBACK, code_verifier: verifier, ...overrides }
+}
+
+async function jwksOf(): Promise<ReturnType<typeof createLocalJWKSet>> {
+  return createLocalJWKSet(await (await get(`${ISSUER}/oauth-signing-keys`))!.json() as JSONWebKeySet)
+}
+
+test('the whole flow: the code, with its verifier and the client secret, gives an id_token and an access token', async () => {
+  const { client, abelId, verifier, code } = await codeForAbel()
+
+  const response = await exchange(exchangeForm(code, verifier), client)
+
+  expect(response?.status).toBe(200)
+  expect(response?.headers.get('cache-control')).toBe('no-store')
+  const tokens = await response!.json() as OauthTokensDTO
+  expect(tokens).toMatchObject({ token_type: 'Bearer', expires_in: 300, scope: 'openid email' })
+  expect(tokens).not.toHaveProperty('refresh_token')
+  const jwks = await jwksOf()
+  const id = await jwtVerify(tokens.id_token, jwks, { issuer: ISSUER, audience: client.id, currentDate: context.clock.now() })
+  expect(id.payload).toMatchObject({
+    sub: abelId,
+    nonce: 'the nonce',
+    amr: ['password'],
+    email: 'abel@example.com',
+    email_verified: false,
+  })
+  expect(id.payload.exp! - id.payload.iat!).toBe(300)
+  const access = await jwtVerify(tokens.access_token, jwks, { issuer: ISSUER, audience: BACKOFFICE, typ: 'at+jwt', currentDate: context.clock.now() })
+  expect(access.payload).toMatchObject({ sub: abelId, client_id: client.id, scope: 'openid email', amr: ['password'] })
+})
+
+test('the secret may come in the form too, and without the email scope the id_token has no email', async () => {
+  const { client, verifier, code } = await codeForAbel('openid')
+
+  const response = await exchange(exchangeForm(code, verifier, { client_id: client.id, client_secret: client.secret }))
+
+  const tokens = await response!.json() as OauthTokensDTO
+  const id = await jwtVerify(tokens.id_token, await jwksOf(), { issuer: ISSUER, audience: client.id, currentDate: context.clock.now() })
+  expect(id.payload).not.toHaveProperty('email')
+})
+
+test('a code works once: the second exchange is refused', async () => {
+  const { client, verifier, code } = await codeForAbel()
+  await exchange(exchangeForm(code, verifier), client)
+
+  const again = await exchange(exchangeForm(code, verifier), client)
+
+  expect(again?.status).toBe(400)
+  expect(await again!.json()).toMatchObject({ error: 'invalid_grant' })
+})
+
+test('two exchanges of one code at once give tokens once', async () => {
+  const { client, verifier, code } = await codeForAbel()
+
+  const answers = await Promise.all([1, 2].map(() => exchange(exchangeForm(code, verifier), client)))
+
+  expect(answers.map(each => each?.status).sort()).toEqual([200, 400])
+})
+
+test.each([
+  ['a wrong verifier', { code_verifier: pkce().verifier }],
+  ['no verifier', { code_verifier: '' }],
+  ['another redirect_uri', { redirect_uri: 'http://localhost:4000/other' }],
+  ['a code it never gave', { code: 'not a code' }],
+])('%s is an invalid grant', async (_, overrides) => {
+  const { client, verifier, code } = await codeForAbel()
+
+  const response = await exchange(exchangeForm(code, verifier, overrides), client)
+
+  expect(response?.status).toBe(400)
+  expect(await response!.json()).toMatchObject({ error: 'invalid_grant' })
+})
+
+test('a code expires in a minute', async () => {
+  const { client, verifier, code } = await codeForAbel()
+  context.clock.advance(61 * 1000)
+
+  const response = await exchange(exchangeForm(code, verifier), client)
+
+  expect(await response!.json()).toMatchObject({ error: 'invalid_grant' })
+})
+
+test('a client that cannot prove itself, or of another client or application, gets nothing', async () => {
+  const { client, verifier, code } = await codeForAbel()
+  const other = await backofficeClient()
+  const form = exchangeForm(code, verifier)
+
+  const noSecret = await exchange(form)
+  expect(noSecret?.status).toBe(401)
+  expect(noSecret?.headers.get('www-authenticate')).toContain('Basic')
+  expect(await noSecret!.json()).toMatchObject({ error: 'invalid_client' })
+  expect((await exchange(form, { ...client, secret: other.secret }))?.status).toBe(401)
+  expect(await (await exchange(form, other))!.json()).toMatchObject({ error: 'invalid_grant' })
+  expect((await exchange(form, client, 'http://auth.auth.test/auth/api'))?.status).toBe(401)
+  expect((await exchange({ ...form, grant_type: 'password' }, client))?.status).toBe(400)
+  // None of those spent the code.
+  expect((await exchange(form, client))?.status).toBe(200)
 })

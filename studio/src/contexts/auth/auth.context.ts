@@ -56,6 +56,7 @@ export class Auth_Context extends BoundedContext {
     const oauthAuthorization = OauthAuthorization_Module.initialize(base, router, {
       application,
       applicationClient,
+      oauthSigningKey,
       signInSession,
       user,
     })

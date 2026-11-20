@@ -38,6 +38,23 @@ export const OauthAuthorizationAuthorizeSchema = z.object({
   query: z.record(z.string(), z.string()),
 })
 
+/** A request to the token endpoint: the host says the application, the client says who it is, the form what it wants. */
+export const OauthAuthorizationExchangeSchema = z.object({
+  host: z.string(),
+  clientId: z.string(),
+  clientSecret: z.string(),
+  form: z.record(z.string(), z.string()),
+})
+
+/** What the token endpoint answers: tokens to use and throw away, so no refresh token. */
+export type OauthTokensDTO = {
+  access_token: string,
+  token_type: 'Bearer',
+  expires_in: number,
+  id_token: string,
+  scope: string,
+}
+
 /** Where /authorize sends the browser: back to the client with a code or an error, or to sign in first. */
 export type OauthAuthorizationRedirectDTO = { redirectTo: string }
 
@@ -57,4 +74,5 @@ export type OauthAuthorizationReferences = { clientId: ApplicationClientDTO, use
 export type OauthAuthorizationFields = z.infer<typeof OauthAuthorizationSchema>
 export type OauthAuthorizationDTO =
   Resolved<z.infer<typeof OauthAuthorizationPublicSchema>, OauthAuthorizationReferences>
+export type OauthAuthorizationExchangeDTO = z.input<typeof OauthAuthorizationExchangeSchema>
 export type OauthAuthorizationAuthorizeDTO = z.input<typeof OauthAuthorizationAuthorizeSchema>

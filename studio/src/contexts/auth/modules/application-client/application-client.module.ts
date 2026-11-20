@@ -1,26 +1,28 @@
-import { Module }                              from '@newt-js/core'
-import type { Page }                           from '@newt-js/core'
-import type { PageRequest }                    from '@newt-js/core'
-import { UseCase }                             from '@newt-js/core'
-import { eventsOf }                            from '@newt-js/core'
-import { mapPage }                             from '@newt-js/core'
-import type { ContextBase }                    from '@newt-js/core/application'
-import type { HttpRouter }                     from '@newt-js/core/http'
+import { Module }                                from '@newt-js/core'
+import type { Page }                             from '@newt-js/core'
+import type { PageRequest }                      from '@newt-js/core'
+import { UseCase }                               from '@newt-js/core'
+import { eventsOf }                              from '@newt-js/core'
+import { mapPage }                               from '@newt-js/core'
+import type { ContextBase }                      from '@newt-js/core/application'
+import type { HttpRouter }                       from '@newt-js/core/http'
 // --------------------------------------------------------
-import { ApplicationClient }                   from './application-client'
-import type { ApplicationClient_Deps }         from './application-client.deps'
-import { ApplicationClient_Repository }        from './application-client.repository'
-import { registerApplicationClientRoutes }     from './application-client.routes'
-import type { ApplicationClientDTO }           from './application-client.schema'
-import { ApplicationClientFilter }             from './application-client.schema'
-import type { ApplicationClientFilterDTO }     from './application-client.schema'
-import type { ApplicationClientRegisterDTO }   from './application-client.schema'
-import { ApplicationClientRegisterSchema }     from './application-client.schema'
-import type { ApplicationClientRegisteredDTO } from './application-client.schema'
-import type { ApplicationClientSortDTO }       from './application-client.schema'
-import { ApplicationClientNotFound }           from './errors/application-client-not-found'
-import { ApplicationClient_Created }           from './events/application-client-created'
-import { ApplicationClientId }                 from './value-objects/application-client-id'
+import { ApplicationClient }                     from './application-client'
+import type { ApplicationClient_Deps }           from './application-client.deps'
+import { ApplicationClient_Repository }          from './application-client.repository'
+import { registerApplicationClientRoutes }       from './application-client.routes'
+import type { ApplicationClientDTO }             from './application-client.schema'
+import { ApplicationClientFilter }               from './application-client.schema'
+import type { ApplicationClientFilterDTO }       from './application-client.schema'
+import type { ApplicationClientRegisterDTO }     from './application-client.schema'
+import { ApplicationClientRegisterSchema }       from './application-client.schema'
+import type { ApplicationClientRegisteredDTO }   from './application-client.schema'
+import type { ApplicationClientSortDTO }         from './application-client.schema'
+import type { ApplicationClientVerifySecretDTO } from './application-client.schema'
+import { ApplicationClientVerifySecretSchema }   from './application-client.schema'
+import { ApplicationClientNotFound }             from './errors/application-client-not-found'
+import { ApplicationClient_Created }             from './events/application-client-created'
+import { ApplicationClientId }                   from './value-objects/application-client-id'
 
 /** A secret too long to guess needs no slow hash: SHA-256, as the tokens of sessions. */
 function hashOf(secret: string): string {
@@ -86,6 +88,17 @@ export class ApplicationClient_Module extends Module {
   async paginate(criteria: ApplicationClientFilterDTO, page: PageRequest): Promise<Page<ApplicationClientDTO>> {
     const found = await this.repository.paginate(ApplicationClientFilter.toCriteria(criteria), page, { newestFirst: true })
     return mapPage(found, each => each.toDTO())
+  }
+
+  /** The client of an id, when the secret is its own; otherwise none, whichever was wrong. */
+  @UseCase()
+  async verifySecret(input: ApplicationClientVerifySecretDTO): Promise<ApplicationClientDTO | null> {
+    const parsed = ApplicationClientVerifySecretSchema.safeParse(input)
+    if (!parsed.success) {
+      return null
+    }
+    const [client] = await this.repository.find({ id: parsed.data.clientId }, { limit: 1 })
+    return client?.hasSecret(hashOf(parsed.data.secret)) ? client.toDTO() : null
   }
 
 }
