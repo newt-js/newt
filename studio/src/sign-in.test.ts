@@ -130,3 +130,56 @@ test('backoffice sends the browser to auth to sign in, tied to it by a cookie', 
   expect(signIn.origin + signIn.pathname).toBe(`${backofficeAtAuth}/sign-in`)
   expect(signIn.searchParams.get('return_to')).toBe(redirectTo)
 })
+
+/** Abel signs in to backoffice, through auth: the address auth sends the browser back to, with its code. */
+async function abelComesBack(browser: Browser): Promise<string> {
+  const started = await browser.post(`${site}/backoffice/api/sign-in-attempts`, {})
+  const { redirectTo } = await started.json() as { redirectTo: string }
+  const signIn = new URL(locationOf(await browser.go(redirectTo)))
+  await signInAtAuth(browser, backofficeAtAuth, backofficeId, 'abel@example.com')
+  return locationOf(await browser.go(signIn.searchParams.get('return_to')!))
+}
+
+test('Abel comes back from auth with a code, and backoffice opens its own session', async () => {
+  const browser = new Browser()
+  const callback = await abelComesBack(browser)
+  expect(callback.startsWith(`${site}/backoffice/api/sign-in-sessions/callback?`)).toBe(true)
+
+  const back = await browser.go(callback)
+
+  expect(locationOf(back)).toBe('/')
+  expect(browser.cookie(site, 'backoffice_session')).toBeDefined()
+  expect(browser.cookie(site, 'backoffice_sign_in')).toBeUndefined()
+})
+
+test('a code comes back only to the browser that started: another one, or the same twice, opens nothing', async () => {
+  const browser = new Browser()
+  const callback = await abelComesBack(browser)
+  const stolenCookie = browser.cookie(site, 'backoffice_sign_in')!
+
+  const another = new Browser()
+  expect((await another.go(callback)).status).toBe(400)
+  expect(another.cookie(site, 'backoffice_session')).toBeUndefined()
+  expect(locationOf(await browser.go(callback))).toBe('/')
+  const again = await fetch(callback, { headers: { cookie: `backoffice_sign_in=${stolenCookie}` }, redirect: 'manual' })
+  expect(again.status).toBe(400)
+})
+
+test('an answer of auth that is not its own, or an error, finishes nothing', async () => {
+  const browser = new Browser()
+  const callback = new URL(await abelComesBack(browser))
+  const tampered = [
+    { iss: 'http://evil.example/auth/api' },
+    { code: 'not the code' },
+    { error: 'access_denied' },
+  ]
+
+  for (const change of tampered) {
+    const address = new URL(callback)
+    for (const [name, value] of Object.entries(change)) {
+      address.searchParams.set(name, value)
+    }
+    expect((await browser.go(address.toString())).status).toBe(400)
+  }
+  expect(browser.cookie(site, 'backoffice_session')).toBeUndefined()
+})

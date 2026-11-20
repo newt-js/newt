@@ -16,6 +16,9 @@ export type SignInAttemptStartProps = {
   now: Date,
 }
 
+/** Who auth said signed in, by the id_token it gave. */
+export type SignInAttemptFinishProps = { userId: string, idToken: string, now: Date }
+
 export class SignInAttempt extends Entity<typeof SignInAttemptSchema, typeof SignInAttemptPublicSchema> {
 
   private constructor(input: EntityInput<SignInAttemptFields>, isNew: boolean) {
@@ -32,6 +35,20 @@ export class SignInAttempt extends Entity<typeof SignInAttemptSchema, typeof Sig
     const attempt = new SignInAttempt({ ...props, userId: null, idToken: null, expiresAt, finishedAt: null }, true)
     attempt.trackEvent(new SignInAttempt_Created(attempt.toDTO()))
     return attempt
+  }
+
+  /** Finished already: the browser came back once. */
+  isFinished(): boolean {
+    return this.data.finishedAt !== null
+  }
+
+  hasExpired(now: Date): boolean {
+    return now >= new Date(this.data.expiresAt)
+  }
+
+  /** Done once auth said who signed in: the id_token is kept to tell auth who signs out. */
+  finish({ userId, idToken, now }: SignInAttemptFinishProps): void {
+    this.change({ userId, idToken, finishedAt: now.toISOString() })
   }
 
   /** Sent to auth in the authorization request, and found again in the id_token. */

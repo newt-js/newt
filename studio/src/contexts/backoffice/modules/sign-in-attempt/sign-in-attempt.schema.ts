@@ -24,7 +24,16 @@ export const SignInAttemptPublicSchema = SignInAttemptSchema.omit({
   idToken: true,
 })
 
+/** What auth sends back with the browser, and the browser's cookies, among which the one of its attempt. */
+export const SignInAttemptFinishSchema = z.object({
+  query: z.record(z.string(), z.string()),
+  cookies: z.record(z.string(), z.string()),
+})
+
 export type SignInAttemptFields = z.infer<typeof SignInAttemptSchema>
 export type SignInAttemptDTO = z.infer<typeof SignInAttemptPublicSchema>
 /** Where the browser goes to sign in, and the state its cookie keeps until it comes back. */
 export type SignInAttemptStartedDTO = { redirectTo: string, state: string }
+export type SignInAttemptFinishDTO = z.input<typeof SignInAttemptFinishSchema>
+/** The attempt finished, and the cookie that tied it to the browser: spent now, the route clears it. */
+export type SignInAttemptFinishedDTO = { attempt: SignInAttemptDTO, spentCookie: string }
