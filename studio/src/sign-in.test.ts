@@ -17,7 +17,14 @@ let site: string
 let backofficeAtAuth: string
 let backofficeId: string
 let abelId: string
+let logs: ReturnType<typeof spyOn>
 const emails: string[] = []
+/** The settings these tests change, put back after. */
+const SETTINGS = [
+  'PUBLIC_URL', 'AUTH_APPLICATIONS_URL', 'AUTH_LOG_EMAIL_LINKS',
+  'BACKOFFICE_AUTH_ISSUER', 'BACKOFFICE_AUTH_CLIENT_ID', 'BACKOFFICE_AUTH_CLIENT_SECRET',
+]
+const settingsBefore = Object.fromEntries(SETTINGS.map(name => [name, Bun.env[name]]))
 
 /** A browser: one jar of cookies per host, following no redirect, so each step is seen. */
 class Browser {
@@ -104,7 +111,8 @@ async function prepareAuth() {
 beforeAll(async () => {
   Bun.env.AUTH_SIGNING_KEYS_SECRET ??= Buffer.alloc(32, 1).toString('base64url')
   Bun.env.AUTH_LOG_EMAIL_LINKS = 'true'
-  spyOn(console, 'log').mockImplementation((text: string) => void emails.push(text))
+  logs = spyOn(console, 'log')
+  logs.mockImplementation((text: string) => void emails.push(text))
   backend = await startBackend(0, { data: 'memory' })
   const { port } = backend.server!
   site = `http://localhost:${port}`
@@ -114,7 +122,17 @@ beforeAll(async () => {
   await prepareAuth()
 })
 
-afterAll(() => backend.stop())
+afterAll(async () => {
+  await backend.stop()
+  logs.mockRestore()
+  for (const [name, value] of Object.entries(settingsBefore)) {
+    if (value === undefined) {
+      delete Bun.env[name]
+    } else {
+      Bun.env[name] = value
+    }
+  }
+})
 
 test('backoffice sends the browser to auth to sign in, tied to it by a cookie', async () => {
   const browser = new Browser()
@@ -125,7 +143,7 @@ test('backoffice sends the browser to auth to sign in, tied to it by a cookie', 
   const { redirectTo } = await started.json() as { redirectTo: string }
   const authorize = new URL(redirectTo)
   expect(authorize.origin + authorize.pathname).toBe(`${backofficeAtAuth}/auth/api/oauth-authorizations/authorize`)
-  expect(authorize.searchParams.get('state')).toBe(browser.cookie(site, 'backoffice_sign_in')!)
+  expect(authorize.searchParams.get('state')).toBe(browser.cookie(site, '__Host-backoffice_sign_in')!)
   expect(authorize.searchParams.get('code_challenge_method')).toBe('S256')
   // Abel has no session at auth yet: auth asks to sign in, and comes back to /authorize after.
   const signIn = new URL(locationOf(await browser.go(redirectTo)))
@@ -150,21 +168,31 @@ test('Abel comes back from auth with a code, and backoffice opens its own sessio
   const back = await browser.go(callback)
 
   expect(locationOf(back)).toBe('/')
-  expect(browser.cookie(site, 'backoffice_session')).toBeDefined()
-  expect(browser.cookie(site, 'backoffice_sign_in')).toBeUndefined()
+  expect(browser.cookie(site, '__Host-backoffice_session')).toBeDefined()
+  expect(browser.cookie(site, '__Host-backoffice_sign_in')).toBeUndefined()
 })
 
 test('a code comes back only to the browser that started: another one, or the same twice, opens nothing', async () => {
   const browser = new Browser()
   const callback = await abelComesBack(browser)
-  const stolenCookie = browser.cookie(site, 'backoffice_sign_in')!
+  const stolenCookie = browser.cookie(site, '__Host-backoffice_sign_in')!
 
   const another = new Browser()
   expect((await another.go(callback)).status).toBe(400)
-  expect(another.cookie(site, 'backoffice_session')).toBeUndefined()
+  expect(another.cookie(site, '__Host-backoffice_session')).toBeUndefined()
   expect(locationOf(await browser.go(callback))).toBe('/')
-  const again = await fetch(callback, { headers: { cookie: `backoffice_sign_in=${stolenCookie}` }, redirect: 'manual' })
+  const again = await fetch(callback, { headers: { cookie: `__Host-backoffice_sign_in=${stolenCookie}` }, redirect: 'manual' })
   expect(again.status).toBe(400)
+})
+
+test('two callbacks at once open a single session', async () => {
+  const browser = new Browser()
+  const callback = await abelComesBack(browser)
+  const cookie = `__Host-backoffice_sign_in=${browser.cookie(site, '__Host-backoffice_sign_in')}`
+
+  const answers = await Promise.all([1, 2, 3].map(() => fetch(callback, { headers: { cookie }, redirect: 'manual' })))
+
+  expect(answers.map(each => each.status).sort()).toEqual([302, 400, 400])
 })
 
 test('an answer of auth that is not its own, or an error, finishes nothing', async () => {
@@ -174,6 +202,7 @@ test('an answer of auth that is not its own, or an error, finishes nothing', asy
     { iss: 'http://evil.example/auth/api' },
     { code: 'not the code' },
     { error: 'access_denied' },
+    { iss: '' },
   ]
 
   for (const change of tampered) {
@@ -183,7 +212,7 @@ test('an answer of auth that is not its own, or an error, finishes nothing', asy
     }
     expect((await browser.go(address.toString())).status).toBe(400)
   }
-  expect(browser.cookie(site, 'backoffice_session')).toBeUndefined()
+  expect(browser.cookie(site, '__Host-backoffice_session')).toBeUndefined()
 })
 
 /** Abel, signed in to backoffice. */
@@ -208,7 +237,7 @@ test("auth's session never opens backoffice, though it is of the backoffice appl
   const atAuth = browser.cookie(backofficeAtAuth, 'session_backoffice')!
 
   const asked = await fetch(`${site}/backoffice/api/sign-in-sessions/current`, {
-    headers: { cookie: `session_backoffice=${atAuth}; backoffice_session=${atAuth}` },
+    headers: { cookie: `session_backoffice=${atAuth}; __Host-backoffice_session=${atAuth}` },
   })
 
   expect(asked.status).toBe(401)
@@ -222,7 +251,7 @@ test('signing out ends both sessions: backoffice its own, and auth the one of th
   expect(new URL(redirectTo).pathname).toBe('/auth/api/oauth-authorizations/end-session')
   expect(locationOf(await browser.go(redirectTo))).toBe(`${site}/`)
 
-  expect(browser.cookie(site, 'backoffice_session')).toBeUndefined()
+  expect(browser.cookie(site, '__Host-backoffice_session')).toBeUndefined()
   expect(browser.cookie(backofficeAtAuth, 'session_backoffice')).toBeUndefined()
   expect((await browser.go(`${site}/backoffice/api/sign-in-sessions/current`)).status).toBe(401)
   // Signing in again goes through auth's sign-in: its session ended.
@@ -231,8 +260,13 @@ test('signing out ends both sessions: backoffice its own, and auth the one of th
   expect(new URL(locationOf(await browser.go(authorize))).pathname).toBe('/sign-in')
 })
 
-test('signing out with no session ends nothing and goes nowhere', async () => {
-  const browser = new Browser()
+test('signing out with no session, or with one already ended, goes nowhere: an old cookie gives no id_token', async () => {
+  const browser = await abelSignedIn()
+  const ended = `__Host-backoffice_session=${browser.cookie(site, '__Host-backoffice_session')}`
+  await browser.go(`${site}/backoffice/api/sign-in-sessions/current`, { method: 'DELETE' })
+
+  const again = await fetch(`${site}/backoffice/api/sign-in-sessions/current`, { method: 'DELETE', headers: { cookie: ended } })
+  expect(await again.json()).toEqual({ redirectTo: null })
 
   const signedOut = await browser.go(`${site}/backoffice/api/sign-in-sessions/current`, { method: 'DELETE' })
 

@@ -8,8 +8,8 @@ import type { SignInSession_Module } from './sign-in-session.module'
 /** Secure unless `.env` says otherwise, as auth's cookies. */
 const SECURE = Bun.env.BACKOFFICE_COOKIE_SECURE !== 'false'
 
-/** The cookie of a backoffice session: not auth's, which lives at backoffice's subdomain of auth. */
-export const SESSION_COOKIE = 'backoffice_session'
+/** The cookie of a backoffice session: not auth's, which lives at backoffice's subdomain of auth. `__Host-` as the attempt's. */
+export const SESSION_COOKIE = `${SECURE ? '__Host-' : ''}backoffice_session`
 
 /** Where the browser goes once signed in: backoffice's front. */
 const SIGNED_IN_PATH = '/'

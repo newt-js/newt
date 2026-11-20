@@ -15,7 +15,7 @@ export const SignInSessionSchema = z.object({
   updatedAt: z.string(),
 })
 
-/** What a session shows: never its token's hash, nor the attempt it only keeps to open once and to sign out. */
+/** What a session shows: never its token's hash, nor the attempt that holds its id_token. */
 export const SignInSessionPublicSchema = SignInSessionSchema.omit({
   tokenHash: true,
   attemptId: true,

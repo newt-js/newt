@@ -49,7 +49,7 @@ export class SignInAttempt_Module extends Module {
     this.events = eventsOf(base.bus, {
       created: SignInAttempt_Created,
     })
-    this.routes = registerSignInAttemptRoutes(router, this)
+    this.routes = registerSignInAttemptRoutes(router, this, base.rateLimits)
   }
 
   /**
@@ -85,7 +85,8 @@ export class SignInAttempt_Module extends Module {
    * Finishes the attempt the browser comes back with: its cookie and auth's state must match, auth must be backoffice's
    * issuer, and the code must give an id_token for this attempt's nonce. Anything else, `InvalidSignInCallback`.
    */
-  @UseCase()
+  // Never run twice: the code is spent at auth on the first run.
+  @UseCase({ retryOnConflict: false })
   async finish(input: SignInAttemptFinishDTO): Promise<SignInAttemptFinishedDTO> {
     const { query, cookies } = SignInAttemptFinishSchema.parse(input)
     const state = cookies[SIGN_IN_COOKIE]

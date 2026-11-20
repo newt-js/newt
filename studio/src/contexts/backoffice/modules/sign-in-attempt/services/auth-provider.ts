@@ -20,13 +20,21 @@ function setting(name: string): string {
   return value
 }
 
-/** Who backoffice is to auth, and where auth is: read on each use, so `.env` can change under the tests. */
+/** How long auth has to answer backoffice: a hung request never holds a sign-in for long. */
+const TIMEOUT_MS = 10_000
+
+/**
+ * Who backoffice is to auth, where auth is, and where backoffice answers from outside: its own host if it has one,
+ * as its routes do, or else the backend's PUBLIC_URL. Read on each use, so `.env` can change under the tests.
+ */
 export function providerSettings(): { issuer: string, clientId: string, clientSecret: string, publicUrl: string } {
+  const backend = setting('PUBLIC_URL')
+  const host = Bun.env.BACKOFFICE_HOST
   return {
     issuer: setting('BACKOFFICE_AUTH_ISSUER'),
     clientId: setting('BACKOFFICE_AUTH_CLIENT_ID'),
     clientSecret: setting('BACKOFFICE_AUTH_CLIENT_SECRET'),
-    publicUrl: Bun.env.PUBLIC_URL ?? 'http://localhost:3000',
+    publicUrl: host ? `${new URL(backend).protocol}//${host}` : backend,
   }
 }
 
@@ -45,7 +53,7 @@ export function metadataOf(issuer: string): Promise<ProviderMetadata> {
 }
 
 async function discover(issuer: string): Promise<ProviderMetadata> {
-  const response = await fetch(`${issuer}/.well-known/openid-configuration`)
+  const response = await fetch(`${issuer}/.well-known/openid-configuration`, { signal: AbortSignal.timeout(TIMEOUT_MS) })
   if (!response.ok) {
     throw new Error(`auth answered ${response.status} to its OpenID configuration`)
   }
@@ -53,6 +61,10 @@ async function discover(issuer: string): Promise<ProviderMetadata> {
   // OpenID Connect Discovery §4.3: the configuration must be of the issuer asked.
   if (metadata.issuer !== issuer) {
     throw new Error('auth gave the OpenID configuration of another issuer')
+  }
+  const endpoints = [metadata.authorization_endpoint, metadata.token_endpoint, metadata.jwks_uri, metadata.end_session_endpoint]
+  if (!endpoints.every(each => typeof each === 'string')) {
+    throw new Error('auth gave an OpenID configuration without the endpoints backoffice uses')
   }
   return metadata
 }
@@ -79,6 +91,7 @@ export async function redeemCode(
     method: 'POST',
     headers: { 'authorization': `Basic ${credentials}`, 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: redirectUri, code_verifier: codeVerifier }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
   })
   if (!response.ok) {
     return null
@@ -98,7 +111,7 @@ export async function subjectOf(
 ): Promise<string | null> {
   const { issuer, clientId } = providerSettings()
   const { jwks_uri } = await metadataOf(issuer)
-  const keys = keySets.get(jwks_uri) ?? createRemoteJWKSet(new URL(jwks_uri))
+  const keys = keySets.get(jwks_uri) ?? createRemoteJWKSet(new URL(jwks_uri), { timeoutDuration: TIMEOUT_MS })
   keySets.set(jwks_uri, keys)
   try {
     const { payload } = await jwtVerify(idToken, keys, {
@@ -107,9 +120,12 @@ export async function subjectOf(
       algorithms: ['RS256'],
       // An id_token, never an access token (at+jwt).
       typ: 'JWT',
+      requiredClaims: ['exp', 'iat', 'sub'],
       currentDate: now,
     })
-    return payload.nonce === nonce && typeof payload.sub === 'string' ? payload.sub : null
+    // With more than one audience, the one it was given to must be backoffice (§3.1.3.7, rule 4).
+    const givenToBackoffice = !Array.isArray(payload.aud) || payload.azp === clientId
+    return payload.nonce === nonce && givenToBackoffice && typeof payload.sub === 'string' ? payload.sub : null
   } catch {
     return null
   }

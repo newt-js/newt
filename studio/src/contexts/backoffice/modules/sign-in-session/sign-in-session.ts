@@ -35,13 +35,18 @@ export class SignInSession extends Entity<typeof SignInSessionSchema, typeof Sig
     return session
   }
 
-  /** The attempt it was opened by, which knows how to sign out of auth. */
+  end(now: Date): void {
+    this.change({ endedAt: now.toISOString() })
+  }
+
+  /** The attempt that holds the id_token to sign out of auth with: kept out of the DTO, as a secret's way in. */
   get attemptId(): SignInAttemptId {
     return this.data.attemptId
   }
 
-  end(now: Date): void {
-    this.change({ endedAt: now.toISOString() })
+  /** Ended by signing out: expiring is not ending. */
+  hasEnded(): boolean {
+    return this.data.endedAt !== null
   }
 
   isAlive(now: Date): boolean {
