@@ -30,6 +30,12 @@ export const ApplicationClientRegisterSchema = ApplicationClientSchema.pick({
   postLogoutRedirectUris: true,
 }).partial({ postLogoutRedirectUris: true })
 
+/** A client's id and secret, as its backend sends them to exchange a code. */
+export const ApplicationClientVerifySecretSchema = z.object({
+  clientId: ApplicationClientId.schema,
+  secret: z.string().max(200),
+})
+
 export const ApplicationClientFilter = defineFilter({
   id: { field: 'id', value: ApplicationClientId.schema, ops: ['eq', 'in'] },
   applicationId: { field: 'applicationId', value: ApplicationId.schema, ops: ['eq'] },
@@ -42,6 +48,7 @@ export type ApplicationClientFields = z.infer<typeof ApplicationClientSchema>
 export type ApplicationClientDTO =
   Resolved<z.infer<typeof ApplicationClientPublicSchema>, ApplicationClientReferences>
 export type ApplicationClientRegisterDTO = z.input<typeof ApplicationClientRegisterSchema>
+export type ApplicationClientVerifySecretDTO = z.input<typeof ApplicationClientVerifySecretSchema>
 export type ApplicationClientFilterDTO = z.input<typeof ApplicationClientFilter.schema>
 export type ApplicationClientSortDTO = z.input<typeof ApplicationClientFilter.sortSchema>
 /** A client just registered, with its secret: the only time the secret is seen. */

@@ -1,22 +1,24 @@
-import { BoundedContext }           from '@newt-js/core/application'
-import { ContextBase }              from '@newt-js/core/application'
-import type { DataPlace }           from '@newt-js/core/application'
-import type { Platform }            from '@newt-js/core/application'
-import { sqlite }                   from '@newt-js/core/database/sqlite'
-import { localFiles }               from '@newt-js/core/files/local'
-import type { ContextToRun }        from '@newt-js/core/http'
-import { HttpRouter }               from '@newt-js/core/http'
-import { openData }                 from '@newt-js/core/http'
-import { join }                     from 'node:path'
+import { BoundedContext }            from '@newt-js/core/application'
+import { ContextBase }               from '@newt-js/core/application'
+import type { DataPlace }            from '@newt-js/core/application'
+import type { Platform }             from '@newt-js/core/application'
+import { sqlite }                    from '@newt-js/core/database/sqlite'
+import { localFiles }                from '@newt-js/core/files/local'
+import type { ContextToRun }         from '@newt-js/core/http'
+import { HttpRouter }                from '@newt-js/core/http'
+import { openData }                  from '@newt-js/core/http'
+import { join }                      from 'node:path'
 // --------------------------------------------------------
-import { authenticate }             from './authenticate'
-import { ApplicationClient_Module } from './modules/application-client/application-client.module'
-import { Application_Module }       from './modules/application/application.module'
-import { SignInAttempt_Module }     from './modules/sign-in-attempt/sign-in-attempt.module'
-import { SignInSession_Module }     from './modules/sign-in-session/sign-in-session.module'
-import { UserCredential_Module }    from './modules/user-credential/user-credential.module'
-import { UserEmailLink_Module }     from './modules/user-email-link/user-email-link.module'
-import { User_Module }              from './modules/user/user.module'
+import { authenticate }              from './authenticate'
+import { ApplicationClient_Module }  from './modules/application-client/application-client.module'
+import { Application_Module }        from './modules/application/application.module'
+import { OauthAuthorization_Module } from './modules/oauth-authorization/oauth-authorization.module'
+import { OauthSigningKey_Module }    from './modules/oauth-signing-key/oauth-signing-key.module'
+import { SignInAttempt_Module }      from './modules/sign-in-attempt/sign-in-attempt.module'
+import { SignInSession_Module }      from './modules/sign-in-session/sign-in-session.module'
+import { UserCredential_Module }     from './modules/user-credential/user-credential.module'
+import { UserEmailLink_Module }      from './modules/user-email-link/user-email-link.module'
+import { User_Module }               from './modules/user/user.module'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
 
@@ -50,6 +52,14 @@ export class Auth_Context extends BoundedContext {
     const applicationClient = ApplicationClient_Module.initialize(base, router, {
       application,
     })
+    const oauthSigningKey = OauthSigningKey_Module.initialize(base, router)
+    const oauthAuthorization = OauthAuthorization_Module.initialize(base, router, {
+      application,
+      applicationClient,
+      oauthSigningKey,
+      signInSession,
+      user,
+    })
     return new Auth_Context(base, {
       application,
       user,
@@ -58,6 +68,7 @@ export class Auth_Context extends BoundedContext {
       signInSession,
       applicationClient,
       userEmailLink,
+      oauthSigningKey, oauthAuthorization,
     })
   }
 
@@ -68,6 +79,8 @@ export class Auth_Context extends BoundedContext {
   private readonly signInSession: SignInSession_Module
   private readonly applicationClient: ApplicationClient_Module
   private readonly userEmailLink: UserEmailLink_Module
+  private readonly oauthSigningKey: OauthSigningKey_Module
+  private readonly oauthAuthorization: OauthAuthorization_Module
 
   private constructor(
     base: ContextBase,
@@ -79,6 +92,8 @@ export class Auth_Context extends BoundedContext {
       signInSession: SignInSession_Module,
       applicationClient: ApplicationClient_Module,
       userEmailLink: UserEmailLink_Module,
+      oauthSigningKey: OauthSigningKey_Module,
+      oauthAuthorization: OauthAuthorization_Module,
     },
   ) {
     super('auth', base, modules)
@@ -89,6 +104,8 @@ export class Auth_Context extends BoundedContext {
     this.signInSession = modules.signInSession
     this.applicationClient = modules.applicationClient
     this.userEmailLink = modules.userEmailLink
+    this.oauthSigningKey = modules.oauthSigningKey
+    this.oauthAuthorization = modules.oauthAuthorization
   }
 
   static async open(
@@ -111,6 +128,8 @@ export class Auth_Context extends BoundedContext {
       storage,
     })
     const context = Auth_Context.initialize(base, router)
+    // Tokens are signed by a key made here, once: signing one never writes.
+    await context.oauthSigningKey.ensureActiveKey()
     router.authenticateWith(authenticate(context.signInSession))
     return { context, router, host }
   }

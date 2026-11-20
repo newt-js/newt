@@ -33,3 +33,5 @@ export type ApplicationDTO = z.infer<typeof ApplicationSchema>
 export type ApplicationCreateDTO = z.input<typeof ApplicationCreateSchema>
 export type ApplicationFilterDTO = z.input<typeof ApplicationFilter.schema>
 export type ApplicationSortDTO = z.input<typeof ApplicationFilter.sortSchema>
+/** An application, and the address it is at: `<scheme>://<slug>.<host of AUTH_APPLICATIONS_URL>`. */
+export type ApplicationAtHostDTO = { application: ApplicationDTO, url: string }

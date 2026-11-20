@@ -43,6 +43,17 @@ export const SignInSessionActorOfSchema = z.object({
   applicationSlug: z.string(),
 })
 
+/** A request's cookies, among which the session of an application, by its cookie. */
+export const SignInSessionCurrentSchema = z.object({
+  cookies: z.record(z.string(), z.string()),
+  applicationSlug: z.string(),
+})
+
+/** The session to end among a request's cookies, and the user it must be of. */
+export const SignInSessionEndCurrentSchema = SignInSessionCurrentSchema.extend({
+  userId: z.string(),
+})
+
 /** The application and the user a session is of, shown whole in its DTO. */
 export type SignInSessionReferences = { applicationId: ApplicationDTO, userId: UserDTO }
 
@@ -50,6 +61,8 @@ export type SignInSessionFields = z.infer<typeof SignInSessionSchema>
 export type SignInSessionDTO =
   Resolved<z.infer<typeof SignInSessionPublicSchema>, SignInSessionReferences>
 export type SignInSessionOpenDTO = z.input<typeof SignInSessionOpenSchema>
+export type SignInSessionCurrentDTO = z.input<typeof SignInSessionCurrentSchema>
+export type SignInSessionEndCurrentDTO = z.input<typeof SignInSessionEndCurrentSchema>
 export type SignInSessionActorOfDTO = z.input<typeof SignInSessionActorOfSchema>
 /** A session just opened, with the token for its cookie: the only time the token is seen. */
 export type SignInSessionOpenedDTO = { session: SignInSessionDTO, token: string }

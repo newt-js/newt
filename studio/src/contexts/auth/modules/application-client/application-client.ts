@@ -1,6 +1,7 @@
 import { Entity }                           from '@newt-js/core'
 import type { EntityInput }                 from '@newt-js/core'
 import type { Resolved }                    from '@newt-js/core'
+import { default as crypto }                from 'node:crypto'
 // --------------------------------------------------------
 import type { ApplicationDTO }              from '../application/application.schema'
 import type { ApplicationClientFields }     from './application-client.schema'
@@ -35,6 +36,13 @@ export class ApplicationClient
     const client = new ApplicationClient(props, true)
     client.trackEvent(new ApplicationClient_Created(client.data))
     return client
+  }
+
+  /** Whether a secret's hash is this client's, compared in constant time. */
+  hasSecret(secretHash: string): boolean {
+    const own = Buffer.from(this.data.secretHash)
+    const given = Buffer.from(secretHash)
+    return own.length === given.length && crypto.timingSafeEqual(own, given)
   }
 
 }

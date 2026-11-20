@@ -10,6 +10,7 @@ import type { HttpRouter }           from '@newt-js/core/http'
 import { Application }               from './application'
 import { Application_Repository }    from './application.repository'
 import { registerApplicationRoutes } from './application.routes'
+import type { ApplicationAtHostDTO } from './application.schema'
 import type { ApplicationCreateDTO } from './application.schema'
 import { ApplicationCreateSchema }   from './application.schema'
 import type { ApplicationDTO }       from './application.schema'
@@ -19,6 +20,8 @@ import type { ApplicationSortDTO }   from './application.schema'
 import { ApplicationNotFound }       from './errors/application-not-found'
 import { SlugTaken }                 from './errors/slug-taken'
 import { Application_Created }       from './events/application-created'
+import { applicationUrlOf }          from './services/application-urls'
+import { slugAtHost }                from './services/application-urls'
 import { ApplicationId }             from './value-objects/application-id'
 import { ApplicationSlug }           from './value-objects/application-slug'
 
@@ -118,6 +121,20 @@ export class Application_Module extends Module {
         return free
       }
     }
+  }
+
+  /**
+   * The application a request is for, by its host: each one has its own subdomain, so a login is never generic.
+   * A host that is not one of them, or of an application that does not exist, `ApplicationNotFound`.
+   */
+  @UseCase()
+  async fromHost(host: string): Promise<ApplicationAtHostDTO> {
+    const slug = slugAtHost(host)
+    const [application] = slug === null ? [] : await this.repository.find({ slug }, { limit: 1 })
+    if (!application) {
+      throw new ApplicationNotFound()
+    }
+    return { application: application.toDTO(), url: applicationUrlOf(slug!) }
   }
 
 }
