@@ -23,18 +23,12 @@ function setting(name: string): string {
 /** How long auth has to answer backoffice: a hung request never holds a sign-in for long. */
 const TIMEOUT_MS = 10_000
 
-/**
- * Who backoffice is to auth, where auth is, and where backoffice answers from outside: its own host if it has one,
- * as its routes do, or else the backend's PUBLIC_URL. Read on each use, so `.env` can change under the tests.
- */
-export function providerSettings(): { issuer: string, clientId: string, clientSecret: string, publicUrl: string } {
-  const backend = setting('PUBLIC_URL')
-  const host = Bun.env.BACKOFFICE_HOST
+/** Who backoffice is to auth, and where auth is: read on each use, so `.env` can change under the tests. */
+export function providerSettings(): { issuer: string, clientId: string, clientSecret: string } {
   return {
     issuer: setting('BACKOFFICE_AUTH_ISSUER'),
     clientId: setting('BACKOFFICE_AUTH_CLIENT_ID'),
     clientSecret: setting('BACKOFFICE_AUTH_CLIENT_SECRET'),
-    publicUrl: host ? `${new URL(backend).protocol}//${host}` : backend,
   }
 }
 

@@ -33,15 +33,14 @@ export class Panel_Context extends BoundedContext {
     platform: Platform,
     place: DataPlace,
   ): Promise<ContextToRun & { context: Panel_Context }> {
-    const router = new HttpRouter({ prefix: '/panel/api' })
-    router.authenticateWith(authenticate)
     const host = Bun.env.PANEL_HOST
+    const router = new HttpRouter({ prefix: '/panel/api', host })
+    router.authenticateWith(authenticate)
     const { database, storage } = await openData('panel', {
       database: { adapter: sqlite(), migrations: MIGRATIONS_FOLDER },
       files: localFiles(),
       router,
       place,
-      host,
     })
     const base = new ContextBase({
       name: 'panel',

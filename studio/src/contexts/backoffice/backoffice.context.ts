@@ -47,14 +47,13 @@ export class Backoffice_Context extends BoundedContext {
     platform: Platform,
     place: DataPlace,
   ): Promise<ContextToRun & { context: Backoffice_Context }> {
-    const router = new HttpRouter({ prefix: '/backoffice/api' })
     const host = Bun.env.BACKOFFICE_HOST
+    const router = new HttpRouter({ prefix: '/backoffice/api', host })
     const { database, storage } = await openData('backoffice', {
       database: { adapter: sqlite(), migrations: MIGRATIONS_FOLDER },
       files: localFiles(),
       router,
       place,
-      host,
     })
     const base = new ContextBase({
       name: 'backoffice',

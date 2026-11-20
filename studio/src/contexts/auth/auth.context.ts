@@ -112,14 +112,13 @@ export class Auth_Context extends BoundedContext {
     platform: Platform,
     place: DataPlace,
   ): Promise<ContextToRun & { context: Auth_Context }> {
-    const router = new HttpRouter({ prefix: '/auth/api' })
     const host = Bun.env.AUTH_HOST
+    const router = new HttpRouter({ prefix: '/auth/api', host })
     const { database, storage } = await openData('auth', {
       database: { adapter: sqlite(), migrations: MIGRATIONS_FOLDER },
       files: localFiles(),
       router,
       place,
-      host,
     })
     const base = new ContextBase({
       name: 'auth',
