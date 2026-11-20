@@ -15,6 +15,7 @@ import { Application_Module }       from './modules/application/application.modu
 import { SignInAttempt_Module }     from './modules/sign-in-attempt/sign-in-attempt.module'
 import { SignInSession_Module }     from './modules/sign-in-session/sign-in-session.module'
 import { UserCredential_Module }    from './modules/user-credential/user-credential.module'
+import { UserEmailLink_Module }     from './modules/user-email-link/user-email-link.module'
 import { User_Module }              from './modules/user/user.module'
 
 const MIGRATIONS_FOLDER = join(import.meta.dir, 'migrations')
@@ -45,12 +46,17 @@ export class Auth_Context extends BoundedContext {
     const applicationClient = ApplicationClient_Module.initialize(base, router, {
       application,
     })
+    const userEmailLink = UserEmailLink_Module.initialize(base, router, {
+      user,
+    })
     return new Auth_Context(base, {
       application,
       user,
       userCredential,
       signInAttempt,
-      signInSession, applicationClient,
+      signInSession,
+      applicationClient,
+      userEmailLink,
     })
   }
 
@@ -60,6 +66,7 @@ export class Auth_Context extends BoundedContext {
   private readonly signInAttempt: SignInAttempt_Module
   private readonly signInSession: SignInSession_Module
   private readonly applicationClient: ApplicationClient_Module
+  private readonly userEmailLink: UserEmailLink_Module
 
   private constructor(
     base: ContextBase,
@@ -70,6 +77,7 @@ export class Auth_Context extends BoundedContext {
       signInAttempt: SignInAttempt_Module,
       signInSession: SignInSession_Module,
       applicationClient: ApplicationClient_Module,
+      userEmailLink: UserEmailLink_Module,
     },
   ) {
     super('auth', base, modules)
@@ -79,6 +87,7 @@ export class Auth_Context extends BoundedContext {
     this.signInAttempt = modules.signInAttempt
     this.signInSession = modules.signInSession
     this.applicationClient = modules.applicationClient
+    this.userEmailLink = modules.userEmailLink
   }
 
   static async open(
