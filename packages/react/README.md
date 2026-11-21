@@ -3,8 +3,10 @@
 `@newt-js/client` in a React frontend, and the components its apps are made of.
 
 - `useValue` reads a signal in render and repaints the component when, and only when, it changes.
-- shadcn's components, in `src/shadcn/` as shadcn writes them: never edit them. Import each by its file,
-  `import { Button } from '@newt-js/react/button'`.
+- shadcn's components, in `src/shadcn/` as shadcn writes them: never edit them.
+- Its components wrap them, in `src/components/`: props in newt's words, and no `className` nor `style`, so an app
+  cannot restyle them. `Button` (`variant`, `size`, `href`, `loading`, `label`, `block`, `type`); with `href` it is a
+  link, which `LinkProvider` makes go through the app's router. `import { Button } from '@newt-js/react'`.
 - The layout: `Stack` (one under another, a column), `Inline` (side by side, a row), `Grid` (columns per
   breakpoint, `columns={{ base: 1, md: 3 }}`) and `Container` (centers and caps the width), with a `gap` from the
   spacing scale. `import { Stack } from '@newt-js/react'`.
