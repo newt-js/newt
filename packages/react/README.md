@@ -12,3 +12,10 @@
 @import "@newt-js/react/theme.css";
 @source "./";
 ```
+
+## An app's own components
+
+An app is made of these components, composed. When nothing here fits, look again: most needs are a
+composition. Only when a piece makes full sense for the app alone, it gets a component of its own, in its
+`components/` folder (`src/contexts/<context>/app/components/`): it wraps or composes these, takes props in the
+app's words, and is the one place of the app with some room for its own look.
