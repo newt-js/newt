@@ -40,6 +40,12 @@ describe('newt add module', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test.each(['sqlite', 'postgres', 'mysql', 'memory'])('a module of the longest name keeps its lines to 80 on %s, and its lint, types and tests pass', async db => {
+    const backend = await backendWithContext(db)
+    expect((await run(ADD_MODULE, ['sales/customer-account-statement-line'], backend)).code).toBe(0)
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
   test('a second module takes the next migration, and both are initialized', async () => {
     const backend = await backendWithContext()
     await run(ADD_MODULE, ['sales/order'], backend)
@@ -90,7 +96,7 @@ describe('newt add module', () => {
     const backend = await backendWithContext('postgres')
     await run(ADD_MODULE, ['sales/order'], backend)
     expect(await read(join(backend, 'src/test-database.ts'))).toContain('return { database: new MemoryDatabase(), drop: async () => {} }')
-    expect(await read(join(backend, 'src/contexts/sales/modules/order/order.module.test.ts'))).toContain("await testDatabase(join(import.meta.dir, '../../migrations'))")
+    expect(await read(join(backend, 'src/contexts/sales/modules/order/order.module.test.ts'))).toContain('await testDatabase(MIGRATIONS)')
     expect(await read(join(backend, 'AGENTS.md'))).toContain('with `TEST_DATABASE_URL`')
     expect(await Bun.file(join(await backendWithContext('sqlite'), 'src/test-database.ts')).exists()).toBe(false)
   })
@@ -110,7 +116,7 @@ describe('newt add module', () => {
     expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain('export function registerCactusRoutes(\n  router: HttpRouter,\n  cacti: Cactus_Module,\n) {')
     expect((await run(ADD_USE_CASE, ['sales/cactus', 'water'], backend)).code).toBe(0)
     expect((await run(ADD_ROUTE, ['sales/cactus', 'water'], backend)).code).toBe(0)
-    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain("router.post('/cacti/:id/water', async request => Response.json(await cacti.water(")
+    expect(await read(join(backend, 'src/contexts/sales/modules/cactus/cactus.routes.ts'))).toContain("router.post('/cacti/:id/water', async request => {\n    const id = CactusId.from(request.params.id)\n    return Response.json(await cacti.water({ id }))\n  })")
     expect(await checkGenerated(backend)).toEqual([])
   }, 60_000)
 

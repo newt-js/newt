@@ -40,7 +40,7 @@ describe('newt add deps', () => {
     const routes = join(backend, SALES, 'modules/order/order.routes.ts')
     expect(await Bun.file(routes).text()).toContain('export function registerOrderRoutes(\n  router: HttpRouter,\n  orders: Order_Module,\n  deps: Order_Deps,\n) {')
     expect(await read(backend, 'modules/order/order.module.ts')).toContain('    this.routes = registerOrderRoutes(router, this, deps)')
-    const under = "  deps.invoice.routes.one.get('/orders', async request => Response.json({ invoice: request.params.invoiceId }))\n"
+    const under = "  deps.invoice.routes.one.get('/orders', async request => {\n    return Response.json({ invoice: request.params.invoiceId })\n  })\n"
     await Bun.write(routes, (await Bun.file(routes).text()).replace('  return { one:', `${under}  return { one:`))
     await Bun.write(join(backend, SALES, 'modules/order/order-under-invoice.test.ts'), `import { testContext }    from '@newt-js/core/application/testing'
 import { MemoryCluster }  from '@newt-js/core/cluster/memory'
@@ -51,11 +51,14 @@ import { test }           from 'bun:test'
 // --------------------------------------------------------
 import { Sales_Context }  from '../../sales.context'
 
-test('GET /invoices/:invoiceId/orders answers from order, under invoice', async () => {
-  const context = await testContext({ name: 'sales', cluster: new MemoryCluster(), database: new MemoryDatabase() })
+test('GET /invoices/:invoiceId/orders answers from order', async () => {
+  const cluster = new MemoryCluster()
+  const database = new MemoryDatabase()
+  const context = await testContext({ name: 'sales', cluster, database })
   const router = new HttpRouter({ prefix: '/sales/api', public: true })
   Sales_Context.initialize(context.base, router)
-  const response = await router.answer(new Request('http://backend.test/sales/api/invoices/7/orders'))
+  const url = 'http://backend.test/sales/api/invoices/7/orders'
+  const response = await router.answer(new Request(url))
   expect(await response?.json()).toEqual({ invoice: '7' })
   await context.close()
 })

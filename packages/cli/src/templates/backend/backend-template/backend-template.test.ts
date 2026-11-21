@@ -53,7 +53,7 @@ describe('backendTemplate', () => {
     expect(backendTs('memory')).toContain('const platform = new Platform()\n')
     expect(backendTs('memory')).not.toContain('MemoryCluster')
     expect(backendTs('valkey')).toContain("import { ValkeyCluster } from '@newt-js/core/cluster/valkey'\n")
-    expect(backendTs('valkey')).toContain("new Platform({ cluster: data === 'memory' ? new MemoryCluster() : new ValkeyCluster(Bun.env.VALKEY_URL) })")
+    expect(backendTs('valkey')).toContain("  const cluster = data === 'memory'\n    ? new MemoryCluster()\n    : new ValkeyCluster(Bun.env.VALKEY_URL)\n  const platform = new Platform({ cluster })")
   })
 
   test("the lint's parser stack gets TypeScript 6, whatever TypeScript the project has", () => {

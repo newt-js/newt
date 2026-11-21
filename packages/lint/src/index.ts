@@ -28,6 +28,7 @@ import { reactionQueue }           from './rules/reaction-queue/reaction-queue'
 import { repositoryPublicMethods } from './rules/repository-public-methods/repository-public-methods'
 import { routeBodyUnchecked }      from './rules/route-body-unchecked/route-body-unchecked'
 import { routeContext }            from './rules/route-context/route-context'
+import { routePublicRateLimit }    from './rules/route-public-rate-limit/route-public-rate-limit'
 import { schemaImports }           from './rules/schema-imports/schema-imports'
 import { useCaseBatched }          from './rules/use-case-batched/use-case-batched'
 import { useCaseFiles }            from './rules/use-case-files/use-case-files'
@@ -56,6 +57,7 @@ export const plugin = {
     'reaction-queue': reactionQueue,
     'repository-public-methods': repositoryPublicMethods,
     'route-body-unchecked': routeBodyUnchecked,
+    'route-public-rate-limit': routePublicRateLimit,
     'route-context': routeContext,
     'schema-imports': schemaImports,
     'use-case-files': useCaseFiles,
@@ -80,13 +82,15 @@ const MODULES = '**/modules/*/**/*.ts'
 /**
  * newt's style, which no rule of its own says: braces on every `if`, `else` and loop,
  * each body on lines of its own, a blank line inside a class at each end, and lines of
- * 80 characters at most but for those with a string. All but the last fix themselves.
+ * 160 characters at most, strings too: only a URL, a regular expression or an import, aligned
+ * at `from` by newt's own rule, may run longer.
+ * All but the last fix themselves.
  */
 export const STYLE: Linter.RulesRecord = {
   'curly': ['error', 'all'],
   'brace-style': ['error', '1tbs', { allowSingleLine: false }],
   '@stylistic/padded-blocks': ['error', { classes: 'always' }],
-  '@stylistic/max-len': ['error', { code: 80, ignoreStrings: true, ignoreTemplateLiterals: true, ignoreUrls: true, ignoreRegExpLiterals: true }],
+  '@stylistic/max-len': ['error', { code: 160, ignoreUrls: true, ignoreRegExpLiterals: true, ignorePattern: '^import\\s' }],
 }
 
 /** The rules of other plugins the preset turns on: `newt/no-disable` keeps them on, as it keeps newt's. */
@@ -173,6 +177,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/use-case-resolved': 'error',
         'newt/use-case-batched': 'error',
         'newt/route-body-unchecked': 'error',
+        'newt/route-public-rate-limit': 'error',
         'newt/framework-tables': 'error',
         'newt/repository-public-methods': 'error',
       },

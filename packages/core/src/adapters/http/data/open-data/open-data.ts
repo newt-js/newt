@@ -11,8 +11,6 @@ export type DataOptions = {
   files: FilesAdapter
   router: HttpRouter
   place: DataPlace
-  /** The context's own host, when it answers at one. */
-  host?: string
 }
 
 /**
@@ -20,11 +18,11 @@ export type DataOptions = {
  * keeps the answers of its idempotent routes in that database, and serves the files
  * when they are kept on disk.
  */
-export async function openData(context: string, { database, files, router, place, host }: DataOptions): Promise<{ database: Database, storage: StorageOptions }> {
+export async function openData(context: string, { database, files, router, place }: DataOptions): Promise<{ database: Database, storage: StorageOptions }> {
   const opened = await database.adapter.open(context, database.migrations, place)
   router.keepAnswersIn(opened)
   try {
-    return { database: opened, storage: await files.open(context, { router, host, place }) }
+    return { database: opened, storage: await files.open(context, { router, place }) }
   } catch (error) {
     // Its files cannot open, so the context does not start: the database it opened is closed.
     await opened.close()

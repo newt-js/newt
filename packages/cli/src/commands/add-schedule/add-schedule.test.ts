@@ -20,7 +20,7 @@ describe('newt add schedule', () => {
     const backend = await moduleProject()
     expect((await run(ADD_SCHEDULE, ['sales/order', 'purge-expired', '--cron', '0 3 * * *'], backend)).code).toBe(0)
     const module = await read(backend, 'order.module.ts')
-    expect(module).toContain("this.purgeExpiredSchedule = base.schedules.define('order.purgeExpired', '0 3 * * *')")
+    expect(module).toContain("this.purgeExpiredSchedule = base.schedules.define(\n      'order.purgeExpired',\n      '0 3 * * *',\n    )")
     expect(module).toContain('  async purgeExpired(): Promise<void> {')
     expect(await read(backend, 'order.workers.ts')).toContain("  orders.on(orders.purgeExpiredSchedule, 'purgeExpired')")
     expect(await read(backend, 'order.module.test.ts')).toContain("schedule: { cron: '0 3 * * *' }")
@@ -57,7 +57,7 @@ describe('newt add schedule', () => {
   test("refuses the names a module keeps, and a member of the module that is not a use case", async () => {
     const backend = await moduleProject()
     expect((await run(ADD_SCHEDULE, ['sales/order', 'on', '--cron', '0 3 * * *'], backend)).text).toStartWith("'on' cannot name a use case")
-    expect((await run(ADD_SCHEDULE, ['sales/order', 'orders', '--cron', '0 3 * * *'], backend)).text).toBe('Order_Module has orders already, and it is not a use case: name the use case by what it does')
+    expect((await run(ADD_SCHEDULE, ['sales/order', 'repository', '--cron', '0 3 * * *'], backend)).text).toBe('Order_Module has repository already, and it is not a use case: name the use case by what it does')
   })
 
   test('refuses a second cron for a use case on one already, and writes nothing', async () => {

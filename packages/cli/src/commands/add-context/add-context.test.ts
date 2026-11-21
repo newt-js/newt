@@ -21,21 +21,29 @@ import { HttpRouter } from '@newt-js/core/http'
 import { expect }     from 'bun:test'
 import { test }       from 'bun:test'
 
-test('sales keeps a file uploaded to its signed address, and serves it at another', async () => {
+const TEXT = { contentType: 'text/plain', expiresIn: 60 }
+
+test('sales keeps a file uploaded to its signed address', async () => {
   const router = new HttpRouter({ prefix: '/sales/api' })
-  const storage = (await localFiles().open('sales', { router, host: undefined, place: 'configured' })).private!
-  const upload = await storage.uploadUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain', size: 5 })
-  const put = await router.answer(new Request(upload.url, { method: 'PUT', headers: upload.headers, body: 'hello' }))
+  const opened = { router, place: 'configured' as const }
+  const storage = (await localFiles().open('sales', opened)).private!
+  const sized = { ...TEXT, size: 5 }
+  const upload = await storage.uploadUrl('notes/hello.txt', sized)
+  const sent = { method: 'PUT', headers: upload.headers, body: 'hello' }
+  const put = await router.answer(new Request(upload.url, sent))
   expect(put?.ok).toBe(true)
-  expect(new URL(upload.url).pathname).toStartWith('/sales/api/files/')
-  const download = await storage.signedUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain' })
-  expect(await (await router.answer(new Request(download)))?.text()).toBe('hello')
+  const uploadedAt = new URL(upload.url).pathname
+  expect(uploadedAt).toStartWith('/sales/api/files/')
+  const download = await storage.signedUrl('notes/hello.txt', TEXT)
+  const got = await router.answer(new Request(download))
+  expect(await got?.text()).toBe('hello')
 })
 
 test('at a host, its files are signed at that host', async () => {
-  const router = new HttpRouter({ prefix: '/sales/api' })
-  const storage = (await localFiles().open('sales', { router, host: 'sales.midominio.com', place: 'configured' })).private!
-  const download = new URL(await storage.signedUrl('notes/hello.txt', { expiresIn: 60, contentType: 'text/plain' }))
+  const router = new HttpRouter({ prefix: '/sales/api', host: 'sales.midominio.com' })
+  const opened = { router, place: 'configured' as const }
+  const storage = (await localFiles().open('sales', opened)).private!
+  const download = new URL(await storage.signedUrl('notes/hello.txt', TEXT))
   expect(download.host).toBe('sales.midominio.com')
   expect(download.pathname).toStartWith('/sales/api/files/')
 })

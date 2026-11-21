@@ -206,3 +206,27 @@ describe('HttpRouter', () => {
     expect((await call(router, '/api/cached')!).headers.get('cache-control')).toBe('max-age=60')
   })
 })
+
+describe('HttpRouter.publicUrl', () => {
+  test("is PUBLIC_URL under its prefix, or its own host with PUBLIC_URL's scheme", () => {
+    const before = Bun.env.PUBLIC_URL
+    Bun.env.PUBLIC_URL = 'https://example.com'
+    try {
+      expect(new HttpRouter({ prefix: '/sales/api' }).publicUrl()).toBe('https://example.com/sales/api')
+      expect(new HttpRouter({ prefix: '/sales/api', host: 'sales.example.com' }).publicUrl()).toBe('https://sales.example.com/sales/api')
+    } finally {
+      if (before === undefined) delete Bun.env.PUBLIC_URL
+      else Bun.env.PUBLIC_URL = before
+    }
+  })
+
+  test('says PUBLIC_URL is missing', () => {
+    const before = Bun.env.PUBLIC_URL
+    delete Bun.env.PUBLIC_URL
+    try {
+      expect(() => new HttpRouter().publicUrl()).toThrow('PUBLIC_URL is not set')
+    } finally {
+      if (before !== undefined) Bun.env.PUBLIC_URL = before
+    }
+  })
+})

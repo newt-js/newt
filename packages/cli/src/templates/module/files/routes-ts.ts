@@ -1,4 +1,5 @@
 import type { ModuleNames } from '../../../names/module-names/module-names'
+import { fitting }          from '../../fitted-call/fitted-call'
 
 /** The head of the routes function: given the module's deps once it has them. */
 export const routesHead = ({ type, plural }: ModuleNames, withDeps: boolean) =>
@@ -10,10 +11,20 @@ export function routesTs(names: ModuleNames): string {
 import type { ${type}_Module } from './${folder}.module'
 
 ${routesHead(names, false)}
-  router.post('/${path}', async request => Response.json(await ${plural}.create(await bodyOf(request)), { status: 201 }))
-  router.get('/${path}', async request => Response.json(await ${plural}.paginate({}, pageRequestFrom(request))))
-  router.get('/${path}/:id', async request => Response.json(await ${plural}.get(request.params.id)))
-  return { one: router.group('/${path}/:${module}Id') }
+  router.post('/${path}', async request => {
+    const body = await bodyOf(request)
+    const created = await ${plural}.create(body)
+    return Response.json(created, { status: 201 })
+  })
+  router.get('/${path}', async request => {
+    const page = pageRequestFrom(request)
+    return Response.json(await ${plural}.paginate({}, page))
+  })
+  router.get('/${path}/:id', async request => {
+    const found = await ${plural}.get(request.params.id)
+    return Response.json(found)
+  })
+${fitting(`  return { one: router.group('/${path}/:${module}Id') }`, `  return {\n    one: router.group('/${path}/:${module}Id'),\n  }`, `  return {\n    one: router.group(\n      '/${path}/:${module}Id',\n    ),\n  }`)}
 }
 `
 }

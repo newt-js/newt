@@ -11,16 +11,23 @@ export function scheduledUseCase(useCase: PieceNames): string {
 /** The schedule is declared with its cron, and once a year has gone by it has fired and its use case has run. */
 export function scheduleTest({ name }: ModuleNames, useCase: PieceNames, cron: string, context: string): string {
   return `test('${useCase.camel} runs at ${cron}', async () => {
-  const described = describeApplication([context.base]).contexts.find(each => each.name === '${context}')
-  const events = described?.modules.find(each => each.name === '${name}')?.events ?? []
-  expect(events).toContainEqual(expect.objectContaining({ name: '${name}.${useCase.camel}', schedule: { cron: ${quoted(cron)} } }))
+  const { contexts } = describeApplication([context.base])
+  const described = contexts.find(each => each.name === '${context}')
+  const module = described?.modules.find(each => each.name === '${name}')
+  const declared = expect.objectContaining({
+    name: '${name}.${useCase.camel}',
+    schedule: { cron: ${quoted(cron)} },
+  })
+  expect(module?.events ?? []).toContainEqual(declared)
 
   await context.base.schedules.tick()
   context.clock.advance(366 * 24 * 60 * 60 * 1000)
   await context.base.schedules.tick()
   await context.settle()
 
+  const queue = '${name}.${useCase.camel}_on_${name}.${useCase.camel}'
   const queued = await context.base.database.outbox.list()
-  expect(queued.find(each => each.queue === '${name}.${useCase.camel}_on_${name}.${useCase.camel}')?.status).toBe('done')
+  const ran = queued.find(each => each.queue === queue)
+  expect(ran?.status).toBe('done')
 })`
 }
