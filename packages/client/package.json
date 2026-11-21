@@ -1,0 +1,34 @@
+{
+  "name": "@newt-js/client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "What a frontend of a newt application thinks with, whatever renders it: a service's state in signals.",
+  "license": "MIT",
+  "author": "Angel Romero",
+  "homepage": "https://newt-js.github.io/newt/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newt-js/newt.git",
+    "directory": "packages/client"
+  },
+  "bugs": "https://github.com/newt-js/newt/issues",
+  "keywords": [
+    "newt",
+    "frontend",
+    "signals"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "src",
+    "!**/*.test.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@preact/signals-core": "1.14.4"
+  }
+}
