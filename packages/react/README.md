@@ -5,6 +5,9 @@
 - `useValue` reads a signal in render and repaints the component when, and only when, it changes.
 - shadcn's components, in `src/shadcn/` as shadcn writes them: never edit them. Import each by its file,
   `import { Button } from '@newt-js/react/button'`.
+- The layout: `Stack` (one under another, a column), `Inline` (side by side, a row), `Grid` (columns per
+  breakpoint, `columns={{ base: 1, md: 3 }}`) and `Container` (centers and caps the width), with a `gap` from the
+  spacing scale. `import { Stack } from '@newt-js/react'`.
 - The theme, `@newt-js/react/theme.css`: an app's stylesheet imports it and Tailwind builds it.
 
 ```css
