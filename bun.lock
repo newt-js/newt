@@ -76,6 +76,20 @@
         "eslint": "^10.12.0",
       },
     },
+    "packages/react": {
+      "name": "@newt-js/react",
+      "version": "0.0.0",
+      "dependencies": {
+        "@newt-js/client": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/react": "19.3.0",
+        "react": "19.3.1",
+      },
+      "peerDependencies": {
+        "react": "^19.3.0",
+      },
+    },
     "web": {
       "name": "@newt-js/web",
       "version": "0.0.1",
@@ -387,6 +401,8 @@
     "@newt-js/core": ["@newt-js/core@workspace:packages/core"],
 
     "@newt-js/lint": ["@newt-js/lint@workspace:packages/lint"],
+
+    "@newt-js/react": ["@newt-js/react@workspace:packages/react"],
 
     "@newt-js/web": ["@newt-js/web@workspace:web"],
 
