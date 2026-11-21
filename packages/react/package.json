@@ -31,8 +31,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
-    "./theme.css": "./src/styles/theme.css",
-    "./*": "./src/shadcn/*.tsx"
+    "./theme.css": "./src/styles/theme.css"
   },
   "dependencies": {
     "@fontsource/poppins": "5.3.0",

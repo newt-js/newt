@@ -13,7 +13,8 @@ const at = (code: string, filename = `${APP}/app.tsx`) => ({ code, filename, opt
 tester.run('app-styles', asRule(appStyles), {
   valid: [
     at('const page = <Button onClick={send}>Send</Button>'),
-    at("import { Button } from '@newt-js/react/button'"),
+    at("import { Button } from '@newt-js/react'"),
+    at("import '@newt-js/react/theme.css'"),
     at('const form = <form onSubmit={send}><Input name="email" /></form>'),
     at("const own = <div className='flex gap-2'>{children}</div>", `${APP}/components/toolbar.tsx`),
     at("import { cn } from 'cn'", `${APP}/components/toolbar.tsx`),
@@ -32,6 +33,8 @@ tester.run('app-styles', asRule(appStyles), {
     { ...at("import { twMerge } from 'tailwind-merge'"), errors: [{ messageId: 'tools' }] },
     { ...at("import { Dialog } from 'radix-ui'"), errors: [{ messageId: 'primitive', data: { context: 'sales', path: 'radix-ui' } }] },
     { ...at("import * as Dialog from '@radix-ui/react-dialog'"), errors: [{ messageId: 'primitive' }] },
+    { ...at("import { Button } from '@newt-js/react/button'"), errors: [{ messageId: 'primitive', data: { context: 'sales', path: '@newt-js/react/button' } }] },
+    { ...at("import { Button } from '@newt-js/react/src/shadcn/button'"), errors: [{ messageId: 'primitive' }] },
     { ...at("const page = <Button className='w-full'>Send</Button>", `${APP}/pages/orders.tsx`), errors: [{ messageId: 'style' }] },
   ],
 })

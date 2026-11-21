@@ -3,7 +3,8 @@
 `@newt-js/client` in a React frontend, and the components its apps are made of.
 
 - `useValue` reads a signal in render and repaints the component when, and only when, it changes.
-- shadcn's components, in `src/shadcn/` as shadcn writes them: never edit them.
+- shadcn's components, in `src/shadcn/` as shadcn writes them: never edit them. They are its own: the package does
+  not export them, and newt's lint refuses them in an app.
 - Its components wrap them, in `src/components/`: props in newt's words, and no `className` nor `style`, so an app
   cannot restyle them. `Button` (`variant`, `size`, `href`, `loading`, `label`, `block`, `type`); with `href` it is a
   link, which `LinkProvider` makes go through the app's router. `import { Button } from '@newt-js/react'`.
@@ -21,8 +22,8 @@
 ## An app never styles
 
 Outside its own `components/`, a context's app writes no `className`, `class` nor `style`, no `<style>`, and
-imports neither the tools that make class names (`cn`, `class-variance-authority`, `tailwind-merge`, `clsx`) nor
-Radix: newt's lint refuses them (`newt/app-styles`), so every app looks the same.
+imports neither the tools that make class names (`cn`, `class-variance-authority`, `tailwind-merge`, `clsx`), nor
+Radix, nor shadcn's pieces: newt's lint refuses them (`newt/app-styles`), so every app looks the same.
 
 ## An app's own components
 

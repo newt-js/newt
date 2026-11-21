@@ -14,8 +14,17 @@ const STYLING = /^(className|class|style)$/
 /** The tools that make class names. */
 const CLASS_TOOLS = new Set(['cn', 'class-variance-authority', 'tailwind-merge', 'clsx'])
 
-/** The primitives the components build on. */
-const isPrimitive = (source: string) => source === 'radix-ui' || source.startsWith('@radix-ui/')
+/** The package of the components apps use, and its theme: anything else under it is what they build on. */
+const COMPONENTS = '@newt-js/react'
+
+const THEME = `${COMPONENTS}/theme.css`
+
+/** The primitives the components build on: Radix, and shadcn's pieces inside @newt-js/react. */
+function isPrimitive(source: string): boolean {
+  const radix = source === 'radix-ui' || source.startsWith('@radix-ui/')
+  const insideComponents = source.startsWith(`${COMPONENTS}/`) && source !== THEME
+  return radix || insideComponents
+}
 
 /** The name of a key in an object, written as a name or as a string. */
 function keyOf(property: TSESTree.Property): string | null {
