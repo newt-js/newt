@@ -13,6 +13,12 @@
 @source "./";
 ```
 
+## An app never styles
+
+Outside its own `components/`, a context's app writes no `className`, `class` nor `style`, no `<style>`, and
+imports neither the tools that make class names (`cn`, `class-variance-authority`, `tailwind-merge`, `clsx`) nor
+Radix: newt's lint refuses them (`newt/app-styles`), so every app looks the same.
+
 ## An app's own components
 
 An app is made of these components, composed. When nothing here fits, look again: most needs are a

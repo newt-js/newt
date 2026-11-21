@@ -9,6 +9,7 @@ import { default as tseslint }     from 'typescript-eslint'
 import { absolute }                from './paths/paths'
 import { slashed }                 from './paths/paths'
 import { appImports }              from './rules/app-imports/app-imports'
+import { appStyles }               from './rules/app-styles/app-styles'
 import type { Uses }               from './rules/context-imports/context-imports'
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
@@ -47,6 +48,7 @@ export const plugin = {
     'framework-tables': frameworkTables,
     'imports-and-exports': importsAndExports,
     'app-imports': appImports,
+    'app-styles': appStyles,
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
@@ -153,6 +155,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     ...root === undefined ? {} : { settings: { newt: { root: base } } },
     rules: {
       'newt/app-imports': ['error', { folder: given }],
+      'newt/app-styles': ['error', { folder: given }],
       'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
     },
   }] : []
