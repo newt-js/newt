@@ -77,25 +77,37 @@ export function defineFilter<const Fields extends Record<string, FilterField>, c
   const fromEquals = (filter: Record<string, unknown>): Record<string, unknown> =>
     Object.fromEntries(Object.entries(filter).filter(([, value]) => value !== undefined).map(([name, value]) => [fields[name]!.field, value]))
 
+  const parse = (input: unknown): FilterInput<Fields> => {
+    const parsed = schema.safeParse(input)
+    if (!parsed.success) {
+      throw new InvalidFilter(issuesOf(parsed.error))
+    }
+    return parsed.data
+  }
+  const parseSort = (input: unknown): Sort<Sortable> => {
+    const parsed = sortSchema.safeParse(input)
+    if (!parsed.success) {
+      throw new InvalidSort(issuesOf(parsed.error))
+    }
+    return parsed.data
+  }
+
   return {
     schema,
     sortSchema,
-    parse: input => {
-      const parsed = schema.safeParse(input)
-      if (!parsed.success) {
-        throw new InvalidFilter(issuesOf(parsed.error))
-      }
-      return parsed.data
+    parse,
+    parseSort,
+    toCriteria: <Row>(input: FilterInput<Fields>) => {
+      const filter = parse(input)
+      return (isNode(filter) ? toCriteria(filter as Node) : fromEquals(filter)) as Criteria<Row>
     },
-    parseSort: input => {
-      const parsed = sortSchema.safeParse(input)
-      if (!parsed.success) {
-        throw new InvalidSort(issuesOf(parsed.error))
+    toOrder: <Row>(input: Sort<Sortable> | undefined) => {
+      const sort: Sort<string> = input === undefined ? [] : parseSort(input)
+      if (sort.length === 0) {
+        return undefined
       }
-      return parsed.data
+      return sort.map(({ field, direction }) => ({ field: field as keyof Row & string, ...(direction === undefined ? {} : { direction }) }))
     },
-    toCriteria: <Row>(filter: FilterInput<Fields>) => (isNode(filter) ? toCriteria(filter as Node) : fromEquals(filter)) as Criteria<Row>,
-    toOrder: <Row>(sort: Sort<string> | undefined) => sort?.length ? sort.map(({ field, direction }) => ({ field: field as keyof Row & string, ...(direction === undefined ? {} : { direction }) })) : undefined,
     fieldOf: name => fields[name]!.field,
   }
 }

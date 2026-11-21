@@ -1,0 +1,34 @@
+import { Repository }               from '@newt-js/core'
+import type { ResolvedRow }         from '@newt-js/core'
+import type { ContextBase }         from '@newt-js/core/application'
+import type { z }                   from 'zod'
+// --------------------------------------------------------
+import { SignInAttempt }            from './sign-in-attempt'
+import type { SignInAttempt_Deps }  from './sign-in-attempt.deps'
+import type { SignInAttemptSchema } from './sign-in-attempt.schema'
+
+type SignInAttemptFields = z.infer<typeof SignInAttemptSchema>
+
+export type SignInAttemptRow = SignInAttemptFields & { version: number }
+
+export class SignInAttempt_Repository
+  extends Repository<SignInAttempt, SignInAttemptRow> {
+
+  constructor(base: ContextBase, { application, user }: SignInAttempt_Deps) {
+    const records = base.database.records<SignInAttemptRow>('sign_in_attempt')
+    super(base, records, {
+      scope: 'none',
+      references: {
+        applicationId: ids => application.find({ field: 'id', op: 'in', value: ids }),
+        userId: ids => user.find({ field: 'id', op: 'in', value: ids }),
+      },
+    })
+  }
+
+  protected toEntity(
+    row: ResolvedRow<SignInAttemptRow, SignInAttempt>,
+  ): SignInAttempt {
+    return SignInAttempt.fromDTO(row)
+  }
+
+}

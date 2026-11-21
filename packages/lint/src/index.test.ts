@@ -146,13 +146,16 @@ describe('the preset of newt', () => {
     expect(await complaints(file, 'export function f(x: number) {\n  if (x) { return 1 }\n  return 2\n}\n')).toEqual(['brace-style', 'brace-style'])
   })
 
-  test('keeps imports sorted, a class padded inside and lines to 80', async () => {
+  test('keeps imports sorted, a class padded inside and lines to 160, strings too', async () => {
     const file = 'src/contexts/ws/modules/brand/brand.module.ts'
     expect(await allComplaints(file, "import { z } from 'zod'\nimport { a } from './a'\nexport const x = [z, a]\n")).toEqual(['newt/imports-and-exports'])
     expect(await allComplaints(file, 'export class A {\n  b = 1\n}\n')).toEqual(['@stylistic/padded-blocks', '@stylistic/padded-blocks'])
     expect(await allComplaints(file, 'export class A {\n\n  b = 1\n\n}\n')).toEqual([])
-    expect(await allComplaints(file, `export const long = [${'1, '.repeat(30)}1]\n`)).toEqual(['@stylistic/max-len'])
-    expect(await allComplaints(file, `export const text = '${'a'.repeat(90)}'\n`)).toEqual([])
+    expect(await allComplaints(file, `export const long = [${'1, '.repeat(40)}1]\n`)).toEqual([])
+    expect(await allComplaints(file, `export const long = [${'1, '.repeat(50)}1]\n`)).toEqual(['@stylistic/max-len'])
+    expect(await allComplaints(file, `export const text = '${'a'.repeat(150)}'\n`)).toEqual(['@stylistic/max-len'])
+    expect(await allComplaints(file, `// https://example.com/${'a'.repeat(150)}\nexport const x = 1\n`)).toEqual([])
+    expect(await allComplaints(file, `import { a } from './${'a'.repeat(150)}'\nexport const x = a\n`)).toEqual([])
   })
 
   test('refuses a promise left unawaited, or handed where nobody awaits it', async () => {

@@ -56,15 +56,14 @@ ${contextInitializeHead(names, false)}
   }
 
 ${contextOpenHead(names, false)}
-    const router = new HttpRouter({ prefix: '/${folder}/api' })
-    router.authenticateWith(authenticate)
     const host = Bun.env.${env}_HOST
+    const router = new HttpRouter({ prefix: '/${folder}/api', host })
+    router.authenticateWith(authenticate)
     const { database, storage } = await openData('${folder}', {
       database: { adapter: ${database.adapter}(), migrations: MIGRATIONS_FOLDER },
       files: ${files.adapter}(),
       router,
       place,
-      host,
     })
     const base = new ContextBase({
       name: '${folder}',

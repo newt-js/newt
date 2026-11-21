@@ -1,3 +1,4 @@
+import { requiredEnv }            from '../../../../application/data/env/env'
 import type { Database }          from '../../../../application/database/database'
 import type { Clock }             from '../../../../domain/clock/clock'
 import { systemClock }            from '../../../../domain/clock/system-clock/system-clock'
@@ -39,16 +40,28 @@ export class HttpRouter {
 
   private readonly table = new Map<string, Entry>()
   readonly prefix: string
+  readonly host: string | undefined
   private readonly defaults: RouteOptions
   private authenticator: Authenticator | null = null
   private database: Pick<Database, 'records'> | undefined
   private readonly clock: Clock
 
-  constructor({ prefix, database, clock, ...defaults }: HttpRouterOptions = {}) {
+  constructor({ prefix, host, database, clock, ...defaults }: HttpRouterOptions = {}) {
     this.prefix = prefix ?? '/api'
+    this.host = host
     this.defaults = defaults
     this.database = database
     this.clock = clock ?? systemClock
+  }
+
+  /**
+   * Where its routes answer from outside, under its prefix: at its own host if it has one, with PUBLIC_URL's scheme,
+   * or else at PUBLIC_URL. Read on each call, so `.env` can change under the tests.
+   */
+  publicUrl(): string {
+    const backend = requiredEnv('PUBLIC_URL')
+    const origin = this.host ? `${new URL(backend).protocol}//${this.host}` : backend
+    return `${origin}${this.prefix}`
   }
 
   authenticateWith(authenticator: Authenticator): void {

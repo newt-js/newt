@@ -22,6 +22,12 @@ describe('newt add value-object', () => {
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
+  test('one of the longest name keeps its lines to 80, and its lint, types and tests pass', async () => {
+    const backend = await moduleProject()
+    expect((await addValueObject(['sales/order', 'customer-account-statement-line'], backend)).code).toBe(0)
+    expect(await checkGenerated(backend)).toEqual([])
+  }, 30_000)
+
   test("the id of another module's entity, of its brand, which that module's use cases take as it is", async () => {
     const backend = await moduleProject()
     await runCommand(ADD_MODULE, ['sales/customer'], { cwd: backend, ask: null })
