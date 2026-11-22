@@ -1,7 +1,6 @@
 {
   "name": "@newt-js/react",
   "version": "0.0.0",
-  "private": true,
   "description": "@newt-js/client in a React frontend, and shadcn's components, as shadcn writes them.",
   "license": "MIT",
   "author": "Angel Romero",

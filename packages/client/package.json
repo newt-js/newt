@@ -1,7 +1,6 @@
 {
   "name": "@newt-js/client",
   "version": "0.0.0",
-  "private": true,
   "description": "What a frontend of a newt application thinks with, whatever renders it: a service's state in signals.",
   "license": "MIT",
   "author": "Angel Romero",
