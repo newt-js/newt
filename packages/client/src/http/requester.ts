@@ -1,5 +1,6 @@
 import { ApiError }         from './api-error'
 import type { ErrorBody }   from './error-body'
+import { issuesOf }         from './field-issue'
 import type { QueryParams } from './query-params'
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -64,7 +65,7 @@ export abstract class Requester {
     if (response.status === 401) Requester.onUnauthorized?.()
     const body = await response.json().catch(() => null) as Partial<ErrorBody> | null
     const message = body?.error || response.statusText || `Request failed (${response.status})`
-    const error = new ApiError(response.status, message, body?.code)
+    const error = new ApiError(response.status, message, body?.code, issuesOf(body))
     if (response.status === 403) Requester.onForbidden?.(error)
     return error
   }

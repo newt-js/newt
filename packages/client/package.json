@@ -29,5 +29,8 @@
   },
   "dependencies": {
     "@preact/signals-core": "1.14.4"
+  },
+  "devDependencies": {
+    "zod": "4.3.6"
   }
 }

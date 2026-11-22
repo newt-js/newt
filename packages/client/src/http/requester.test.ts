@@ -72,6 +72,15 @@ describe('Requester', () => {
     expect(failure).toMatchObject({ status: 404, code: 'note.not_found', message: 'Note x not found' })
   })
 
+  test('an input that is not valid keeps what was wrong with each field', async () => {
+    const issues = [{ code: 'too_small', path: ['address', 'city'], message: 'Too short' }]
+    answer(Response.json({ error: 'The input is not valid', code: 'validation', issues }, { status: 400 }))
+
+    const failure = await new NotesApi().create('').catch((error: unknown) => error)
+
+    expect(failure).toMatchObject({ status: 400, code: 'validation', issues: [{ field: 'address.city', message: 'Too short' }] })
+  })
+
   test('a failed answer without a JSON body or a status text still says what failed', async () => {
     answer(new Response('<html>Bad Gateway</html>', { status: 502, statusText: '', headers: { 'content-type': 'text/html' } }))
 
