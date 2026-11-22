@@ -130,6 +130,22 @@ export function moduleOfContext(file: string, contexts: string): Place | null {
   return { context, module, inside: rest.join('/') }
 }
 
+/** Where a file is in its context's app: the context, and its path inside `app/` (`features/clients/clients.tsx`). */
+export type AppPlace = { context: string, inside: string }
+
+/**
+ * Where a file is in its context's app, when contexts are the folders of `folder` as the rule's options write it.
+ * `null` for a file in no app.
+ */
+export function appPlaceOf(context: Context, folder: string): AppPlace | null {
+  const contexts = real(absolute(folder, rootOf(context)))
+  const own = contextOf(context.physicalFilename, contexts)
+  if (!own || own === ROOT) return null
+  const app = `${contexts}/${own}/app/`
+  const file = real(slashed(context.physicalFilename))
+  return file.startsWith(app) ? { context: own, inside: file.slice(app.length) } : null
+}
+
 /** The file a relative import points at. */
 export function target(file: string, specifier: string): string {
   return posix.normalize(posix.join(posix.dirname(slashed(file)), specifier))
