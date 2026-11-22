@@ -23,7 +23,7 @@ export function packageJson(name: string, versions: TemplateVersions, inMonorepo
     private: true,
     type: 'module',
     scripts: {
-      dev: 'bun --watch src/index.ts',
+      dev: 'NODE_ENV=development bun --watch src/index.ts',
       start: 'bun src/index.ts',
       test: 'bun test',
       typecheck: 'bun check -b',

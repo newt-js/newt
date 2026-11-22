@@ -8,6 +8,9 @@ export function srcIndexTs(cluster: ClusterTemplate): string {
 ${cluster.importLines.map(line => `${line}\n`).join('')}import { runContexts, type RunningContexts } from '@newt-js/core/http'
 import { openContexts } from './contexts/contexts'
 
+/** bun run dev: the apps reload in the browser as their files change (HMR), and errors show in full. */
+const DEVELOPMENT = Bun.env.NODE_ENV === 'development'
+
 export async function startBackend(
   port: number,
   { data = 'configured' }: { data?: DataPlace } = {},
@@ -16,7 +19,7 @@ ${clustered}  const platform = new Platform(${options})
   const contexts = await openContexts(platform, data)
   return runContexts(contexts, {
     platformWithoutContexts: platform,
-    serve: { port },
+    serve: { port, development: DEVELOPMENT },
   })
 }
 
