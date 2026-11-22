@@ -5,6 +5,11 @@
 - `useValue` reads a signal in render and repaints the component when, and only when, it changes.
 - `Provide` gives the components below it their own instances of some services, alive as long as it is;
   `useService(Service)` hands a component the one from the closest `Provide` above, or the app's.
+- `Router` goes around the app once, with `basename` where the backend serves it (`/backoffice`): routes come from
+  `react-router` (`Routes`, `Route`, `Outlet`, `useParams`), and every link of the components goes through it.
+  `useQueryParam('status')` reads one query param and changes it: what a person chose to look at (a tab, a
+  filter, a page, a search) lives in the address, so it can be shared, kept and gone back to. An app depends on
+  `react-router` itself.
 - shadcn's components, in `src/shadcn/` as shadcn writes them: never edit them. They are its own: the package does
   not export them, and newt's lint refuses them in an app.
 - Its components wrap them, in `src/components/`: props in newt's words, and no `className` nor `style`, so an app

@@ -1,7 +1,7 @@
 {
   "name": "@newt-js/react",
   "version": "0.0.0",
-  "description": "@newt-js/client in a React frontend, and shadcn's components, as shadcn writes them.",
+  "description": "@newt-js/client in a React frontend, its router, and shadcn's components, as shadcn writes them.",
   "license": "MIT",
   "author": "Angel Romero",
   "homepage": "https://newt-js.github.io/newt/",
@@ -45,12 +45,14 @@
   },
   "peerDependencies": {
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "react-router": "^8.5.1"
   },
   "devDependencies": {
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "react-router": "8.5.1"
   }
 }
