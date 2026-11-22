@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 
-export type TemplateVersions = { newt: string, zod: string, eslint: string, bunTypes: string, react: string, reactDom: string, reactTypes: string, reactDomTypes: string, bunPluginTailwind: string, lintTypescript: string, typescript: string }
+export type TemplateVersions = { newt: string, zod: string, eslint: string, bunTypes: string, react: string, reactDom: string, reactTypes: string, reactDomTypes: string, bunPluginTailwind: string, reactRouter: string, lintTypescript: string, typescript: string }
 
 const MANIFEST = join(import.meta.dir, '../../../package.json')
 
@@ -20,6 +20,7 @@ export async function templateVersions(): Promise<TemplateVersions> {
     reactTypes: devDependencies['@types/react']!,
     reactDomTypes: devDependencies['@types/react-dom']!,
     bunPluginTailwind: devDependencies['bun-plugin-tailwind']!,
+    reactRouter: devDependencies['react-router']!,
     lintTypescript: dependencies.typescript!,
     typescript: PROJECT_TYPESCRIPT,
   }

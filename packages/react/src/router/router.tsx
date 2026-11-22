@@ -13,7 +13,7 @@ type RouterProps = {
 /** The app's router, around it once: routes read the address, and every link of the components goes through it. */
 export function Router({ basename, children }: RouterProps) {
   return (
-    <BrowserRouter basename={basename}>
+    <BrowserRouter basename={basename || '/'}>
       <LinkProvider component={RouterLink}>{children}</LinkProvider>
     </BrowserRouter>
   )

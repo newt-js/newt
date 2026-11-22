@@ -12,8 +12,8 @@ app/
   app.css             imports @newt-js/react/theme.css
   main.tsx            mounts the app; sets Requester.baseUrl to the context's API (the one file
                       besides the api files that touches Requester)
-  app.tsx             the router, the providers, the session
-  app.routes.tsx      once there is a router: the shell's route, and one lazy route per feature
+  app.tsx             <Router basename={BASE}> around the routes; the providers, the session
+  app.routes.tsx      the shell's route, and one lazy route per feature
   base.ts             where the backend serves the app, and its API
   components/         the app's own components: the only place with class names, each with its `Why:`
     layouts/          the app's structures: as few as possible, each argued (see Structure)
@@ -124,6 +124,48 @@ export function ClientsList() {
 - **Requests go in `<feature>.api.ts`**, beside its service: a class extending `Requester`, its `path` and one
   method per request. Nothing else talks to the backend. A failed request is an `ApiError` (`status`, `message`,
   `code`).
+
+## Routes
+
+The router is `react-router`, set up once by `<Router basename={BASE}>` (from `@newt-js/react`) in `app.tsx`: every
+route and link starts at the context's path, and every `Button href` and link of the components goes through it.
+
+```tsx
+// app.routes.tsx
+const Clients = lazy(() => import('./features/clients/clients').then(({ Clients }) => ({ default: Clients })))
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<Shell />}>
+        <Route index element={<Home />} />
+        <Route path="clients/*" element={<Clients />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  )
+}
+```
+
+- **Every feature is lazy**, `lazy()` in `app.routes.tsx`: nobody downloads what they do not open. The shell holds
+  the `<Suspense>` around `<Outlet />`, with no loader: a page shows what it has as it comes.
+- **A feature's own routes** go in its `<feature>.routes.tsx` (`clients/:clientId`, `clients/new`), rendered by its root.
+- **The address says what is on the screen (no lint).** What a person chose to look at lives in the URL, never only
+  in a component or a service, so it can be shared, kept as a bookmark, opened in another tab and gone back to:
+  - **Which thing:** a path segment, `/clients/:clientId`.
+  - **How it is looked at:** a query param. That covers a tab (`?tab=secrets`), a list's filters
+    (`?status=active&role=admin`), its order (`?sort=name`), its page (`?page=2`) and a search (`?q=acme`).
+  - **What stays out:** what is only of the moment: a menu that is open, a row that is unfolded, a draft not sent.
+    That is `useState`.
+- **`useQueryParam(name)`** (from `@newt-js/react`) reads one param and changes it: `null` or `''` takes it out.
+  The component reads the address and hands it to its service. The service never reads the URL:
+  ```tsx
+  const [status, setStatus] = useQueryParam('status')
+  useEffect(() => { void clients.load({ status }) }, [clients, status])
+  ```
+  A param that changes as a person types (a search) is set when they stop or submit, never on every key.
+- **A param's value is a word a person can read** (`?status=active`, never `?s=1`). It is the same in the address
+  and in the API's query, when the API takes it.
 
 ## Composing, never styling
 

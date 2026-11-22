@@ -38,10 +38,74 @@ createRoot(document.getElementById('root')!).render(
 )
 `
 
-export const APP_TSX = `import { Home } from './features/home/home'
+export const APP_TSX = `import { Router }    from '@newt-js/react'
+// --------------------------------------------------------
+import { AppRoutes } from './app.routes'
+import { BASE }      from './base'
 
 export function App() {
-  return <Home />
+  return (
+    <Router basename={BASE}>
+      <AppRoutes />
+    </Router>
+  )
+}
+`
+
+/** The shell's route around every page, and one lazy route per feature. */
+export const APP_ROUTES_TSX = `import { lazy }     from 'react'
+import { Route }    from 'react-router'
+import { Routes }   from 'react-router'
+// --------------------------------------------------------
+import { NotFound } from './pages/not-found/not-found'
+import { Shell }    from './pages/shell/shell'
+
+const Home = lazy(() => import('./features/home/home').then(({ Home }) => ({ default: Home })))
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<Shell />}>
+        <Route index element={<Home />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  )
+}
+`
+
+/** The frame around every page: the place for the navigation, the brand and the user. */
+export const SHELL_TSX = `import { Column }   from '@newt-js/react'
+import { Suspense } from 'react'
+import { Outlet }   from 'react-router'
+
+export function Shell() {
+  return (
+    <Column as="main">
+      <Suspense>
+        <Outlet />
+      </Suspense>
+    </Column>
+  )
+}
+`
+
+export const NOT_FOUND_TSX = `import { Button }    from '@newt-js/react'
+import { Column }    from '@newt-js/react'
+import { Container } from '@newt-js/react'
+import { Heading }   from '@newt-js/react'
+import { Text }      from '@newt-js/react'
+
+export function NotFound() {
+  return (
+    <Container>
+      <Column padding={8} gap={4} align="start">
+        <Heading>Not found</Heading>
+        <Text tone="muted">There is nothing at this address.</Text>
+        <Button href="/" variant="outline">Go home</Button>
+      </Column>
+    </Container>
+  )
 }
 `
 
