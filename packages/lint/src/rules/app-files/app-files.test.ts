@@ -34,7 +34,8 @@ tester.run('app-files', asRule(appFiles), {
     at('features/clients/clients-list.tsx', "import { ClientsService } from './clients.service'"),
     at('features/clients/clients-list-row/clients-list-row.tsx', "import { ClientsService } from '../clients.service'"),
     at('features/clients/clients.tsx', "import { ListPage } from '../../components/layouts/list-page'"),
-    at('app.routes.tsx', "import { Clients } from './features/clients/clients'"),
+    at('app.routes.tsx', "const Clients = lazy(() => import('./features/clients/clients').then(({ Clients }) => ({ default: Clients })))"),
+    at('pages/shell/shell.tsx', "import type { ClientDTO } from '../../features/clients/clients.state'"),
     { code: '', filename: `${FOLDER}/sales/modules/order/order.ts`, options },
   ],
   invalid: [
@@ -51,6 +52,8 @@ tester.run('app-files', asRule(appFiles), {
     { ...at('features/clients/clients.service.ts', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
     { ...at('features/clients/clients-list.tsx', "import { Store, Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
     { ...at('app.tsx', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
+    { ...at('app.routes.tsx', "import { Clients } from './features/clients/clients'"), errors: [{ messageId: 'lazy', data: { inside: 'app.routes.tsx', other: 'clients' } }] },
+    { ...at('pages/shell/shell.tsx', "import { ClientsService } from '../../features/clients/clients.service'"), errors: [{ messageId: 'lazy' }] },
     { ...at('features/clients/clients.tsx', "import { Invoices } from '../invoices/invoices'"), errors: [{ messageId: 'feature', data: { inside: 'features/clients/clients.tsx', other: 'invoices' } }] },
     { ...at('features/clients/clients-list-row/clients-list-row.tsx', "import { InvoicesService } from '../../invoices/invoices.service'"), errors: [{ messageId: 'feature' }] },
     { ...at('features/main.tsx', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'loose' }, { messageId: 'requester' }] },
