@@ -10,6 +10,7 @@ import { absolute }                from './paths/paths'
 import { slashed }                 from './paths/paths'
 import { appFiles }                from './rules/app-files/app-files'
 import { appImports }              from './rules/app-imports/app-imports'
+import { appSize }                 from './rules/app-size/app-size'
 import { appStyles }               from './rules/app-styles/app-styles'
 import type { Uses }               from './rules/context-imports/context-imports'
 import { assertUsesTree }          from './rules/context-imports/context-imports'
@@ -50,6 +51,7 @@ export const plugin = {
     'imports-and-exports': importsAndExports,
     'app-files': appFiles,
     'app-imports': appImports,
+    'app-size': appSize,
     'app-styles': appStyles,
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
@@ -158,6 +160,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     rules: {
       'newt/app-files': ['error', { folder: given }],
       'newt/app-imports': ['error', { folder: given }],
+      'newt/app-size': ['error', { folder: given }],
       'newt/app-styles': ['error', { folder: given }],
       'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
     },
