@@ -3,6 +3,8 @@
 `@newt-js/client` in a React frontend, and the components its apps are made of.
 
 - `useValue` reads a signal in render and repaints the component when, and only when, it changes.
+- `Provide` gives the components below it their own instances of some services, alive as long as it is;
+  `useService(Service)` hands a component the one from the closest `Provide` above, or the app's.
 - shadcn's components, in `src/shadcn/` as shadcn writes them: never edit them. They are its own: the package does
   not export them, and newt's lint refuses them in an app.
 - Its components wrap them, in `src/components/`: props in newt's words, and no `className` nor `style`, so an app
