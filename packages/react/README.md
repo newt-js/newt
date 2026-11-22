@@ -8,9 +8,25 @@
 - Its components wrap them, in `src/components/`: props in newt's words, and no `className` nor `style`, so an app
   cannot restyle them. `Button` (`variant`, `size`, `href`, `loading`, `label`, `block`, `type`); with `href` it is a
   link, which `LinkProvider` makes go through the app's router. `import { Button } from '@newt-js/react'`.
-- The layout: `Stack` (one under another, a column), `Inline` (side by side, a row), `Grid` (columns per
-  breakpoint, `columns={{ base: 1, md: 3 }}`) and `Container` (centers and caps the width), with a `gap` from the
-  spacing scale. `import { Stack } from '@newt-js/react'`.
+- The layout, with no class names: `Column` (one under another) and `Row` (side by side) take a `gap`, `align`,
+  `justify` and `padding` from the spacing scale, `grow` to take the room left, `fill` to be as tall as their parent,
+  a `width` (`xs` to `xl`, or `full`) and `as` for what they are to the page (`nav`, `aside`, `ul`…). `Grid` lays out
+  columns per breakpoint (`columns={{ base: 1, md: 3 }}`), `Container` centers and caps the width, `Spacer` pushes what
+  follows it to the end, `Scroll` scrolls its content inside the room left and `Sticky` keeps a header or a bar of
+  actions on its edge while the rest scrolls. A side column and a page that scrolls on its own:
+
+  ```tsx
+  <Row fill align="stretch" gap={0}>
+    <Column as="nav" width="sm" padding={4}>…</Column>
+    <Scroll>
+      <Sticky><Row padding={4}><Heading>Clients</Heading><Spacer /><Button>New</Button></Row></Sticky>
+      <Column padding={4}>…</Column>
+    </Scroll>
+  </Row>
+  ```
+
+  Every page is made of these: an app never needs a class name to lay something out.
+- Text: `Heading` (`level` 1 to 4) and `Text` (`tone`, `size`, `strong`, `as`). An app writes no `h1` nor `p` of its own.
 - The theme, `@newt-js/react/theme.css`: an app's stylesheet imports it and Tailwind builds it.
 
 ```css
