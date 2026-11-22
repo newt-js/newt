@@ -1,0 +1,68 @@
+{
+  "name": "@newt-js/react",
+  "version": "0.0.0",
+  "description": "@newt-js/client in a React frontend, its router, and shadcn's components, as shadcn writes them.",
+  "license": "MIT",
+  "author": "Angel Romero",
+  "homepage": "https://newt-js.github.io/newt/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newt-js/newt.git",
+    "directory": "packages/react"
+  },
+  "bugs": "https://github.com/newt-js/newt/issues",
+  "keywords": [
+    "newt",
+    "react",
+    "signals",
+    "shadcn",
+    "tailwind"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "src",
+    "!**/*.test.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./src/styles/theme.css"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "@fontsource/poppins": "5.3.0",
+    "@newt-js/client": "workspace:*",
+    "@shadcn/react": "0.3.1",
+    "class-variance-authority": "0.7.1",
+    "cmdk": "1.1.1",
+    "cn": "0.4.0",
+    "embla-carousel-react": "8.6.0",
+    "input-otp": "1.5.0",
+    "lucide-react": "1.48.0",
+    "radix-ui": "1.7.0",
+    "react-day-picker": "10.0.2",
+    "react-hook-form": "7.91.0",
+    "react-resizable-panels": "4.19.1",
+    "recharts": "3.8.0",
+    "sonner": "2.0.8",
+    "tailwindcss": "4.3.3",
+    "tw-animate-css": "1.4.0",
+    "vaul": "1.1.2"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.5.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.5.1"
+  }
+}

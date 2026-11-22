@@ -198,6 +198,23 @@ describe('runContexts, one server for every context', () => {
     await rm(built, { recursive: true })
   })
 
+  test("a context's HTML-import app is built and served as a built app: under its CSP, never in a frame, its scripts at its base", async () => {
+    const log: string[] = []
+    const { default: notes } = await import('../../frontend/fixtures/frontend/index.html')
+    const app = runContexts([
+      { context: context('notes', log), router: routerOf('notes', '/folders', '/notes/api'), app: notes },
+    ], { signals: false, serve: { port: 0 } })
+    const at = (path: string) => fetch(new URL(path, app.server!.url))
+
+    const page = await at('/notes/folders/12')
+    const script = /src="(\/notes\/[^"]+\.js)"/.exec(await page.text())?.[1]
+    expect(page.headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
+    expect(page.headers.get('x-frame-options')).toBe('DENY')
+    expect(await (await at(script!)).text()).toContain('ready')
+
+    await app.stop()
+  })
+
   test('a context with a host answers there at its own paths, and with its name too, and never by its name on another host', async () => {
     const log: string[] = []
     const { default: notes } = await import('../../frontend/fixtures/frontend/index.html')

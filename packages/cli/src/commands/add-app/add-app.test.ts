@@ -22,7 +22,13 @@ describe('newt add app', () => {
     expect(await read(join(backend, 'src/contexts/sales/app/base.ts'))).toContain("const PATH = '/sales'\n")
     expect(await read(join(backend, 'src/index.test.ts'))).toContain("test('the backend serves the app of sales'")
     expect(await Bun.file(join(backend, 'src/frontends.ts')).exists()).toBe(false)
-    expect(await Bun.file(join(backend, 'package.json')).json()).toMatchObject({ dependencies: { 'react': expect.any(String), 'react-dom': expect.any(String) } })
+    expect(await Bun.file(join(backend, 'package.json')).json()).toMatchObject({ dependencies: { '@newt-js/client': expect.any(String), '@newt-js/react': expect.any(String), 'react': expect.any(String), 'react-dom': expect.any(String), 'react-router': expect.any(String) } })
+    expect(await read(join(backend, 'src/contexts/sales/app/features/home/home.tsx'))).toContain('<Heading>Sales</Heading>')
+    expect(await read(join(backend, 'src/contexts/sales/app/app.routes.tsx'))).toContain("lazy(() => import('./features/home/home')")
+    expect(await read(join(backend, 'src/contexts/sales/app/pages/shell/shell.tsx'))).toContain('<Outlet />')
+    expect(await read(join(backend, 'bunfig.toml'))).toContain('plugins = ["bun-plugin-tailwind"]')
+    expect(await read(join(backend, 'docs/agents/frontend.md'))).toStartWith('# Frontend\n')
+    expect(await read(join(backend, 'AGENTS.md'))).toContain('`docs/agents/frontend.md`')
     expect(await Bun.file(join(backend, 'tsconfig.json')).json()).toMatchObject({ exclude: ['node_modules', 'src/contexts/*/app'], references: [{ path: './src/contexts/sales/app' }] })
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
@@ -30,7 +36,7 @@ describe('newt add app', () => {
   test("the backend's type check checks the app too, with its own tsconfig", async () => {
     const backend = await moduleProject()
     await addApp(['sales'], backend)
-    await Bun.write(join(backend, 'src/contexts/sales/app/app.tsx'), 'export function App() {\n  const count: number = \'one\'\n  return <h1>{count}</h1>\n}\n')
+    await Bun.write(join(backend, 'src/contexts/sales/app/app.tsx'), "import { Heading } from '@newt-js/react'\n\nexport function App() {\n  const count: number = 'one'\n  return <Heading>{count}</Heading>\n}\n")
     const failures = await checkGenerated(backend)
     expect(failures.map(failure => failure.split(':')[0])).toEqual(['typecheck failed'])
     expect(failures[0]).toContain('src/contexts/sales/app/app.tsx')
@@ -39,7 +45,7 @@ describe('newt add app', () => {
   test('the app imports the types of its context\'s schemas, and they type-check', async () => {
     const backend = await moduleProject()
     await addApp(['sales'], backend)
-    await Bun.write(join(backend, 'src/contexts/sales/app/app.tsx'), "import type { OrderDTO } from '../modules/order/order.schema'\n\nexport function App({ order }: { order?: OrderDTO }) {\n  return <h1>{order?.name}</h1>\n}\n")
+    await Bun.write(join(backend, 'src/contexts/sales/app/app.tsx'), "import { Heading }       from '@newt-js/react'\n// --------------------------------------------------------\nimport type { OrderDTO } from '../modules/order/order.schema'\n\nexport function App({ order }: { order?: OrderDTO }) {\n  return <Heading>{order?.name}</Heading>\n}\n")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

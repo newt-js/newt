@@ -63,6 +63,24 @@ describe('serveFrontend', () => {
     }
   })
 
+  test('gzips text for a browser that takes it, and the page is asked again every time', async () => {
+    const zipped = await serveFrontend(folder)(new Request('http://app.test/assets/app.js', { headers: { 'accept-encoding': 'gzip, br' } }))
+    expect(zipped.headers.get('content-encoding')).toBe('gzip')
+    expect(zipped.headers.get('vary')).toBe('accept-encoding')
+    expect(new TextDecoder().decode(Bun.gunzipSync(new Uint8Array(await zipped.arrayBuffer())))).toBe('console.log(1)')
+    expect((await get('/assets/app.js')).headers.get('content-encoding')).toBeNull()
+    expect((await get('/')).headers.get('cache-control')).toBe('no-cache')
+  })
+
+  test('a browser keeps for good the files named by their content, and no other', async () => {
+    await Bun.write(join(folder, 'chunk-ab12cd34.js'), 'console.log(2)')
+    const serveIt = serveFrontend(folder, undefined, '', /^chunk-[a-z0-9]+\.js$/)
+    const at = (path: string) => serveIt(new Request(`http://app.test${path}`))
+
+    expect((await at('/chunk-ab12cd34.js')).headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect((await at('/assets/app.js')).headers.get('cache-control')).toBeNull()
+  })
+
   test('under a prefix, a path names the file at what follows it', async () => {
     expect(await (await serveFrontend(folder, undefined, '/backoffice')(new Request('http://app.test/backoffice/assets/app.js'))).text()).toBe('console.log(1)')
   })

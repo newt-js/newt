@@ -8,6 +8,7 @@ const EXAMPLES: Record<string, string> = {
   'a value object': 'email or postal-code',
   'a service': 'send-email or exchange-rates',
   'a use case': 'ship or mark-paid',
+  'a feature': 'clients or price-changes',
 }
 
 const KEBAB = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/

@@ -8,7 +8,13 @@ import { default as tseslint }     from 'typescript-eslint'
 // --------------------------------------------------------
 import { absolute }                from './paths/paths'
 import { slashed }                 from './paths/paths'
+import { appComponents }           from './rules/app-components/app-components'
+import { appFiles }                from './rules/app-files/app-files'
+import { appHtml }                 from './rules/app-html/app-html'
 import { appImports }              from './rules/app-imports/app-imports'
+import { appSignalReads }          from './rules/app-signal-reads/app-signal-reads'
+import { appSize }                 from './rules/app-size/app-size'
+import { appStyles }               from './rules/app-styles/app-styles'
 import type { Uses }               from './rules/context-imports/context-imports'
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
@@ -46,7 +52,13 @@ export const plugin = {
     'module-place': modulePlace,
     'framework-tables': frameworkTables,
     'imports-and-exports': importsAndExports,
+    'app-components': appComponents,
+    'app-files': appFiles,
+    'app-html': appHtml,
     'app-imports': appImports,
+    'app-signal-reads': appSignalReads,
+    'app-size': appSize,
+    'app-styles': appStyles,
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
@@ -152,7 +164,13 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     plugins: { newt: plugin },
     ...root === undefined ? {} : { settings: { newt: { root: base } } },
     rules: {
+      'newt/app-components': ['error', { folder: given }],
+      'newt/app-files': ['error', { folder: given }],
+      'newt/app-html': ['error', { folder: given }],
       'newt/app-imports': ['error', { folder: given }],
+      'newt/app-signal-reads': ['error', { folder: given }],
+      'newt/app-size': ['error', { folder: given }],
+      'newt/app-styles': ['error', { folder: given }],
       'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
     },
   }] : []

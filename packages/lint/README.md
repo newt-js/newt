@@ -52,13 +52,26 @@ Everything else is its own: its schemas as values (another module never parses, 
 |---|---|
 | `newt/module-files` | A module has only its own files, named after it: `.module`, `.ts` (the entity), `.schema`, `.repository`, `.routes`, `.workers`, `.deps`, `-options`, its tests, and the folders `events/`, `errors/`, `value-objects/` and `services/`. |
 | `newt/module-entity` | A module keeps one entity, the root of its aggregate: only its `<m>.ts` declares a class that extends `Entity`, and only one, however many base classes of its own it goes through. Another entity is a module of its own, referenced by its id. |
-| `newt/app-imports` | A context's app (`<context>/app/`, `.ts` and `.tsx`) imports its own files and, as types alone (`import type`), its context's schemas; never the server's code: no module, repository or other context, and newt, Bun and Node (`bun`, `bun:*`, `node:*`) only as types. |
 | `newt/module-imports` | A module reaches another of its context only through its API: its use cases, through the dependency `newt add deps` gives it, and, as imports, only the types (`import type`) of its module, its schema (the DTOs) and its events, and its errors. Never its schemas as values, entity, value objects, repository, routes, workers or services. A file of the context outside the modules re-exports only that API. The modules of a context never use each other in a cycle, as their `<m>.deps.ts` say. |
 | `newt/module-names` | A module is named after its folder, in camelCase (`oauth-signing-key` is `oauthSigningKey`): in `super`, and at the start of its events', schedules' and rate limits' names. |
 | `newt/context-imports` | A context imports only the contexts it says it uses, never in a cycle. |
 | `newt/published-modules` | Another context is imported only through its class, `<context>.context.ts`, whose public fields are the modules it publishes (`public readonly workspace: Workspace_Module`), and, of a module it publishes, the types of its module, schema and events, and its errors. Never a module it keeps to itself, nor any other file of it. |
 | `newt/module-place` | A module lives in its context, `<context>/modules/<module>/`: a file in `features/` or `module/` says where to move it, and a folder of `modules/` with no `<folder>.module.ts` is none. Needs `contexts`. |
 | `newt/schema-imports` | A module's schema imports only zod, `@newt-js/core` (its root), the module's value objects and other modules' DTO types (`import type`, which `newt/module-imports` checks). |
+
+### A context's app
+
+The rules of `<context>/app/` (`.ts` and `.tsx`, with `contexts`): how an app is built is in the guide `newt add app` leaves in `docs/agents/frontend.md`.
+
+| Rule | Checks |
+|---|---|
+| `newt/app-imports` | A context's app (`<context>/app/`, `.ts` and `.tsx`) imports its own files and, as types alone (`import type`), its context's schemas; never the server's code: no module, repository or other context, and newt, Bun and Node (`bun`, `bun:*`, `node:*`) only as types. |
+| `newt/app-files` | Each thing in its place: at the root, `main.tsx`, `app.tsx`, `app.routes.tsx`, `base.ts` and the folders `components/`, `services/`, `guards/`, `pages/` and `features/`. In `features/`, `pages/` and `services/`, a folder per piece, every file and folder in it named after the folder it is in (`clients/clients-list.tsx`). `pages/` holds no `*.service.ts`, `*.state.ts` nor `*.api.ts`. Only an api file (`*.api.ts`) imports `Requester`, and `main.tsx`, which says where requests go. A feature imports no other feature: they hear each other through events. Outside `features/`, a feature is reached only with `lazy(() => import(…))`, so it is downloaded when opened. |
+| `newt/app-size` | A piece that grows is split: a component file in at most 100 lines, its JSX nested 4 deep, a component with 1 `useService` and 3 `useValue`; a service in at most 150 lines, 7 public methods and 3 `inject()`. Blank lines are not counted. |
+| `newt/app-styles` | Outside `components/`, no `className`, `class` nor `style`, no `<style>`, no `cn`, `class-variance-authority`, `tailwind-merge` nor `clsx`, and no Radix nor shadcn's pieces inside `@newt-js/react`: an app composes, never styles. |
+| `newt/app-html` | Outside `components/`, no element of the browser's own (`div`, `h1`, `p`…): a box is a `Column` or a `Row`, with `as` for what it is to the page; a title, a `Heading`; a line, a `Text`. |
+| `newt/app-signal-reads` | A component reads a signal with `useValue`, never its `.value` while it renders, which would never repaint it. In a handler or an effect `.value` is fine. With types, only a signal's `.value` counts. |
+| `newt/app-components` | A component of the app's own, in `components/` (`components/layouts/` too), says in its doc comment, on a line `Why: …`, why nothing in `@newt-js/react` composes it. |
 
 ### Use cases
 

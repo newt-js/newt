@@ -1,0 +1,6 @@
+{
+  // shadcn's components are kept as shadcn writes them, which do not pass exactOptionalPropertyTypes.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "lib": ["ESNext", "DOM", "DOM.Iterable"], "jsx": "react-jsx", "exactOptionalPropertyTypes": false },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

@@ -1,8 +1,8 @@
-import type { Mount }        from '../mount'
-import { prefixOf }          from '../prefix-of/prefix-of'
-import type { ServeOptions } from '../serve-options'
+import { prefixOf }           from '../prefix-of/prefix-of'
+import type { FrontendMount } from '../serve-options'
+import type { ServeOptions }  from '../serve-options'
 
-export function mountsOf(frontend: ServeOptions['frontend'], publicFolder: string | undefined): Mount[] {
+export function mountsOf(frontend: ServeOptions['frontend'], publicFolder: string | undefined): Array<FrontendMount & { prefix: string }> {
   if (frontend === undefined) {
     return []
   }
