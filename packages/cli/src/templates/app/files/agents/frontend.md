@@ -32,7 +32,7 @@ Ask what it is, and take the first answer that fits:
 |---|---|
 | What a person chose to look at: which thing, which tab, which filters, order, page or search | **the URL**: a path segment (`/clients/:clientId`) or a query param (`?status=active`) |
 | What only one component needs for a moment: a menu open, a row unfolded, a draft | **`useState`** in that component, or its closest ancestor if two need it |
-| What a feature's screens show, from the backend, and how it changes | **the feature's service**, provided at the lowest component that holds all who use it |
+| What a feature's screens show, from the backend, and how it changes: a list, a form being filled | **the feature's service**, provided at the lowest component that holds all who use it; a list in a `ListStore`, a form in a `FormStore` |
 | What the whole app needs: the session, the user and permissions, the theme | **`services/<name>/`**, the app's own |
 | That something changed, which another feature shows | **an event** on the `EventBus`, named as the backend's (`client.updated`) |
 | A request to the backend | **`<feature>.api.ts`**, beside its service |
@@ -54,7 +54,7 @@ app/
   pages/               the frame and the errors, with no state: shell/, not-found/
   features/<feature>/  one folder per part of the business: clients, sessions, home…
   services/<name>/     what belongs to the whole app
-  guards/              route guards
+  guards/              who may see which routes: a `Guard` with the app's own rule
   components/          the app's own components: the one place with class names
     layouts/           the app's structures
 ```
@@ -77,7 +77,7 @@ features/clients/
 - **Names say where a file lives.** Everything inside a folder is named after it (`clients-list.tsx`), and its
   root is the plain name (`Clients`).
 - **A feature has no `components/` of its own.**
-- **A feature imports no other feature (no lint).** Features hear each other through events.
+- **A feature imports no other feature.** Features hear each other through events.
 - **`pages/` holds no state.** Anything that shows the business is a feature, however small; the home too.
 
 ## The layers
@@ -90,7 +90,12 @@ features/clients/
   around `<Suspense><Outlet /></Suspense>`. A feature never imports it.
 - **Every feature is lazy**, with `lazy()` in `app.routes.tsx`: nobody downloads what they do not open. There is no
   loader: a page shows what it has as it comes.
-- **`useQueryParam(name)`** reads one query param and sets it; `null` or `''` takes it out.
+- **A private part is a layout route with a guard.** `guards/signed-in.tsx` renders
+  `<Guard allows={session.signedIn} otherwise="/sign-in" />` with a signal of `services/session/`; the routes inside
+  it are seen only while it is `true`, and who is sent away comes back through `?next=`. A guard only hides: the
+  backend is what refuses the data.
+- **`Tabs` and `Pagination` keep the open tab and the page in the URL by themselves.** For anything else,
+  `useQueryParam(name)` reads one query param and sets it; `null` or `''` takes it out.
 - **A param's value is a word a person reads** (`?status=active`, never `?s=1`) **(no lint)**. Where the API takes
   the same filter, the param has the same name and value there.
 - **A search is set in the URL when the person stops typing or submits, never on every key (no lint).**
@@ -105,13 +110,21 @@ features/clients/
   `load({ status })`.
 - **Its constructor does nothing but set up (no lint).** It loads when a component calls it, and `load()` may run
   twice: StrictMode does that in development.
+- **A list is a `ListStore`, a form a `FormStore`**, as fields of the service:
+  - `new ListStore((filters, cursor) => this.api.list({ ...filters, cursor }))` asks the backend page by page, as it
+    pages (`size`, `cursor`). `load(filters)` starts again, `more()` adds the next page (a `LoadMore` under the list
+    does it), and an answer that comes after a newer load is dropped.
+  - `new FormStore(schema, initial)` holds the values and what is wrong with them. `submit(values => this.api.create(values))`
+    checks them with the schema first (zod, or any Standard Schema), and shows by its field what the backend found
+    wrong. A component ties each control with `useFormField(form, 'name')`, inside `Form`.
 - **It is provided where its part of the screen is.** `<Provide services={[ClientsService]}>` gives that part its
   own instance, released (`dispose`) when it goes away. A service nobody provides is one for the whole app.
 
 ### Backend and events
 
 - **Only `<feature>.api.ts` talks to the backend.** It is a class extending `Requester`, with its `path` and one
-  method per request. A failed request is an `ApiError` (`status`, `message`, `code`).
+  method per request. A failed request is an `ApiError` (`status`, `message`, `code`, and `issues` by field when the
+  input was not valid).
 - **What another feature must know is an event (no lint).**
   - The service that changed something emits it: `this.events.emit('client.updated', { id })`.
   - Those that show it listen with `on`, stop in their `dispose`, and load again.
@@ -134,7 +147,13 @@ The app composes `@newt-js/react` and never styles it. Outside `components/` it 
 
 So every screen of every app looks the same. When something is missing, take the first step that solves it:
 
-1. **A piece as it is:** `Button`, `Heading`, `Text`…
+1. **A piece as it is.** `@newt-js/react` wraps every component of shadcn, and each one's doc comment says when it
+   fits and when another does:
+   - forms: `Field` and its controls (`Input`, `Select`, `Combobox`, `DatePicker`…), `Form`;
+   - data: `Table`, `Card`, `Item`, `Badge`, `Alert`, `Empty`, `Chart`…;
+   - layers: `Dialog`, `ConfirmDialog`, `Sheet`, `Menu`, `Tooltip`, `CommandPalette`, `toast`…;
+   - navigation: `Tabs`, `Pagination`, `Breadcrumb`, `SidebarLayout` (the shell's frame);
+   - text: `Heading`, `Text`.
 2. **Pieces placed:**
    - `Column` and `Row` take `gap`, `align`, `justify`, `padding`, `grow`, `fill`, `width`, and `as` for what they
      are to the page (`nav`, `aside`, `ul`, `li`, `form`…).
@@ -175,14 +194,14 @@ A piece that grows is split before it is hard to read. The lint stops these:
 From the outside in, a list of clients filtered by status:
 
 1. **Its address.** `/clients?status=active`: the route in `app.routes.tsx`, lazy, and the filter as a query param.
-2. **Its state and requests.** The shape is in `clients.state.ts`. The requests are in `clients.api.ts`:
+2. **Its requests**, in `clients.api.ts`:
 
    ```ts
    export class ClientsApi extends Requester {
      protected readonly path = '/clients'
 
-     list(filters: { status?: string | undefined }) {
-       return this.get<ClientDTO[]>('', filters)
+     list(params: { status?: string | undefined, cursor?: string | undefined }) {
+       return this.get<Page<ClientDTO>>('', params)
      }
    }
    ```
@@ -193,13 +212,9 @@ From the outside in, a list of clients filtered by status:
    export class ClientsService {
 
      private readonly api = inject(ClientsApi)
-     private readonly store = new Store<ClientsState>({ items: [], loading: false })
-     readonly items = this.store.select('items')
-
-     async load(filters: { status?: string | undefined }) {
-       this.store.patch({ loading: true })
-       this.store.patch({ items: await this.api.list(filters), loading: false })
-     }
+     readonly list = new ListStore<ClientDTO, { status?: string | undefined }>(
+       (filters, cursor) => this.api.list({ ...filters, cursor }),
+     )
    }
    ```
 
@@ -210,12 +225,17 @@ From the outside in, a list of clients filtered by status:
    ```tsx
    export function ClientsList() {
      const clients = useService(ClientsService)
-     const items = useValue(clients.items)
+     const items = useValue(clients.list.items)
      const [status] = useQueryParam('status')
      useEffect(() => {
-       void clients.load({ status: status ?? undefined })
+       void clients.list.load({ status: status ?? undefined })
      }, [clients, status])
-     return <Column as="ul">{items.map(client => <ClientsListRow key={client.id} client={client} />)}</Column>
+     return (
+       <Column gap={4}>
+         <Column as="ul">{items.map(client => <ClientsListRow key={client.id} client={client} />)}</Column>
+         <LoadMore list={clients.list} />
+       </Column>
+     )
    }
    ```
 
