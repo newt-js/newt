@@ -192,7 +192,11 @@ A piece that grows is split before it is hard to read. The lint stops these:
 
 ## Building a screen
 
-From the outside in, a list of clients filtered by status:
+A new feature starts with `bunx newt add feature <context>/<feature>`: its folder, its root with its service, its api,
+and its lazy route. With `--module <module>`, it also lists that module a page at a time and adds to it with a form,
+the rules of its create copied: a screen that works, to change from there. Never write that start by hand.
+
+What it writes, from the outside in, for a list of clients filtered by status:
 
 1. **Its address.** `/clients?status=active`: the route in `app.routes.tsx`, lazy, and the filter as a query param.
 2. **Its requests**, in `clients.api.ts`:
