@@ -5,7 +5,8 @@ import { layers }            from './tools/lint/layers'
 
 // The framework's own lint: the style of this repository, not of the applications built with newt.
 export default [
-  { ignores: ['**/node_modules/**'] },
+  // shadcn's components are kept as shadcn writes them: not in this repository's style.
+  { ignores: ['**/node_modules/**', 'packages/react/src/shadcn/**'] },
   {
     files: ['**/*.ts'],
     languageOptions: { parser },
