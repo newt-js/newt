@@ -16,6 +16,7 @@ test("newt's packages at the cli's version, the others at the cli's own", async 
     reactDom: devDependencies['react-dom']!,
     reactTypes: devDependencies['@types/react']!,
     reactDomTypes: devDependencies['@types/react-dom']!,
+    bunPluginTailwind: devDependencies['bun-plugin-tailwind']!,
     lintTypescript: dependencies.typescript!,
     typescript: PROJECT_TYPESCRIPT,
   })

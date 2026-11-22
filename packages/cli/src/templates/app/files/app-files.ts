@@ -7,6 +7,7 @@ export function indexHtml({ type }: ContextNames): string {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${type}</title>
+    <link rel="stylesheet" href="./app.css" />
   </head>
   <body>
     <div id="root"></div>
@@ -16,18 +17,55 @@ export function indexHtml({ type }: ContextNames): string {
 `
 }
 
-export const MAIN_TSX = `import { createRoot } from 'react-dom/client'
-import { App } from './app'
-
-createRoot(document.getElementById('root')!).render(<App />)
+/** newt's theme, and where Tailwind finds the app's own class names (its components/). */
+export const APP_CSS = `@import "@newt-js/react/theme.css";
+@source "./";
 `
 
-export function appTsx({ type }: ContextNames): string {
-  return `export function App() {
-  return <h1>${type}</h1>
+export const MAIN_TSX = `import { Requester }  from '@newt-js/client'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+// --------------------------------------------------------
+import { App }        from './app'
+import { API }        from './base'
+
+Requester.baseUrl = API
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+`
+
+export const APP_TSX = `import { Home } from './features/home/home'
+
+export function App() {
+  return <Home />
+}
+`
+
+export function homeTsx({ type }: ContextNames): string {
+  return `import { Column }    from '@newt-js/react'
+import { Container } from '@newt-js/react'
+import { Heading }   from '@newt-js/react'
+import { Text }      from '@newt-js/react'
+
+export function Home() {
+  return (
+    <Container>
+      <Column padding={8} gap={2}>
+        <Heading>${type}</Heading>
+        <Text tone="muted">How this app is built: docs/agents/frontend.md.</Text>
+      </Column>
+    </Container>
+  )
 }
 `
 }
+
+/** Bun's bundler builds the contexts' apps with Tailwind, as the backend serves them. */
+export const BUNFIG_LINES = ['[serve.static]', 'plugins = ["bun-plugin-tailwind"]']
 
 /** Where the backend serves the app, and its API: what its client router and its fetches start with. */
 export function baseTs({ folder }: ContextNames): string {

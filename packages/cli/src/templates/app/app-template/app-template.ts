@@ -6,13 +6,18 @@ import { CONTEXTS_FOLDER }       from '../../../project/backend-contexts/backend
 import { CONTEXT_TO_RUN }        from '../../context/files/context-ts'
 import { quoted }                from '../../quoted/quoted'
 import type { TemplateVersions } from '../../template-versions/template-versions'
+import { APP_CSS }               from '../files/app-files'
 import { APP_TSCONFIG_JSON }     from '../files/app-files'
+import { APP_TSX }               from '../files/app-files'
+import { BUNFIG_LINES }          from '../files/app-files'
 import { MAIN_TSX }              from '../files/app-files'
-import { appTsx }                from '../files/app-files'
 import { baseTs }                from '../files/app-files'
+import { homeTsx }               from '../files/app-files'
 import { indexHtml }             from '../files/app-files'
 import { appTest }               from '../files/backend-files'
 import { contextToRunWithApp }   from '../files/backend-files'
+import { FRONTEND_GUIDE }        from '../files/frontend-md'
+import { FRONTEND_POINTER }      from '../files/frontend-md'
 
 export type AppTemplateOptions = { backend: string, context: ContextNames, versions: TemplateVersions }
 
@@ -39,18 +44,23 @@ export function appTemplate({ backend, context, versions }: AppTemplateOptions):
   const app = at(inContext)
   return [
     { action: 'create', path: join(app, 'index.html'), content: indexHtml(context) },
+    { action: 'create', path: join(app, 'app.css'), content: APP_CSS },
     { action: 'create', path: join(app, 'main.tsx'), content: MAIN_TSX },
-    { action: 'create', path: join(app, 'app.tsx'), content: appTsx(context) },
+    { action: 'create', path: join(app, 'app.tsx'), content: APP_TSX },
+    { action: 'create', path: join(app, 'features/home/home.tsx'), content: homeTsx(context) },
     { action: 'create', path: join(app, 'base.ts'), content: baseTs(context) },
     { action: 'create', path: join(app, 'tsconfig.json'), content: APP_TSCONFIG_JSON },
     {
       action: 'complete-json',
       path: at('package.json'),
       values: {
-        dependencies: { 'react': versions.react, 'react-dom': versions.reactDom },
-        devDependencies: { '@types/react': versions.reactTypes, '@types/react-dom': versions.reactDomTypes },
+        dependencies: { '@newt-js/client': versions.newt, '@newt-js/react': versions.newt, 'react': versions.react, 'react-dom': versions.reactDom },
+        devDependencies: { '@types/react': versions.reactTypes, '@types/react-dom': versions.reactDomTypes, 'bun-plugin-tailwind': versions.bunPluginTailwind },
       },
     },
+    { action: 'ensure-lines', path: at('bunfig.toml'), lines: BUNFIG_LINES },
+    { action: 'create', path: at(FRONTEND_GUIDE.path), content: FRONTEND_GUIDE.content },
+    { action: 'ensure-lines', path: at('AGENTS.md'), lines: [FRONTEND_POINTER] },
     { action: 'complete-json', path: at('tsconfig.json'), values: { exclude: [`${CONTEXTS_FOLDER}/*/app`], references: [{ path: `./${inContext}` }] } },
     ...servedAt(backend, context, 'app', ["import app from './app/index.html'"]),
   ]
