@@ -13,8 +13,24 @@
 - shadcn's components, in `src/shadcn/` as shadcn writes them: never edit them. They are its own: the package does
   not export them, and newt's lint refuses them in an app.
 - Its components wrap them, in `src/components/`: props in newt's words, and no `className` nor `style`, so an app
-  cannot restyle them. `Button` (`variant`, `size`, `href`, `loading`, `label`, `block`, `type`); with `href` it is a
-  link, which `LinkProvider` makes go through the app's router. `import { Button } from '@newt-js/react'`.
+  cannot restyle them. Each one's doc comment says when to use it, and when another fits better. Every link of them
+  goes through the app's router (`LinkProvider`, which `Router` sets).
+  - **Forms**: `Field` (a control's label, help and error), `Input`, `Textarea`, `Select` (few options),
+    `Combobox` (many, searched), `RadioGroup`, `Checkbox`, `Switch`, `Slider`, `DatePicker`, `InputOTP`, `Toggle`,
+    `ToggleGroup`; `Form` around them. A control inside a `Field` is tied to its label and error by itself.
+  - **Data**: `Table`, `Card`, `Item`, `Badge`, `Avatar`, `Alert`, `Empty`, `Skeleton`, `Spinner`, `Progress`,
+    `Separator`, `Kbd`, `AspectRatio`, `Chart` (bars, lines or areas, in the theme's colors).
+  - **Layers**: `Dialog`, `ConfirmDialog`, `Sheet`, `Drawer`, `Popover`, `HoverCard`, `Tooltip`, `Menu`,
+    `ContextMenu`, `Menubar`, `CommandPalette`; `toast` and its `Toaster`.
+  - **Navigation**: `Tabs` and `Pagination`, which keep the open tab and the page in the address; `Breadcrumb`,
+    `NavigationMenu` (a public site's top), `SidebarLayout` (an app's frame, in its shell).
+  - **Content**: `Accordion`, `Collapsible`, `Carousel`, `Resizable`, `ButtonGroup`, `Button`, `Marker`,
+    `ChatThread` and `ChatMessage`, `Attachment`.
+- `FormStore` and `ListStore` (from `@newt-js/client`) in a screen: `useFormField(form, 'name')` gives a control its
+  value and its error (`<Field label="Name" error={name.error}><Input {...name.control} /></Field>`), `Form` shows
+  what is wrong with the whole form, and `LoadMore` asks a list for its next page.
+- `Guard` keeps the routes inside it for those a signal allows (`true`), sends the rest to `otherwise` with
+  `?next=`, and shows nothing while it is not known (`null`).
 - The layout, with no class names: `Column` (one under another) and `Row` (side by side) take a `gap`, `align`,
   `justify` and `padding` from the spacing scale, `grow` to take the room left, `fill` to be as tall as their parent,
   a `width` (`xs` to `xl`, or `full`) and `as` for what they are to the page (`nav`, `aside`, `ul`…). `Grid` lays out
