@@ -1,4 +1,5 @@
 import { TSESLint }   from '@typescript-eslint/utils'
+import { posix }      from 'node:path'
 // --------------------------------------------------------
 import { isTypeOnly } from '../../ast/ast'
 import { appPlaceOf } from '../../paths/paths'
@@ -22,6 +23,9 @@ const ROOT_LIST = 'main.tsx, app.tsx, app.routes.tsx, base.ts and the folders co
 /** A file's name before its first dot: `clients-list` of `clients-list.service.ts`. */
 const stem = (file: string) => file.slice(0, file.indexOf('.') === -1 ? undefined : file.indexOf('.'))
 
+/** The feature a path of the app is in: `clients` of `features/clients/clients.tsx`, or `null`. */
+const featureOf = (path: string) => /^features\/([^/]+)/.exec(path)?.[1] ?? null
+
 const isPrefixed = (name: string, folder: string) => name === folder || name.startsWith(`${folder}-`)
 
 /**
@@ -29,7 +33,7 @@ const isPrefixed = (name: string, folder: string) => name === folder || name.sta
  * features/, pages/ and services/, a folder per piece, whose files and folders are named after it; pages/ holds
  * no state; only an api file talks to the backend (and main.tsx says where).
  */
-export const appFiles: TSESLint.RuleModule<'root' | 'loose' | 'prefix' | 'pages' | 'requester', [{ folder: string }]> = {
+export const appFiles: TSESLint.RuleModule<'root' | 'loose' | 'prefix' | 'pages' | 'requester' | 'feature', [{ folder: string }]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
   meta: {
     type: 'problem',
@@ -39,6 +43,7 @@ export const appFiles: TSESLint.RuleModule<'root' | 'loose' | 'prefix' | 'pages'
       loose: "'{{inside}}' sits loose in {{top}}/: {{top}}/ holds a folder for each, `{{top}}/<name>/<name>.tsx`.",
       prefix: "'{{name}}' is in {{folder}}/: name it {{folder}} or {{folder}}-<part>, so where it lives is in its name.",
       pages: "'{{inside}}' holds state or talks to the backend: pages/ is the frame and the errors alone (shell, not-found); what shows the business is a feature, in features/.",
+      feature: "'{{inside}}' imports the feature {{other}}: a feature never reaches into another. Let an event on the EventBus tell it, or move what both need to components/ or services/.",
       requester: 'Only an api file (`<name>.api.ts`, beside its service) talks to the backend: extend Requester there. main.tsx alone sets where requests go.',
     },
     schema: [{ type: 'object', properties: { folder: { type: 'string' } }, required: ['folder'], additionalProperties: false }],
@@ -71,6 +76,10 @@ export const appFiles: TSESLint.RuleModule<'root' | 'loose' | 'prefix' | 'pages'
         }
       },
       ImportDeclaration(node) {
+        const other = featureOf(posix.join(posix.dirname(inside), node.source.value))
+        if (top === 'features' && node.source.value.startsWith('.') && other !== null && other !== segments[1]) {
+          context.report({ node, messageId: 'feature', data: { inside, other } })
+        }
         if (mayRequest || node.source.value !== '@newt-js/client' || isTypeOnly(node.source)) return
         for (const specifier of node.specifiers) {
           const imported = specifier.type === 'ImportSpecifier' && specifier.imported.type === 'Identifier' ? specifier.imported.name : null

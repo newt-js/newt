@@ -31,6 +31,10 @@ tester.run('app-files', asRule(appFiles), {
     at('features/clients/clients-list-row/clients-list-row-menu.tsx'),
     at('features/clients/clients.service.ts', "import type { Requester } from '@newt-js/client'"),
     at('features/clients/clients.service.ts', "import { type Requester, Store } from '@newt-js/client'"),
+    at('features/clients/clients-list.tsx', "import { ClientsService } from './clients.service'"),
+    at('features/clients/clients-list-row/clients-list-row.tsx', "import { ClientsService } from '../clients.service'"),
+    at('features/clients/clients.tsx', "import { ListPage } from '../../components/layouts/list-page'"),
+    at('app.routes.tsx', "import { Clients } from './features/clients/clients'"),
     { code: '', filename: `${FOLDER}/sales/modules/order/order.ts`, options },
   ],
   invalid: [
@@ -47,6 +51,8 @@ tester.run('app-files', asRule(appFiles), {
     { ...at('features/clients/clients.service.ts', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
     { ...at('features/clients/clients-list.tsx', "import { Store, Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
     { ...at('app.tsx', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
+    { ...at('features/clients/clients.tsx', "import { Invoices } from '../invoices/invoices'"), errors: [{ messageId: 'feature', data: { inside: 'features/clients/clients.tsx', other: 'invoices' } }] },
+    { ...at('features/clients/clients-list-row/clients-list-row.tsx', "import { InvoicesService } from '../../invoices/invoices.service'"), errors: [{ messageId: 'feature' }] },
     { ...at('features/main.tsx', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'loose' }, { messageId: 'requester' }] },
   ],
 })
