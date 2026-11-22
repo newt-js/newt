@@ -11,7 +11,7 @@ import { isSeparator }                        from '../menu/menu-item'
 
 type ContextMenuProps = {
   items: MenuItem[]
-  /** Where a right click, or a long press, opens it. */
+  /** Where a right click, or a long press, opens it: any piece, wrapped whole. */
   children: ReactNode
 }
 
@@ -22,7 +22,7 @@ type ContextMenuProps = {
 export function ContextMenu({ items, children }: ContextMenuProps) {
   return (
     <ShadcnContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuTrigger className="block">{children}</ContextMenuTrigger>
       <ContextMenuContent>
         {items.map((item, index) => {
           if (isSeparator(item)) return <ContextMenuSeparator key={index} />

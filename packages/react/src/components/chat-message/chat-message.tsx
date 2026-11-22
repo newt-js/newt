@@ -27,7 +27,7 @@ export function ChatMessage({ author, mine = false, time, footer, children }: Ch
     <Message align={mine ? 'end' : 'start'}>
       <MessageAvatar><Avatar name={author.name} src={author.picture ?? null} size={8} /></MessageAvatar>
       <MessageContent>
-        <MessageHeader>{author.name}{time !== undefined && <span className="text-muted-foreground">{time}</span>}</MessageHeader>
+        <MessageHeader className="gap-2">{author.name}{time !== undefined && <span className="text-muted-foreground">{time}</span>}</MessageHeader>
         <Bubble variant={mine ? 'default' : 'muted'} align={mine ? 'end' : 'start'}>
           <BubbleContent>{children}</BubbleContent>
         </Bubble>
