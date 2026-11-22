@@ -41,11 +41,14 @@
 
 Outside its own `components/`, a context's app writes no `className`, `class` nor `style`, no `<style>`, and
 imports neither the tools that make class names (`cn`, `class-variance-authority`, `tailwind-merge`, `clsx`), nor
-Radix, nor shadcn's pieces: newt's lint refuses them (`newt/app-styles`), so every app looks the same.
+Radix, nor shadcn's pieces (`newt/app-styles`). It writes no element of the browser's own either, no `div`, `h1` nor
+`p`: it composes these components (`newt/app-html`). So every app looks the same.
 
 ## An app's own components
 
 An app is made of these components, composed. When nothing here fits, look again: most needs are a
 composition. Only when a piece makes full sense for the app alone, it gets a component of its own, in its
 `components/` folder (`src/contexts/<context>/app/components/`): it wraps or composes these, takes props in the
-app's words, and is the one place of the app with some room for its own look.
+app's words, and is the one place of the app with some room for its own look. Its doc comment says, on a line
+`Why: …`, why nothing here composes it (`newt/app-components`). The app's structures (a list page, a detail page)
+live in `components/layouts/`, made of `Column`, `Row`, `Scroll` and `Sticky`, with as little of their own look as can be.
