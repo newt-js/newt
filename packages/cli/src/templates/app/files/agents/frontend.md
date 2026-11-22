@@ -1,60 +1,160 @@
 # Frontend
 
-How a context's app (`src/contexts/<context>/app/`) is built: React, with `@newt-js/client` (what the app
-thinks with) and `@newt-js/react` (what it is made of). newt's lint holds most of this: run it after every change.
-What it cannot see is marked **(no lint)**: keep to it all the same.
+How a context's app (`src/contexts/<context>/app/`) is built: React, with `@newt-js/client` (what the app thinks
+with) and `@newt-js/react` (what it is made of). Read it top to bottom once. Building a screen is the last part.
 
-## Folders
+newt's lint holds most of this: run it after every change and fix what it says. What it cannot see is marked
+**(no lint)**: keep to it all the same.
+
+## The idea
+
+**Every piece of the app has one home, and the home says what it may do.** An app stays easy to change as it grows
+because nobody has to guess where something is, or who changed it.
+
+One request for a screen goes down through these, each only talking to the next:
+
+```
+URL           /backoffice/clients?status=active       what a person is looking at
+ └ route      app.routes.tsx → features/clients/      which feature answers it
+   └ feature  clients.tsx: <Provide ClientsService>   where its state is born and dies
+     └ components  read with useValue, call methods   what is painted, and nothing else
+       └ service   Store, its api, events             what the screens hold, and what changes it
+         └ api     ClientsApi extends Requester       the only talk with the backend
+```
+
+Going back up, the service's signals change and only the components that read them paint again.
+
+## Where each thing lives
+
+Ask what it is, and take the first answer that fits:
+
+| It is… | It lives in… |
+|---|---|
+| What a person chose to look at: which thing, which tab, which filters, order, page or search | **the URL**: a path segment (`/clients/:clientId`) or a query param (`?status=active`) |
+| What only one component needs for a moment: a menu open, a row unfolded, a draft | **`useState`** in that component, or its closest ancestor if two need it |
+| What a feature's screens show, from the backend, and how it changes | **the feature's service**, provided at the lowest component that holds all who use it |
+| What the whole app needs: the session, the user and permissions, the theme | **`services/<name>/`**, the app's own |
+| That something changed, which another feature shows | **an event** on the `EventBus`, named as the backend's (`client.updated`) |
+| A request to the backend | **`<feature>.api.ts`**, beside its service |
+| How something looks | **`@newt-js/react`**, composed; a structure in `components/layouts/`; in the end, `components/` |
+
+The URL comes first on purpose. A screen whose state is in the address can be shared, kept, opened in another
+tab and gone back to (no lint).
+
+## The map
 
 ```
 app/
-  index.html          the page Bun serves; it links app.css and loads main.tsx
-  app.css             imports @newt-js/react/theme.css
-  main.tsx            mounts the app; sets Requester.baseUrl to the context's API (the one file
-                      besides the api files that touches Requester)
-  app.tsx             <Router basename={BASE}> around the routes; the providers, the session
-  app.routes.tsx      the shell's route, and one lazy route per feature
-  base.ts             where the backend serves the app, and its API
-  components/         the app's own components: the only place with class names, each with its `Why:`
-    layouts/          the app's structures: as few as possible, each argued (see Structure)
-  services/<name>/    what belongs to the whole app: the session, the user and permissions, the theme
-  guards/             route guards: the session's, and any other
-  pages/              the frame and the errors alone: shell/, not-found/, the route's error
-  features/<feature>/ one folder per part of the business: clients, sessions…
+  index.html           the page Bun serves; it links app.css and loads main.tsx
+  app.css              imports @newt-js/react/theme.css
+  main.tsx             mounts the app; sets Requester.baseUrl to the context's API
+  app.tsx              <Router basename={BASE}> around the routes, and the app's providers
+  app.routes.tsx       the shell's route, and one lazy route per feature
+  base.ts              where the backend serves the app, and its API
+  pages/               the frame and the errors, with no state: shell/, not-found/
+  features/<feature>/  one folder per part of the business: clients, sessions, home…
+  services/<name>/     what belongs to the whole app
+  guards/              route guards
+  components/          the app's own components: the one place with class names
+    layouts/           the app's structures
 ```
 
-- Nothing else at the root.
-- **Pages or features.** `pages/` holds no state: no `*.service.ts`, `*.state.ts` nor `*.api.ts`. Anything that
-  shows the business is a feature, however simple; the home too (`features/home/`).
-- **Shell.** `pages/shell/shell.tsx` is the route that wraps the rest: its frame (navigation, brand, user)
-  around `<Outlet />`. A feature never imports it.
-
-A feature:
+Nothing else goes at the root. A feature, with everything it may hold:
 
 ```
 features/clients/
-  clients.tsx            the root: <Provide services={[ClientsService]}>
-  clients.routes.tsx
-  clients.service.ts     the state and what changes it
-  clients.state.ts       the state's shape and its first value
-  clients.api.ts         the requests, extending Requester
-  clients-list.tsx       a part split out of clients.tsx
-  clients-list-row/      a part that split again: then it gets a folder
+  clients.tsx              its root: <Provide services={[ClientsService]}> and its routes
+  clients.routes.tsx       its own routes: clients/:clientId, clients/new
+  clients.state.ts         the state's shape and its first value
+  clients.service.ts       the state, and what changes it
+  clients.api.ts           its requests
+  clients-list.tsx         a part split out of clients.tsx
+  clients-list-row/        a part that split again
     clients-list-row.tsx
     clients-list-row-menu.tsx
 ```
 
-- **Names say where a file lives.** Every file and folder inside a piece's folder is named after that folder:
-  `clients-list.tsx`, `clients-list-row/`. The root of a folder is the plain name (`Clients`).
-- **A part that splits off sits beside its parent**, named after it. It gets a folder of its own only when it
-  splits again.
-- **No `components/` inside a feature.**
-- **A feature imports no other feature (no lint).** What two features share goes up to `services/`, only if it is
-  the whole app's. Otherwise each loads its own, and they hear each other through events (see State).
+- **Names say where a file lives.** Everything inside a folder is named after it (`clients-list.tsx`), and its
+  root is the plain name (`Clients`).
+- **A feature has no `components/` of its own.**
+- **A feature imports no other feature (no lint).** Features hear each other through events.
+- **`pages/` holds no state.** Anything that shows the business is a feature, however small; the home too.
 
-## Size
+## The layers
 
-A piece that grows is split. The lint stops these:
+### URL and routes
+
+- **The router comes from `react-router`, set up once.** `<Router basename={BASE}>` (from `@newt-js/react`) in
+  `app.tsx` starts every route and link at the context's path. Every link and `Button href` goes through it.
+- **The shell wraps every page.** `pages/shell/shell.tsx` is a layout route: the frame (navigation, brand, user)
+  around `<Suspense><Outlet /></Suspense>`. A feature never imports it.
+- **Every feature is lazy**, with `lazy()` in `app.routes.tsx`: nobody downloads what they do not open. There is no
+  loader: a page shows what it has as it comes.
+- **`useQueryParam(name)`** reads one query param and sets it; `null` or `''` takes it out.
+- **A param's value is a word a person reads** (`?status=active`, never `?s=1`) **(no lint)**. Where the API takes
+  the same filter, the param has the same name and value there.
+- **A search is set in the URL when the person stops typing or submits, never on every key (no lint).**
+
+### Services and state
+
+- **A service is a class built with no arguments.** It gets what it needs with `inject(Other)`. It holds its state in a
+  `Store`, and hands parts of it out as read-only signals with `select`, as fields.
+- **A service is shaped by its screens, not by the business (no lint).** It holds what they show, as they show it.
+  The rules of the business are the backend's.
+- **A service never reads the URL (no lint).** The component reads the URL and passes it to a method, as in
+  `load({ status })`.
+- **Its constructor does nothing but set up (no lint).** It loads when a component calls it, and `load()` may run
+  twice: StrictMode does that in development.
+- **It is provided where its part of the screen is.** `<Provide services={[ClientsService]}>` gives that part its
+  own instance, released (`dispose`) when it goes away. A service nobody provides is one for the whole app.
+
+### Backend and events
+
+- **Only `<feature>.api.ts` talks to the backend.** It is a class extending `Requester`, with its `path` and one
+  method per request. A failed request is an `ApiError` (`status`, `message`, `code`).
+- **What another feature must know is an event (no lint).**
+  - The service that changed something emits it: `this.events.emit('client.updated', { id })`.
+  - Those that show it listen with `on`, stop in their `dispose`, and load again.
+  - A payload is JSON: ids, and little else.
+  - In real time, the server's events reach the same listeners through `EventBus.receive`, so a feature never
+    cares where an event came from.
+
+### Components
+
+- **A component paints what a service holds and calls its methods.** That is all it does: no requests, no rules.
+- **It reads a signal with `useValue`**, which paints it again when, and only when, that signal changes. Reading
+  `.value` while rendering gives a value that never repaints; `.value` belongs in a handler, an effect or a service.
+
+### How it looks
+
+The app composes `@newt-js/react` and never styles it. Outside `components/` it writes:
+- no `className`, `class` nor `style`;
+- no element of the browser's own (`div`, `h1`, `p`…);
+- no `cn`, Radix nor shadcn.
+
+So every screen of every app looks the same. When something is missing, take the first step that solves it:
+
+1. **A piece as it is:** `Button`, `Heading`, `Text`…
+2. **Pieces placed:**
+   - `Column` and `Row` take `gap`, `align`, `justify`, `padding`, `grow`, `fill`, `width`, and `as` for what they
+     are to the page (`nav`, `aside`, `ul`, `li`, `form`…).
+   - `Grid` lays out columns per breakpoint, and `Container` caps the width.
+   - `Spacer` pushes what follows to the end, `Scroll` scrolls a part on its own, and `Sticky` keeps a header or a
+     bar of actions in place.
+3. **A structure of the app's.** Screens that look alike are built alike:
+   - Before building a screen, look in `components/layouts/` for one that holds it: a list page, a detail page, a form.
+   - When a shape comes back on a second screen, make it a structure and build both with it (no lint).
+   - None is made ahead of need.
+   - A structure is made of the pieces above and styles as little as it can. It says why in a line `Why: …`. It is
+     never made without first proposing its shape to whoever asked and waiting for the yes (no lint).
+4. **A component of the app's own**, in `components/`, with class names: the last resort.
+   - Its doc comment says, on a line `Why: …`, why nothing in `@newt-js/react` composes it.
+   - If another app would want it too, say so to whoever asked.
+   - What apps share lives in a package of the project's own, never in newt's (`@newt-js/*`) (no lint).
+
+## Growing
+
+A piece that grows is split before it is hard to read. The lint stops these:
 
 | Piece | Limit |
 |---|---|
@@ -63,138 +163,63 @@ A piece that grows is split. The lint stops these:
 | Component | 1 `useService`, 3 `useValue` |
 | Service | 150 lines, 7 public methods, 3 `inject()` |
 
-- **A component past its limit** gets a part split out, named after it.
-- **A service past its limit** is split by part of the feature, each provided where its part is
-  (`clients-detail/` gets a `ClientsDetailService`).
-- **A component that reads many values** gets one `computed` from its service that holds what it shows.
+- **A component that grows** gets a part split out, beside it and named after it (`clients-list-row.tsx`). The part
+  gets its own folder only when it splits again.
+- **A component that reads many values** gets one `computed` from its service, holding what it shows.
+- **A service that grows** is split by part of the screen. Each part is provided where it is (`clients-detail/`
+  gets a `ClientsDetailService`).
+- **A service that injects too much** depends on too much. Let an event tell it instead.
 
-## State
+## Building a screen
 
-The state lives in services, never in components. A component paints what a service holds and calls its methods.
+From the outside in, a list of clients filtered by status:
 
-```ts
-// clients.state.ts
-export type ClientsState = { items: ClientDTO[], loading: boolean }
-export const CLIENTS_STATE: ClientsState = { items: [], loading: false }
+1. **Its address.** `/clients?status=active`: the route in `app.routes.tsx`, lazy, and the filter as a query param.
+2. **Its state and requests.** The shape is in `clients.state.ts`. The requests are in `clients.api.ts`:
 
-// clients.service.ts
-export class ClientsService {
-  private readonly api = inject(ClientsApi)
-  private readonly store = new Store(CLIENTS_STATE)
-  readonly items = this.store.select('items')
+   ```ts
+   export class ClientsApi extends Requester {
+     protected readonly path = '/clients'
 
-  async load() {
-    this.store.patch({ loading: true })
-    this.store.patch({ items: await this.api.list(), loading: false })
-  }
-}
+     list(filters: { status?: string | undefined }) {
+       return this.get<ClientDTO[]>('', filters)
+     }
+   }
+   ```
 
-// clients-list.tsx
-export function ClientsList() {
-  const clients = useService(ClientsService)
-  const items = useValue(clients.items)
-  useEffect(() => { void clients.load() }, [clients])
-  return <Column>{items.map(client => <ClientsListRow key={client.id} client={client} />)}</Column>
-}
-```
+3. **Its service**, holding what the screen shows:
 
-- **A component reads a signal with `useValue`**, which repaints it when, and only when, the signal changes.
-  `.value` read while it renders gives a value that never repaints it. `.value` belongs in a handler, an effect
-  or a service.
-- **A service is coupled to what its UI needs (no lint).** It holds what its screens show, shaped as they show it.
-  The business rules are the backend's. A service holds state, calls its API and tells the others.
-- **A service's constructor has no effects (no lint).** It loads in a method the component calls, and `load()`
-  may be called twice: StrictMode does in development.
-- **`select` only in the service's fields (no lint)**, never in render.
-- **Where state lives (no lint):** take the first step that holds it:
-  1. `useState`, when only that component needs it, such as a row that is open.
-  2. The closest ancestor of those who need it.
-  3. A service with `<Provide>` in the lowest component that holds everyone who shares it.
-  4. The root, `services/`, only for the whole app's.
-- **A service is provided where its part is.** `<Provide services={[ClientsService]}>` gives the components below
-  their own instance, released (`dispose`) when it goes away. A service that nobody provides is the app's, one
-  for all.
-- **Between features, events (no lint).**
-  - When a feature changes something another shows, it emits an event named as the backend's events:
-    `inject(EventBus).emit('client.updated', { id })`.
-  - Those who show clients listen with `on` (stopping in their `dispose`) and load again.
-  - A payload is JSON: ids, and little else.
-  - The server's events, in real time, reach the same listeners through `receive`, so a feature never cares
-    where an event came from.
-- **Requests go in `<feature>.api.ts`**, beside its service: a class extending `Requester`, its `path` and one
-  method per request. Nothing else talks to the backend. A failed request is an `ApiError` (`status`, `message`,
-  `code`).
+   ```ts
+   export class ClientsService {
 
-## Routes
+     private readonly api = inject(ClientsApi)
+     private readonly store = new Store<ClientsState>({ items: [], loading: false })
+     readonly items = this.store.select('items')
 
-The router is `react-router`, set up once by `<Router basename={BASE}>` (from `@newt-js/react`) in `app.tsx`: every
-route and link starts at the context's path, and every `Button href` and link of the components goes through it.
+     async load(filters: { status?: string | undefined }) {
+       this.store.patch({ loading: true })
+       this.store.patch({ items: await this.api.list(filters), loading: false })
+     }
+   }
+   ```
 
-```tsx
-// app.routes.tsx
-const Clients = lazy(() => import('./features/clients/clients').then(({ Clients }) => ({ default: Clients })))
+4. **Its root**, which gives the screen the service: `clients.tsx` renders
+   `<Provide services={[ClientsService]}>` around its routes.
+5. **Its components**, reading the URL and the service, and composed of `@newt-js/react`:
 
-export function AppRoutes() {
-  return (
-    <Routes>
-      <Route element={<Shell />}>
-        <Route index element={<Home />} />
-        <Route path="clients/*" element={<Clients />} />
-        <Route path="*" element={<NotFound />} />
-      </Route>
-    </Routes>
-  )
-}
-```
+   ```tsx
+   export function ClientsList() {
+     const clients = useService(ClientsService)
+     const items = useValue(clients.items)
+     const [status] = useQueryParam('status')
+     useEffect(() => {
+       void clients.load({ status: status ?? undefined })
+     }, [clients, status])
+     return <Column as="ul">{items.map(client => <ClientsListRow key={client.id} client={client} />)}</Column>
+   }
+   ```
 
-- **Every feature is lazy**, `lazy()` in `app.routes.tsx`: nobody downloads what they do not open. The shell holds
-  the `<Suspense>` around `<Outlet />`, with no loader: a page shows what it has as it comes.
-- **A feature's own routes** go in its `<feature>.routes.tsx` (`clients/:clientId`, `clients/new`), rendered by its root.
-- **The address says what is on the screen (no lint).** What a person chose to look at lives in the URL, never only
-  in a component or a service, so it can be shared, kept as a bookmark, opened in another tab and gone back to:
-  - **Which thing:** a path segment, `/clients/:clientId`.
-  - **How it is looked at:** a query param. That covers a tab (`?tab=secrets`), a list's filters
-    (`?status=active&role=admin`), its order (`?sort=name`), its page (`?page=2`) and a search (`?q=acme`).
-  - **What stays out:** what is only of the moment: a menu that is open, a row that is unfolded, a draft not sent.
-    That is `useState`.
-- **`useQueryParam(name)`** (from `@newt-js/react`) reads one param and changes it: `null` or `''` takes it out.
-  The component reads the address and hands it to its service. The service never reads the URL:
-  ```tsx
-  const [status, setStatus] = useQueryParam('status')
-  useEffect(() => { void clients.load({ status }) }, [clients, status])
-  ```
-  A param that changes as a person types (a search) is set when they stop or submit, never on every key.
-- **A param's value is a word a person can read** (`?status=active`, never `?s=1`). It is the same in the address
-  and in the API's query, when the API takes it.
-
-## Composing, never styling
-
-The app composes `@newt-js/react`. Outside `components/`:
-- no `className`, `class` nor `style`;
-- no element of the browser's own (`div`, `h1`, `p`…);
-- no `cn`, Radix nor shadcn.
-
-When something is missing, take the first step that solves it:
-
-1. **A piece as it is:** `Button`, `Heading`, `Text`…
-2. **Placed:** `Column` and `Row` take `gap`, `align`, `justify`, `padding`, `grow`, `fill`, `width` and `as`
-   (`nav`, `aside`, `ul`, `li`, `form`… for what it is to the page). `Grid` for columns per breakpoint, `Container`
-   to cap the width, `Spacer` to push to the end, `Scroll` for a part that scrolls on its own, `Sticky` for a
-   header or a bar of actions that stays.
-3. **A structure of the app's** (see Structure).
-4. **A component of the app's own**, in `components/`, with class names: the last resort. Its doc comment says,
-   on a line `Why: …`, why nothing in `@newt-js/react` composes it. If another app would want it too, it does not
-   go here: say so to whoever asked.
-
-## Structure
-
-Pages that look alike are built alike, so the whole app is consistent.
-
-- **Before building a screen, look for a structure of the app's that holds it**: a list page, a detail page, a form.
-- **When a shape comes back on a second screen, make it a structure (no lint).** Then build both screens with it.
-- **No structure is made ahead of need.** Each app has the ones its screens ask for, or the ones it is asked for.
-- **Structures live in `components/layouts/`.** They are made of `Column`, `Row`, `Grid`, `Scroll`, `Sticky` and
-  `Spacer`. They may style, but **as little as possible**. Each needs its `Why:`, and **is not made without saying
-  so first to whoever asked (no lint)**: propose its shape, and wait for the yes.
-- **Shared structures stay out of newt's packages (no lint).** If someone wants to share structures between
-  apps, they go in a package of the project's own, never in newt's (`@newt-js/*`).
+6. **Its look.** If another screen already has this shape, use its structure from `components/layouts/`. If this
+   is the second screen with it, propose one.
+7. **Its edges.** If it changes what another feature shows, emit the event. If the lint says it grew, split it.
+8. **Check it.** Run the lint, the types and the tests, then open it in the browser at its address.
