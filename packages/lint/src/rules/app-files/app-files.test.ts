@@ -13,6 +13,7 @@ const at = (inside: string, code = '') => ({ code, filename: `${APP}/${inside}`,
 tester.run('app-files', asRule(appFiles), {
   valid: [
     at('main.tsx'),
+    at('main.tsx', "import { Requester } from '@newt-js/client'"),
     at('app.tsx'),
     at('app.routes.tsx'),
     at('base.ts'),
@@ -45,5 +46,7 @@ tester.run('app-files', asRule(appFiles), {
     { ...at('pages/home/home.api.ts'), errors: [{ messageId: 'pages' }] },
     { ...at('features/clients/clients.service.ts', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
     { ...at('features/clients/clients-list.tsx', "import { Store, Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
+    { ...at('app.tsx', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'requester' }] },
+    { ...at('features/main.tsx', "import { Requester } from '@newt-js/client'"), errors: [{ messageId: 'loose' }, { messageId: 'requester' }] },
   ],
 })

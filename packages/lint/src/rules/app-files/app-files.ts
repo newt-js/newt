@@ -14,7 +14,8 @@ const NAMED = new Set(['services', 'pages', 'features'])
 /** What holds state or talks to the backend: never in pages/. */
 const STATEFUL = /\.(service|state|api)\.ts$/
 
-const API_FILE = /\.api\.ts$/
+/** Who may reach Requester: an api file, and main.tsx, which sets where requests go when the app starts. */
+const REQUESTS = /\.api\.ts$|^main\.tsx$/
 
 const ROOT_LIST = 'main.tsx, app.tsx, app.routes.tsx, base.ts and the folders components/, services/, guards/, pages/ and features/'
 
@@ -26,7 +27,7 @@ const isPrefixed = (name: string, folder: string) => name === folder || name.sta
 /**
  * A context's app keeps each thing in its place: at its root, its start and a folder per kind of piece; in
  * features/, pages/ and services/, a folder per piece, whose files and folders are named after it; pages/ holds
- * no state; only an api file talks to the backend.
+ * no state; only an api file talks to the backend (and main.tsx says where).
  */
 export const appFiles: TSESLint.RuleModule<'root' | 'loose' | 'prefix' | 'pages' | 'requester', [{ folder: string }]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
@@ -38,7 +39,7 @@ export const appFiles: TSESLint.RuleModule<'root' | 'loose' | 'prefix' | 'pages'
       loose: "'{{inside}}' sits loose in {{top}}/: {{top}}/ holds a folder for each, `{{top}}/<name>/<name>.tsx`.",
       prefix: "'{{name}}' is in {{folder}}/: name it {{folder}} or {{folder}}-<part>, so where it lives is in its name.",
       pages: "'{{inside}}' holds state or talks to the backend: pages/ is the frame and the errors alone (shell, not-found); what shows the business is a feature, in features/.",
-      requester: 'Only an api file (`<name>.api.ts`, beside its service) talks to the backend: extend Requester there.',
+      requester: 'Only an api file (`<name>.api.ts`, beside its service) talks to the backend: extend Requester there. main.tsx alone sets where requests go.',
     },
     schema: [{ type: 'object', properties: { folder: { type: 'string' } }, required: ['folder'], additionalProperties: false }],
   },
@@ -50,7 +51,7 @@ export const appFiles: TSESLint.RuleModule<'root' | 'loose' | 'prefix' | 'pages'
     const segments = inside.split('/')
     const [top = ''] = segments
     const file = segments.at(-1) ?? ''
-    const isApi = API_FILE.test(file)
+    const mayRequest = REQUESTS.test(inside)
     return {
       Program(node) {
         const data = { inside, context: place.context, top }
@@ -70,7 +71,7 @@ export const appFiles: TSESLint.RuleModule<'root' | 'loose' | 'prefix' | 'pages'
         }
       },
       ImportDeclaration(node) {
-        if (isApi || node.source.value !== '@newt-js/client' || isTypeOnly(node.source)) return
+        if (mayRequest || node.source.value !== '@newt-js/client' || isTypeOnly(node.source)) return
         for (const specifier of node.specifiers) {
           const imported = specifier.type === 'ImportSpecifier' && specifier.imported.type === 'Identifier' ? specifier.imported.name : null
           const typeOnly = specifier.type === 'ImportSpecifier' && specifier.importKind === 'type'
