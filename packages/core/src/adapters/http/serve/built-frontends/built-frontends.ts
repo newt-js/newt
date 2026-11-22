@@ -1,4 +1,5 @@
 import { log }               from '../../../../application/platform/log/log'
+import { HASHED_NAMES }      from '../../frontend/build-app/build-app'
 import { serveFrontend }     from '../../frontend/serve-frontend/serve-frontend'
 import type { Handler }      from '../handler'
 import type { Mount }        from '../mount'
@@ -14,7 +15,7 @@ export function builtFrontends(mounts: Mount[], csp: ServeOptions['csp']): Handl
     .flatMap(mount => isSourceApp(mount.app) ? [] : [{ prefix: mount.prefix, folder: mount.app }])
     .map(({ prefix, folder }) => ({
       prefix,
-      serving: Promise.resolve(folder).then(ready => serveFrontend(ready, csp, prefix), (error: unknown) => {
+      serving: Promise.resolve(folder).then(ready => serveFrontend(ready, csp, prefix, folder instanceof Promise ? HASHED_NAMES : undefined), (error: unknown) => {
         log.error(`[serve] the app at ${prefix || '/'} did not build`, { error })
         return unbuilt
       }),

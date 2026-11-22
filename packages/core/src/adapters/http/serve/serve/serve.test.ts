@@ -208,7 +208,7 @@ describe('serve, its security headers', () => {
     const at = started({ routers: [api()], frontend: folder })
 
     expect((await at('/api/cached')).headers.get('referrer-policy')).toBe('no-referrer')
-    expect((await at('/')).headers.get('cache-control')).toBeNull()
+    expect((await at('/')).headers.get('cache-control')).toBe('no-cache')
   })
 
   test('as it is told: some replaced or left out, none, and HSTS only when asked', async () => {

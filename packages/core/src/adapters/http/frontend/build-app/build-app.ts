@@ -5,6 +5,9 @@ import { join }       from 'node:path'
 // --------------------------------------------------------
 import { fontsOutOf } from '../fonts-out-of/fonts-out-of'
 
+/** What this build names by its content: its chunks and the fonts taken out of its CSS. */
+export const HASHED_NAMES = /^(?:chunk|font)-[a-z0-9]+\.\w+$/
+
 /** The bundler plugins bunfig.toml gives Bun.serve, `[serve.static] plugins`, as Bun loads them. */
 async function staticPlugins(): Promise<Bun.BunPlugin[]> {
   const bunfig = Bun.file(join(process.cwd(), 'bunfig.toml'))
