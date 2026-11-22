@@ -94,7 +94,7 @@ features/clients/
   `<Guard allows={session.signedIn} otherwise="/sign-in" />` with a signal of `services/session/`; the routes inside
   it are seen only while it is `true`, and who is sent away comes back through `?next=`. A guard only hides: the
   backend is what refuses the data.
-- **`Tabs` and `Pagination` keep the open tab and the page in the URL by themselves.** For anything else,
+- **`Tabs` keeps the open tab in the URL by itself.** For anything else,
   `useQueryParam(name)` reads one query param and sets it; `null` or `''` takes it out.
 - **A param's value is a word a person reads** (`?status=active`, never `?s=1`) **(no lint)**. Where the API takes
   the same filter, the param has the same name and value there.
@@ -112,11 +112,12 @@ features/clients/
   twice: StrictMode does that in development.
 - **A list is a `ListStore`, a form a `FormStore`**, as fields of the service:
   - `new ListStore((filters, cursor) => this.api.list({ ...filters, cursor }))` asks the backend page by page, as it
-    pages (`size`, `cursor`). `load(filters)` starts again, `more()` adds the next page (a `LoadMore` under the list
-    does it), and an answer that comes after a newer load is dropped.
+    pages (`size`, `cursor`). `load(filters)` starts again, `more()` adds the next page, and an answer that comes
+    after a newer load is dropped. There are no page numbers: the list goes on with a `LoadMore` under it or, for a
+    long one, with a virtual scroll that calls `more()` as the end comes near. Choose what fits the screen.
   - `new FormStore(schema, initial)` holds the values and what is wrong with them. `submit(values => this.api.create(values))`
     checks them with the schema first (zod, or any Standard Schema), and shows by its field what the backend found
-    wrong. A component ties each control with `useFormField(form, 'name')`, inside `Form`.
+    wrong. The schema is the app's own: copy the module's rules into it, never import the backend. A component ties each control with `useFormField(form, 'name')`, inside `Form`.
 - **It is provided where its part of the screen is.** `<Provide services={[ClientsService]}>` gives that part its
   own instance, released (`dispose`) when it goes away. A service nobody provides is one for the whole app.
 
@@ -152,7 +153,7 @@ So every screen of every app looks the same. When something is missing, take the
    - forms: `Field` and its controls (`Input`, `Select`, `Combobox`, `DatePicker`…), `Form`;
    - data: `Table`, `Card`, `Item`, `Badge`, `Alert`, `Empty`, `Chart`…;
    - layers: `Dialog`, `ConfirmDialog`, `Sheet`, `Menu`, `Tooltip`, `CommandPalette`, `toast`…;
-   - navigation: `Tabs`, `Pagination`, `Breadcrumb`, `SidebarLayout` (the shell's frame);
+   - navigation: `Tabs`, `Breadcrumb`, `SidebarLayout` (the shell's frame);
    - text: `Heading`, `Text`.
 2. **Pieces placed:**
    - `Column` and `Row` take `gap`, `align`, `justify`, `padding`, `grow`, `fill`, `width`, and `as` for what they

@@ -22,7 +22,7 @@
     `Separator`, `Kbd`, `AspectRatio`, `Chart` (bars, lines or areas, in the theme's colors).
   - **Layers**: `Dialog`, `ConfirmDialog`, `Sheet`, `Drawer`, `Popover`, `HoverCard`, `Tooltip`, `Menu`,
     `ContextMenu`, `Menubar`, `CommandPalette`; `toast` and its `Toaster`.
-  - **Navigation**: `Tabs` and `Pagination`, which keep the open tab and the page in the address; `Breadcrumb`,
+  - **Navigation**: `Tabs`, which keeps the open tab in the address; `Breadcrumb`,
     `NavigationMenu` (a public site's top), `SidebarLayout` (an app's frame, in its shell).
   - **Content**: `Accordion`, `Collapsible`, `Carousel`, `Resizable`, `ButtonGroup`, `Button`, `Marker`,
     `ChatThread` and `ChatMessage`, `Attachment`.
