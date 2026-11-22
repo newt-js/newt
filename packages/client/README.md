@@ -11,5 +11,9 @@ What a frontend of a newt application thinks with, whatever renders it:
   gets JSON in and out, query params and a failed answer turned into an `ApiError` (`status`, `message`, `code`;
   status 0 is no answer). `Requester.baseUrl` is the context's API, set when the app starts;
   `onUnauthorized` and `onForbidden` hear every 401 and 403.
+- `EventBus`: how features hear what another changed without sharing its state. Events are named as the
+  backend's (`client.updated`: the module, a dot, what happened) and carry JSON; one feature `emit`s, those that
+  show it listen with `on` (stopping in their `dispose`) and load again. The server's events, in real time, come in
+  through `receive`, and reach the same listeners.
 
 It never imports a UI framework: `@newt-js/react` brings it to React.
