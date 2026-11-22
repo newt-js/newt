@@ -5,6 +5,7 @@ import { HttpRouter }   from '../../router/http-router/http-router'
 import { answerOf }     from '../answer-of/answer-of'
 import type { Handler } from '../handler'
 import type { Mount }   from '../mount'
+import { isSourceApp }  from '../mount'
 import { proxyTo }      from '../proxy-to/proxy-to'
 
 export type ContextAnswers = {
@@ -56,7 +57,7 @@ export function byHost(hosts: Record<string, string>, answers: ContextAnswers): 
     const app = answers.mounts.find(mount => mount.prefix === `/${context}`)?.app
     if (app === undefined) return notFound()
     // Bun serves an HTML import only by its path: the server asks it of itself.
-    if (typeof app === 'string') return answers.frontend(inner, server)
+    if (!isSourceApp(app)) return answers.frontend(inner, server)
     const hidden = new URL(inner.url)
     hidden.pathname = `${answers.hiddenApps}${hidden.pathname}`
     return proxyTo(server.url.href)(new Request(hidden.href, inner), server)

@@ -1,4 +1,5 @@
 import { toErrorResponse }     from '../../errors/to-error-response/to-error-response'
+import { buildApp }            from '../../frontend/build-app/build-app'
 import { noteClientIp }        from '../../request/note-client-ip/note-client-ip'
 import { noteRequestHost }     from '../../request/note-request-host/note-request-host'
 import { withHeaders }         from '../../responses/with-headers/with-headers'
@@ -7,6 +8,8 @@ import { answerOf }            from '../answer-of/answer-of'
 import { builtFrontends }      from '../built-frontends/built-frontends'
 import { byHost }              from '../by-host/by-host'
 import type { Handler }        from '../handler'
+import type { Mount }          from '../mount'
+import { isSourceApp }         from '../mount'
 import { mountsOf }            from '../mounts-of/mounts-of'
 import { proxied }             from '../proxied/proxied'
 import { routesOf }            from '../routes-of/routes-of'
@@ -28,7 +31,9 @@ export function serveContexts(options: ServeOptions, contexts: ServedContexts): 
   const health = Object.fromEntries(healthPaths.map(path => [path, { GET: answerHealth }]))
   const headers = securityHeadersOf(options.securityHeaders, options.hsts)
   const trustProxy = options.trustProxy ?? 0
-  const mounts = mountsOf(options.frontend, options.publicFolder)
+  // In production an HTML import is built, split by its lazy imports, and served as a built app is.
+  const toServe = (mount: Mount): Mount => development || !isSourceApp(mount.app) ? mount : { ...mount, app: buildApp(mount.app, mount.prefix, mount.publicFolder) }
+  const mounts = mountsOf(options.frontend, options.publicFolder).map(toServe)
   const frontend = builtFrontends(mounts, options.csp)
   // An HTML import is served by Bun's routes, before any handler: one with a host gets a path nobody can guess.
   const hiddenApps = `/_apps/${crypto.randomUUID()}`

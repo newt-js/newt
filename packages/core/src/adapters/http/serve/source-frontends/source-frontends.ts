@@ -3,11 +3,12 @@ import { join }        from 'node:path'
 import { relative }    from 'node:path'
 // --------------------------------------------------------
 import type { Mount }  from '../mount'
+import { isSourceApp } from '../mount'
 
 export function sourceFrontends(mounts: Mount[]): Record<string, Bun.HTMLBundle | Bun.BunFile> {
   const routes: Record<string, Bun.HTMLBundle | Bun.BunFile> = {}
   for (const { app, prefix, publicFolder } of mounts) {
-    if (typeof app === 'string') {
+    if (!isSourceApp(app)) {
       continue
     }
     const files = publicFolder
