@@ -20,6 +20,7 @@ describe('newt add use-case', () => {
     expect(await read(backend, 'order.module.ts')).toContain('  @UseCase()\n  async markPaid(input: OrderMarkPaidDTO): Promise<OrderDTO> {')
     expect(await read(backend, 'order.schema.ts')).toContain('export const OrderMarkPaidSchema = OrderSchema.pick({ id: true })')
     expect(await read(backend, 'order.module.test.ts')).toContain("test('markPaid reads the order by its id and tells it'")
+    expect(await read(backend, 'index.ts')).toMatch(/export type \{ OrderMarkPaidDTO \}\s+from '\.\/order\.schema'/)
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

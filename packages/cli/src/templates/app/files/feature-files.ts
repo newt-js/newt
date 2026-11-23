@@ -84,7 +84,7 @@ export class ${feature.type}Api extends Requester {
 `
   }
   const { module } = bound
-  const schema = `../../../modules/${module.folder}/${module.folder}.schema`
+  const schema = `../../../modules/${module.folder}`
   return `${importBlock(
     [['import type { Page }', '@newt-js/client'], ['import { Requester }', '@newt-js/client']],
     [[`import type { ${module.type}CreateDTO }`, schema], [`import type { ${module.type}DTO }`, schema]],
@@ -121,7 +121,7 @@ export class ${feature.type}Service {
   return `${importBlock(
     [['import { FormStore }', '@newt-js/client'], ['import { inject }', '@newt-js/client'], ['import { ListStore }', '@newt-js/client']],
     [
-      [`import type { ${module.type}DTO }`, `../../../modules/${module.folder}/${module.folder}.schema`],
+      [`import type { ${module.type}DTO }`, `../../../modules/${module.folder}`],
       [`import { ${feature.type}Api }`, `./${feature.folder}.api`],
       [`import { ${feature.camel}Form }`, `./${feature.folder}.state`],
       [`import { ${feature.camel}FormStart }`, `./${feature.folder}.state`],
@@ -246,7 +246,7 @@ export function featureListRowTsx(feature: PieceNames, { module, columns }: Feat
   const cell = (column: SchemaField) => isText(column.zod) ? `{${one}.${column.name}}` : `{String(${one}.${column.name})}`
   return `${importBlock(
     [['import { TableCell }', '@newt-js/react'], ['import { TableRow }', '@newt-js/react']],
-    [[`import type { ${module.type}DTO }`, `../../../../../modules/${module.folder}/${module.folder}.schema`]],
+    [[`import type { ${module.type}DTO }`, `../../../../../modules/${module.folder}`]],
   )}
 
 export function ${feature.type}ListRow({ ${one} }: { ${one}: ${module.type}DTO }) {

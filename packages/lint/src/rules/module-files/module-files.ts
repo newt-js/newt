@@ -19,7 +19,7 @@ const KINDS = ['module', '', 'schema', 'repository', 'routes', 'workers', 'deps'
  * Every module is made of the same files, so whoever opens one (a person or an agent)
  * knows where everything is: `<m>.module.ts`, `<m>.ts`, `<m>.schema.ts`,
  * `<m>.repository.ts`, `<m>.routes.ts`, `<m>.workers.ts`, `<m>.deps.ts`,
- * `<m>-options.ts`, its tests, and the folders in `FOLDERS`. A module keeps one entity:
+ * `<m>-options.ts`, `index.ts` (what it offers the others), its tests, and the folders in `FOLDERS`. A module keeps one entity:
  * another is a module of its own.
  */
 export const moduleFiles: TSESLint.RuleModule<'file' | 'folder' | 'event'> = {
@@ -28,7 +28,7 @@ export const moduleFiles: TSESLint.RuleModule<'file' | 'folder' | 'event'> = {
     type: 'problem',
     docs: { description: 'A module is made of the files every module has, named after it.' },
     messages: {
-      file: "'{{file}}' is not a file a module has. Move its code to one of them: {{module}}.module.ts (use cases), {{module}}.ts (entity), {{module}}.schema.ts (DTOs), {{module}}.repository.ts, {{module}}.routes.ts, {{module}}.workers.ts, {{module}}.deps.ts, {{module}}-options.ts, or a *.test.ts. A module keeps one entity: another is a module of its own.",
+      file: "'{{file}}' is not a file a module has. Move its code to one of them: {{module}}.module.ts (use cases), {{module}}.ts (entity), {{module}}.schema.ts (DTOs), {{module}}.repository.ts, {{module}}.routes.ts, {{module}}.workers.ts, {{module}}.deps.ts, {{module}}-options.ts, index.ts (what it offers the others), or a *.test.ts. A module keeps one entity: another is a module of its own.",
       folder: "'{{folder}}' is not a folder a module has: its folders are {{folders}}.",
       event: "An event's file is named '{{module}}-<event>.ts', not '{{file}}': rename it.",
     },
@@ -42,7 +42,7 @@ export const moduleFiles: TSESLint.RuleModule<'file' | 'folder' | 'event'> = {
     return {
       Program(node) {
         if (rest.length === 0) {
-          const files = [...KINDS.map(kind => `${module}${kind ? `.${kind}` : ''}.ts`), `${module}-options.ts`]
+          const files = [...KINDS.map(kind => `${module}${kind ? `.${kind}` : ''}.ts`), `${module}-options.ts`, 'index.ts']
           if (!files.includes(first) && !first.endsWith('.test.ts')) {
             context.report({ node, messageId: 'file', data: { file: first, module } })
           }

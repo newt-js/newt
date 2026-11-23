@@ -24,6 +24,7 @@ import { importsAndExports }       from './rules/imports-and-exports/imports-and
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
+import { moduleIndex }             from './rules/module-index/module-index'
 import { moduleNames }             from './rules/module-names/module-names'
 import { modulePlace }             from './rules/module-place/module-place'
 import { moduleTransactions }      from './rules/module-transactions/module-transactions'
@@ -62,6 +63,7 @@ export const plugin = {
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
+    'module-index': moduleIndex,
     'module-names': moduleNames,
     'module-transactions': moduleTransactions,
     'no-disable': noDisable,
@@ -209,6 +211,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/module-entity': 'error',
         'newt/module-files': 'error',
         'newt/module-imports': 'error',
+        'newt/module-index': 'error',
         'newt/module-names': 'error',
         'newt/entity-method-params': 'error',
         'newt/reaction-queue': 'error',

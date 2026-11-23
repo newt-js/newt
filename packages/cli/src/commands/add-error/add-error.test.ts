@@ -21,8 +21,10 @@ describe('newt add error', () => {
       expect((await addError(['sales/order', `order-${kind}`, '--kind', kind], backend)).code).toBe(0)
     }
     expect(await checkGenerated(backend)).toEqual([])
+    const index = await Bun.file(join(backend, ORDER_MODULE, 'index.ts')).text()
     for (const [kind, status] of Object.entries(STATUSES)) {
       const type = `Order${kind.split('-').map(word => word[0]!.toUpperCase() + word.slice(1)).join('')}`
+      expect(index).toMatch(new RegExp(`export \\{ ${type} \\}\\s+from '\\./errors/order-${kind}'`))
       const errors = await import(join(backend, ORDER_MODULE, `errors/order-${kind}.ts`)) as Record<string, new () => Error>
       expect(toErrorResponse(new errors[type]!()).status).toBe(status)
     }

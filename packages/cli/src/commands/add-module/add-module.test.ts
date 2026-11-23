@@ -37,6 +37,11 @@ describe('newt add module', () => {
     expect(context).toContain("    const order = Order_Module.initialize(base, router)\n    return new Sales_Context(base, { order })\n  }\n\n  private readonly order: Order_Module\n\n  private constructor(\n    base: ContextBase,\n    modules: {\n      order: Order_Module,\n    },\n  ) {\n    super('sales', base, modules)\n    this.order = modules.order\n  }")
     expect(context).toContain("import { Order_Module }      from './modules/order/order.module'")
     expect(await Bun.file(join(backend, 'src/contexts/sales/modules/index.ts')).exists()).toBe(false)
+    // What it offers the others, name by name: the type of its module, its DTOs and its errors.
+    const index = await read(join(backend, 'src/contexts/sales/modules/order/index.ts'))
+    for (const offered of ['export type { Order_Module }', 'export type { OrderDTO }', 'export type { OrderCreateDTO }', 'export { OrderNotFound }']) {
+      expect(index).toContain(offered)
+    }
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 

@@ -162,5 +162,7 @@ export const APP_TSCONFIG_JSON = `${JSON.stringify({
     skipLibCheck: true,
     noUncheckedIndexedAccess: true,
   },
-  include: ['**/*.ts', '**/*.tsx', '../modules/*/*.schema.ts', '../modules/*/value-objects/*.ts', '../modules/*/errors/*.ts'],
+  // A module's index.ts offers its module's type too: the app's program reads its whole module, as types alone.
+  include: ['**/*.ts', '**/*.tsx', '../modules/**/*.ts'],
+  exclude: ['../modules/**/*.test.ts'],
 }, null, 2)}\n`

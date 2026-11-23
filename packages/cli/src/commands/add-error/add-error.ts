@@ -1,13 +1,14 @@
-import { join }          from 'node:path'
+import { join }           from 'node:path'
 // --------------------------------------------------------
-import { pieceNames }    from '../../names/piece-names/piece-names'
-import { ERROR_KINDS }   from '../../options/error-kind-of/error-kind-of'
-import { errorKindOf }   from '../../options/error-kind-of/error-kind-of'
-import { findModule }    from '../../project/find-module/find-module'
-import { errorCode }     from '../../templates/pieces/error-ts'
-import { errorTs }       from '../../templates/pieces/error-ts'
-import { defineCommand } from '../command'
-import { CommandError }  from '../command-error/command-error'
+import { pieceNames }     from '../../names/piece-names/piece-names'
+import { ERROR_KINDS }    from '../../options/error-kind-of/error-kind-of'
+import { errorKindOf }    from '../../options/error-kind-of/error-kind-of'
+import { findModule }     from '../../project/find-module/find-module'
+import { indexErrorLine } from '../../templates/module/files/index-ts'
+import { errorCode }      from '../../templates/pieces/error-ts'
+import { errorTs }        from '../../templates/pieces/error-ts'
+import { defineCommand }  from '../command'
+import { CommandError }   from '../command-error/command-error'
 
 const USAGE = 'newt add error takes the module and the error, as in newt add error sales/order order-already-paid --kind conflict'
 
@@ -41,7 +42,11 @@ export const ADD_ERROR = defineCommand({
       }
     }
     return {
-      changes: [{ action: 'create', path: join(folder, 'errors', `${error.folder}.ts`), content: errorTs(module, error, kind) }],
+      changes: [
+        { action: 'create', path: join(folder, 'errors', `${error.folder}.ts`), content: errorTs(module, error, kind) },
+        // Who calls the module tells it apart with instanceof: its index.ts offers it.
+        { action: 'ensure-lines', path: join(folder, 'index.ts'), lines: [indexErrorLine(error.type, error.folder)] },
+      ],
       nextSteps: [`throw it where it happens: throw new ${error.type}()`],
     }
   },
