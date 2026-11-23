@@ -14,23 +14,27 @@ import { resolved }        from '../../paths/paths'
 import { rootOf }          from '../../paths/paths'
 import { slashed }         from '../../paths/paths'
 
-/** A context's app imports its own files, and only types from its context's modules (what their `index.ts` offers) and from newt. */
-export const appImports: TSESLint.RuleModule<'outside' | 'module' | 'server' | 'runtime', [{ folder: string }]> = {
+/**
+ * A context's app imports its own files, the UI every app of the project shares (`ui`, when it has one), and only
+ * types from its context's modules (what their `index.ts` offers) and from newt.
+ */
+export const appImports: TSESLint.RuleModule<'outside' | 'module' | 'server' | 'runtime', [{ folder: string, ui?: string }]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
   meta: {
     type: 'problem',
     docs: { description: "A context's app imports its own files and, as types, its context's modules, never the server's code." },
     messages: {
-      outside: "'{{path}}' is outside {{context}}'s app: an app imports its own files and, as types, what its context's modules offer in their index.ts, by their folder. Never the server's code.",
+      outside: "'{{path}}' is outside {{context}}'s app: an app imports its own files, the project's shared UI and, as types, what its context's modules offer in their index.ts, by their folder. Never the server's code.",
       module: "'{{path}}' is a module of {{context}}: import its types alone, `import type`, so the server's code never reaches the browser.",
       server: "'{{path}}' is newt's code, which runs in the server: an app imports only its types, `import type`.",
       runtime: "'{{path}}' is Bun's or Node's, which a browser has not: an app imports only its types, `import type`.",
     },
-    schema: [{ type: 'object', properties: { folder: { type: 'string' } }, required: ['folder'], additionalProperties: false }],
+    schema: [{ type: 'object', properties: { folder: { type: 'string' }, ui: { type: 'string' } }, required: ['folder'], additionalProperties: false }],
   },
   create(context) {
-    const [{ folder: written }] = context.options
+    const [{ folder: written, ui: writtenUi }] = context.options
     const folder = real(absolute(written, rootOf(context)))
+    const ui = writtenUi === undefined ? null : real(absolute(writtenUi, rootOf(context)))
     const own = contextOf(context.physicalFilename, folder)
     if (!own || own === ROOT) return {}
     const app = `${folder}/${own}/app`
@@ -48,6 +52,7 @@ export const appImports: TSESLint.RuleModule<'outside' | 'module' | 'server' | '
       }
       const file = real(path)
       if (file.startsWith(`${app}/`)) return
+      if (ui !== null && file.startsWith(`${ui}/`)) return
       const module = moduleOfContext(file, folder)
       if (module?.context === own && isModuleEntry(module.inside)) {
         if (!isTypeOnly(node)) context.report({ node, messageId: 'module', data })

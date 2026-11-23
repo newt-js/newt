@@ -24,6 +24,7 @@ tester.run('app-imports', asRule(appImports), {
     at("import type { Page } from '@newt-js/core'"),
     at("import type { BunFile } from 'bun'"),
     at("import { Order_Module } from './modules/order/order.module'", `${FOLDER}/sales/sales.context.ts`),
+    { code: "import { AppFrame } from '../../../ui/layouts/app-frame/app-frame'", filename: `${APP}/main.tsx`, options: [{ folder: FOLDER, ui: '/repo/src/ui' }] },
   ],
   invalid: [
     { ...at("import { OrderNotFound } from '../modules/order'"), errors: [{ messageId: 'module', data: { path: '../modules/order', context: 'sales' } }] },
@@ -42,5 +43,6 @@ tester.run('app-imports', asRule(appImports), {
     { ...at("import { $ } from 'bun'"), errors: [{ messageId: 'runtime' }] },
     { ...at("export * from '../modules/order'"), errors: [{ messageId: 'module' }] },
     { ...at("import { requiredEnv } from '/repo/src/env'"), errors: [{ messageId: 'outside' }] },
+    { ...at("import { AppFrame } from '../../../ui/layouts/app-frame/app-frame'"), errors: [{ messageId: 'outside' }] },
   ],
 })

@@ -59,7 +59,13 @@ app/
     layouts/           the app's structures
 ```
 
-Nothing else goes at the root. A feature, with everything it may hold:
+Nothing else goes at the root. What a file imports from outside its own feature goes by the app's aliases, set in
+its `tsconfig.json` and named after its context, never by `../../..`: `@<context>/services/…`, `@<context>/guards/…`,
+`@<context>/pages/…`, `@<context>/components/…` for the app's own parts, `@<context>/modules/<module>` for what
+its context's modules offer (their `index.ts`, as types), and `@ui/…` for the project's shared UI. A feature is never reached by an alias: only `lazy()`, in
+`app.routes.tsx`.
+
+A feature, with everything it may hold:
 
 ```
 features/clients/
@@ -166,6 +172,10 @@ So every screen of every app looks the same. When something is missing, take the
      bar of actions in place.
 3. **A structure of the app's.** Screens that look alike are built alike:
    - Before building a screen, look in `components/layouts/` for one that holds it: a list page, a detail page, a form.
+   - A project with several apps keeps what they share in one folder of its own, `src/ui/`, named in the lint's
+     config (`ui: 'src/ui'`): every app may import it. It holds two kinds of thing, each in a folder per piece:
+     `layouts/`, the containers (the frame, a page's header, its tabs), and `components/`, the elements of the
+     interface (a toggle, a badge of the business).
    - When a shape comes back on a second screen, make it a structure and build both with it (no lint).
    - None is made ahead of need.
    - A structure is made of the pieces above and styles as little as it can. It says why in a line `Why: …`. It is
@@ -173,7 +183,11 @@ So every screen of every app looks the same. When something is missing, take the
 4. **A component of the app's own**, in `components/`, with class names: the last resort.
    - Its doc comment says, on a line `Why: …`, why nothing in `@newt-js/react` composes it.
    - If another app would want it too, say so to whoever asked.
-   - What apps share lives in a package of the project's own, never in newt's (`@newt-js/*`) (no lint).
+   - What apps share lives in the project's shared UI folder (`ui` in the lint's config), never in newt's
+     (`@newt-js/*`) (no lint).
+
+Icons are Phosphor's (`@phosphor-icons/react`), each imported from its own file so that only it is downloaded:
+`import { UsersIcon } from '@phosphor-icons/react/dist/csr/Users'` (no lint).
 
 ## Growing
 
