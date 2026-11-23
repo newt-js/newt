@@ -14,7 +14,7 @@ type FieldProps = {
   description?: ReactNode
   /** When there is one, the control is marked wrong and this is read with it. */
   error?: ReactNode
-  /** One control: `Input`, `Textarea`, `Select`, `Combobox`, `DatePicker`, `Slider`, `InputOTP`… */
+  /** One control: `Input`, `Textarea`, `ChipsInput`, `Select`, `Combobox`, `DatePicker`, `Slider`, `InputOTP`… */
   children: ReactNode
 }
 
