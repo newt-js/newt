@@ -49,7 +49,10 @@ export function featureTsx(feature: PieceNames, bound: FeatureOfModule | null): 
     ['import { Provide }', '@newt-js/react'],
   ]
   const inside: [string, string][] = [
-    ...parts.map((part): [string, string] => [`import { ${part} }`, `./${feature.folder}-${part.slice(feature.type.length).toLowerCase()}`]),
+    ...parts.map((part): [string, string] => {
+      const name = `${feature.folder}-${part.slice(feature.type.length).toLowerCase()}`
+      return [`import { ${part} }`, `./${name}/${name}`]
+    }),
     [`import { ${feature.type}Service }`, `./${feature.folder}.service`],
   ]
   return `${importBlock(outside, inside)}
@@ -167,7 +170,7 @@ export function featureFormTsx(feature: PieceNames, { module, inputs }: FeatureO
       ['import { useService }', '@newt-js/react'],
       ['import { useValue }', '@newt-js/react'],
     ],
-    [[`import { ${feature.type}Service }`, `./${feature.folder}.service`]],
+    [[`import { ${feature.type}Service }`, `../${feature.folder}.service`]],
   )}
 
 /** The form that adds ${withArticle(module.words)}. */
@@ -196,9 +199,9 @@ export function featureListTsx(feature: PieceNames, { module }: FeatureOfModule)
       ['import { useEffect }', 'react'],
     ],
     [
-      [`import { ${feature.type}ListHead }`, `./${feature.folder}-list-head`],
-      [`import { ${feature.type}ListRow }`, `./${feature.folder}-list-row`],
-      [`import { ${feature.type}Service }`, `./${feature.folder}.service`],
+      [`import { ${feature.type}ListHead }`, `./${feature.folder}-list-head/${feature.folder}-list-head`],
+      [`import { ${feature.type}ListRow }`, `./${feature.folder}-list-row/${feature.folder}-list-row`],
+      [`import { ${feature.type}Service }`, `../${feature.folder}.service`],
     ],
   )}
 
@@ -243,7 +246,7 @@ export function featureListRowTsx(feature: PieceNames, { module, columns }: Feat
   const cell = (column: SchemaField) => isText(column.zod) ? `{${one}.${column.name}}` : `{String(${one}.${column.name})}`
   return `${importBlock(
     [['import { TableCell }', '@newt-js/react'], ['import { TableRow }', '@newt-js/react']],
-    [[`import type { ${module.type}DTO }`, `../../../modules/${module.folder}/${module.folder}.schema`]],
+    [[`import type { ${module.type}DTO }`, `../../../../../modules/${module.folder}/${module.folder}.schema`]],
   )}
 
 export function ${feature.type}ListRow({ ${one} }: { ${one}: ${module.type}DTO }) {
