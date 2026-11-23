@@ -170,6 +170,11 @@ export function resolved(context: Context, specifier: string): string | null {
   return path?.replace(/\.[cm]?[jt]sx?$/, '') ?? null
 }
 
+/** Whether a path is an alias of the tsconfig's `paths`: one of the project's files, named as the project names it. */
+export function isAlias(context: Context, specifier: string): boolean {
+  return !specifier.startsWith('.') && !specifier.startsWith('/') && aliased(context, specifier) !== null
+}
+
 /**
  * The file an alias of the tsconfig's `paths` points at: the first one it lists, by the
  * longest pattern that matches, from the `baseUrl` if there is one and the tsconfig's

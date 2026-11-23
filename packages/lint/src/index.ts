@@ -186,6 +186,7 @@ export function newt({ files = ['**/*.ts'], contexts, root, ui }: NewtLintOption
       'newt/app-signal-reads': ['error', { folder: given }],
       'newt/app-size': ['error', { folder: given }],
       'newt/app-styles': ['error', { folder: given }],
+      'newt/imports-and-exports': 'error',
       'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
     },
   }] : []

@@ -14,6 +14,7 @@ import { join }          from 'node:path'
 import { pathToFileURL } from 'node:url'
 // --------------------------------------------------------
 import { newt }          from './index'
+import { SEPARATOR }     from './rules/imports-and-exports/imports-and-exports'
 
 let root: string
 let eslint: ESLint
@@ -74,6 +75,15 @@ describe('the preset of newt', () => {
   test("reads an alias of the tsconfig's paths as the file it names", async () => {
     expect(await complaints('src/contexts/ws/modules/order/order.module.ts', "import { x } from '@/contexts/ws/modules/brand/brand.repository'\nexport const y = x\n")).toEqual(['newt/module-imports'])
     expect(await complaints('src/contexts/ws/modules/order/order.deps.ts', "import type { x } from '@/contexts/ws/modules/brand'\nexport type Y = typeof x\n")).toEqual([])
+  })
+
+  test("puts the aliases of the tsconfig's paths after the packages, each group under its own line", async () => {
+    const file = 'src/shared/aliases.ts'
+    const ordered = `import { z }   from 'zod'\n${SEPARATOR}\nimport { env } from '@/env'\n${SEPARATOR}\nimport { a }   from './a'\n\nexport const b = [z, env, a]\n`
+    expect(await allComplaints(file, ordered)).toEqual([])
+    expect(await allComplaints(file, `import { env } from '@/env'\nimport { z }   from 'zod'\n${SEPARATOR}\nimport { a }   from './a'\n\nexport const b = [z, env, a]\n`)).toEqual(['newt/imports-and-exports'])
+    const [result] = await eslint.lintFiles([join(root, file)])
+    expect(result?.messages[0]?.fix?.text).toBe(ordered.slice(0, ordered.indexOf('\n\n')))
   })
 
   test('keeps a module writing through persist, never in a transaction of its own', async () => {
@@ -193,6 +203,8 @@ describe('the preset of newt', () => {
     await writeFile(join(root, app, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'Preserve', moduleResolution: 'bundler', jsx: 'react-jsx', paths: { '@/*': ['../../../*'] } }, include: ['**/*.ts', '**/*.tsx'] }))
     expect(await complaints(`${app}/app.tsx`, "// eslint-disable-next-line newt/app-imports\nimport { requiredEnv } from '../../../env'\nexport const a = requiredEnv\n")).toEqual(['newt/no-disable'])
     expect(await complaints(`${app}/main.tsx`, "import { requiredEnv } from '@/env'\nexport const b = requiredEnv\n")).toEqual(['newt/app-imports'])
+    // Its .tsx files keep their imports in shape too.
+    expect((await allComplaints(`${app}/list.tsx`, "import { b } from './b'\nimport { a } from 'react'\nexport const c = [a, b]\n")).filter(rule => rule !== 'newt/app-files')).toEqual(['newt/imports-and-exports'])
   })
 
   test('says what a rule of newt found in a message an agent can follow', async () => {
