@@ -1,4 +1,5 @@
 import type { Clock }              from '../../../domain/clock/clock'
+import type { EmailSender }        from '../../../domain/email/email-sender'
 import type { StorageOptions }     from '../../../domain/file-storage/files/storage-options'
 import type { ConflictRetries }    from '../../../domain/use-case/conflict-retries/conflict-retries'
 import type { GuardRule }          from '../../../domain/use-case/guard-rule'
@@ -17,4 +18,5 @@ export type ContextBaseOptions = {
   guardRule?: GuardRule | undefined
   conflictRetries?: Partial<ConflictRetries> | undefined
   storage?: StorageOptions | undefined
+  email?: EmailSender | undefined
 }

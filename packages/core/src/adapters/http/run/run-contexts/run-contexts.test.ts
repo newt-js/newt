@@ -48,6 +48,15 @@ function routerOf(answer: string, path = '/who', prefix = `/${answer}/api`): Htt
 }
 
 describe('runContexts', () => {
+  test('gives one of its contexts by its name', async () => {
+    const shop = context('shop', [])
+    const app = runContexts([{ context: context('auth', []) }, { context: shop }], { signals: false })
+
+    expect(app.context('shop')).toBe(shop)
+    expect(() => app.context('nope')).toThrow('No context named nope is running')
+    await app.stop()
+  })
+
   test('serves every context\'s router on one server, with its health by default, starts them all, and stops them the last one first', async () => {
     const log: string[] = []
     const app = runContexts([

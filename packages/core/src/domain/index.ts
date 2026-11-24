@@ -1,6 +1,7 @@
 export * from './actor'
 export * from './clock'
 export * from './criteria'
+export * from './email'
 export * from './entity'
 export * from './errors'
 export * from './events'

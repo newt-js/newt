@@ -21,5 +21,7 @@ export type ContextToRun = {
 
 export type RunningContexts = {
   server?: Bun.Server<undefined>
+  /** One of its contexts, by its name: its tests read what it sent or stored. */
+  context(name: string): ContextToRun['context']
   stop(): Promise<void>
 }
