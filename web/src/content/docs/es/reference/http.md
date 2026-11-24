@@ -359,6 +359,7 @@ return runContexts(contexts, {
 | Miembro | Tipo | Qué es |
 |---|---|---|
 | `server` | `Bun.Server` | El servidor compartido, si se dio `serve`. |
+| `context` | `(name: string) => ContextToRun['context']` | Uno de sus contextos, por su nombre. Lanza un error si no está. |
 | `stop` | `() => Promise<void>` | Para el servidor, luego los workers, y cierra los contextos (el último primero). Lanza un `AggregateError` si falló algún paso; los demás se ejecutan igual. |
 
 ### Opciones de serve

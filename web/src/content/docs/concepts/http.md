@@ -339,7 +339,7 @@ The `serve` options you are most likely to touch:
 Set `trustProxy` only to the number of proxies you really have. With a higher number, a client can fake its IP in `X-Forwarded-For` and slip past IP rate limits.
 :::
 
-`runContexts` returns `{ server, stop() }`. The stop runs in order: the server finishes their requests, workers finish their jobs, contexts close.
+`runContexts` returns `{ server, context(name), stop() }`. The stop runs in order: the server finishes their requests, workers finish their jobs, contexts close.
 
 The full list of `serve` and `runContexts` options is in the [HTTP API reference](/reference/http/).
 

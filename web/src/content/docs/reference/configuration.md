@@ -139,6 +139,16 @@ With `--cluster valkey`:
 
 With `memory` (default) there is no variable. See [Running several instances](/guides/scaling/).
 
+### Email
+
+Only for a context that opens its email with `smtpEmail()`. See [Email](/concepts/email/).
+
+| Name | Meaning | Default |
+|---|---|---|
+| `SMTP_URL` | The server emails go through, `smtp://user:password@host:587`. Required, but in development. | none |
+| `EMAIL_FROM` | Who they are from. Required with `SMTP_URL`. | none |
+| `<CONTEXT>_EMAIL_FROM` | Who those of one context are from. | `EMAIL_FROM` |
+
 ### Tests
 
 With `--db postgres` or `--db mysql`:

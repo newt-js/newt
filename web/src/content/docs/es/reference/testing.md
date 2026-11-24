@@ -54,7 +54,7 @@ afterEach(() => context.close())
 | `conflictRetries` | `Partial<ConflictRetries>` | los de ContextBase | Igual que en ContextBase. |
 | `storage` | `StorageOptions` | ninguno | Almacenamiento de ficheros, por ejemplo `{ private: new MemoryStorage() }`. |
 
-No puedes pasar `platform` ni `clock`: `testContext` crea los suyos.
+No puedes pasar `platform`, `clock` ni `email`: `testContext` crea los suyos.
 
 :::caution
 En un contexto de test los jobs nunca se ejecutan solos. Tras un caso de uso que publica un evento, llama a `await context.settle()` antes de comprobar lo que hicieron sus suscripciones.
@@ -67,6 +67,7 @@ En un contexto de test los jobs nunca se ejecutan solos. Tras un caso de uso que
 | `base` | `ContextBase` | La base del contexto: pásala a tus módulos (`tasksModules(context.base, router)`). |
 | `clock` | `TestClock` | El reloj de `base`. El tiempo no avanza hasta que lo mueves. |
 | `logs` | `CapturedLines` | Lo que se ha escrito en el log de este contexto, guardado para el test en vez de imprimirse. |
+| `email` | `MemoryEmail` | Lo que envía sus emails: no sale ninguno, y `sent` los tiene todos. |
 | `settle()` | `() => Promise<void>` | Ejecuta cada job pendiente, y los jobs que esos dejan, hasta que no queda ninguno. |
 | `close()` | `() => Promise<void>` | Para el worker y las tareas programadas, cierra la base de datos y deja de capturar logs. Llámalo en `afterEach`. |
 

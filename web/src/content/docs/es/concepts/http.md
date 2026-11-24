@@ -339,7 +339,7 @@ Las opciones de `serve` que más vas a tocar:
 Pon en `trustProxy` solo el número de proxies que tienes de verdad. Con un número mayor, un cliente puede falsear su IP en `X-Forwarded-For` y saltarse los límites por IP.
 :::
 
-`runContexts` devuelve `{ server, stop() }`. La parada va en orden: el servidor termina sus peticiones, los workers terminan sus jobs y los contextos se cierran.
+`runContexts` devuelve `{ server, context(name), stop() }`. La parada va en orden: el servidor termina sus peticiones, los workers terminan sus jobs y los contextos se cierran.
 
 La lista completa de opciones de `serve` y `runContexts` está en la [referencia de la API HTTP](/es/reference/http/).
 

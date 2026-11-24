@@ -359,6 +359,7 @@ return runContexts(contexts, {
 | Member | Type | Meaning |
 |---|---|---|
 | `server` | `Bun.Server` | The shared server, when `serve` was given. |
+| `context` | `(name: string) => ContextToRun['context']` | One of its contexts, by its name. Throws when there is none. |
 | `stop` | `() => Promise<void>` | Stops the server, then the workers, then closes the contexts (last one first). Throws an `AggregateError` if a step failed; the others still run. |
 
 ### Serve options

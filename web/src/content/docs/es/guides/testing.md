@@ -152,6 +152,7 @@ Paso a paso:
 | `base` | La base del contexto: base de datos, tareas programadas, worker, almacenamiento |
 | `clock` | El [reloj de test](#mover-el-reloj) |
 | `logs` | Las líneas de log escritas durante el test |
+| `email` | Lo que envía sus emails: `email.sent` los tiene todos, y no sale ninguno |
 | `settle()` | Ejecuta todos los jobs pendientes y espera a que acaben |
 | `close()` | Para tareas programadas y worker, y cierra la base de datos |
 
