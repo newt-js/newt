@@ -43,6 +43,7 @@ import { useCaseParams }           from './rules/use-case-params/use-case-params
 import { useCasePublicMethods }    from './rules/use-case-public-methods/use-case-public-methods'
 import { useCaseReads }            from './rules/use-case-reads/use-case-reads'
 import { useCaseResolved }         from './rules/use-case-resolved/use-case-resolved'
+import { workerOneWrite }          from './rules/worker-one-write/worker-one-write'
 
 /** The rules of newt that no other plugin has, as ESLint takes them: typescript-eslint's types of a rule are not ESLint's, though ESLint runs them. */
 export const plugin = {
@@ -80,6 +81,7 @@ export const plugin = {
     'use-case-reads': useCaseReads,
     'use-case-resolved': useCaseResolved,
     'use-case-batched': useCaseBatched,
+    'worker-one-write': workerOneWrite,
   },
   processors: { 'keep-no-disable': keepNoDisable },
 } as unknown as ESLint.Plugin
@@ -210,6 +212,7 @@ export function newt({ files = ['**/*.ts'], contexts, root, ui }: NewtLintOption
         'newt/use-case-reads': 'error',
         'newt/use-case-resolved': 'error',
         'newt/use-case-batched': 'error',
+        'newt/worker-one-write': 'error',
         'newt/route-body-unchecked': 'error',
         'newt/route-public-rate-limit': 'error',
         'newt/framework-tables': 'error',
