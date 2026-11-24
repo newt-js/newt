@@ -41,6 +41,14 @@ Read a session cookie or a bearer token there and return \`{ userId }\`, or \`nu
 \`@newt-js/core/http\` has \`bearerAuthenticator\`, \`setSessionCookie\`, \`readSessionCookie\` and \`clearSessionCookie\`:
 a session cookie is \`__Host-\` when it can be, so read it with \`readSessionCookie\`, never by its name.
 
+## Who may go on
+
+Who may enter a path, and all that hangs from it (a workspace only its members), is said once, in the context's \`initialize\`,
+after its modules: \`router.guard('/workspaces/:workspaceId', async request => { … })\`. It throws to refuse, and covers the
+routes of every module there. Use it whenever one module would need another that already uses it, only to check who calls:
+never a function handed to a module, a group with the check in another module's routes, nor a check repeated route by route.
+One action's own rule (only an admin renames it) is checked in its use case.
+
 ## Rules
 
 newt's lint holds the rules of the code: run it after every change and fix what it says.

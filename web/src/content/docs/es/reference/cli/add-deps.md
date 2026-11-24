@@ -78,6 +78,6 @@ export function tasksModules(base: ContextBase, router: HttpRouter) {
 - **Un módulo de otro contexto** (`tasks/project`): rechazado; newt todavía no escribe eso.
 - **El propio módulo**: rechazado.
 - **Un módulo que el contexto no tiene**: rechazado; añádelo con [`newt add module`](/es/reference/cli/add-module/).
-- **Un ciclo**: `project → task → project would be a cycle: modules never use each other, even through others`.
+- **Un ciclo**: `project → task → project would be a cycle: modules never use each other, even through others. If it is to check who may go on at a path, the context gives its router a guard (router.guard), and no module uses the other`.
 
 Consulta [Servicios y dependencias](/es/concepts/services-and-deps/).

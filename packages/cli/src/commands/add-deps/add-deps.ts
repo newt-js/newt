@@ -47,7 +47,7 @@ async function moduleOfItsContext(found: FoundModule, other: string, cwd: string
   const used = moduleNames(other)
   const cycle = dependencyPath(await moduleDepsGraph(join(cwd, contextFolder, 'modules'), modules), used.module, module.module)
   if (cycle) {
-    throw new CommandError(`${[module.module, ...cycle].join(' → ')} would be a cycle: modules never use each other, even through others`)
+    throw new CommandError(`${[module.module, ...cycle].join(' → ')} would be a cycle: modules never use each other, even through others. If it is to check who may go on at a path, the context gives its router a guard (router.guard), and no module uses the other`)
   }
   const contextFile = join(contextFolder, `${context.folder}.context.ts`)
   const changes: FileChange[] = [

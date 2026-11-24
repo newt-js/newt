@@ -108,7 +108,7 @@ test('GET /invoices/:invoiceId/orders answers from order', async () => {
     for (const module of ['alpha', 'bravo', 'charlie']) await run(ADD_MODULE, [`sales/${module}`], backend)
     await run(ADD_DEPS, ['sales/alpha', 'bravo'], backend)
     await run(ADD_DEPS, ['sales/bravo', 'charlie'], backend)
-    expect((await run(ADD_DEPS, ['sales/charlie', 'alpha'], backend)).text).toBe('charlie → alpha → bravo → charlie would be a cycle: modules never use each other, even through others')
+    expect((await run(ADD_DEPS, ['sales/charlie', 'alpha'], backend)).text).toBe('charlie → alpha → bravo → charlie would be a cycle: modules never use each other, even through others. If it is to check who may go on at a path, the context gives its router a guard (router.guard), and no module uses the other')
   })
 
   test('refuses a module the context has not, itself, its own context, a cycle, or a path', async () => {
@@ -117,7 +117,7 @@ test('GET /invoices/:invoiceId/orders answers from order', async () => {
     expect((await run(ADD_DEPS, ['sales/order', 'order'], backend)).text).toBe('order cannot use itself')
     expect((await run(ADD_DEPS, ['sales/order', 'sales'], backend)).text).toBe('order is of sales: it uses the other modules of its context by their name, as in newt add deps sales/order <module>')
     await run(ADD_DEPS, ['sales/order', 'invoice'], backend)
-    expect((await run(ADD_DEPS, ['sales/invoice', 'order'], backend)).text).toBe('invoice → order → invoice would be a cycle: modules never use each other, even through others')
+    expect((await run(ADD_DEPS, ['sales/invoice', 'order'], backend)).text).toBe('invoice → order → invoice would be a cycle: modules never use each other, even through others. If it is to check who may go on at a path, the context gives its router a guard (router.guard), and no module uses the other')
     expect((await run(ADD_DEPS, ['sales/order', 'auth/user'], backend)).text).toBe('A module uses another context whole, by its name alone, and reaches the modules it publishes through it: newt add deps sales/order auth')
   })
 })
