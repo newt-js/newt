@@ -2,11 +2,12 @@ import { createTransport }   from 'nodemailer'
 // --------------------------------------------------------
 import type { EmailMessage } from '../../../../domain/email/email-message'
 import type { EmailSender }  from '../../../../domain/email/email-sender'
+import { parsedFrom }        from '../parsed-from/parsed-from'
 
 export type SmtpEmailOptions = {
   /** `smtp://user:password@host:587`, or `smtps://` for TLS from the start. */
   url: string
-  /** `Shop <hello@shop.com>`. */
+  /** Who the emails that do not say it are from: `Shop <hello@shop.com>`. */
   from: string
   /** How long the server has for each answer. */
   timeoutMs?: number | undefined
@@ -27,10 +28,14 @@ function mustUpgrade(url: URL): boolean {
 export class SmtpEmailSender implements EmailSender {
 
   private readonly transport: ReturnType<typeof createTransport>
-  private readonly from: string
+  private readonly from: { name: string, address: string }
 
   constructor({ url, from, timeoutMs = TIMEOUT_MS }: SmtpEmailOptions) {
-    this.from = from
+    const parsedSender = parsedFrom(from)
+    if (!parsedSender) {
+      throw new Error('EMAIL_FROM is not an address, as Shop <hello@shop.com>: see .env.example')
+    }
+    this.from = parsedSender
     const parsed = URL.parse(url)
     if (!parsed || !['smtp:', 'smtps:'].includes(parsed.protocol)) {
       throw new Error('SMTP_URL is not an smtp:// or smtps:// address: see .env.example')
@@ -46,9 +51,9 @@ export class SmtpEmailSender implements EmailSender {
     })
   }
 
-  async send({ to, subject, text, html, replyTo }: EmailMessage): Promise<void> {
+  async send({ to, from, subject, text, html, replyTo }: EmailMessage): Promise<void> {
     await this.transport.sendMail({
-      from: this.from,
+      from: { name: from?.name ?? this.from.name, address: from?.address ?? this.from.address },
       to: [to].flat().map(only),
       subject,
       text,

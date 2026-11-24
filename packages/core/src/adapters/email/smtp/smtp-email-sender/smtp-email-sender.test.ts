@@ -36,6 +36,32 @@ describe('SmtpEmailSender', () => {
     expect(server.received[0]!.data).toContain('Reply-To: help@shop.test')
   })
 
+  test('is from whom the email says, and from the same address when it only says a name', async () => {
+    server = startSmtpServer()
+    const sender = new SmtpEmailSender({ url: server.url, from: FROM })
+
+    await sender.send({ ...MESSAGE, from: { name: 'Panel' } })
+    await sender.send({ ...MESSAGE, from: { name: 'Panel', address: 'hi@panel.test' } })
+
+    expect(server.received.map(each => each.from)).toEqual(['<hello@shop.test>', '<hi@panel.test>'])
+    expect(server.received[0]!.data).toContain('From: Panel <hello@shop.test>')
+    expect(server.received[1]!.data).toContain('From: Panel <hi@panel.test>')
+  })
+
+  test('a name with another address in it is still a name', async () => {
+    server = startSmtpServer()
+
+    await new SmtpEmailSender({ url: server.url, from: FROM }).send({ ...MESSAGE, from: { name: 'Eva <eva@example.com>, Panel\r\nBcc: ana@example.com' } })
+
+    expect(server.received[0]!.from).toBe('<hello@shop.test>')
+    expect(server.received[0]!.to).toEqual(['<ana@example.com>'])
+    expect(server.received[0]!.data).not.toMatch(/^Bcc:/m)
+  })
+
+  test('refuses to be from something that is no address', () => {
+    expect(() => new SmtpEmailSender({ url: 'smtp://mail.test', from: 'Shop' })).toThrow('EMAIL_FROM is not an address')
+  })
+
   test('keeps accents', async () => {
     server = startSmtpServer()
 

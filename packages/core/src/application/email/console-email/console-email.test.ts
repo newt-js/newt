@@ -16,3 +16,13 @@ test('writes to the log whom it was for, its subject and its text', async () => 
   expect(logs.said('info')).toEqual(['[email] to ana@example.com, eva@example.com: Hi\nHello'])
   logs.restore()
 })
+
+test('says whom it is from when it is not from the context', async () => {
+  const platform = new Platform({ cluster: new MemoryCluster() })
+  const logs = captureLines(platform)
+
+  await platformScope.run(platform, () => new ConsoleEmail().send({ to: 'ana@example.com', from: { name: 'Panel' }, subject: 'Hi', text: 'Hello' }))
+
+  expect(logs.said('info')).toEqual(['[email] to ana@example.com from Panel: Hi\nHello'])
+  logs.restore()
+})

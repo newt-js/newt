@@ -5,8 +5,9 @@ import { log }               from '../../platform/log/log'
 /** Writes the emails to the log instead of sending them, links and all: only for development. */
 export class ConsoleEmail implements EmailSender {
 
-  async send({ to, subject, text }: EmailMessage): Promise<void> {
-    log.info(`[email] to ${[to].flat().join(', ')}: ${subject}\n${text}`)
+  async send({ to, from, subject, text }: EmailMessage): Promise<void> {
+    const sender = from?.name ?? from?.address
+    log.info(`[email] to ${[to].flat().join(', ')}${sender ? ` from ${sender}` : ''}: ${subject}\n${text}`)
   }
 
 }
