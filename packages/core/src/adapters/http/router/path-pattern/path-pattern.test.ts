@@ -44,6 +44,20 @@ describe('PathPattern', () => {
     expect(() => new PathPattern('/*/things')).toThrow("'*' only at its end")
   })
 
+  test('matches the start of a path that goes on from it, an empty param too', () => {
+    const start = (pathname: string) => new PathPattern('/api/things/:id').matchStart(partsOf(pathname)!)
+
+    expect(['/api/things/7', '/api/things/7/parts/a', '/api/things//parts'].map(start)).toEqual([['7'], ['7'], ['']])
+    expect(['/api/things', '/api/others/7', '/API/things/7'].map(start)).toEqual([null, null, null])
+  })
+
+  test('covers the routes at it and under it, and those with a param or a * that may be there', () => {
+    const covers = (path: string) => new PathPattern('/things/:id/parts').covers(new PathPattern(path))
+
+    expect(['/things/:id/parts', '/things/:thingId/parts/:part', '/things/*', '/:kind/:id/:what', '/things/:id/:what'].filter(path => !covers(path))).toEqual([])
+    expect(['/things/:id', '/things/new/parts', '/others/:id/parts', '/things/:id/others', ''].filter(covers)).toEqual([])
+  })
+
   test('a pathname that cannot be decoded has no parts', () => {
     expect(partsOf('/api/%E0%A4%A')).toBeNull()
   })

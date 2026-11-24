@@ -10,6 +10,7 @@ import { RouteNotFound }          from '../../errors/route-not-found/route-not-f
 import type { Idempotency }       from '../../idempotency/idempotency'
 import type { IdempotentOptions } from '../../idempotency/idempotent/idempotent'
 import type { KeptAnswer }        from '../../idempotency/kept-answer'
+import type { Guarding }          from '../../layers/guarded/guarded'
 import { layered }                from '../../layers/layered/layered'
 import type { LayeredOptions }    from '../../layers/layering'
 import { noStore }                from '../../layers/no-store/no-store'
@@ -28,6 +29,7 @@ import { MAX_BODY_BYTES }         from '../max-body-bytes/max-body-bytes'
 import { paramsOf }               from '../params-of/params-of'
 import { PathPattern }            from '../path-pattern/path-pattern'
 import { partsOf }                from '../path-pattern/path-pattern'
+import type { RouteGuard }        from '../route-guard'
 import type { RouteOptions }      from '../route-options'
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
@@ -43,6 +45,7 @@ export class HttpRouter {
   readonly host: string | undefined
   private readonly defaults: RouteOptions
   private authenticator: Authenticator | null = null
+  private readonly guards: Guarding[] = []
   private database: Pick<Database, 'records'> | undefined
   private readonly clock: Clock
 
@@ -66,6 +69,22 @@ export class HttpRouter {
 
   authenticateWith(authenticator: Authenticator): void {
     this.authenticator = authenticator
+  }
+
+  /**
+   * Who may go on at a path and under it, whatever module its routes are of: `guard` throws to refuse. It runs once the
+   * caller is signed in, on public routes too. Given in the context's `initialize`, once its modules have registered
+   * their routes, since who may is often known by a module that the path's own cannot use.
+   */
+  guard<Path extends string>(path: Path, guard: RouteGuard<Path>): void {
+    const pattern = new PathPattern(`${this.prefix}${path}`)
+    if (pattern.segments.some(segment => segment.kind === 'rest')) {
+      throw new Error(`A guard covers all that is under its path, so it has no '*': ${path}`)
+    }
+    if (![...this.table.values()].some(({ pattern: route }) => pattern.covers(route))) {
+      throw new Error(`No route is at ${path} or under it, so its guard would let everyone in: check the path, and give it after the routes are registered`)
+    }
+    this.guards.push({ pattern, guard: guard as RouteGuard })
   }
 
   /** The database that keeps the first answers of its idempotent routes, when it opens after the router. */
@@ -142,6 +161,7 @@ export class HttpRouter {
       path: pattern.path,
       options,
       authenticator: () => this.authenticator,
+      guards: () => this.guards.filter(each => each.pattern.covers(pattern)),
       keeping: (idempotency: Idempotency) => this.keeping(method, pattern.path, idempotency, options.public),
     }
     entry.byMethod.set(method, { route: layered(route as HttpRoute, ROUTE_LAYERS, layering), options, pattern })

@@ -41,6 +41,38 @@ export class PathPattern {
     return parts.length === this.segments.length ? values : null
   }
 
+  /** The values of a path that is here or goes on from here. Unlike a route, a guard takes an empty param too: nothing gets past it. */
+  matchStart(parts: string[]): string[] | null {
+    const values: string[] = []
+    for (const [i, segment] of this.segments.entries()) {
+      const part = parts[i]
+      if (part === undefined || (segment.kind === 'static' && part !== segment.value)) {
+        return null
+      }
+      if (segment.kind === 'param') {
+        values.push(part)
+      }
+    }
+    return values
+  }
+
+  /** Whether what `route` answers may be here or go on from here. A name of its own where this has a param is another thing. */
+  covers(route: PathPattern): boolean {
+    for (const [i, segment] of this.segments.entries()) {
+      const theirs = route.segments[i]
+      if (!theirs) {
+        return false
+      }
+      if (theirs.kind === 'rest') {
+        return true
+      }
+      if (theirs.kind === 'static' && (segment.kind !== 'static' || segment.value !== theirs.value)) {
+        return false
+      }
+    }
+    return true
+  }
+
   outranks(other: PathPattern): boolean {
     const rank = { static: 0, param: 1, rest: 2 }
     for (let i = 0; i < Math.max(this.segments.length, other.segments.length); i++) {
