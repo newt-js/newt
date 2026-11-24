@@ -13,9 +13,9 @@ describe('clearSessionCookie', () => {
       return new Response(null, { status: 204 })
     })
 
-    const cookie = (await router.answer(new Request('http://shop.test/api/out', { method: 'POST', headers: { cookie: 'app_session=token-1' } }))!).headers.get('set-cookie')!
+    const cookie = (await router.answer(new Request('http://shop.test/api/out', { method: 'POST', headers: { cookie: '__Host-app_session=token-1' } }))!).headers.get('set-cookie')!
 
-    expect(cookie).toStartWith('app_session=;')
+    expect(cookie).toStartWith('__Host-app_session=;')
     for (const part of ['Max-Age=0', 'HttpOnly', 'Secure']) {
       expect(cookie).toContain(part)
     }

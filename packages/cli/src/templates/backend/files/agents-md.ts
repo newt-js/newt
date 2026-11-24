@@ -38,7 +38,8 @@ ${database === 'postgres' || database === 'mysql' ? TEST_DATABASE : ''}- \`src/c
 Every route is private: without a session it answers 401, and a route takes \`{ public: true }\` to need none.
 \`src/auth.ts\` says who is calling, for every context; it signs no one in until it is written.
 Read a session cookie or a bearer token there and return \`{ userId }\`, or \`null\`:
-\`@newt-js/core/http\` has \`bearerAuthenticator\`, \`setSessionCookie\` and \`clearSessionCookie\`.
+\`@newt-js/core/http\` has \`bearerAuthenticator\`, \`setSessionCookie\`, \`readSessionCookie\` and \`clearSessionCookie\`:
+a session cookie is \`__Host-\` when it can be, so read it with \`readSessionCookie\`, never by its name.
 
 ## Rules
 
