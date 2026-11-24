@@ -79,12 +79,28 @@ await this.base.email.send({
 | Campo | Obligatorio | Qué es |
 |---|---|---|
 | `to` | sí | Una dirección, o varias. Cada una sola, sin nombre: `ana@example.com`. |
+| `from` | no | De quién es, `{ name, address }`. Lo que no pongas es lo de `EMAIL_FROM`. |
 | `subject` | sí | El asunto. |
 | `text` | sí | El email como texto. |
 | `html` | no | Lo mismo en HTML. |
 | `replyTo` | no | A dónde van las respuestas. |
 
 `send` falla si el servidor no acepta el email, o si no contesta en 10 segundos.
+
+Para firmar un email con otro nombre, desde la misma dirección:
+
+```ts
+await this.base.email.send({
+  to: 'ana@example.com',
+  from: { name: 'Soporte de Newthub' },
+  subject: 'Hemos recibido tu pregunta',
+  text: 'Te contestamos hoy.',
+})
+```
+
+:::caution
+Casi todos los servidores solo envían desde direcciones que has verificado con ellos. Cambia `name` con libertad, y `address` con cuidado.
+:::
 
 ## Envíalo desde un job
 

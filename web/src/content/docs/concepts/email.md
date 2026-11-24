@@ -79,12 +79,28 @@ await this.base.email.send({
 | Field | Required | Meaning |
 |---|---|---|
 | `to` | yes | An address, or several. Each alone, with no name: `ana@example.com`. |
+| `from` | no | Who it is from, `{ name, address }`. What you leave out is `EMAIL_FROM`'s. |
 | `subject` | yes | The subject. |
 | `text` | yes | The email as plain text. |
 | `html` | no | The same as HTML. |
 | `replyTo` | no | Where answers go. |
 
 `send` rejects when the server does not take the email, or does not answer in 10 seconds.
+
+To sign an email with another name, from the same address:
+
+```ts
+await this.base.email.send({
+  to: 'ana@example.com',
+  from: { name: 'Newthub Support' },
+  subject: 'We got your question',
+  text: 'We will answer today.',
+})
+```
+
+:::caution
+Most servers only send from addresses you have verified with them. Change the `name` freely, and the `address` with care.
+:::
 
 ## Send it from a job
 
