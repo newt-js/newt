@@ -263,6 +263,21 @@ describe('runContexts, one server for every context', () => {
     await rm(built, { recursive: true })
   })
 
+  test('a context with subdomains answers at each of them as at its host, and only one level down', async () => {
+    const log: string[] = []
+    const app = runContexts([
+      { context: context('auth', log), router: routerOf('auth', '/session', '/auth/api'), host: 'auth.test', subdomains: true },
+    ], { signals: false, serve: { port: 0 } })
+    const at = (path: string, host: string) => fetch(new URL(path, app.server!.url), { headers: { host } })
+
+    expect(await (await at('/api/session', 'auth.test')).json()).toBe('auth')
+    expect(await (await at('/api/session', 'Backoffice.Auth.Test:3000')).json()).toBe('auth')
+    expect((await at('/api/session', 'a.backoffice.auth.test')).status).toBe(404)
+    expect((await at('/api/session', 'otherauth.test')).status).toBe(404)
+
+    await app.stop()
+  })
+
   test('two contexts at one host stop it before anything starts', () => {
     const log: string[] = []
 

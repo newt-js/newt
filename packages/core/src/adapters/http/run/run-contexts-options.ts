@@ -15,6 +15,8 @@ export type ContextToRun = {
   router?: HttpRouter
   app?: string | Bun.HTMLBundle
   host?: string | undefined
+  /** Whether it answers at every subdomain of its host too: auth, whose applications each have their own. */
+  subdomains?: boolean
 }
 
 export type RunningContexts = {

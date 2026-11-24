@@ -1,14 +1,19 @@
 import type { ContextToRun } from '../run-contexts-options'
 
-/** Each context's host, the context it is of; two contexts at one host stop it before anything starts. */
+/**
+ * Each context's host, the context it is of, and `*.<host>` for one that answers at its subdomains too. Two contexts
+ * at one host stop it before anything starts.
+ */
 export function hostsOf(contexts: ContextToRun[]): Record<string, string> {
   const hosts: Record<string, string> = {}
-  for (const { context, host } of contexts) {
+  for (const { context, host, subdomains } of contexts) {
     if (!host) continue
     const given = host.toLowerCase()
-    const taken = hosts[given]
-    if (taken) throw new Error(`${taken} and ${context.name} both answer at the host ${given}`)
-    hosts[given] = context.name
+    for (const each of subdomains ? [given, `*.${given}`] : [given]) {
+      const taken = hosts[each]
+      if (taken) throw new Error(`${taken} and ${context.name} both answer at the host ${each}`)
+      hosts[each] = context.name
+    }
   }
   return hosts
 }

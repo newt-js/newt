@@ -39,7 +39,13 @@ export function byHost(hosts: Record<string, string>, answers: ContextAnswers): 
   const rewritten = new WeakSet<Request>()
   const ownerOf = (request: Request) => {
     const host = requestHost(request)
-    return host === null ? undefined : owners.get(host) ?? owners.get(host.replace(/:\d+$/, ''))
+    if (host === null) return undefined
+    // With its port and without, at the host itself or at one of its subdomains.
+    for (const each of [host, host.replace(/:\d+$/, '')]) {
+      const owner = owners.get(each) ?? owners.get(`*.${each.slice(each.indexOf('.') + 1)}`)
+      if (owner !== undefined) return owner
+    }
+    return undefined
   }
   const answerAs = async (context: string, request: Request, server: Bun.Server<undefined>) => {
     const url = new URL(request.url)
