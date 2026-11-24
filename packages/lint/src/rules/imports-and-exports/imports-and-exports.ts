@@ -1,11 +1,13 @@
-import type { Rule } from 'eslint'
+import type { Rule }    from 'eslint'
 // --------------------------------------------------------
-import { compare }   from './compare/compare'
-import { isPackage } from './is-package/is-package'
+import type { Context } from '../../paths/paths'
+import { isAlias }      from '../../paths/paths'
+import { compare }      from './compare/compare'
+import { isPackage }    from './is-package/is-package'
 
 type Statement = Rule.Node
 type Kind = 'import' | 'export'
-type Line = { kind: Kind, head: string, tail: string, path: string, name: string }
+type Line = { kind: Kind, head: string, tail: string, path: string, name: string, alias: boolean }
 
 export const SEPARATOR = '// --------------------------------------------------------'
 
@@ -14,7 +16,7 @@ export const importsAndExports: Rule.RuleModule = {
     type: 'layout',
     fixable: 'code',
     messages: {
-      shape: 'Imports, then exports; packages, then local files; one name per line, in braces, sorted and aligned at `from`.',
+      shape: 'Imports, then exports; packages, then the aliases of the tsconfig, then local files; one name per line, in braces, sorted and aligned at `from`.',
       star: 'Name what it takes, in braces: `{{text}}` takes everything.',
       scattered: 'Imports and exports go together, at the head of the file: this is between them.',
     },
@@ -22,6 +24,8 @@ export const importsAndExports: Rule.RuleModule = {
   },
   create(context) {
     const code = context.sourceCode
+    // An alias of the tsconfig's `paths` is the project's own: only known when typescript-eslint builds a program, as the preset does.
+    const aliasOf = (path: string) => isAlias(context as unknown as Context, path)
 
     function kindOf(statement: Statement): Kind | null {
       if (statement.type === 'ImportDeclaration') return statement.specifiers.length > 0 ? 'import' : null
@@ -34,7 +38,7 @@ export const importsAndExports: Rule.RuleModule = {
       if (statement.type === 'ExportAllDeclaration') {
         if (statement.exported != null) return null
         const path = String(statement.source.value)
-        return [{ kind, head: 'export *', tail: `from ${code.getText(statement.source as Rule.Node)}`, path, name: '*' }]
+        return [{ kind, head: 'export *', tail: `from ${code.getText(statement.source as Rule.Node)}`, path, name: '*', alias: aliasOf(path) }]
       }
       if (statement.type !== 'ImportDeclaration' && statement.type !== 'ExportNamedDeclaration') return null
       const source = statement.source!
@@ -50,7 +54,7 @@ export const importsAndExports: Rule.RuleModule = {
           : code.getText(specifier as Rule.Node)
         const name = text.replace(/^type\s+/, '')
         const typed = isType || name !== text
-        lines.push({ kind, head: `${kind}${typed ? ' type' : ''} { ${name} }`, tail, path, name })
+        lines.push({ kind, head: `${kind}${typed ? ' type' : ''} { ${name} }`, tail, path, name, alias: aliasOf(path) })
       }
       return lines
     }
@@ -59,7 +63,8 @@ export const importsAndExports: Rule.RuleModule = {
       const column = Math.max(...lines.map(line => line.head.length)) + 1
       const groups = (['import', 'export'] as const).flatMap(kind => {
         const ofKind = lines.filter(line => line.kind === kind).sort(compare)
-        return [ofKind.filter(isPackage), ofKind.filter(line => !isPackage(line))]
+        const packages = ofKind.filter(isPackage)
+        return [packages.filter(line => !line.alias), packages.filter(line => line.alias), ofKind.filter(line => !isPackage(line))]
       })
       return groups
         .filter(group => group.length > 0)

@@ -28,7 +28,7 @@ describe('newt add deps', () => {
   test('order uses invoice, given by sales.context.ts, and its lint, types and tests pass', async () => {
     const backend = await withInvoice()
     expect((await run(ADD_DEPS, ['sales/order', 'invoice'], backend)).code).toBe(0)
-    expect(await read(backend, 'modules/order/order.deps.ts')).toBe("import type { Invoice_Module } from '../invoice/invoice.module'\n\nexport type Order_Deps = {\n  invoice: Invoice_Module\n}\n")
+    expect(await read(backend, 'modules/order/order.deps.ts')).toBe("import type { Invoice_Module } from '../invoice'\n\nexport type Order_Deps = {\n  invoice: Invoice_Module\n}\n")
     expect(await read(backend, 'modules/order/order.module.ts')).toContain("    super('order', base.useCaseRunner, deps)")
     expect(await read(backend, 'sales.context.ts')).toContain('    const invoice = Invoice_Module.initialize(base, router)\n    const order = Order_Module.initialize(base, router, {\n      invoice,\n    })')
     expect(await checkGenerated(backend)).toEqual([])

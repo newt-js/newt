@@ -11,6 +11,7 @@ import { entityTs }          from '../files/entity-ts'
 import { errorNotFoundTs }   from '../files/error-not-found-ts'
 import { eventCreatedTs }    from '../files/event-created-ts'
 import { idTs }              from '../files/id-ts'
+import { indexTs }           from '../files/index-ts'
 import { moduleTestTs }      from '../files/module-test-ts'
 import { moduleTs }          from '../files/module-ts'
 import { repositoryTs }      from '../files/repository-ts'
@@ -42,6 +43,7 @@ export function moduleTemplate({ backend, context, names, database, migration }:
     [`${names.folder}.repository.ts`]: repositoryTs(names),
     [`${names.folder}.module.ts`]: moduleTs(names),
     [`${names.folder}.routes.ts`]: routesTs(names),
+    ['index.ts']: indexTs(names),
     [`${names.folder}.module.test.ts`]: moduleTestTs(names, context, database),
   }
   const sql = moduleMigration(names, database)

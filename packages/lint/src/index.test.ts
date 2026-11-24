@@ -14,6 +14,7 @@ import { join }          from 'node:path'
 import { pathToFileURL } from 'node:url'
 // --------------------------------------------------------
 import { newt }          from './index'
+import { SEPARATOR }     from './rules/imports-and-exports/imports-and-exports'
 
 let root: string
 let eslint: ESLint
@@ -57,10 +58,13 @@ describe('the preset of newt', () => {
     await complaints('src/contexts/auth/auth.context.ts', 'export class Auth_Context {\n\n  public readonly user: unknown\n\n}\n')
     await complaints('src/contexts/auth/modules/user/user.schema.ts', 'export type UserDTO = { id: string }\n')
     await complaints('src/contexts/auth/modules/secret/secret.schema.ts', 'export type SecretDTO = { id: string }\n')
+    await complaints('src/contexts/auth/modules/user/index.ts', "export type { UserDTO } from './user.schema'\n")
+    await complaints('src/contexts/auth/modules/secret/index.ts', "export type { SecretDTO } from './secret.schema'\n")
 
     expect(await complaints(order, "import type { Auth_Context } from '../../../auth/auth.context'\nexport type A = Auth_Context\n")).toEqual([])
-    expect(await complaints(order, "import type { UserDTO } from '../../../auth/modules/user/user.schema'\nexport type U = UserDTO\n")).toEqual([])
-    expect(await complaints(order, "import type { SecretDTO } from '../../../auth/modules/secret/secret.schema'\nexport type S = SecretDTO\n")).toEqual(['newt/published-modules'])
+    expect(await complaints(order, "import type { UserDTO } from '../../../auth/modules/user'\nexport type U = UserDTO\n")).toEqual([])
+    expect(await complaints(order, "import type { UserDTO } from '../../../auth/modules/user/user.schema'\nexport type U = UserDTO\n")).toEqual(['newt/published-modules'])
+    expect(await complaints(order, "import type { SecretDTO } from '../../../auth/modules/secret'\nexport type S = SecretDTO\n")).toEqual(['newt/published-modules'])
   })
 
   test('refuses contexts that are no tree', () => {
@@ -70,7 +74,16 @@ describe('the preset of newt', () => {
 
   test("reads an alias of the tsconfig's paths as the file it names", async () => {
     expect(await complaints('src/contexts/ws/modules/order/order.module.ts', "import { x } from '@/contexts/ws/modules/brand/brand.repository'\nexport const y = x\n")).toEqual(['newt/module-imports'])
-    expect(await complaints('src/contexts/ws/modules/order/order.deps.ts', "import type { x } from '@/contexts/ws/modules/brand/brand.module'\nexport type Y = typeof x\n")).toEqual([])
+    expect(await complaints('src/contexts/ws/modules/order/order.deps.ts', "import type { x } from '@/contexts/ws/modules/brand'\nexport type Y = typeof x\n")).toEqual([])
+  })
+
+  test("puts the aliases of the tsconfig's paths after the packages, each group under its own line", async () => {
+    const file = 'src/shared/aliases.ts'
+    const ordered = `import { z }   from 'zod'\n${SEPARATOR}\nimport { env } from '@/env'\n${SEPARATOR}\nimport { a }   from './a'\n\nexport const b = [z, env, a]\n`
+    expect(await allComplaints(file, ordered)).toEqual([])
+    expect(await allComplaints(file, `import { env } from '@/env'\nimport { z }   from 'zod'\n${SEPARATOR}\nimport { a }   from './a'\n\nexport const b = [z, env, a]\n`)).toEqual(['newt/imports-and-exports'])
+    const [result] = await eslint.lintFiles([join(root, file)])
+    expect(result?.messages[0]?.fix?.text).toBe(ordered.slice(0, ordered.indexOf('\n\n')))
   })
 
   test('keeps a module writing through persist, never in a transaction of its own', async () => {
@@ -117,12 +130,13 @@ describe('the preset of newt', () => {
     expect(await complaints('src/contexts/ws/modules/order/order.routes.ts', "import { HttpRouter } from '@newt-js/core/http'\nexport const x = HttpRouter\n")).toEqual([])
   })
 
-  test("reaches another module only through its API: its DTOs as types, never its schema as a value", async () => {
+  test("reaches another module only through its index.ts: its DTOs as types, never its schema", async () => {
     await complaints('src/contexts/ws/modules/folder/folder.schema.ts', "import { z } from 'zod'\nexport const FolderSchema = z.object({ id: z.string() })\nexport type FolderDTO = z.infer<typeof FolderSchema>\n")
+    expect(await complaints('src/contexts/ws/modules/folder/index.ts', "export type { FolderDTO } from './folder.schema'\n")).toEqual([])
+    expect(await complaints('src/contexts/ws/modules/folder/index.ts', "export { FolderSchema } from './folder.schema'\n")).toEqual(['newt/module-index'])
     const schema = 'src/contexts/ws/modules/note/note.schema.ts'
-    // Said once, by module-imports: schema-imports lets a schema name another's, and module-imports says how.
-    expect(await complaints(schema, "import { z } from 'zod'\nimport { FolderSchema } from '../folder/folder.schema'\nexport const NoteSchema = z.object({ folderId: FolderSchema.shape.id })\n")).toEqual(['newt/module-imports'])
-    expect(await complaints(schema, "import { z } from 'zod'\nimport type { FolderDTO } from '../folder/folder.schema'\nexport const NoteSchema = z.object({ folderId: z.string() })\nexport type NoteFolder = FolderDTO\n")).toEqual([])
+    expect((await complaints(schema, "import { z } from 'zod'\nimport { FolderSchema } from '../folder/folder.schema'\nexport const NoteSchema = z.object({ folderId: FolderSchema.shape.id })\n")).sort()).toEqual(['newt/module-imports', 'newt/schema-imports'])
+    expect(await complaints(schema, "import { z } from 'zod'\nimport type { FolderDTO } from '../folder'\nexport const NoteSchema = z.object({ folderId: z.string() })\nexport type NoteFolder = FolderDTO\n")).toEqual([])
     expect(await complaints('src/contexts/ws/modules/note/note.module.ts', "import { FolderSchema } from '@/contexts/ws/modules/folder/folder.schema'\nexport const x = FolderSchema\n")).toEqual(['newt/module-imports'])
   })
 
@@ -189,6 +203,8 @@ describe('the preset of newt', () => {
     await writeFile(join(root, app, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, module: 'Preserve', moduleResolution: 'bundler', jsx: 'react-jsx', paths: { '@/*': ['../../../*'] } }, include: ['**/*.ts', '**/*.tsx'] }))
     expect(await complaints(`${app}/app.tsx`, "// eslint-disable-next-line newt/app-imports\nimport { requiredEnv } from '../../../env'\nexport const a = requiredEnv\n")).toEqual(['newt/no-disable'])
     expect(await complaints(`${app}/main.tsx`, "import { requiredEnv } from '@/env'\nexport const b = requiredEnv\n")).toEqual(['newt/app-imports'])
+    // Its .tsx files keep their imports in shape too.
+    expect((await allComplaints(`${app}/list.tsx`, "import { b } from './b'\nimport { a } from 'react'\nexport const c = [a, b]\n")).filter(rule => rule !== 'newt/app-files')).toEqual(['newt/imports-and-exports'])
   })
 
   test('says what a rule of newt found in a message an agent can follow', async () => {
@@ -224,9 +240,9 @@ describe('the preset of newt', () => {
   test("keeps a context's file from handing out a module's own files", async () => {
     const entry = 'src/contexts/ws/ws.context.ts'
     expect(await complaints(entry, "export * from './modules/brand/brand.repository'\n")).toEqual(['newt/module-imports'])
-    expect(await complaints(entry, "export * from './modules/brand/brand.module'\n")).toEqual(['newt/module-imports'])
-    expect(await complaints(entry, "export type * from './modules/brand/brand.module'\n")).toEqual([])
-    expect(await complaints(entry, "export * from './modules/brand/errors/brand-not-found'\n")).toEqual([])
+    expect(await complaints(entry, "export type * from './modules/brand/brand.module'\n")).toEqual(['newt/module-imports'])
+    expect(await complaints(entry, "export * from './modules/brand/errors/brand-not-found'\n")).toEqual(['newt/module-imports'])
+    expect(await complaints(entry, "export type * from './modules/brand'\n")).toEqual([])
     expect(await complaints(entry, "import { x } from './modules/brand/brand.repository'\nexport const y = x\n")).toEqual([])
   })
 

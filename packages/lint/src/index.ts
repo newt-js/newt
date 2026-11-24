@@ -19,11 +19,13 @@ import type { Uses }               from './rules/context-imports/context-imports
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
+import { entityUpdated }           from './rules/entity-updated/entity-updated'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
 import { importsAndExports }       from './rules/imports-and-exports/imports-and-exports'
 import { moduleEntity }            from './rules/module-entity/module-entity'
 import { moduleFiles }             from './rules/module-files/module-files'
 import { moduleImports }           from './rules/module-imports/module-imports'
+import { moduleIndex }             from './rules/module-index/module-index'
 import { moduleNames }             from './rules/module-names/module-names'
 import { modulePlace }             from './rules/module-place/module-place'
 import { moduleTransactions }      from './rules/module-transactions/module-transactions'
@@ -42,6 +44,7 @@ import { useCaseParams }           from './rules/use-case-params/use-case-params
 import { useCasePublicMethods }    from './rules/use-case-public-methods/use-case-public-methods'
 import { useCaseReads }            from './rules/use-case-reads/use-case-reads'
 import { useCaseResolved }         from './rules/use-case-resolved/use-case-resolved'
+import { workerOneWrite }          from './rules/worker-one-write/worker-one-write'
 
 /** The rules of newt that no other plugin has, as ESLint takes them: typescript-eslint's types of a rule are not ESLint's, though ESLint runs them. */
 export const plugin = {
@@ -62,6 +65,7 @@ export const plugin = {
     'module-entity': moduleEntity,
     'module-files': moduleFiles,
     'module-imports': moduleImports,
+    'module-index': moduleIndex,
     'module-names': moduleNames,
     'module-transactions': moduleTransactions,
     'no-disable': noDisable,
@@ -77,7 +81,9 @@ export const plugin = {
     'use-case-public-methods': useCasePublicMethods,
     'use-case-reads': useCaseReads,
     'use-case-resolved': useCaseResolved,
+    'entity-updated': entityUpdated,
     'use-case-batched': useCaseBatched,
+    'worker-one-write': workerOneWrite,
   },
   processors: { 'keep-no-disable': keepNoDisable },
 } as unknown as ESLint.Plugin
@@ -120,6 +126,8 @@ export type NewtLintOptions = {
   contexts?: { folder: string, uses?: Uses }
   /** The folder of the config, which its globs and folders are read from: ESLint's cwd without it. */
   root?: string
+  /** The folder of the UI a project's apps share, its layouts above all: every app may import it. */
+  ui?: string
 }
 
 /**
@@ -133,7 +141,7 @@ export type NewtLintOptions = {
  * export default newt({ root: import.meta.dirname, contexts: { folder: 'src/contexts' } })
  * ```
  */
-export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = {}): Linter.Config[] {
+export function newt({ files = ['**/*.ts'], contexts, root, ui }: NewtLintOptions = {}): Linter.Config[] {
   const base = absolute(root ?? process.cwd(), process.cwd())
   if (contexts?.uses) assertUsesTree(contexts.uses)
   const folder = contexts ? absolute(contexts.folder, base) : undefined
@@ -155,6 +163,17 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     ignores: [MODULES],
     rules: { 'newt/module-imports': 'error' },
   }] : []
+  // Read as the contexts' folder is: from the root, or from ESLint's cwd without one.
+  const sharedUi = ui === undefined ? undefined : root === undefined ? ui : absolute(ui, base)
+  const uiRules: Linter.Config[] = ui === undefined ? [] : [{
+    // The shared UI is .ts and .tsx too, checked as the rest of the project's code.
+    files: [`${posix.relative(base, absolute(ui, base))}/**/*.{ts,tsx}`],
+    languageOptions: { parser: tseslint.parser, parserOptions: { projectService: true } },
+    processor: keepNoDisable,
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
+    plugins: { 'newt': plugin, '@typescript-eslint': tseslint.plugin as unknown as ESLint.Plugin, '@stylistic': stylistic as unknown as ESLint.Plugin },
+    rules: { ...OTHERS, 'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }], 'newt/imports-and-exports': 'error' },
+  }]
   const appRules: Linter.Config[] = contexts ? [{
     // A context's app is .ts and .tsx, each its own project, whose aliases resolve as in the rest.
     files: [`${inside ? `${inside}/` : ''}*/app/**/*.{ts,tsx}`],
@@ -167,10 +186,11 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
       'newt/app-components': ['error', { folder: given }],
       'newt/app-files': ['error', { folder: given }],
       'newt/app-html': ['error', { folder: given }],
-      'newt/app-imports': ['error', { folder: given }],
+      'newt/app-imports': ['error', { folder: given, ...ui === undefined ? {} : { ui: sharedUi } }],
       'newt/app-signal-reads': ['error', { folder: given }],
       'newt/app-size': ['error', { folder: given }],
       'newt/app-styles': ['error', { folder: given }],
+      'newt/imports-and-exports': 'error',
       'newt/no-disable': ['error', { rules: Object.keys(OTHERS) }],
     },
   }] : []
@@ -193,7 +213,9 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/use-case-params': 'error',
         'newt/use-case-reads': 'error',
         'newt/use-case-resolved': 'error',
+        'newt/entity-updated': 'error',
         'newt/use-case-batched': 'error',
+        'newt/worker-one-write': 'error',
         'newt/route-body-unchecked': 'error',
         'newt/route-public-rate-limit': 'error',
         'newt/framework-tables': 'error',
@@ -202,6 +224,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
     },
     ...contextRules,
     ...appRules,
+    ...uiRules,
     {
       // A module's file among those it lints: an inner list is every pattern of it at once.
       files: files.map(pattern => [pattern, MODULES]),
@@ -209,6 +232,7 @@ export function newt({ files = ['**/*.ts'], contexts, root }: NewtLintOptions = 
         'newt/module-entity': 'error',
         'newt/module-files': 'error',
         'newt/module-imports': 'error',
+        'newt/module-index': 'error',
         'newt/module-names': 'error',
         'newt/entity-method-params': 'error',
         'newt/reaction-queue': 'error',

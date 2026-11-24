@@ -4,18 +4,16 @@ import { statSync }        from 'node:fs'
 import { posix }           from 'node:path'
 import { default as ts }   from 'typescript'
 // --------------------------------------------------------
-import { isTypeOnly }      from '../../ast/ast'
 import { ROOT }            from '../../paths/paths'
 import { absolute }        from '../../paths/paths'
 import { camelCase }       from '../../paths/paths'
 import { contextOf }       from '../../paths/paths'
 import { importsOf }       from '../../paths/paths'
+import { isModuleEntry }   from '../../paths/paths'
 import { moduleOfContext } from '../../paths/paths'
 import { real }            from '../../paths/paths'
 import { resolved }        from '../../paths/paths'
 import { rootOf }          from '../../paths/paths'
-import { API_TYPES }       from '../module-imports/module-imports'
-import { API_VALUES }      from '../module-imports/module-imports'
 
 export type PublishedModulesOptions = { folder: string }
 
@@ -48,19 +46,18 @@ export function publishedBy(file: string): string[] {
 
 /**
  * A context reaches another only through what it offers: its class, `<name>.context.ts`,
- * whose public fields are the modules it publishes, and of those, the types of their
- * module, schema and events, and their errors. Which contexts it may reach at all,
+ * whose public fields are the modules it publishes, and of those, what their `index.ts`
+ * offers. Which contexts it may reach at all,
  * `newt/context-imports` says.
  */
-export const publishedModules: TSESLint.RuleModule<'unpublished' | 'inside' | 'type', [PublishedModulesOptions]> = {
+export const publishedModules: TSESLint.RuleModule<'unpublished' | 'inside', [PublishedModulesOptions]> = {
   defaultOptions: [{ folder: 'src/contexts' }],
   meta: {
     type: 'problem',
     docs: { description: 'Another context is reached only through its class and the modules it publishes.' },
     messages: {
       unpublished: "'{{path}}' is of {{module}}, which {{context}} does not publish: another context reaches only the modules {{context}}.context.ts holds in a public field. If {{context}} offers it, publish it there (newt publish {{context}}/{{folder}}).",
-      inside: "'{{path}}' is {{context}}'s own: from another context, import {{context}}.context.ts, and of a module it publishes, only the types of its module, schema and events, and its errors.",
-      type: "'{{path}}' is part of {{module}}'s API as types alone: `import type`. Call it through the context you are given, this.deps.{{context}}.{{module}}.",
+      inside: "'{{path}}' is {{context}}'s own: from another context, import {{context}}.context.ts, and of a module it publishes, only its index.ts, by its folder.",
     },
     schema: [{
       type: 'object',
@@ -80,18 +77,13 @@ export const publishedModules: TSESLint.RuleModule<'unpublished' | 'inside' | 't
       const contextFile = posix.join(real(folder), other, `${other}.context`)
       if (real(path) === contextFile) return
       const imported = moduleOfContext(path, folder)
-      const isApi = imported && (API_TYPES.test(imported.inside) || API_VALUES.test(imported.inside))
-      if (!imported || !isApi) {
+      if (!imported || !isModuleEntry(imported.inside)) {
         context.report({ node, messageId: 'inside', data: { path: specifier, context: other } })
         return
       }
       const module = camelCase(imported.module)
       if (!publishedBy(`${contextFile}.ts`).includes(module)) {
         context.report({ node, messageId: 'unpublished', data: { path: specifier, context: other, module, folder: imported.module } })
-        return
-      }
-      if (API_TYPES.test(imported.inside) && !isTypeOnly(node)) {
-        context.report({ node, messageId: 'type', data: { path: specifier, context: other, module } })
       }
     })
   },

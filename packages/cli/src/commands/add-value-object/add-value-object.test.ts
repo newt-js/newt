@@ -38,7 +38,7 @@ describe('newt add value-object', () => {
     await Bun.write(join(backend, ORDER_MODULE, 'customer-id.test.ts'), `import { expect }               from 'bun:test'
 import { test }                 from 'bun:test'
 // --------------------------------------------------------
-import type { Customer_Module } from '../customer/customer.module'
+import type { Customer_Module } from '../customer'
 import { CustomerId }           from './value-objects/customer-id'
 
 test("customer's use cases take the id order keeps", () => {

@@ -78,6 +78,11 @@ export const ADD_FEATURE = defineCommand({
       ? { bound: null, warnings: [] }
       : await boundModule(join(contextFolder, 'modules', options.module), options.module, found.modules, context)
     const file = (suffix: string) => relative(cwd, join(folder, `${feature.folder}${suffix}`))
+    // Every part in a folder of its own, inside its parent's: `clients-list/clients-list-row/clients-list-row.tsx`.
+    const part = (path: string[]) => {
+      const folders = path.map(each => `${feature.folder}-${each}`)
+      return relative(cwd, join(folder, ...folders, `${folders.at(-1)}.tsx`))
+    }
     const lines = featureRouteLines(feature)
     const changes: FileChange[] = [
       { action: 'create', path: file('.tsx'), content: featureTsx(feature, bound) },
@@ -85,10 +90,10 @@ export const ADD_FEATURE = defineCommand({
       { action: 'create', path: file('.api.ts'), content: featureApiTs(feature, bound) },
       ...bound === null ? [] : [
         { action: 'create' as const, path: file('.state.ts'), content: featureStateTs(feature, bound) },
-        { action: 'create' as const, path: file('-form.tsx'), content: featureFormTsx(feature, bound) },
-        { action: 'create' as const, path: file('-list.tsx'), content: featureListTsx(feature, bound) },
-        { action: 'create' as const, path: file('-list-head.tsx'), content: featureListHeadTsx(feature, bound) },
-        { action: 'create' as const, path: file('-list-row.tsx'), content: featureListRowTsx(feature, bound) },
+        { action: 'create' as const, path: part(['form']), content: featureFormTsx(feature, bound) },
+        { action: 'create' as const, path: part(['list']), content: featureListTsx(feature, bound) },
+        { action: 'create' as const, path: part(['list', 'list-head']), content: featureListHeadTsx(feature, bound) },
+        { action: 'create' as const, path: part(['list', 'list-row']), content: featureListRowTsx(feature, bound) },
       ],
       { action: 'insert-lines', path: relative(cwd, routes), anchor: ROUTES_HEAD, position: 'before', lines: [lines.lazy, ''], imports: [] },
       { action: 'insert-lines', path: relative(cwd, routes), anchor: NOT_FOUND_ROUTE, position: 'before', lines: [lines.route], imports: [] },

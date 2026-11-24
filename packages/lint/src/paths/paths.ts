@@ -75,7 +75,8 @@ function inProject(file: string, root: string): string {
 
 /**
  * Where a file of a module is, `<context>/modules/<module>/`: its context (the folder that
- * holds `modules/`), its module, and its path inside the module. `null` for a file of no
+ * holds `modules/`), its module, and its path inside the module (`''` for the module's
+ * folder, which an import names its `index.ts` by). `null` for a file of no
  * module. The path is read from the project's root, so a project that lives inside a
  * folder named `modules` is not mistaken for one; a `modules/` at the project's root has
  * the project itself as its context (`.`).
@@ -84,10 +85,18 @@ export function modulePlace(file: string, root = ''): Place | null {
   const whole = real(slashed(file))
   const path = inProject(whole, root)
   const inRoot = path !== whole
-  const top = inRoot ? /^\/modules\/([^/]+)\/(.+)$/.exec(path) : null
-  if (top) return { context: '.', module: top[1]!, inside: top[2]! }
-  const inContext = /\/([^/]+)\/modules\/([^/]+)\/(.+)$/.exec(path)
-  return inContext ? { context: inContext[1]!, module: inContext[2]!, inside: inContext[3]! } : null
+  const top = inRoot ? /^\/modules\/([^/]+)(?:\/(.+))?$/.exec(path) : null
+  if (top) return { context: '.', module: top[1]!, inside: top[2] ?? '' }
+  const inContext = /\/([^/]+)\/modules\/([^/]+)(?:\/(.+))?$/.exec(path)
+  return inContext ? { context: inContext[1]!, module: inContext[2]!, inside: inContext[3] ?? '' } : null
+}
+
+/**
+ * A module's entry, the only file of it another module, context or app imports: its
+ * `index.ts`, named by its path or by the module's folder.
+ */
+export function isModuleEntry(inside: string): boolean {
+  return inside === '' || inside === 'index'
 }
 
 /** Where a file directly in the folder of the contexts is: in no context, and one no context may import. */
@@ -159,6 +168,11 @@ export function target(file: string, specifier: string): string {
 export function resolved(context: Context, specifier: string): string | null {
   const path = specifier.startsWith('.') ? target(context.filename, specifier) : specifier.startsWith('/') ? slashed(specifier) : aliased(context, specifier)
   return path?.replace(/\.[cm]?[jt]sx?$/, '') ?? null
+}
+
+/** Whether a path is an alias of the tsconfig's `paths`: one of the project's files, named as the project names it. */
+export function isAlias(context: Context, specifier: string): boolean {
+  return !specifier.startsWith('.') && !specifier.startsWith('/') && aliased(context, specifier) !== null
 }
 
 /**

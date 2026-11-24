@@ -59,7 +59,13 @@ app/
     layouts/           the app's structures
 ```
 
-Nothing else goes at the root. A feature, with everything it may hold:
+Nothing else goes at the root. What a file imports from outside its own feature goes by the app's aliases, set in
+its `tsconfig.json` and named after its context, never by `../../..`: `@<context>/services/…`, `@<context>/guards/…`,
+`@<context>/pages/…`, `@<context>/components/…` for the app's own parts, `@<context>/modules/<module>` for what
+its context's modules offer (their `index.ts`, as types), and `@ui/…` for the project's shared UI. A feature is never reached by an alias: only `lazy()`, in
+`app.routes.tsx`.
+
+A feature, with everything it may hold:
 
 ```
 features/clients/
@@ -68,14 +74,17 @@ features/clients/
   clients.state.ts         the state's shape and its first value
   clients.service.ts       the state, and what changes it
   clients.api.ts           its requests
-  clients-list.tsx         a part split out of clients.tsx
-  clients-list-row/        a part that split again
-    clients-list-row.tsx
-    clients-list-row-menu.tsx
+  clients-list/            a part of clients.tsx, in a folder of its own
+    clients-list.tsx
+    clients-list-row/      a part of clients-list.tsx, inside its folder
+      clients-list-row.tsx
 ```
 
-- **Names say where a file lives.** Everything inside a folder is named after it (`clients-list.tsx`), and its
+- **Names say where a file lives.** Everything inside a folder is named after it (`clients-list/`), and its
   root is the plain name (`Clients`).
+- **Every component has a folder of its own**, named as it (`clients-list/clients-list.tsx`), even before it
+  splits; its parts go inside it. A component that grows splits by adding a file, never by moving one. Loose in
+  the feature's folder are only its root, its routes, its state, its service and its api.
 - **A feature has no `components/` of its own.**
 - **A feature imports no other feature.** Features hear each other through events.
 - **`pages/` holds no state.** Anything that shows the business is a feature, however small; the home too.
@@ -163,6 +172,10 @@ So every screen of every app looks the same. When something is missing, take the
      bar of actions in place.
 3. **A structure of the app's.** Screens that look alike are built alike:
    - Before building a screen, look in `components/layouts/` for one that holds it: a list page, a detail page, a form.
+   - A project with several apps keeps what they share in one folder of its own, `src/ui/`, named in the lint's
+     config (`ui: 'src/ui'`): every app may import it. It holds two kinds of thing, each in a folder per piece:
+     `layouts/`, the containers (the frame, a page's header, its tabs), and `components/`, the elements of the
+     interface (a toggle, a badge of the business).
    - When a shape comes back on a second screen, make it a structure and build both with it (no lint).
    - None is made ahead of need.
    - A structure is made of the pieces above and styles as little as it can. It says why in a line `Why: …`. It is
@@ -170,7 +183,11 @@ So every screen of every app looks the same. When something is missing, take the
 4. **A component of the app's own**, in `components/`, with class names: the last resort.
    - Its doc comment says, on a line `Why: …`, why nothing in `@newt-js/react` composes it.
    - If another app would want it too, say so to whoever asked.
-   - What apps share lives in a package of the project's own, never in newt's (`@newt-js/*`) (no lint).
+   - What apps share lives in the project's shared UI folder (`ui` in the lint's config), never in newt's
+     (`@newt-js/*`) (no lint).
+
+Icons are Phosphor's (`@phosphor-icons/react`), each imported from its own file so that only it is downloaded:
+`import { UsersIcon } from '@phosphor-icons/react/dist/csr/Users'` (no lint).
 
 ## Growing
 
@@ -183,8 +200,8 @@ A piece that grows is split before it is hard to read. The lint stops these:
 | Component | 1 `useService`, 3 `useValue` |
 | Service | 150 lines, 7 public methods, 3 `inject()` |
 
-- **A component that grows** gets a part split out, beside it and named after it (`clients-list-row.tsx`). The part
-  gets its own folder only when it splits again.
+- **A component that grows** gets a part split out, in a folder inside its own and named after it
+  (`clients-list/clients-list-row/clients-list-row.tsx`).
 - **A component that reads many values** gets one `computed` from its service, holding what it shows.
 - **A service that grows** is split by part of the screen. Each part is provided where it is (`clients-detail/`
   gets a `ClientsDetailService`).

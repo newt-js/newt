@@ -51,7 +51,7 @@ async function moduleOfItsContext(found: FoundModule, other: string, cwd: string
   }
   const contextFile = join(contextFolder, `${context.folder}.context.ts`)
   const changes: FileChange[] = [
-    ...moduleChanges(found, { key: used.module, type: `${used.type}_Module`, from: `../${used.folder}/${used.folder}.module` }),
+    ...moduleChanges(found, { key: used.module, type: `${used.type}_Module`, from: `../${used.folder}` }),
     { action: 'add-object-property', path: contextFile, call: `${module.type}_Module.initialize`, argument: 2, key: used.module, value: used.module, imports: [], createArgument: true },
     { action: 'order-modules', path: contextFile },
   ]

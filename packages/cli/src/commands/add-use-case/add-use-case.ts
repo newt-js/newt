@@ -3,6 +3,7 @@ import { join }          from 'node:path'
 import { useCaseNames }  from '../../names/use-case-names/use-case-names'
 import { classMembers }  from '../../project/class-members/class-members'
 import { findModule }    from '../../project/find-module/find-module'
+import { indexTypeLine } from '../../templates/module/files/index-ts'
 import { useCaseMember } from '../../templates/pieces/use-case-ts'
 import { useCaseSchema } from '../../templates/pieces/use-case-ts'
 import { useCaseTest }   from '../../templates/pieces/use-case-ts'
@@ -53,6 +54,8 @@ export const ADD_USE_CASE = defineCommand({
           imports: [`import { ${module.type}${useCase.type}Schema, type ${module.type}${useCase.type}DTO } from './${module.folder}.schema'`],
         },
         { action: 'append-block', path: file('.module.test.ts'), block: useCaseTest(module, useCase), imports: [] },
+        // Who calls the use case writes its input: its index.ts offers its DTO.
+        { action: 'ensure-lines', path: join(folder, 'index.ts'), lines: [indexTypeLine(`${module.type}${useCase.type}DTO`, module.folder)] },
       ],
       nextSteps: [
         `change the ${module.words} by a method of its entity, in ${module.folder}.ts, and call it before persist in ${useCase.camel}`,

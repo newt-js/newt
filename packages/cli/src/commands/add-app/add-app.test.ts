@@ -42,10 +42,10 @@ describe('newt add app', () => {
     expect(failures[0]).toContain('src/contexts/sales/app/app.tsx')
   }, 30_000)
 
-  test('the app imports the types of its context\'s schemas, and they type-check', async () => {
+  test('the app imports the types its context\'s modules offer, and they type-check', async () => {
     const backend = await moduleProject()
     await addApp(['sales'], backend)
-    await Bun.write(join(backend, 'src/contexts/sales/app/app.tsx'), "import { Heading }       from '@newt-js/react'\n// --------------------------------------------------------\nimport type { OrderDTO } from '../modules/order/order.schema'\n\nexport function App({ order }: { order?: OrderDTO }) {\n  return <Heading>{order?.name}</Heading>\n}\n")
+    await Bun.write(join(backend, 'src/contexts/sales/app/app.tsx'), "import { Heading }       from '@newt-js/react'\n// --------------------------------------------------------\nimport type { OrderDTO } from '../modules/order'\n\nexport function App({ order }: { order?: OrderDTO }) {\n  return <Heading>{order?.name}</Heading>\n}\n")
     expect(await checkGenerated(backend)).toEqual([])
   }, 30_000)
 
