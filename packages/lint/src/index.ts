@@ -19,6 +19,7 @@ import type { Uses }               from './rules/context-imports/context-imports
 import { assertUsesTree }          from './rules/context-imports/context-imports'
 import { contextImports }          from './rules/context-imports/context-imports'
 import { entityMethodParams }      from './rules/entity-method-params/entity-method-params'
+import { entityUpdated }           from './rules/entity-updated/entity-updated'
 import { frameworkTables }         from './rules/framework-tables/framework-tables'
 import { importsAndExports }       from './rules/imports-and-exports/imports-and-exports'
 import { moduleEntity }            from './rules/module-entity/module-entity'
@@ -80,6 +81,7 @@ export const plugin = {
     'use-case-public-methods': useCasePublicMethods,
     'use-case-reads': useCaseReads,
     'use-case-resolved': useCaseResolved,
+    'entity-updated': entityUpdated,
     'use-case-batched': useCaseBatched,
     'worker-one-write': workerOneWrite,
   },
@@ -211,6 +213,7 @@ export function newt({ files = ['**/*.ts'], contexts, root, ui }: NewtLintOption
         'newt/use-case-params': 'error',
         'newt/use-case-reads': 'error',
         'newt/use-case-resolved': 'error',
+        'newt/entity-updated': 'error',
         'newt/use-case-batched': 'error',
         'newt/worker-one-write': 'error',
         'newt/route-body-unchecked': 'error',
