@@ -172,6 +172,18 @@ async paginateInFolder(
 }
 ```
 
+### Who may enter the parent
+
+Say only the members of a folder may see what is inside it, and the members are a module, `folderMember`, that uses `folder`. `folder` cannot ask it, and no child should check for all the others. Who may enter is the context's to say, with a [guard](/concepts/http/#guards):
+
+```ts title="src/contexts/notes/notes.context.ts"
+router.guard('/folders/:folderId', async request => {
+  await folderMember.current(request.params.folderId)
+})
+```
+
+It covers the folder's own routes and those its children hang, without any module knowing of it.
+
 ### The parent changes, the children follow
 
 Deleting a folder should delete its notes. `folder` deletes the folder and emits `folder.deleted`; `note` subscribes to it through its deps, which its `initialize` hands to `registerNoteWorkers(module, deps)`, and deletes the folder's notes in a job:

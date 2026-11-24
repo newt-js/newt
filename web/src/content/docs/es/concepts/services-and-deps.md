@@ -172,6 +172,18 @@ async paginateInFolder(
 }
 ```
 
+### Quién puede entrar en el padre
+
+Supón que solo los miembros de una carpeta pueden ver lo que hay dentro, y que los miembros son un módulo, `folderMember`, que usa `folder`. `folder` no puede preguntarle, y ningún hijo debería comprobarlo por los demás. Quién puede entrar lo dice el contexto, con un [guard](/es/concepts/http/#guards):
+
+```ts title="src/contexts/notes/notes.context.ts"
+router.guard('/folders/:folderId', async request => {
+  await folderMember.current(request.params.folderId)
+})
+```
+
+Cubre las rutas de la carpeta y las que cuelgan sus hijos, sin que ningún módulo lo sepa.
+
 ### El padre cambia, los hijos le siguen
 
 Borrar una carpeta debería borrar sus notas. `folder` borra la carpeta y emite `folder.deleted`; `note` se suscribe a él a través de sus deps, que su `initialize` pasa a `registerNoteWorkers(module, deps)`, y borra las notas de la carpeta en un job:

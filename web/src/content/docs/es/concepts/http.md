@@ -170,6 +170,41 @@ reports.get('/overdue', async () => Response.json(await tasks.find({})))
 
 `/overdue` responde en `/tasks/api/reports/overdue`. El middleware se ejecuta después de las comprobaciones de newt (sesión, límites, clave de idempotencia) y alrededor de la ruta: llama a `next()` para ejecutarla, o devuelve tu propio `Response` para cortar.
 
+## Guards
+
+Un guard dice quién puede seguir en un camino y en lo que cuelga de él. Dáselo al router en el `initialize` del contexto, después de sus módulos:
+
+```ts title="src/contexts/tasks/tasks.context.ts"
+const project = Project_Module.initialize(base, router)
+const projectMember = ProjectMember_Module.initialize(base, router, { project })
+router.guard('/projects/:projectId', async request => {
+  await projectMember.current(request.params.projectId)
+})
+```
+
+`projectMember.current` busca al actor entre los miembros del proyecto y lanza `ProjectNotFound` (404) si no es uno de ellos.
+
+- **Cubre** `/projects/:projectId` y todas las rutas que cuelgan de él, las registre el módulo que las registre, antes o después del guard. `request.params` tiene los parámetros del camino del guard.
+- **Rechaza lanzando un error**, que se responde como cualquier [error](#errores). Lo que devuelve no se lee, así que un guard que devuelve algo no compila.
+- **Se ejecuta** después de la sesión y de los límites, y también en las rutas públicas, sin actor.
+- **No toca** una ruta con un nombre propio en el sitio de un parámetro: `/projects/mine` no es un `:projectId`.
+- **Lanza un error si no hay ninguna ruta en su camino ni debajo**, para que una errata nunca deje un camino abierto.
+
+Si varios cubren un camino, se ejecutan en el orden en que se dieron.
+
+### Cuándo usarlo
+
+Cuando quién puede seguir lo sabe un módulo que el dueño del camino no puede usar. `projectMember` usa `project`, así que `project` no puede preguntarle quiénes son los miembros: sería un ciclo. Con un guard no hace falta: el contexto conoce los dos módulos.
+
+| Quieres | Usa |
+|---|---|
+| saber quién llama | el [autenticador](/es/guides/authentication/) |
+| cerrar todo lo que cuelga de un camino a quien no puede entrar | un guard |
+| hacer algo alrededor de unas rutas, como [fijar un scope](/es/concepts/actor-and-scope/#fijar-un-scope-por-petición) | el middleware de un grupo |
+| comprobar una acción (solo un admin renombra un proyecto) | el caso de uso |
+
+Un guard protege rutas, no casos de uso: un worker u otro módulo llama a un caso de uso sin pasar por él.
+
 ## Por dónde pasa una petición
 
 Este es el orden en que una petición pasa por las comprobaciones de newt antes de que se ejecute tu ruta:
@@ -182,7 +217,8 @@ flowchart TD
   B --> O["Comprobación de origen (no GET)"]
   O --> S["Sesión (rutas privadas)"]
   S --> L["Límites de peticiones, si hay"]
-  L --> I["Clave de idempotencia (POST, si está activa)"]
+  L --> G["Guards de su camino, si hay"]
+  G --> I["Clave de idempotencia (POST, si está activa)"]
   I --> M[Middleware del grupo]
   M --> H[Tu ruta]
 ```

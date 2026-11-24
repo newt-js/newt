@@ -39,6 +39,7 @@ router.authenticateWith(authenticate)
 |---|---|---|
 | `prefix` | `readonly string` | El prefijo dado, o `'/api'`. |
 | `authenticateWith` | `(authenticator: Authenticator) => void` | Indica quién identifica las peticiones. Sin él, toda ruta privada responde 401. |
+| `guard` | `(path, guard: RouteGuard<Path>) => void` | Indica quién puede seguir en un camino y en lo que cuelga de él: `guard` lanza un error para rechazar. Lanza un error si no hay ninguna ruta ahí, o si el camino lleva `*`. Consulta [Guards](/es/concepts/http/#guards). |
 | `get` `post` `put` `patch` `delete` | `(path, route: HttpRoute<Path>, options?: RouteOptions) => void` | Registra una ruta. Lanza un error si el mismo método y ruta se registran dos veces. |
 | `group` | `(prefix, middleware: Middleware<Prefix>, options?: RouteOptions) => HttpGroup<Prefix>` | Rutas bajo un mismo camino que comparten middleware y opciones. |
 | `answer` | `(request: Request) => Promise<Response> \| null` | Responde a una petición. `null` si ninguna ruta coincide y el camino está fuera del prefijo. |
@@ -85,11 +86,15 @@ flowchart TD
   method -->|"sí"| body["Tamaño del cuerpo y JSON"]
   body --> origin["Mismo origen, salvo GET"]
   origin --> signIn["Identificación, salvo public"]
-  signIn --> limits["Límites de frecuencia, luego idempotencia en POST"]
+  signIn --> limits["Límites de frecuencia, guards, luego idempotencia en POST"]
   limits --> route["Tu ruta"]
 ```
 
 Cualquier error lanzado por el camino se convierte en respuesta con el `onError` de la ruta. [Lo que hace cada ruta](#lo-que-hace-cada-ruta) lista cada paso.
+
+### RouteGuard
+
+`RouteGuard<Path> = (request: HttpRequest<Path>) => void | Promise<void>`. Lanza un error para rechazar, y lo que devuelve no se lee.
 
 ### HttpGroup
 
