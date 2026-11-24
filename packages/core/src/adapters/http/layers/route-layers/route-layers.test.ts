@@ -9,11 +9,11 @@ import { HttpRouter }    from '../../router/http-router/http-router'
 import { ROUTE_LAYERS }  from './route-layers'
 
 describe('route layers', () => {
-  test('are, from the outermost: no-store, cookies, cors, handled, same origin, signed in, rate limited, idempotent', () => {
-    expect(ROUTE_LAYERS.map(layer => layer.name)).toEqual(['noStore', 'cookies', 'cors', 'handled', 'sameOrigin', 'signedIn', 'rateLimited', 'idempotent'])
+  test('are, from the outermost: no-store, cookies, cors, handled, same origin, signed in, rate limited, guarded, idempotent', () => {
+    expect(ROUTE_LAYERS.map(layer => layer.name)).toEqual(['noStore', 'cookies', 'cors', 'handled', 'sameOrigin', 'signedIn', 'rateLimited', 'guarded', 'idempotent'])
   })
 
-  test('a request goes through each in order: its origin, its session, its limit, its group\'s middleware, its route', async () => {
+  test('a request goes through each in order: its origin, its session, its limit, its guards, its group\'s middleware, its route', async () => {
     const seen: string[] = []
     const limit = new RateLimits(new MemoryCluster(), 'shop', systemClock).define('api.calls', { limit: 1, windowMs: 60_000 })
     const take = limit.take.bind(limit)
@@ -37,10 +37,13 @@ describe('route layers', () => {
       seen.push('route')
       return Response.json({ made: true }, { status: 201 })
     })
+    router.guard('/things', () => {
+      seen.push('guarded')
+    })
     const post = (headers: Record<string, string>) => router.answer(new Request('http://shop.test/api/things', { method: 'POST', headers }))!
 
     expect((await post({ 'x-user': 'ana' })).status).toBe(201)
-    expect(seen.splice(0)).toEqual(['signedIn', 'rateLimited', 'middleware', 'route'])
+    expect(seen.splice(0)).toEqual(['signedIn', 'rateLimited', 'guarded', 'middleware', 'route'])
 
     const refused = await post({ 'x-user': 'ana', origin: 'https://a.example', 'sec-fetch-site': 'same-origin' })
     expect([refused.status, refused.headers.get('cache-control'), refused.headers.get('access-control-allow-origin')]).toEqual([429, 'no-store', 'https://a.example'])

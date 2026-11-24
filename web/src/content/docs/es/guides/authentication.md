@@ -89,6 +89,10 @@ router.post('/sign-in', signIn, { public: true })
 Las rutas de ficheros de `src/stores.ts` son públicas. Sus URLs van firmadas con `FILES_SECRET`, y eso es lo que las deja pasar. Consulta [ficheros](/es/concepts/files/).
 :::
 
+### Quién puede seguir
+
+La sesión dice quién llama, no dónde puede entrar. Para cerrar un camino, y todo lo que cuelga de él, a quien no puede entrar (un workspace a quien no está en él), dale un guard al router del contexto: consulta [Guards](/es/concepts/http/#guards).
+
 ## Tokens bearer
 
 `bearerAuthenticator` lee la cabecera `Authorization: Bearer <token>` y pasa el token a tu función:

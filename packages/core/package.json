@@ -41,6 +41,8 @@
     "./cluster/valkey": "./src/adapters/cluster/valkey/index.ts",
     "./files/local": "./src/adapters/files/local/index.ts",
     "./files/s3": "./src/adapters/files/s3/index.ts",
+    "./email/memory": "./src/adapters/email/memory/index.ts",
+    "./email/smtp": "./src/adapters/email/smtp/index.ts",
     "./database/postgres": "./src/adapters/database/postgres/index.ts",
     "./database/mysql": "./src/adapters/database/mysql/index.ts",
     "./database/sqlite": "./src/adapters/database/sqlite/index.ts",
@@ -50,9 +52,16 @@
     "bun": ">=1.4.0"
   },
   "peerDependencies": {
+    "nodemailer": "^10.6.1",
     "zod": "^4.3.6"
   },
+  "peerDependenciesMeta": {
+    "nodemailer": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "nodemailer": "10.6.1",
     "zod": "4.3.6"
   }
 }

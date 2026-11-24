@@ -8,11 +8,13 @@ import { rm }             from 'node:fs/promises'
 import { tmpdir }         from 'node:os'
 import { join }           from 'node:path'
 // --------------------------------------------------------
+import { MemoryEmail }    from '../../../../application/email/memory-email/memory-email'
 import { memoryDatabase } from '../../../database/memory/memory-adapter/memory-adapter'
 import { MemoryDatabase } from '../../../database/memory/memory-database/memory-database'
 import { postgres }       from '../../../database/postgres/postgres-adapter/postgres-adapter'
 import { sqlite }         from '../../../database/sqlite/sqlite-adapter/sqlite-adapter'
 import { SqliteDatabase } from '../../../database/sqlite/sqlite-database/sqlite-database'
+import { smtpEmail }      from '../../../email/smtp/smtp-email/smtp-email'
 import { localFiles }     from '../../../files/local/local-files/local-files'
 import { LocalStorage }   from '../../../files/local/local-storage/local-storage'
 import { memoryFiles }    from '../../../files/memory/memory-files/memory-files'
@@ -86,6 +88,16 @@ describe('openData', () => {
 
     await expect(openData('sales', { database: { adapter: { open: async () => database }, migrations: MIGRATIONS }, files: localFiles(), router, place: 'configured' })).rejects.toThrow('is not set')
     expect(closed).toBe(true)
+  })
+
+  test('opens what sends its emails, in memory for the tests, and nothing when it sends none', async () => {
+    const options = { database: { adapter: memoryDatabase(), migrations: MIGRATIONS }, files: memoryFiles(), place: 'memory' as const }
+
+    const sends = await openData('sales', { ...options, email: smtpEmail(), router: new HttpRouter({ prefix: '/api' }) })
+    const sendsNone = await openData('sales', { ...options, router: new HttpRouter({ prefix: '/api' }) })
+
+    expect(sends.email).toBeInstanceOf(MemoryEmail)
+    expect(sendsNone.email).toBeUndefined()
   })
 
   test('says which variable is missing to open what is configured', async () => {

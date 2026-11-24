@@ -7,7 +7,7 @@ import { allowed }   from './allowed/allowed'
 
 const ROOT = `${sep}packages${sep}core${sep}src${sep}`
 
-const PORTS = ['database', 'files', 'cluster']
+const PORTS = ['database', 'files', 'cluster', 'email']
 
 export function layerOf(file: string): string | null {
   const at = file.lastIndexOf(ROOT)

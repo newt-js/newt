@@ -54,7 +54,7 @@ afterEach(() => context.close())
 | `conflictRetries` | `Partial<ConflictRetries>` | ContextBase's | Same as in ContextBase. |
 | `storage` | `StorageOptions` | none | File storage, for example `{ private: new MemoryStorage() }`. |
 
-You cannot pass `platform` or `clock`: `testContext` makes its own.
+You cannot pass `platform`, `clock` or `email`: `testContext` makes its own.
 
 :::caution
 Jobs never run by themselves in a test context. After a use case that publishes an event, call `await context.settle()` before checking what its subscriptions did.
@@ -67,6 +67,7 @@ Jobs never run by themselves in a test context. After a use case that publishes 
 | `base` | `ContextBase` | The context's base: pass it to your modules (`tasksModules(context.base, router)`). |
 | `clock` | `TestClock` | The clock of `base`. Time stands still until you move it. |
 | `logs` | `CapturedLines` | What was logged in this context, kept for the test instead of printed. |
+| `email` | `MemoryEmail` | What sends its emails: none goes out, and `sent` has them all. |
 | `settle()` | `() => Promise<void>` | Runs every waiting job, and the jobs those jobs leave, until none is left. |
 | `close()` | `() => Promise<void>` | Stops the worker and the schedules, closes the database, and stops capturing logs. Call it in `afterEach`. |
 

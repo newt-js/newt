@@ -152,6 +152,7 @@ Step by step:
 | `base` | The context's base: database, schedules, worker, storage |
 | `clock` | The [test clock](#move-the-clock) |
 | `logs` | The log lines written during the test |
+| `email` | What sends its emails: `email.sent` has them all, and none goes out |
 | `settle()` | Runs every pending job, and waits for them |
 | `close()` | Stops schedules and worker, closes the database |
 

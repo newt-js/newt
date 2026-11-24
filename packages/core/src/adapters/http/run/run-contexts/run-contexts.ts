@@ -41,6 +41,11 @@ export function runContexts(contexts: ContextToRun[], options: RunContextsOption
   }
   const running: RunningContexts = {
     ...(server ? { server } : {}),
+    context: name => {
+      const found = contexts.find(({ context }) => context.name === name)
+      if (!found) throw new Error(`No context named ${name} is running`)
+      return found.context
+    },
     stop: () => stopped ??= platformScope.run(platform, async () => {
       if (options.signals !== false) {
         for (const signal of SIGNALS) {

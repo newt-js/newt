@@ -1,5 +1,6 @@
 import type { Clock }              from '../../../domain/clock/clock'
 import { systemClock }             from '../../../domain/clock/system-clock/system-clock'
+import type { EmailSender }        from '../../../domain/email/email-sender'
 import type { ContextStorage }     from '../../../domain/file-storage/files/context-storage'
 import type { RepositoryDeps }     from '../../../domain/repository/repository-deps'
 import type { Transactions }       from '../../../domain/repository/transactions/transactions'
@@ -12,6 +13,7 @@ import { RateLimits }              from '../../runtime/rate-limits/rate-limits/r
 import { Schedules }               from '../../runtime/schedules/schedules/schedules'
 import { Worker }                  from '../../runtime/worker/worker/worker'
 import { ContextBus }              from '../context-bus/context-bus'
+import { contextEmail }            from '../context-email/context-email'
 import { contextStorage }          from '../context-storage/context-storage'
 import { jobsChannel }             from '../jobs-channel/jobs-channel'
 import type { ContextBaseOptions } from './context-base-options'
@@ -29,6 +31,7 @@ export class ContextBase implements RepositoryDeps {
   readonly schedules: Schedules
   readonly rateLimits: RateLimits
   readonly storage: ContextStorage
+  readonly email: EmailSender
   private readonly unwatch: () => void
 
   constructor(options: ContextBaseOptions) {
@@ -54,6 +57,7 @@ export class ContextBase implements RepositoryDeps {
     this.bus = new ContextBus({ name: this.name, database: this.database, worker: this.worker, registry: this.useCaseRunner.registry, platform: this.platform, clock })
     this.schedules = new Schedules(this.database, this.bus, this.useCaseRunner, this.platform, clock)
     this.storage = contextStorage(options.storage, options.name)
+    this.email = contextEmail(options.email, options.name)
     this.rateLimits = new RateLimits(this.platform.cluster, options.name, clock)
   }
 

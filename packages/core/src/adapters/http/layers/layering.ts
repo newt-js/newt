@@ -4,6 +4,7 @@ import type { HttpRateLimit }     from '../rate-limits/http-rate-limit'
 import type { HttpMethod }        from '../router/http-route'
 import type { RouteOptions }      from '../router/route-options'
 import type { Authenticator }     from '../session/authenticator'
+import type { Guarding }          from './guarded/guarded'
 
 export type LayeredOptions = Omit<RouteOptions, 'rateLimit'> & { rateLimit: HttpRateLimit[] | false }
 
@@ -12,5 +13,6 @@ export type Layering = {
   path: string
   options: LayeredOptions
   authenticator: () => Authenticator | null
+  guards: () => Guarding[]
   keeping: (idempotency: Idempotency) => IdempotentOptions
 }

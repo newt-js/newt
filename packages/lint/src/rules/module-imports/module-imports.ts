@@ -74,7 +74,7 @@ export const moduleImports: TSESLint.RuleModule<'private' | 'barrel' | 'cycle'> 
     docs: { description: "A module reaches another only through its index.ts: the type of its module, its DTOs and its errors." },
     messages: {
       private: "'{{path}}' is {{module}}'s own. Reach {{module}} through its use cases, the dependency `newt add deps` gives (this.deps.{{camel}}), and import of it only what its index.ts offers, by its folder ('…/{{module}}'). If you need something it does not offer, offer it there: a DTO or an error; an id of its entity is a value object of this module's own.",
-      cycle: "{{cycle}}: the modules of a context never use each other in a cycle. Keep one direction and drop the import that closes it; where the module that lost it called the other, it emits an event instead, and the other reacts to it.",
+      cycle: "{{cycle}}: the modules of a context never use each other in a cycle. Keep one direction and drop the import that closes it; where the module that lost it called the other, it emits an event instead, and the other reacts to it; where it checked who may go on at a path, the context gives its router a guard (`router.guard`) instead.",
       barrel: "This re-exports '{{path}}', which is {{module}}'s own: outside the modules, a file re-exports only what a module's index.ts offers, by its folder ('…/{{module}}').",
     },
     schema: [],

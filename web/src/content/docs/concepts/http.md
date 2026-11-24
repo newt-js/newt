@@ -170,6 +170,41 @@ reports.get('/overdue', async () => Response.json(await tasks.find({})))
 
 `/overdue` answers at `/tasks/api/reports/overdue`. The middleware runs after newt's own checks (sign-in, rate limits, idempotency key) and around the route: call `next()` to run it, or return your own `Response` to stop.
 
+## Guards
+
+A guard says who may go on at a path and under it. Give it to the router in the context's `initialize`, after its modules:
+
+```ts title="src/contexts/tasks/tasks.context.ts"
+const project = Project_Module.initialize(base, router)
+const projectMember = ProjectMember_Module.initialize(base, router, { project })
+router.guard('/projects/:projectId', async request => {
+  await projectMember.current(request.params.projectId)
+})
+```
+
+`projectMember.current` looks for the actor among the project's members and throws `ProjectNotFound` (404) when they are not one of them.
+
+- **It covers** `/projects/:projectId` and every route under it, whichever module registers it, before or after the guard. `request.params` has the params of the guard's own path.
+- **It refuses by throwing.** The error answers as any [error](#errors). What it returns is not read, so a guard that returns something does not compile.
+- **It runs** after sign-in and rate limits, and on public routes too, with no actor.
+- **It leaves alone** a route with a name of its own in place of a param: `/projects/mine` is not a `:projectId`.
+- **It throws when no route is at its path or under it**, so a typo never leaves a path open.
+
+When several cover a path, they run in the order they were given.
+
+### When to use one
+
+When who may go on is known by a module that the path's own module cannot use. `projectMember` uses `project`, so `project` cannot ask it who the members are: that would be a cycle. A guard needs neither: the context knows both modules.
+
+| You want to | Use |
+|---|---|
+| know who calls | the [authenticator](/guides/authentication/) |
+| refuse everything under a path to those who may not enter | a guard |
+| do something around some routes, such as [setting a scope](/concepts/actor-and-scope/#setting-a-scope-per-request) | a group's middleware |
+| check one action (only an admin renames a project) | the use case |
+
+A guard protects routes, not use cases: a worker or another module calls a use case without passing through it.
+
 ## What a request goes through
 
 This is the order in which a request meets newt's checks before your route runs:
@@ -182,7 +217,8 @@ flowchart TD
   B --> O["Origin check (not GET)"]
   O --> S["Sign-in (private routes)"]
   S --> L["Rate limits, if any"]
-  L --> I["Idempotency key (POST, if on)"]
+  L --> G["Guards of its path, if any"]
+  G --> I["Idempotency key (POST, if on)"]
   I --> M[Group middleware]
   M --> H[Your route]
 ```
@@ -339,7 +375,7 @@ The `serve` options you are most likely to touch:
 Set `trustProxy` only to the number of proxies you really have. With a higher number, a client can fake its IP in `X-Forwarded-For` and slip past IP rate limits.
 :::
 
-`runContexts` returns `{ server, stop() }`. The stop runs in order: the server finishes their requests, workers finish their jobs, contexts close.
+`runContexts` returns `{ server, context(name), stop() }`. The stop runs in order: the server finishes their requests, workers finish their jobs, contexts close.
 
 The full list of `serve` and `runContexts` options is in the [HTTP API reference](/reference/http/).
 

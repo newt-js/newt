@@ -1,4 +1,5 @@
 import { ContextBase }             from '../../context/context-base/context-base'
+import { MemoryEmail }             from '../../email/memory-email/memory-email'
 import type { CapturedLines }      from '../../platform/capture-lines/capture-lines'
 import { captureLines }            from '../../platform/capture-lines/capture-lines'
 import { Platform }                from '../../platform/platform/platform'
@@ -9,6 +10,8 @@ export type TestContext = {
   base: ContextBase
   clock: TestClock
   logs: CapturedLines
+  /** What sends its emails: none goes out, and `sent` has them all. */
+  email: MemoryEmail
   settle(): Promise<void>
   close(): Promise<void>
 }
@@ -17,11 +20,13 @@ export function testContext({ cluster, at, ...options }: TestContextOptions): Te
   const clock = new TestClock(at)
   const platform = new Platform({ cluster })
   const logs = captureLines(platform)
-  const base = new ContextBase({ ...options, platform, clock })
+  const email = new MemoryEmail()
+  const base = new ContextBase({ ...options, platform, clock, email })
   return {
     base,
     clock,
     logs,
+    email,
     settle: () => base.worker.idle(),
     close: async () => {
       try {

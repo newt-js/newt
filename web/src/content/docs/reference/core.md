@@ -17,6 +17,7 @@ sidebar:
 | `@newt-js/core/http` | The router and the server. See [HTTP API](/reference/http/). |
 | `@newt-js/core/database/sqlite` · `/postgres` · `/mysql` · `/memory` | Databases. See [Adapters](#adapters). |
 | `@newt-js/core/files/local` · `/s3` · `/memory` | File storage. |
+| `@newt-js/core/email/smtp` · `/memory` | Sending [emails](/concepts/email/). |
 | `@newt-js/core/cluster/memory` · `/valkey` | What several instances share. |
 
 `zod` 4 is a peer dependency.
@@ -586,8 +587,9 @@ What every module of a context shares.
 | `guardRule` | `'error'` | See [Use cases](#use-cases). |
 | `conflictRetries` | `{ times: 3, duplicates: 1, backoffMs: 10 }` | |
 | `storage` | — | `StorageOptions`. |
+| `email` | — | `EmailSender`: what sends its [emails](/concepts/email/). |
 
-Members: `name`, `platform`, `clock`, `database`, `transactions`, `useCaseRunner`, `bus` (`ContextBus`), `worker`, `schedules`, `rateLimits`, `storage`, `close()`.
+Members: `name`, `platform`, `clock`, `database`, `transactions`, `useCaseRunner`, `bus` (`ContextBus`), `worker`, `schedules`, `rateLimits`, `storage`, `email`, `close()`.
 
 ### `BoundedContext<B = ContextBase>`
 
@@ -791,6 +793,8 @@ The memory entry point also exports `MemoryOutbox`, `MemoryRecords`, `MemoryTran
 | `@newt-js/core/files/local` | `LocalStorage`, `LocalPublicStorage` | `await LocalStorage.open({ folder, baseUrl, secret, clock? })` |
 | `@newt-js/core/files/s3` | `S3Storage`, `S3PublicStorage` | `await S3Storage.open({ bucket, accessKeyId, secretAccessKey, sessionToken?, region?, endpoint?, virtualHostedStyle? })` |
 | `@newt-js/core/files/memory` | `MemoryStorage`, `MemoryPublicStorage` | `new MemoryStorage()` |
+| `@newt-js/core/email/smtp` | `SmtpEmailSender` | `new SmtpEmailSender({ url, from, timeoutMs? })` |
+| `@newt-js/core/email/memory` | `MemoryEmail` | `new MemoryEmail()` |
 
 | Option | Meaning |
 |---|---|

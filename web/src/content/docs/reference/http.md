@@ -39,6 +39,7 @@ router.authenticateWith(authenticate)
 |---|---|---|
 | `prefix` | `readonly string` | The prefix given, or `'/api'`. |
 | `authenticateWith` | `(authenticator: Authenticator) => void` | Sets who signs requests in. Without it, every private route answers 401. |
+| `guard` | `(path, guard: RouteGuard<Path>) => void` | Says who may go on at a path and under it: `guard` throws to refuse. Throws if no route is there, or if the path has a `*`. See [Guards](/concepts/http/#guards). |
 | `get` `post` `put` `patch` `delete` | `(path, route: HttpRoute<Path>, options?: RouteOptions) => void` | Registers a route. Throws if the same method and path are registered twice. |
 | `group` | `(prefix, middleware: Middleware<Prefix>, options?: RouteOptions) => HttpGroup<Prefix>` | Routes under a common path that share a middleware and options. |
 | `answer` | `(request: Request) => Promise<Response> \| null` | Answers a request. `null` when no route matches and the path is outside the prefix. |
@@ -85,11 +86,15 @@ flowchart TD
   method -->|"yes"| body["Body size and JSON checks"]
   body --> origin["Same-origin check, unless GET"]
   origin --> signIn["Sign-in, unless public"]
-  signIn --> limits["Rate limits, then idempotency for POST"]
+  signIn --> limits["Rate limits, guards, then idempotency for POST"]
   limits --> route["Your route"]
 ```
 
 Any error thrown along the way becomes a response through the route's `onError`. [What every route does](#what-every-route-does) lists every step.
+
+### RouteGuard
+
+`RouteGuard<Path> = (request: HttpRequest<Path>) => void | Promise<void>`. It throws to refuse, and what it returns is not read.
 
 ### HttpGroup
 
@@ -359,6 +364,7 @@ return runContexts(contexts, {
 | Member | Type | Meaning |
 |---|---|---|
 | `server` | `Bun.Server` | The shared server, when `serve` was given. |
+| `context` | `(name: string) => ContextToRun['context']` | One of its contexts, by its name. Throws when there is none. |
 | `stop` | `() => Promise<void>` | Stops the server, then the workers, then closes the contexts (last one first). Throws an `AggregateError` if a step failed; the others still run. |
 
 ### Serve options

@@ -89,6 +89,10 @@ router.post('/sign-in', signIn, { public: true })
 The file routes in `src/stores.ts` are public. Their URLs are signed with `FILES_SECRET`, which is what lets them through. See [files](/concepts/files/).
 :::
 
+### Who may go on
+
+Signing in says who calls, not what they may enter. To close a path, and all that hangs from it, to those who may not enter (a workspace to whoever is not in it), give the context's router a guard: see [Guards](/concepts/http/#guards).
+
 ## Bearer tokens
 
 `bearerAuthenticator` reads the `Authorization: Bearer <token>` header and hands the token to your function:

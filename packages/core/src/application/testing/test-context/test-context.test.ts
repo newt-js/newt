@@ -42,6 +42,14 @@ describe('testContext', () => {
     expect(ran).toEqual(['welcome', 'counted'])
   })
 
+  test('sends no email: it keeps them, for the test to read', async () => {
+    shop = testContext({ name: 'shop', database: new MemoryDatabase(), cluster: new MemoryCluster() })
+
+    await shop.base.email.send({ to: 'ana@example.com', subject: 'Welcome', text: 'Hello' })
+
+    expect(shop.email.sent).toMatchObject([{ to: 'ana@example.com', subject: 'Welcome' }])
+  })
+
   test('keeps its logs to itself, for the test to read', async () => {
     const outside: string[] = []
     const before = unscopedLogs.logger
